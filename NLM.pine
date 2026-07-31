@@ -941,6 +941,7 @@ alertcondition(sweptThisBar, "Tracked liquidity swept", "A tracked liquidity lev
 groupAnchor = "General"
 snapMaxBars   = input.int(400, "Bars searched when snapping an HTF pivot to its wick", minval = 50, maxval = 900, group = groupAnchor, tooltip = "request.security hands back the HTF bar's OPEN time. On a 1m chart that lands a 15m pivot at the start of the 15m candle instead of on the wick. This is how far back the exact wick is hunted.")
 labelSizeSel  = input.string("normal", "Label size", options = ["tiny", "small", "normal", "large"], group = groupAnchor)
+drawReach     = input.int(4000, "Max bars a drawing may reach back", minval = 200, maxval = 9000, group = groupAnchor, tooltip = "TradingView refuses a bar-index coordinate more than about 10000 bars from the current bar. Anything anchored further back than this is clamped to it.")
 
 f_lblSize() =>
     labelSizeSel == "tiny" ? size.tiny : labelSizeSel == "small" ? size.small : labelSizeSel == "large" ? size.large : size.normal
@@ -967,11 +968,20 @@ bool doLayout = barstate.islast
 f_rx(int bars) =>
     bar_index + math.max(1, bars)
 
+// TradingView rejects a bar-index coordinate more than roughly 10000 bars from
+// the current bar. A weekly profile anchor on a 1m chart, or a liquidity ray a
+// few days old, will reach that far - so every LEFT anchor goes through here.
+// Clamping only moves where a level visually starts; the price is untouched.
+f_lx(int bi) =>
+    int b = na(bi) ? bar_index - 1 : bi
+    math.max(bar_index - drawReach, math.min(b, bar_index))
+
 // One level = two line segments with a real visual break, and the text sitting
 // centred in that break. This is the "on the line" look, not text floating on
 // top of a continuous line. Callers re-run it every bar while the line is still
 // growing, because a break position computed once drifts off-centre as it grows.
-f_gapLine(line a, line b, label lb, float price, int x1, int x2, int gapBars, string txt) =>
+f_gapLine(line a, line b, label lb, float price, int rawX1, int x2, int gapBars, string txt) =>
+    int x1 = f_lx(rawX1)
     int xr = x2 <= x1 ? x1 + 1 : x2
     int span = xr - x1
     int half = math.max(1, int(gapBars / 2))
@@ -1131,7 +1141,7 @@ f_clearVp(array<VpLvl> vs) =>
 // Dashed line with the break, and therefore the name, sitting near the right
 // edge rather than in the middle of a week-long span.
 f_layoutVp(VpLvl v) =>
-    int x1 = na(v.startBi) ? bar_index - 1 : v.startBi
+    int x1 = f_lx(v.startBi)
     int xr = f_rx(vpExtendBars)
     int mid = math.max(x1 + 1, bar_index - vpLabelBack)
     int half = math.max(1, int(vpLabelGap / 2))
@@ -1145,7 +1155,7 @@ f_layoutVp(VpLvl v) =>
 
 f_drawVp(array<VpLvl> vs, string name, float price, color col, int startBi) =>
     if not na(price)
-        int x1 = na(startBi) ? bar_index - 1 : startBi
+        int x1 = f_lx(startBi)
         line a = line.new(x1, price, x1, price, xloc = xloc.bar_index, color = col, style = line.style_dashed, width = 1)
         line b = line.new(x1, price, x1, price, xloc = xloc.bar_index, color = col, style = line.style_dashed, width = 1)
         label lb = label.new(x1, price, name, xloc = xloc.bar_index, style = label.style_none, color = color.new(color.black, 100), textcolor = col, size = size.small, textalign = text.align_center)
@@ -1561,10 +1571,11 @@ f_styleGap(Gap g) =>
 
 f_layoutGap(Gap g) =>
     int rx = f_gapRight(g.rank)
+    int lx = f_lx(g.leftBi)
     float mid = (g.top + g.bot) / 2
-    box.set_lefttop(g.bx, g.leftBi, g.top)
+    box.set_lefttop(g.bx, lx, g.top)
     box.set_rightbottom(g.bx, rx, g.bot)
-    line.set_xy1(g.ce, g.leftBi, mid)
+    line.set_xy1(g.ce, lx, mid)
     line.set_xy2(g.ce, rx, mid)
     label.set_xy(g.lb, rx, mid)
     0
@@ -1617,9 +1628,10 @@ f_sameTier(int a, int b) =>
 
 f_makeGap(float top, float bot, float wickHi, float wickLo, int leftBi, int tfSec, string tfName, int rank, bool bull, bool bpr, int lId, int lIdx) =>
     int rx = f_gapRight(rank)
+    int lx = f_lx(leftBi)
     float mid = (top + bot) / 2
-    box bx = box.new(leftBi, top, rx, bot, xloc = xloc.bar_index, border_color = color.black, border_width = 1)
-    line ce = line.new(leftBi, mid, rx, mid, xloc = xloc.bar_index, style = line.style_dashed, width = 1)
+    box bx = box.new(lx, top, rx, bot, xloc = xloc.bar_index, border_color = color.black, border_width = 1)
+    line ce = line.new(lx, mid, rx, mid, xloc = xloc.bar_index, style = line.style_dashed, width = 1)
     label lb = label.new(rx, mid, "", xloc = xloc.bar_index, style = label.style_label_right, color = color.new(color.black, 100), size = f_lblSize(), textalign = text.align_right)
     Gap g = Gap.new(bx = bx, ce = ce, lb = lb, top = top, bot = bot, wickHi = wickHi, wickLo = wickLo, tfSec = tfSec, tfName = tfName, rank = rank, bull = bull, inverted = false, bpr = bpr, leftBi = leftBi, bornBar = bar_index, touched = false, respected = false, legId = lId, legIdx = lIdx)
     f_styleGap(g)
@@ -2029,19 +2041,21 @@ f_delBrk(array<Brk> bs, int i) =>
 
 f_layoutBrk(Brk b) =>
     int rx = f_rx(bbExtend)
+    int lx = f_lx(b.leftBi)
     float mid = (b.top + b.bot) / 2
-    box.set_lefttop(b.bx, b.leftBi, b.top)
+    box.set_lefttop(b.bx, lx, b.top)
     box.set_rightbottom(b.bx, rx, b.bot)
-    line.set_xy1(b.mid, b.leftBi, mid)
+    line.set_xy1(b.mid, lx, mid)
     line.set_xy2(b.mid, rx, mid)
     label.set_xy(b.lb, rx, mid)
     if not na(b.cisdLn) and not b.confirmed
-        line.set_xy1(b.cisdLn, b.leftBi, b.cisd)
+        line.set_xy1(b.cisdLn, lx, b.cisd)
         line.set_xy2(b.cisdLn, rx, b.cisd)
     0
 
-f_addBrk(array<Brk> bs, float top, float bot, int leftBi, bool bullBreaker, float cisd, bool confirmAbove) =>
+f_addBrk(array<Brk> bs, float top, float bot, int rawLeftBi, bool bullBreaker, float cisd, bool confirmAbove) =>
     int rx = f_rx(bbExtend)
+    int leftBi = f_lx(rawLeftBi)
     float mid = (top + bot) / 2
     box bx = box.new(leftBi, top, rx, bot, xloc = xloc.bar_index, border_color = color.new(color.black, math.max(0, bbTransp - 40)), border_width = 1, bgcolor = color.new(bbFill, bbTransp))
     line ml = line.new(leftBi, mid, rx, mid, xloc = xloc.bar_index, color = color.new(color.black, 0), style = line.style_dashed, width = 1)
@@ -2199,6 +2213,11 @@ f_pushPiv(cmHtfLo, cmSecPl, bar_index - cmHtfLoOff)
 f_pushPiv(cmLtfHi, cmLtfPh, bar_index - smtLtfLen)
 f_pushPiv(cmLtfLo, cmLtfPl, bar_index - smtLtfLen)
 
+// Clamping the endpoint here would pull the line off the wick, which is the
+// whole point of it - so a pair of pivots too far apart to draw is skipped.
+f_smtDrawable(PivSeq s) =>
+    array.size(s.b) >= 2 and bar_index - array.get(s.b, 1) < drawReach
+
 f_drawSmt(PivSeq s) =>
     float p0 = array.get(s.p, 0)
     float p1 = array.get(s.p, 1)
@@ -2240,7 +2259,7 @@ var bool  smtLtfBear = false
 var float smtLtfPiv = na
 var int   smtLtfBar = na
 
-if showSmt and nHtfHi and f_smtBear(chHtfHi, cmHtfHi, cmLive)
+if showSmt and nHtfHi and f_smtDrawable(chHtfHi) and f_smtBear(chHtfHi, cmHtfHi, cmLive)
     line.delete(smtHtfLn)
     label.delete(smtHtfLb)
     [a1, a2] = f_drawSmt(chHtfHi)
@@ -2250,7 +2269,7 @@ if showSmt and nHtfHi and f_smtBear(chHtfHi, cmHtfHi, cmLive)
     smtHtfBear := true
     smtHtfPiv := array.get(chHtfHi.p, 0)
     smtHtfBar := bar_index
-else if showSmt and nHtfLo and f_smtBull(chHtfLo, cmHtfLo, cmLive)
+else if showSmt and nHtfLo and f_smtDrawable(chHtfLo) and f_smtBull(chHtfLo, cmHtfLo, cmLive)
     line.delete(smtHtfLn)
     label.delete(smtHtfLb)
     [b1, b2] = f_drawSmt(chHtfLo)
@@ -2261,7 +2280,7 @@ else if showSmt and nHtfLo and f_smtBull(chHtfLo, cmHtfLo, cmLive)
     smtHtfPiv := array.get(chHtfLo.p, 0)
     smtHtfBar := bar_index
 
-if showSmt and nLtfHi and f_smtBear(chLtfHi, cmLtfHi, cmLive)
+if showSmt and nLtfHi and f_smtDrawable(chLtfHi) and f_smtBear(chLtfHi, cmLtfHi, cmLive)
     line.delete(smtLtfLn)
     label.delete(smtLtfLb)
     [c1, c2] = f_drawSmt(chLtfHi)
@@ -2271,7 +2290,7 @@ if showSmt and nLtfHi and f_smtBear(chLtfHi, cmLtfHi, cmLive)
     smtLtfBear := true
     smtLtfPiv := array.get(chLtfHi.p, 0)
     smtLtfBar := bar_index
-else if showSmt and nLtfLo and f_smtBull(chLtfLo, cmLtfLo, cmLive)
+else if showSmt and nLtfLo and f_smtDrawable(chLtfLo) and f_smtBull(chLtfLo, cmLtfLo, cmLive)
     line.delete(smtLtfLn)
     label.delete(smtLtfLb)
     [d1, d2] = f_drawSmt(chLtfLo)
