@@ -1143,8 +1143,6 @@ vpShowDaily   = input.bool(true, "Draw Daily POC / VAH / VAL", group = groupVp)
 vpShowWeekly  = input.bool(true, "Draw Weekly POC / VAH / VAL", group = groupVp)
 vpDailyColor  = input.color(#A7C957, "Daily color", group = groupVp)
 vpWeeklyColor = input.color(#E040FB, "Weekly color", group = groupVp)
-vpLabelBack   = input.int(14, "Label position (bars left of price)", minval = 2, maxval = 100, group = groupVp)
-vpLabelGap    = input.int(9, "Label gap width (bars)", minval = 2, maxval = 40, group = groupVp)
 
 var array<float> vpDayP = array.new_float()
 var array<float> vpDayV = array.new_float()
@@ -1193,28 +1191,23 @@ f_clearVp(array<VpLvl> vs) =>
             array.remove(vs, i)
     0
 
-// the break, and so the name, sits near the right edge rather than in the
-// middle of a week-long span
+// One continuous line with a coloured tag in the same right-hand column the
+// session levels use - POC/VAH/VAL read as session levels, not as BSL/SSL.
 f_layoutVp(VpLvl v) =>
-    int unit = f_units(1)
     int x1 = f_xAt(v.startB, v.startT)
-    int half = math.max(unit, int(f_units(vpLabelGap) / 2))
-    int mid = math.max(x1 + unit, f_xNow() - f_units(vpLabelBack))
-    int aEnd = math.max(x1, mid - half)
-    int bStart = math.max(aEnd, mid + half)
     line.set_xy1(v.a, x1, v.price)
-    line.set_xy2(v.a, aEnd, v.price)
-    line.set_xy1(v.b, bStart, v.price)
-    line.set_xy2(v.b, math.max(bStart + unit, f_xNow()), v.price)
-    label.set_xy(v.lb, mid, v.price)
+    line.set_xy2(v.a, x1, v.price)
+    line.set_xy1(v.b, x1, v.price)
+    line.set_xy2(v.b, math.max(x1 + f_units(1), f_xNow()), v.price)
+    label.set_xy(v.lb, f_xFwd(labelOffsetBars), v.price)
     0
 
-f_drawVp(array<VpLvl> vs, string name, float price, color col, int startB, int startT, bool enabled) =>
+f_drawVp(array<VpLvl> vs, string name, float price, color col, color txtCol, int startB, int startT, bool enabled) =>
     if enabled and not na(price)
         int x1 = f_xAt(startB, startT)
         line a = line.new(x1, price, x1, price, xloc = xlMode, color = col, style = line.style_dashed, width = 1)
         line b = line.new(x1, price, x1, price, xloc = xlMode, extend = extend.right, color = col, style = line.style_dashed, width = 1)
-        label lb = label.new(x1, price, name, xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), textcolor = col, size = size.small, textalign = text.align_center)
+        label lb = label.new(x1, price, showPricesInLabels ? name + " " + f_priceText(price) : name, xloc = xlMode, style = label.style_label_left, color = color.new(col, 0), textcolor = txtCol, size = size.small, textalign = text.align_left)
         VpLvl v = VpLvl.new(a = a, b = b, lb = lb, price = price, startB = startB, startT = startT, name = name)
         array.push(vs, v)
         f_layoutVp(v)
@@ -1222,12 +1215,12 @@ f_drawVp(array<VpLvl> vs, string name, float price, color col, int startB, int s
 
 f_redrawVp(array<VpLvl> vs) =>
     f_clearVp(vs)
-    f_drawVp(vs, "POC D", dPoc, vpDailyColor, dStartB, dStartT, vpShowDaily)
-    f_drawVp(vs, "VAH D", dVah, vpDailyColor, dStartB, dStartT, vpShowDaily)
-    f_drawVp(vs, "VAL D", dVal, vpDailyColor, dStartB, dStartT, vpShowDaily)
-    f_drawVp(vs, "POC W", wPoc, vpWeeklyColor, wStartB, wStartT, vpShowWeekly)
-    f_drawVp(vs, "VAH W", wVah, vpWeeklyColor, wStartB, wStartT, vpShowWeekly)
-    f_drawVp(vs, "VAL W", wVal, vpWeeklyColor, wStartB, wStartT, vpShowWeekly)
+    f_drawVp(vs, "POC D", dPoc, vpDailyColor, color.black, dStartB, dStartT, vpShowDaily)
+    f_drawVp(vs, "VAH D", dVah, vpDailyColor, color.black, dStartB, dStartT, vpShowDaily)
+    f_drawVp(vs, "VAL D", dVal, vpDailyColor, color.black, dStartB, dStartT, vpShowDaily)
+    f_drawVp(vs, "POC W", wPoc, vpWeeklyColor, color.white, wStartB, wStartT, vpShowWeekly)
+    f_drawVp(vs, "VAH W", wVah, vpWeeklyColor, color.white, wStartB, wStartT, vpShowWeekly)
+    f_drawVp(vs, "VAL W", wVal, vpWeeklyColor, color.white, wStartB, wStartT, vpShowWeekly)
     0
 
 bool vpRolled = false
@@ -2429,13 +2422,17 @@ bool smtLtfBearNow = smtLtfFreshNow and smtLtfBear
 groupModel = "Model"
 showModel       = input.bool(true, "Run the model", group = groupModel)
 condSweepBars   = input.int(20, "Condition: bars since a sweep", minval = 1, maxval = 200, group = groupModel)
-confirmWindow   = input.int(3, "Confirmation freshness (bars)", minval = 1, maxval = 50, group = groupModel)
+confirmWindow   = input.int(4, "Confirmation freshness (bars)", minval = 1, maxval = 50, group = groupModel)
 mtfMemoryBars   = input.int(20, "Bars price stays \"in the MTF gap\" for continuation", minval = 3, maxval = 200, group = groupModel)
 requireConfirm  = input.bool(true, "Confirmation is a hard gate", group = groupModel)
 requireSequence = input.bool(true, "Enforce sweep -> MTF gap -> confirmation ORDER", group = groupModel, tooltip = "Without this the three legs are independent windows that only have to OVERLAP, so a sweep 18 bars ago, an unrelated gap touch 20 bars ago and an IFVG 3 bars ago in any direction produce a signal. This is the single biggest source of junk trades.")
 requireCoherent = input.bool(true, "Confirmation must point the same way as the sweep", group = groupModel, tooltip = "A high swept, then a BULLISH IFVG, is two unrelated events - not a setup.")
 enterOnConfirm  = input.bool(true, "Enter only on the confirmation bar", group = groupModel, tooltip = "Off, the model can enter any bar inside the freshness window, which chases price away from the level.")
-minRR           = input.float(1.5, "Minimum RR to the nearest opposing liquidity (hard gate)", minval = 0.5, maxval = 10, step = 0.1, group = groupModel)
+minRR           = input.float(1.5, "Minimum RR to the target (hard gate)", minval = 0.5, maxval = 10, step = 0.1, group = groupModel)
+rrTargetSel     = input.string("TP2", "RR measured to", options = ["TP1", "TP2", "TP3"], group = groupModel)
+minWallR        = input.float(0.5, "Nearest opposing level must be at least this many R away", minval = 0.0, maxval = 3, step = 0.1, group = groupModel, tooltip = "This is the obstacle check, and it is deliberately LOW. Measuring the whole RR gate to the nearest obstacle is what produced almost no trades - the nearest BSL/SSL is often a fraction of an R away. This only rejects an entry pointed straight into a wall.")
+tpMaxStretch    = input.float(1.6, "A target may not sit beyond this multiple of its R floor", minval = 1.0, maxval = 5, step = 0.1, group = groupModel, tooltip = "Stops a target snapping to a level miles away. Your two logged trades planned 8.8R to TP2 - unreachable, so both were losses. Past this limit the plain R multiple is used instead.")
+minStopAtr      = input.float(0.35, "Minimum stop as a multiple of reference ATR", minval = 0.0, maxval = 3, step = 0.05, group = groupModel, tooltip = "An unrealistically tight wick stop makes every distance look like a huge R, which is the other half of the 8.8R problem.")
 tp1MinR         = input.float(1.0, "TP1 floor (R)", minval = 0.3, maxval = 5, step = 0.1, group = groupModel)
 tp2MinR         = input.float(2.0, "TP2 floor (R)", minval = 0.5, maxval = 10, step = 0.1, group = groupModel)
 tp3MinR         = input.float(3.5, "TP3 floor (R)", minval = 1.0, maxval = 15, step = 0.1, group = groupModel)
@@ -2513,6 +2510,12 @@ f_nextAnchor(array<float> hiPool, array<float> loPool, array<Level> lv, array<Ga
     best := f_bestAnchor(best, f_nearestHtfCe(gs, from, up), from, up)
     best
 
+// A target that snapped to a level far beyond its own R floor is unreachable.
+// Past the limit the plain R multiple is used instead.
+f_capTp(float cand, float floorPx, float entry, bool up) =>
+    float lim = entry + (up ? 1.0 : -1.0) * math.abs(floorPx - entry) * tpMaxStretch
+    na(cand) or (up ? cand > lim : cand < lim) ? float(na) : cand
+
 // wick of the low-timeframe object the entry is actually taken from
 f_confWick(array<Gap> gs, array<Brk> bs, float px, bool wantHigh) =>
     float best = na
@@ -2579,7 +2582,10 @@ int dirSweep = recentSweep ? (lastSweepIsHigh ? -1 : 1) : 0
 
 int modelDir = dirConfirm != 0 ? dirConfirm : dirSweep
 bool coherent = not requireCoherent or dirConfirm == 0 or dirSweep == 0 or dirConfirm == dirSweep
-bool seqOk = not requireSequence or (not na(lastSweepBar) and not na(mtfGapBar) and not na(confBar) and lastSweepBar <= mtfGapBar and mtfGapBar <= confBar)
+// The gap leg is only enforced when a gap visit is actually live. Requiring one
+// unconditionally made the sequence unsatisfiable whenever price had not been
+// inside a 5m/15m gap, which is most of the time.
+bool seqOk = not requireSequence or (not na(lastSweepBar) and not na(confBar) and lastSweepBar <= confBar and (not mtfMemory or na(mtfGapBar) or (lastSweepBar <= mtfGapBar and mtfGapBar <= confBar)))
 bool onConfirmBar = not enterOnConfirm or (not na(confBar) and confBar == bar_index)
 
 string whyText = (recentSweep ? "sweep" : inHtfGap ? "HTF gap" : "-") + " > " + (inMtfGap ? "in MTF gap" : mtfMemory ? "MTF gap" : "-") + " > " + (brkNewer ? "BB" : freshIfvg ? "IFVG" : "-")
@@ -2621,6 +2627,13 @@ if modelDir != 0
         mStop := modelDir == 1 ? mEntry - atrStopMult * atrRef : mEntry + atrStopMult * atrRef
         stopSource := "reference ATR"
 
+// a wick two ticks away makes every target look like a huge R
+if not na(mStop) and not na(atrRef) and minStopAtr > 0
+    float minD = minStopAtr * atrRef
+    if math.abs(mEntry - mStop) < minD
+        mStop := modelDir == 1 ? mEntry - minD : mEntry + minD
+        stopSource := stopSource + " +min"
+
 float mRisk = na(mStop) ? na : math.abs(mEntry - mStop)
 bool goLong = modelDir == 1
 
@@ -2642,24 +2655,28 @@ if tpNeeded
     float f2 = goLong ? mEntry + mRisk * tp2MinR : mEntry - mRisk * tp2MinR
     float f3 = goLong ? mEntry + mRisk * tp3MinR : mEntry - mRisk * tp3MinR
     float f4 = goLong ? mEntry + mRisk * tp4MinR : mEntry - mRisk * tp4MinR
-    tp1 := f_nextAnchor(tpHiPool, tpLoPool, levels, gaps, liqs, f1, goLong)
+    tp1 := f_capTp(f_nextAnchor(tpHiPool, tpLoPool, levels, gaps, liqs, f1, goLong), f1, mEntry, goLong)
     tp1Use := na(tp1) ? f1 : tp1
     float g2 = goLong ? math.max(f2, tp1Use) : math.min(f2, tp1Use)
-    tp2 := f_nextAnchor(tpHiPool, tpLoPool, levels, gaps, liqs, g2, goLong)
+    tp2 := f_capTp(f_nextAnchor(tpHiPool, tpLoPool, levels, gaps, liqs, g2, goLong), g2, mEntry, goLong)
     tp2Use := na(tp2) ? g2 : tp2
     float g3 = goLong ? math.max(f3, tp2Use) : math.min(f3, tp2Use)
-    tp3 := f_nextAnchor(tpHiPool, tpLoPool, levels, gaps, liqs, g3, goLong)
+    tp3 := f_capTp(f_nextAnchor(tpHiPool, tpLoPool, levels, gaps, liqs, g3, goLong), g3, mEntry, goLong)
     tp3Use := na(tp3) ? g3 : tp3
     float g4 = goLong ? math.max(f4, tp3Use) : math.min(f4, tp3Use)
-    tp4 := f_nextAnchor(tpHiPool, tpLoPool, levels, gaps, liqs, g4, goLong)
+    tp4 := f_capTp(f_nextAnchor(tpHiPool, tpLoPool, levels, gaps, liqs, g4, goLong), g4, mEntry, goLong)
     tp4Use := na(tp4) ? g4 : tp4
 int tpAnchorCount = (na(tp1) ? 0 : 1) + (na(tp2) ? 0 : 1) + (na(tp3) ? 0 : 1)
 
 // The gate is the nearest opposing liquidity, not the target we chose. If the
 // first real obstacle in front of price is inside 1.5R the trade is walking
 // straight into a wall regardless of how far out TP3 is drawn.
-float mRR = na(mRisk) or mRisk <= 0 or na(nearestOpp) ? na : math.abs(nearestOpp - mEntry) / mRisk
+float rrTarget = rrTargetSel == "TP1" ? tp1Use : rrTargetSel == "TP3" ? tp3Use : tp2Use
+float mRR = na(mRisk) or mRisk <= 0 or na(rrTarget) ? na : math.abs(rrTarget - mEntry) / mRisk
 bool cRiskReward = not na(mRR) and mRR >= minRR
+// separate, and deliberately lenient: only reject an entry aimed at a wall
+float wallR = na(mRisk) or mRisk <= 0 or na(nearestOpp) ? na : math.abs(nearestOpp - mEntry) / mRisk
+bool notIntoWall = na(wallR) or wallR >= minWallR
 
 float mScoreRaw = (cCondition ? wCondition : 0.0) + (cConditionPlus ? wConditionPlus : 0.0) + (cPullback ? wPullback : 0.0) + (cPullbackPlus ? wPullbackPlus : 0.0) + (cConfirmation ? wConfirmation : 0.0) + (cRiskReward ? wRiskReward : 0.0)
 float mWeightSum = math.max(1, wCondition + wConditionPlus + wPullback + wPullbackPlus + wConfirmation + wRiskReward)
@@ -2672,7 +2689,7 @@ f_gradeIdx(string g) =>
     g == "A+" ? 0 : g == "A" ? 1 : g == "A-" ? 2 : g == "B+" ? 3 : g == "B" ? 4 : g == "B-" ? 5 : g == "C" ? 6 : -1
 
 bool chopBlocked = useChopFilter and isChop
-bool gatesOk = sessionOk and cRiskReward and modelDir != 0 and not chopBlocked and not stopTooWide and coherent and seqOk and (not requireConfirm or cConfirmation)
+bool gatesOk = sessionOk and cRiskReward and notIntoWall and modelDir != 0 and not chopBlocked and not stopTooWide and coherent and seqOk and (not requireConfirm or cConfirmation)
 string mGrade = not showModel or not gatesOk ? "No Trade" : f_gradeFromScore(mScore)
 
 float sizeMult = 1.0
@@ -2999,7 +3016,9 @@ else if not seqOk
 else if stopTooWide
     blockReason := "stop too wide"
 else if not cRiskReward
-    blockReason := na(mRR) ? "no level in front" : "RR " + str.tostring(mRR, "#.#") + " < " + str.tostring(minRR, "#.#")
+    blockReason := na(mRR) ? "no target found" : "RR " + str.tostring(mRR, "#.#") + " < " + str.tostring(minRR, "#.#")
+else if not notIntoWall
+    blockReason := "wall " + str.tostring(wallR, "#.#") + "R ahead"
 else if f_gradeIdx(mGrade) < 0
     blockReason := "score " + str.tostring(mScore, "#") + "% < 60"
 else if not planGradeOk
@@ -3067,7 +3086,7 @@ if showChecklist and barstate.islast
     f_r3(clTbl, 5, "Pullback", f_tick(cPullback), str.tostring(wPullback, "#") + "%", f_tickCol(cPullback))
     f_r3(clTbl, 6, "Pullback+", f_tick(cPullbackPlus), str.tostring(wPullbackPlus, "#") + "%", f_tickCol(cPullbackPlus))
     f_r3(clTbl, 7, "Confirmation", f_tick(cConfirmation), brkNewer ? "BB" : freshIfvg ? "IFVG" : "-", f_tickCol(cConfirmation))
-    f_r3(clTbl, 8, "RR to next level", f_tick(cRiskReward), f_num(mRR) + "R", f_tickCol(cRiskReward))
+    f_r3(clTbl, 8, "RR to " + rrTargetSel + " / wall", f_tick(cRiskReward and notIntoWall), (na(mRR) ? "-" : str.tostring(mRR, "#.#")) + "R / " + (na(wallR) ? "-" : str.tostring(wallR, "#.#")) + "R", f_tickCol(cRiskReward and notIntoWall))
     f_r3(clTbl, 9, "Direction", modelDir == 1 ? "Long" : modelDir == -1 ? "Short" : "-", str.tostring(tpAnchorCount) + "/3 TPs on wicks", modelDir == 0 ? color.new(color.gray, 0) : modelDir == 1 ? color.new(#089981, 0) : color.new(#F23645, 0))
     f_r3(clTbl, 10, "Entry / stop", f_num(mEntry), f_num(mStop), panelText)
     f_r3(clTbl, 11, "Stop source", stopSource, na(mRisk) ? "-" : str.tostring(mRisk, "#.##") + " pts", panelText)
