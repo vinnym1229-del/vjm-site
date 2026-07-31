@@ -966,7 +966,7 @@ string chartTfLabel = f_tfLabel(timeframe.period)
 bool doLayout = barstate.islast
 
 f_rx(int bars) =>
-    bar_index + math.max(1, bars)
+    bar_index + math.min(400, math.max(1, bars))
 
 // TradingView rejects a bar-index coordinate more than roughly 10000 bars from
 // the current bar. A weekly profile anchor on a 1m chart, or a liquidity ray a
@@ -976,13 +976,21 @@ f_lx(int bi) =>
     int b = na(bi) ? bar_index - 1 : bi
     math.max(bar_index - drawReach, math.min(b, bar_index))
 
+// Same limit applies to a RIGHT edge, but a live drawing legitimately reaches
+// past the last bar, so this one clamps to the future side too instead of
+// pinning everything back to bar_index.
+f_cx(int bi) =>
+    int b = na(bi) ? bar_index : bi
+    math.max(bar_index - drawReach, math.min(b, bar_index + 400))
+
 // One level = two line segments with a real visual break, and the text sitting
 // centred in that break. This is the "on the line" look, not text floating on
 // top of a continuous line. Callers re-run it every bar while the line is still
 // growing, because a break position computed once drifts off-centre as it grows.
 f_gapLine(line a, line b, label lb, float price, int rawX1, int x2, int gapBars, string txt) =>
     int x1 = f_lx(rawX1)
-    int xr = x2 <= x1 ? x1 + 1 : x2
+    int rx2 = f_cx(x2)
+    int xr = rx2 <= x1 ? x1 + 1 : rx2
     int span = xr - x1
     int half = math.max(1, int(gapBars / 2))
     int mid = x1 + int(span / 2)
@@ -991,7 +999,7 @@ f_gapLine(line a, line b, label lb, float price, int rawX1, int x2, int gapBars,
         line.set_xy2(a, xr, price)
         line.set_xy1(b, xr, price)
         line.set_xy2(b, xr, price)
-        label.set_xy(lb, xr + half, price)
+        label.set_xy(lb, f_cx(xr + half), price)
     else
         line.set_xy1(a, x1, price)
         line.set_xy2(a, mid - half, price)
@@ -2737,12 +2745,13 @@ f_layoutTrade(Trade t) =>
             bool lvlHit = k >= 2 and array.size(t.tpHit) > k - 2 and array.get(t.tpHit, k - 2)
             f_gapLine(array.get(t.lnA, k), array.get(t.lnB, k), array.get(t.lbs, k), lvlPx, t.startBi, x2, planLabelGap, f_planName(k, t.beMoved, lvlPx, lvlHit))
         else
-            line.set_xy1(array.get(t.lnA, k), t.startBi, t.entry)
-            line.set_xy2(array.get(t.lnA, k), t.startBi, t.entry)
-            line.set_xy1(array.get(t.lnB, k), t.startBi, t.entry)
-            line.set_xy2(array.get(t.lnB, k), t.startBi, t.entry)
+            int hx = f_lx(t.startBi)
+            line.set_xy1(array.get(t.lnA, k), hx, t.entry)
+            line.set_xy2(array.get(t.lnA, k), hx, t.entry)
+            line.set_xy1(array.get(t.lnB, k), hx, t.entry)
+            line.set_xy2(array.get(t.lnB, k), hx, t.entry)
             label.set_text(array.get(t.lbs, k), "")
-    int bx2 = t.active ? rx : t.endBi
+    int bx2 = f_cx(t.active ? rx : t.endBi)
     if not (t.riskGone and not t.isLong)
         box.set_right(t.bxUpper, bx2)
     if not (t.riskGone and t.isLong)
@@ -2843,7 +2852,8 @@ if array.size(trades) > 0
         Trade t = array.get(trades, i)
         bool wasActive = t.active
         f_updateTrade(t)
-        if wasActive and not t.active and not t.counted
+        bool justResolved = wasActive and not t.active
+        if justResolved and not t.counted
             t.counted := true
             int maxTp = useTp4 ? 4 : 3
             float rv = f_realisedR(t)
@@ -2853,7 +2863,9 @@ if array.size(trades) > 0
             f_record(stN, stFull, st3, st2, st1, stLoss, stCap, stR, stPlanR, f_gradeIdx(t.grade), t.hits, f_capPct(t), rv, t.plannedR, maxTp)
             f_record(stN, stFull, st3, st2, st1, stLoss, stCap, stR, stPlanR, t.setup == "Continuation" ? 7 : 8, t.hits, f_capPct(t), rv, t.plannedR, maxTp)
             array.set(trades, i, t)
-        if doLayout
+        // active plans grow every bar, a resolving plan is positioned once and
+        // then frozen, and an old one is never touched again
+        if t.active or justResolved or (doLayout and bar_index - t.startBi <= drawReach)
             f_layoutTrade(t)
 
 // Why the model is not producing a trade right now. First failing gate wins.
