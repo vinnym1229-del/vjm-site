@@ -1,18 +1,24 @@
 //@version=6
-indicator("NLM", shorttitle = "NLM", overlay = true, max_lines_count = 500, max_labels_count = 500, max_boxes_count = 500, max_bars_back = 1000)
+indicator("NLM", shorttitle = "NLM", overlay = true, max_lines_count = 500, max_labels_count = 500, max_boxes_count = 500, max_bars_back = 5000)
 
 // =============================================================================
-// PART 1 - SESSION ENGINE (unchanged foundation)
-// Asia / London / NY intraday high-low, PDH/PDL, PWH/PWL, volume profile.
-// Nothing in this part was rewritten: levels still print with their dates, fade
-// and go dashed when swept, and roll at the 18:00 New York futures reopen.
+// PART 1 - SESSION ENGINE
+// This is the original NLM script, unchanged. Asia / London high-low, PDH/PDL,
+// PWH/PWL, NY intraday high-low and the volume profile. Levels still carry
+// their dates, go dashed and faded when swept, and roll off the next day.
+//
+// The ONE change in this part: "NY reset hour" defaults to 18, so levels roll
+// at 18:00 New York when after-market futures reopen.
+//
+// Everything in Part 2 draws the same way this part does - xloc.bar_time, with
+// extend.right on anything that should run to the right edge.
 // =============================================================================
 
 groupSessions = "Sessions"
 sessionTimezone = input.string("America/New_York", "Session timezone", group = groupSessions, display = display.none)
 sessionDays = input.string("1234567", "Active days", options = ["1234567", "23456"], group = groupSessions, display = display.none)
 calcTimeframe = input.timeframe("1", "Stable calculation timeframe", group = groupSessions, display = display.none)
-lowerTfBarsRequested = input.int(10000, "Lower-TF bars requested", minval = 1000, maxval = 200000, group = groupSessions, display = display.none)
+lowerTfBarsRequested = input.int(100000, "Lower-TF bars requested", minval = 1000, maxval = 200000, group = groupSessions, display = display.none)
 dailyResetHour = input.int(18, "NY reset hour", minval = 0, maxval = 23, group = groupSessions, display = display.none)
 
 showPdLevels = input.bool(true, "Show PDH/PDL", group = groupSessions, display = display.none)
@@ -31,8 +37,8 @@ groupProfile = "Profile"
 profileRange = input.string("Previous week", "Profile range", options = ["Overnight", "NY session", "Previous day", "Current week", "Previous week"], group = groupProfile, display = display.none)
 keepHistoricalProfiles = input.bool(true, "Keep historical profiles", group = groupProfile, display = display.none)
 maxHistoricalProfiles = input.int(12, "Historical profiles to keep", minval = 1, maxval = 50, group = groupProfile, display = display.none)
-showProfileLevels = input.bool(false, "Show POC/VAH/VAL (legacy single profile)", group = groupProfile, display = display.none)
-showLatestProfileLabels = input.bool(false, "Label latest POC/VAH/VAL", group = groupProfile, display = display.none)
+showProfileLevels = input.bool(true, "Show POC/VAH/VAL", group = groupProfile, display = display.none)
+showLatestProfileLabels = input.bool(true, "Label latest POC/VAH/VAL", group = groupProfile, display = display.none)
 historicalLevelMode = input.string("Latest only", "Old POC/VAH/VAL mode", options = ["Latest only", "All faded", "All faded + labels"], group = groupProfile, display = display.none)
 mergeCloseHistoricalLevels = input.bool(true, "Merge close old profile levels", group = groupProfile, display = display.none)
 historicalMergeTicks = input.int(12, "Old profile merge ticks", minval = 1, maxval = 200, group = groupProfile, display = display.none)
@@ -40,8 +46,8 @@ useProfileConfluence = input.bool(true, "Tag H/L with POC/VAH/VAL", group = grou
 profileRows = input.int(24, "Profile rows", minval = 12, maxval = 100, group = groupProfile, display = display.none)
 valueAreaPct = input.int(70, "Value area %", minval = 50, maxval = 99, group = groupProfile, display = display.none)
 profileToleranceTicks = input.int(8, "Confluence tolerance, ticks", minval = 1, maxval = 200, group = groupProfile, display = display.none)
-maxProfileBars = input.int(5000, "Max bars in profile", minval = 100, maxval = 20000, group = groupProfile, display = display.none)
-showVolumeProfileBars = input.bool(false, "Show volume profile bars", group = groupProfile, display = display.none)
+maxProfileBars = input.int(10000, "Max bars in profile", minval = 100, maxval = 20000, group = groupProfile, display = display.none)
+showVolumeProfileBars = input.bool(true, "Show volume profile bars", group = groupProfile, display = display.none)
 stretchProfileAcrossRange = input.bool(true, "Stretch profile across range", group = groupProfile, display = display.none)
 profileBarOffsetBars = input.int(0, "Profile bar offset", minval = 0, maxval = 50, group = groupProfile, display = display.none)
 profileBarWidthBars = input.int(80, "Compact profile max width", minval = 4, maxval = 300, group = groupProfile, display = display.none)
@@ -80,13 +86,9 @@ maxOldUnsweptSessionLevels = input.int(16, "Max old unswept Asia/London levels",
 bool showHistoricalProfileLevels = historicalLevelMode != "Latest only"
 bool showHistoricalProfileLabels = historicalLevelMode == "All faded + labels"
 
-int chartSeconds = timeframe.in_seconds(timeframe.period)
-// request.security_lower_tf yields an empty array when the requested timeframe is
-// above the chart's, which would silently disable every session level on a 30s
-// chart. Clamp the calculation timeframe to the chart.
-simple string calcTfEff = timeframe.in_seconds(calcTimeframe) > chartSeconds ? timeframe.period : calcTimeframe
-int calcSeconds = timeframe.in_seconds(calcTfEff)
+int calcSeconds = timeframe.in_seconds(calcTimeframe)
 int calcMs = math.max(1000, calcSeconds * 1000)
+int chartSeconds = timeframe.in_seconds(timeframe.period)
 int chartMs = math.max(1000, chartSeconds * 1000)
 int dayAnchorMs = dailyResetHour * 60 * 60 * 1000
 
@@ -191,11 +193,8 @@ f_nyKey(int t) =>
     int keyed = t - dayAnchorMs
     year(keyed, sessionTimezone) * 10000 + month(keyed, sessionTimezone) * 100 + dayofmonth(keyed, sessionTimezone)
 
-// Label anchor in BAR INDEX space. A future timestamp has no bar to sit on, so
-// TradingView projects it, and the projection moves with the visible bar
-// spacing whenever the chart is scrolled or zoomed. A bar index cannot drift.
-f_labelXi() =>
-    bar_index + labelOffsetBars
+f_labelX() =>
+    time + labelOffsetBars * chartMs
 
 f_lineRightX(int startTime) =>
     int baseRight = time + labelOffsetBars * chartMs
@@ -510,7 +509,7 @@ f_addLevel(string name, float price, bool isHigh, color baseColor, color textCol
         line ln = line.new(x1, price, f_lineRightX(x1), price, xloc = xloc.bar_time, extend = extend.right, color = baseColor, style = line.style_solid, width = width)
         label lb = na
         if showLabels
-            lb := label.new(f_labelXi(), price, f_levelText(name, price, false, confluence, dateText), xloc = xloc.bar_index, style = label.style_label_left, color = color.new(baseColor, 0), textcolor = textColor, size = size.small, textalign = text.align_left)
+            lb := label.new(f_labelX(), price, f_levelText(name, price, false, confluence, dateText), xloc = xloc.bar_time, style = label.style_label_left, color = color.new(baseColor, 0), textcolor = textColor, size = size.small, textalign = text.align_left)
         array.push(levels, Level.new(ln, lb, price, isHigh, false, dayKey, name, baseColor, textColor, confluence, keepIfUnswept, dateText))
     0
 
@@ -541,7 +540,7 @@ f_addProfileLine(string name, float price, color lineColor, int profileId, int s
         if showLabels and drawLabel
             color txtColor = name == "POC" ? color.white : color.black
             int labelFade = isLatest ? 0 : math.min(90, historicalProfileLevelTransparency + 10)
-            lb := label.new(f_labelXi(), price, f_profileText(name, price), xloc = xloc.bar_index, style = label.style_label_left, color = color.new(lineColor, labelFade), textcolor = txtColor, size = size.small, textalign = text.align_left)
+            lb := label.new(f_labelX(), price, f_profileText(name, price), xloc = xloc.bar_time, style = label.style_label_left, color = color.new(lineColor, labelFade), textcolor = txtColor, size = size.small, textalign = text.align_left)
         array.push(profileDrawings, ProfileDrawing.new(ln, lb, profileId, name, price, lineColor))
     0
 
@@ -606,23 +605,23 @@ f_updateLabels() =>
             for i = 0 to array.size(levels) - 1
                 Level lvl = array.get(levels, i)
                 if not na(lvl.lb)
-                    label.set_x(lvl.lb, f_labelXi())
+                    label.set_x(lvl.lb, f_labelX())
                     label.set_textalign(lvl.lb, text.align_left)
         if array.size(profileDrawings) > 0
             for i = 0 to array.size(profileDrawings) - 1
                 ProfileDrawing drawing = array.get(profileDrawings, i)
                 if not na(drawing.lb)
-                    label.set_x(drawing.lb, f_labelXi())
+                    label.set_x(drawing.lb, f_labelX())
                     label.set_textalign(drawing.lb, text.align_left)
         if not na(intradayHighLabel)
-            label.set_x(intradayHighLabel, f_labelXi())
+            label.set_x(intradayHighLabel, f_labelX())
             label.set_textalign(intradayHighLabel, text.align_left)
         if not na(intradayLowLabel)
-            label.set_x(intradayLowLabel, f_labelXi())
+            label.set_x(intradayLowLabel, f_labelX())
             label.set_textalign(intradayLowLabel, text.align_left)
     0
 
-[ltfTime, ltfHigh, ltfLow, ltfClose, ltfHlc3, ltfVolume, ltfInAsia, ltfInLondon, ltfInNewYork, ltfInOvernight, ltfNyKey, ltfTvDayKey, ltfWeekKey] = request.security_lower_tf(syminfo.tickerid, calcTfEff, [time, high, low, close, hlc3, volume, not na(time(calcTfEff, f_session(asiaSession), sessionTimezone)), not na(time(calcTfEff, f_session(londonSession), sessionTimezone)), not na(time(calcTfEff, f_session(newYorkSession), sessionTimezone)), not na(time(calcTfEff, f_session(overnightSession), sessionTimezone)), f_nyKey(time), time("D"), time("W")], ignore_invalid_timeframe = true, calc_bars_count = lowerTfBarsRequested)
+[ltfTime, ltfHigh, ltfLow, ltfClose, ltfHlc3, ltfVolume, ltfInAsia, ltfInLondon, ltfInNewYork, ltfInOvernight, ltfNyKey, ltfTvDayKey, ltfWeekKey] = request.security_lower_tf(syminfo.tickerid, calcTimeframe, [time, high, low, close, hlc3, volume, not na(time(calcTimeframe, f_session(asiaSession), sessionTimezone)), not na(time(calcTimeframe, f_session(londonSession), sessionTimezone)), not na(time(calcTimeframe, f_session(newYorkSession), sessionTimezone)), not na(time(calcTimeframe, f_session(overnightSession), sessionTimezone)), f_nyKey(time), time("D"), time("W")], ignore_invalid_timeframe = true, calc_bars_count = lowerTfBarsRequested)
 
 bool profileIsOvernight = profileRange == "Overnight"
 bool profileIsNySession = profileRange == "NY session"
@@ -779,8 +778,8 @@ if ltfCount > 0
                 intradayHighLine := line.new(intradayHighTime, intradayHigh, f_lineRightX(intradayHighTime), intradayHigh, xloc = xloc.bar_time, extend = extend.right, color = intradayColor, style = line.style_solid, width = lineWidth)
                 intradayLowLine := line.new(intradayLowTime, intradayLow, f_lineRightX(intradayLowTime), intradayLow, xloc = xloc.bar_time, extend = extend.right, color = intradayColor, style = line.style_solid, width = lineWidth)
                 if showLabels
-                    intradayHighLabel := label.new(f_labelXi(), intradayHigh, f_liveText("IDH", intradayHigh), xloc = xloc.bar_index, style = label.style_label_left, color = color.new(intradayColor, 0), textcolor = color.black, size = size.small, textalign = text.align_left)
-                    intradayLowLabel := label.new(f_labelXi(), intradayLow, f_liveText("IDL", intradayLow), xloc = xloc.bar_index, style = label.style_label_left, color = color.new(intradayColor, 0), textcolor = color.black, size = size.small, textalign = text.align_left)
+                    intradayHighLabel := label.new(f_labelX(), intradayHigh, f_liveText("IDH", intradayHigh), xloc = xloc.bar_time, style = label.style_label_left, color = color.new(intradayColor, 0), textcolor = color.black, size = size.small, textalign = text.align_left)
+                    intradayLowLabel := label.new(f_labelX(), intradayLow, f_liveText("IDL", intradayLow), xloc = xloc.bar_time, style = label.style_label_left, color = color.new(intradayColor, 0), textcolor = color.black, size = size.small, textalign = text.align_left)
 
         if inNewYork
             if na(nySessionHigh) or h > nySessionHigh
@@ -806,13 +805,13 @@ if ltfCount > 0
                 line.set_xy2(intradayLowLine, f_lineRightX(intradayLowTime), intradayLow)
                 if showLabels
                     if na(intradayHighLabel)
-                        intradayHighLabel := label.new(f_labelXi(), intradayHigh, f_liveText("IDH", intradayHigh), xloc = xloc.bar_index, style = label.style_label_left, color = color.new(intradayColor, 0), textcolor = color.black, size = size.small, textalign = text.align_left)
+                        intradayHighLabel := label.new(f_labelX(), intradayHigh, f_liveText("IDH", intradayHigh), xloc = xloc.bar_time, style = label.style_label_left, color = color.new(intradayColor, 0), textcolor = color.black, size = size.small, textalign = text.align_left)
                     if na(intradayLowLabel)
-                        intradayLowLabel := label.new(f_labelXi(), intradayLow, f_liveText("IDL", intradayLow), xloc = xloc.bar_index, style = label.style_label_left, color = color.new(intradayColor, 0), textcolor = color.black, size = size.small, textalign = text.align_left)
-                    label.set_x(intradayHighLabel, f_labelXi())
+                        intradayLowLabel := label.new(f_labelX(), intradayLow, f_liveText("IDL", intradayLow), xloc = xloc.bar_time, style = label.style_label_left, color = color.new(intradayColor, 0), textcolor = color.black, size = size.small, textalign = text.align_left)
+                    label.set_x(intradayHighLabel, f_labelX())
                     label.set_y(intradayHighLabel, intradayHigh)
                     label.set_text(intradayHighLabel, f_liveText("IDH", intradayHigh))
-                    label.set_x(intradayLowLabel, f_labelXi())
+                    label.set_x(intradayLowLabel, f_labelX())
                     label.set_y(intradayLowLabel, intradayLow)
                     label.set_text(intradayLowLabel, f_liveText("IDL", intradayLow))
 
@@ -930,18 +929,16 @@ alertcondition(sweptThisBar, "Tracked liquidity swept", "A tracked liquidity lev
 // =============================================================================
 // PART 2 - MODEL EXTENSION
 // Additive. Part 1 above is untouched and still owns Asia, London, PDH/PDL,
-// PWH/PWL and the live intraday high/low.
+// PWH/PWL, the intraday high-low and the volume profile.
 //
-// ANCHORING RULE, and it is the reason gaps used to slide when you scrolled:
-// every drawing down here lives in BAR INDEX space. A future TIMESTAMP has no
-// bar to sit on, so TradingView projects it from the visible bar spacing - and
-// that spacing changes the instant you scroll or zoom. A bar index cannot drift.
+// Everything here is drawn in TIME (xloc.bar_time) exactly the way Part 1 draws,
+// with extend.right on anything that should run to the right edge. Nothing in
+// this file uses bar-index coordinates.
 // =============================================================================
 
-groupAnchor = "General"
-snapMaxBars   = input.int(400, "Bars searched when snapping an HTF pivot to its wick", minval = 50, maxval = 900, group = groupAnchor, tooltip = "request.security hands back the HTF bar's OPEN time. On a 1m chart that lands a 15m pivot at the start of the 15m candle instead of on the wick. This is how far back the exact wick is hunted.")
-labelSizeSel  = input.string("normal", "Label size", options = ["tiny", "small", "normal", "large"], group = groupAnchor)
-drawReach     = input.int(4000, "Max bars a drawing may reach back", minval = 200, maxval = 9000, group = groupAnchor, tooltip = "TradingView refuses a bar-index coordinate more than about 10000 bars from the current bar. Anything anchored further back than this is clamped to it.")
+groupGeneral = "General"
+snapMaxBars  = input.int(400, "Bars searched when snapping an HTF pivot to its wick", minval = 50, maxval = 900, group = groupGeneral, tooltip = "request.security hands back the HTF bar's OPEN time. On a 1m chart that puts a 15m pivot at the start of the 15m candle instead of on the wick. This is how far back the real wick is hunted.")
+labelSizeSel = input.string("normal", "Label size", options = ["tiny", "small", "normal", "large"], group = groupGeneral)
 
 f_lblSize() =>
     labelSizeSel == "tiny" ? size.tiny : labelSizeSel == "small" ? size.small : labelSizeSel == "large" ? size.large : size.normal
@@ -962,44 +959,29 @@ f_tfLabel(string tf) =>
 string chartTfLabel = f_tfLabel(timeframe.period)
 
 // Drawings persist across bars, so only the LAST bar's layout is ever seen.
-// Repositioning on every historical bar is pure wasted runtime.
+// Repositioning on every historical bar is wasted runtime.
 bool doLayout = barstate.islast
 
-f_rx(int bars) =>
-    bar_index + math.min(400, math.max(1, bars))
+// right edge, as a TIME, N bars past the current bar
+f_rxT(int bars) =>
+    time + math.max(1, bars) * chartMs
 
-// TradingView rejects a bar-index coordinate more than roughly 10000 bars from
-// the current bar. A weekly profile anchor on a 1m chart, or a liquidity ray a
-// few days old, will reach that far - so every LEFT anchor goes through here.
-// Clamping only moves where a level visually starts; the price is untouched.
-f_lx(int bi) =>
-    int b = na(bi) ? bar_index - 1 : bi
-    math.max(bar_index - drawReach, math.min(b, bar_index))
-
-// Same limit applies to a RIGHT edge, but a live drawing legitimately reaches
-// past the last bar, so this one clamps to the future side too instead of
-// pinning everything back to bar_index.
-f_cx(int bi) =>
-    int b = na(bi) ? bar_index : bi
-    math.max(bar_index - drawReach, math.min(b, bar_index + 400))
-
-// One level = two line segments with a real visual break, and the text sitting
-// centred in that break. This is the "on the line" look, not text floating on
-// top of a continuous line. Callers re-run it every bar while the line is still
-// growing, because a break position computed once drifts off-centre as it grows.
-f_gapLine(line a, line b, label lb, float price, int rawX1, int x2, int gapBars, string txt) =>
-    int x1 = f_lx(rawX1)
-    int rx2 = f_cx(x2)
-    int xr = rx2 <= x1 ? x1 + 1 : rx2
+// One level = two line segments with a real visual break and the text centred
+// in that break. This is the "on the line" look - text sitting in the line, not
+// floating on top of it. Callers re-run it every bar while the line is still
+// growing, because a break worked out once drifts off-centre as it grows.
+f_gapLine(line a, line b, label lb, float price, int x1, int x2, int gapBars, string txt) =>
+    int xr = x2 <= x1 ? x1 + chartMs : x2
     int span = xr - x1
-    int half = math.max(1, int(gapBars / 2))
+    int gapMs = math.max(chartMs, gapBars * chartMs)
+    int half = int(gapMs / 2)
     int mid = x1 + int(span / 2)
-    if span <= gapBars + 2
+    if span <= gapMs + 2 * chartMs
         line.set_xy1(a, x1, price)
         line.set_xy2(a, xr, price)
         line.set_xy1(b, xr, price)
         line.set_xy2(b, xr, price)
-        label.set_xy(lb, f_cx(xr + half), price)
+        label.set_xy(lb, xr + half, price)
     else
         line.set_xy1(a, x1, price)
         line.set_xy2(a, mid - half, price)
@@ -1009,31 +991,30 @@ f_gapLine(line a, line b, label lb, float price, int rawX1, int x2, int gapBars,
     label.set_text(lb, txt)
     0
 
-// Chart-bar offset of the wick that actually produced an HTF pivot. Walks back
-// only across the bars inside that HTF candle, then stops.
-f_snapOffset(float px, int tMs, int tfSec, bool isHigh) =>
+// TIME of the wick that actually produced an HTF pivot. Walks back only across
+// the chart bars inside that HTF candle, then stops.
+f_snapTime(float px, int tMs, int tfSec, bool isHigh) =>
     int best = na
     float bestD = na
-    int loT = tMs
     int hiT = tMs + tfSec * 1000
     bool done = false
     if not na(px) and not na(tMs)
         for i = 0 to snapMaxBars
             if not done
                 int ti = time[i]
-                if na(ti) or ti < loT
+                if na(ti) or ti < tMs
                     done := true
                 else if ti < hiT
                     float v = isHigh ? high[i] : low[i]
                     float d = math.abs(v - px)
                     if na(bestD) or d < bestD
                         bestD := d
-                        best := i
-    best
+                        best := ti
+    na(best) ? tMs : best
 
 // ------------------------------------------------------------ instrument / risk
 groupRisk = "Risk & sizing"
-instrMode    = input.string("MNQ", "Instrument", options = ["Auto (charted symbol)", "MNQ", "NQ", "MES", "ES"], group = groupRisk, tooltip = "Chart NQ and execute MNQ by leaving this on MNQ. Auto uses syminfo.pointvalue so the script also sizes stocks.")
+instrMode    = input.string("MNQ", "Instrument", options = ["Auto (charted symbol)", "MNQ", "NQ", "MES", "ES"], group = groupRisk, tooltip = "Chart NQ and execute MNQ by leaving this on MNQ.")
 riskDollars  = input.float(600, "Risk per trade ($)", minval = 1, group = groupRisk)
 sizeCutGrade = input.string("B+", "Size cut applies below grade", options = ["A", "A-", "B+", "B", "B-", "C"], group = groupRisk)
 sizeCutPct   = input.float(75, "Size cut %", minval = 10, maxval = 100, group = groupRisk)
@@ -1045,12 +1026,12 @@ string instrName = instrMode == "Auto (charted symbol)" ? syminfo.ticker : instr
 // --------------------------------------------------------- session / news gates
 groupGate = "Session & news gates"
 rthSession   = input.session("0935-1500", "Primary trading window", group = groupGate)
-asiaTrading  = input.bool(false, "Also trade the Asia window", group = groupGate, tooltip = "Off by default. The Asia window was contributing most of the low-grade losers.")
+asiaTrading  = input.bool(false, "Also trade the Asia window", group = groupGate)
 asiaTradeSes = input.session("2000-2300", "Asia trading window", group = groupGate)
-blockMonday  = input.bool(false, "Block Mondays entirely", group = groupGate, tooltip = "Off by default: Mondays are size-reduced rather than blocked.")
+blockMonday  = input.bool(false, "Block Mondays entirely", group = groupGate)
 useNewsBlock = input.bool(true, "Block news windows", group = groupGate)
-// Each window has its own switch. Never use an empty-looking session string as an
-// off sentinel: TradingView reads 0000-0000 as the FULL 24-hour day, which
+// Each window has its own switch. Never use an empty-looking session string as
+// an off sentinel: TradingView reads 0000-0000 as the FULL 24-hour day, which
 // silently blocks every bar.
 news1On = input.bool(true, "Block 08:30 news", group = groupGate)
 news1   = input.session("0828-0836", "News window 1", group = groupGate)
@@ -1072,6 +1053,7 @@ bool isMonday   = dayofweek(time, sessionTimezone) == dayofweek.monday
 bool isFriday   = dayofweek(time, sessionTimezone) == dayofweek.friday
 bool inNews     = useNewsBlock and ((news1On and f_inSes(news1)) or (news2On and f_inSes(news2)) or (news3On and f_inSes(news3)) or (news4On and f_inSes(news4)) or (news5On and f_inSes(news5)))
 bool sessionOk  = (inRth or inAsiaTrad) and not inNews and not (blockMonday and isMonday)
+bool newTradingDay = not na(time[1]) and f_nyKey(time) != f_nyKey(time[1])
 
 // ------------------------------------------------------------------ chop filter
 groupChop = "Chop filter"
@@ -1083,7 +1065,6 @@ chopAtrRef    = input.int(50, "ATR baseline length", minval = 10, maxval = 300, 
 float atrNow  = ta.atr(14)
 float atrBase = ta.sma(atrNow, chopAtrRef)
 float bodyRatio = (high - low) > 0 ? math.abs(close - open) / (high - low) : 0.0
-// three components, each normalised so 100 == maximally choppy
 float chopComp1 = math.min(100.0, math.max(0.0, (1.0 - atrNow / math.max(syminfo.mintick, atrBase)) * 200.0))
 float chopComp2 = (1.0 - ta.sma(bodyRatio, chopLen)) * 100.0
 float chopComp3 = math.min(100.0, math.max(0.0, (1.0 - (ta.highest(high, chopLen) - ta.lowest(low, chopLen)) / math.max(syminfo.mintick, atrNow * chopLen * 0.5)) * 100.0))
@@ -1092,15 +1073,15 @@ bool isChop = chopScore >= chopThreshold
 
 // =============================================================================
 // Fixed volume profile - Daily and Weekly
-// Re-walks the intrabar arrays Part 1 already fetched, so this costs no extra
-// request.security call.
+// Re-walks the intrabar arrays Part 1 already fetched, so no extra security call.
+// Always computed, because BSL/SSL read it for their +VAH / +VAL / +POC tag.
+// Drawing it is optional, since Part 1 already prints its own profile levels.
 // =============================================================================
 groupVp = "Fixed volume profile (Daily / Weekly)"
-vpShowDaily   = input.bool(true, "Show Daily POC / VAH / VAL", group = groupVp)
-vpShowWeekly  = input.bool(true, "Show Weekly POC / VAH / VAL", group = groupVp)
+vpShowDaily   = input.bool(false, "Draw Daily POC / VAH / VAL", group = groupVp, tooltip = "Off by default because Part 1 already draws a profile. The Daily and Weekly levels are always CALCULATED either way - BSL/SSL use them for the +VAH / +POC tag.")
+vpShowWeekly  = input.bool(false, "Draw Weekly POC / VAH / VAL", group = groupVp)
 vpDailyColor  = input.color(#A7C957, "Daily color", group = groupVp)
 vpWeeklyColor = input.color(#E040FB, "Weekly color", group = groupVp)
-vpExtendBars  = input.int(8, "Right extension (bars)", minval = 2, maxval = 100, group = groupVp)
 vpLabelBack   = input.int(14, "Label position (bars left of price)", minval = 2, maxval = 100, group = groupVp)
 vpLabelGap    = input.int(9, "Label gap width (bars)", minval = 2, maxval = 40, group = groupVp)
 
@@ -1114,8 +1095,8 @@ var float vpWkHi  = na
 var float vpWkLo  = na
 var int   vpDayKey = na
 var int   vpWkKey  = na
-var int   vpDayStartBi = na
-var int   vpWkStartBi  = na
+var int   vpDayStart = na
+var int   vpWkStart  = na
 
 var float dPoc = na
 var float dVah = na
@@ -1123,15 +1104,15 @@ var float dVal = na
 var float wPoc = na
 var float wVah = na
 var float wVal = na
-var int   dStartBi = na
-var int   wStartBi = na
+var int   dStart = na
+var int   wStart = na
 
 type VpLvl
     line   a
     line   b
     label  lb
     float  price
-    int    startBi
+    int    startTime
     string name
 
 var array<VpLvl> vpLevels = array.new<VpLvl>()
@@ -1146,93 +1127,91 @@ f_clearVp(array<VpLvl> vs) =>
             array.remove(vs, i)
     0
 
-// Dashed line with the break, and therefore the name, sitting near the right
-// edge rather than in the middle of a week-long span.
+// break, and therefore the name, sits near the right edge rather than in the
+// middle of a week-long span
 f_layoutVp(VpLvl v) =>
-    int x1 = f_lx(v.startBi)
-    int xr = f_rx(vpExtendBars)
-    int mid = math.max(x1 + 1, bar_index - vpLabelBack)
-    int half = math.max(1, int(vpLabelGap / 2))
+    int x1 = na(v.startTime) ? time - chartMs : v.startTime
+    int mid = math.max(x1 + chartMs, time - vpLabelBack * chartMs)
+    int half = math.max(chartMs, int(vpLabelGap * chartMs / 2))
     int aEnd = math.max(x1, mid - half)
     line.set_xy1(v.a, x1, v.price)
     line.set_xy2(v.a, aEnd, v.price)
     line.set_xy1(v.b, math.max(aEnd, mid + half), v.price)
-    line.set_xy2(v.b, xr, v.price)
+    line.set_xy2(v.b, math.max(aEnd, mid + half) + chartMs, v.price)
     label.set_xy(v.lb, mid, v.price)
     0
 
-f_drawVp(array<VpLvl> vs, string name, float price, color col, int startBi) =>
-    if not na(price)
-        int x1 = f_lx(startBi)
-        line a = line.new(x1, price, x1, price, xloc = xloc.bar_index, color = col, style = line.style_dashed, width = 1)
-        line b = line.new(x1, price, x1, price, xloc = xloc.bar_index, color = col, style = line.style_dashed, width = 1)
-        label lb = label.new(x1, price, name, xloc = xloc.bar_index, style = label.style_none, color = color.new(color.black, 100), textcolor = col, size = size.small, textalign = text.align_center)
-        VpLvl v = VpLvl.new(a = a, b = b, lb = lb, price = price, startBi = startBi, name = name)
+f_drawVp(array<VpLvl> vs, string name, float price, color col, int startTime, bool enabled) =>
+    if enabled and not na(price)
+        int x1 = na(startTime) ? time - chartMs : startTime
+        line a = line.new(x1, price, x1, price, xloc = xloc.bar_time, color = col, style = line.style_dashed, width = 1)
+        line b = line.new(x1, price, x1, price, xloc = xloc.bar_time, extend = extend.right, color = col, style = line.style_dashed, width = 1)
+        label lb = label.new(x1, price, name, xloc = xloc.bar_time, style = label.style_none, color = color.new(color.black, 100), textcolor = col, size = size.small, textalign = text.align_center)
+        VpLvl v = VpLvl.new(a = a, b = b, lb = lb, price = price, startTime = startTime, name = name)
         array.push(vs, v)
         f_layoutVp(v)
     0
 
 f_redrawVp(array<VpLvl> vs) =>
     f_clearVp(vs)
-    if vpShowDaily
-        f_drawVp(vs, "POC D", dPoc, vpDailyColor, dStartBi)
-        f_drawVp(vs, "VAH D", dVah, vpDailyColor, dStartBi)
-        f_drawVp(vs, "VAL D", dVal, vpDailyColor, dStartBi)
-    if vpShowWeekly
-        f_drawVp(vs, "POC W", wPoc, vpWeeklyColor, wStartBi)
-        f_drawVp(vs, "VAH W", wVah, vpWeeklyColor, wStartBi)
-        f_drawVp(vs, "VAL W", wVal, vpWeeklyColor, wStartBi)
+    f_drawVp(vs, "POC D", dPoc, vpDailyColor, dStart, vpShowDaily)
+    f_drawVp(vs, "VAH D", dVah, vpDailyColor, dStart, vpShowDaily)
+    f_drawVp(vs, "VAL D", dVal, vpDailyColor, dStart, vpShowDaily)
+    f_drawVp(vs, "POC W", wPoc, vpWeeklyColor, wStart, vpShowWeekly)
+    f_drawVp(vs, "VAH W", wVah, vpWeeklyColor, wStart, vpShowWeekly)
+    f_drawVp(vs, "VAL W", wVal, vpWeeklyColor, wStart, vpShowWeekly)
     0
 
 bool vpRolled = false
 if ltfCount > 0
     for j = 0 to ltfCount - 1
-        float h = array.get(ltfHigh, j)
-        float l = array.get(ltfLow, j)
-        float p = array.get(ltfHlc3, j)
-        float v = array.get(ltfVolume, j)
+        int vt = array.get(ltfTime, j)
+        float vh = array.get(ltfHigh, j)
+        float vl = array.get(ltfLow, j)
+        float vp = array.get(ltfHlc3, j)
+        float vv = array.get(ltfVolume, j)
         int dk = array.get(ltfNyKey, j)
         int wk = array.get(ltfWeekKey, j)
         if na(vpDayKey)
             vpDayKey := dk
-            vpDayStartBi := bar_index
+            vpDayStart := vt
         if na(vpWkKey)
             vpWkKey := wk
-            vpWkStartBi := bar_index
+            vpWkStart := vt
         if dk != vpDayKey
             if array.size(vpDayP) > 0
-                [pc, vh, vl] = f_calcProfile(vpDayP, vpDayV, vpDayHi, vpDayLo)
-                dPoc := pc
-                dVah := vh
-                dVal := vl
-                dStartBi := vpDayStartBi
+                [pcD, vhD, vlD] = f_calcProfile(vpDayP, vpDayV, vpDayHi, vpDayLo)
+                dPoc := pcD
+                dVah := vhD
+                dVal := vlD
+                dStart := vpDayStart
                 vpRolled := true
             array.clear(vpDayP)
             array.clear(vpDayV)
             vpDayHi := na
             vpDayLo := na
             vpDayKey := dk
-            vpDayStartBi := bar_index
+            vpDayStart := vt
         if wk != vpWkKey
             if array.size(vpWkP) > 0
-                [pc2, vh2, vl2] = f_calcProfile(vpWkP, vpWkV, vpWkHi, vpWkLo)
-                wPoc := pc2
-                wVah := vh2
-                wVal := vl2
-                wStartBi := vpWkStartBi
+                [pcW, vhW, vlW] = f_calcProfile(vpWkP, vpWkV, vpWkHi, vpWkLo)
+                wPoc := pcW
+                wVah := vhW
+                wVal := vlW
+                wStart := vpWkStart
                 vpRolled := true
             array.clear(vpWkP)
             array.clear(vpWkV)
             vpWkHi := na
             vpWkLo := na
             vpWkKey := wk
-            vpWkStartBi := bar_index
-        vpDayHi := na(vpDayHi) ? h : math.max(vpDayHi, h)
-        vpDayLo := na(vpDayLo) ? l : math.min(vpDayLo, l)
-        vpWkHi := na(vpWkHi) ? h : math.max(vpWkHi, h)
-        vpWkLo := na(vpWkLo) ? l : math.min(vpWkLo, l)
-        f_pushProfile(vpDayP, vpDayV, p, v, true)
-        f_pushProfile(vpWkP, vpWkV, p, v, true)
+            vpWkStart := vt
+        vpDayHi := na(vpDayHi) ? vh : math.max(vpDayHi, vh)
+        vpDayLo := na(vpDayLo) ? vl : math.min(vpDayLo, vl)
+        vpWkHi := na(vpWkHi) ? vh : math.max(vpWkHi, vh)
+        vpWkLo := na(vpWkLo) ? vl : math.min(vpWkLo, vl)
+        f_pushProfile(vpDayP, vpDayV, vp, vv, true)
+        f_pushProfile(vpWkP, vpWkV, vp, vv, true)
 
 if vpRolled
     f_redrawVp(vpLevels)
@@ -1240,23 +1219,24 @@ if doLayout and array.size(vpLevels) > 0
     for i = 0 to array.size(vpLevels) - 1
         f_layoutVp(array.get(vpLevels, i))
 
-// tag used by BSL/SSL: "BSL+VAH", "SSL+POC" ...
+// Reads the Daily/Weekly profile AND the profile Part 1 already maintains, so
+// the tag works whichever of the two you have switched on.
 f_vpTag(float px) =>
     string tg = ""
-    if f_near(px, dVah, profileToleranceTicks) or f_near(px, wVah, profileToleranceTicks)
+    if f_near(px, dVah, profileToleranceTicks) or f_near(px, wVah, profileToleranceTicks) or f_near(px, activeProfileVah, profileToleranceTicks)
         tg := "VAH"
-    else if f_near(px, dVal, profileToleranceTicks) or f_near(px, wVal, profileToleranceTicks)
+    else if f_near(px, dVal, profileToleranceTicks) or f_near(px, wVal, profileToleranceTicks) or f_near(px, activeProfileVal, profileToleranceTicks)
         tg := "VAL"
-    else if f_near(px, dPoc, profileToleranceTicks) or f_near(px, wPoc, profileToleranceTicks)
+    else if f_near(px, dPoc, profileToleranceTicks) or f_near(px, wPoc, profileToleranceTicks) or f_near(px, activeProfilePoc, profileToleranceTicks)
         tg := "POC"
     tg
 
 // =============================================================================
 // Liquidity - BSL / SSL
 // A black horizontal line with the text sitting in a break in the middle of it.
-// "BSL" / "SSL" (+VAH, +VAL or +POC when it lands on the fixed profile, which is
-// what makes it worth taking), then "$$$" the moment it is tagged - and the line
-// stops dead at the sweep bar instead of running on to the right.
+// "BSL" / "SSL", plus +VAH, +VAL or +POC when it lands on the fixed profile,
+// which is what makes it worth taking. It turns into "$$$" the moment it is
+// tagged, and the line stops dead at the sweep bar instead of running onward.
 // =============================================================================
 groupLiq = "Liquidity (BSL / SSL)"
 showLiq       = input.bool(true, "Show BSL / SSL", group = groupLiq)
@@ -1269,8 +1249,6 @@ liqSweptHold  = input.int(30, "Keep $$$ for N bars after the sweep", minval = 3,
 liqMaxUnswept = input.int(10, "Max unswept rays", minval = 1, maxval = 60, group = groupLiq)
 liqMaxAgeDays = input.int(5, "Drop unswept rays older than (days)", minval = 1, maxval = 30, group = groupLiq)
 liqColor      = input.color(color.black, "Ray color", group = groupLiq)
-
-bool newTradingDay = not na(time[1]) and f_nyKey(time) != f_nyKey(time[1])
 
 f_pivFeed(simple string sym, simple string tf, simple int len) =>
     request.security(sym, tf, [ta.pivothigh(high, len, len), ta.pivotlow(low, len, len), time[len]], lookahead = barmerge.lookahead_off)
@@ -1312,13 +1290,13 @@ levelsCountPrev := array.size(levels)
 if array.size(swPrice) > 0
     for i = 0 to array.size(swPrice) - 1
         if not array.get(swDone, i)
-            float px = array.get(swPrice, i)
-            bool isH = array.get(swIsHigh, i)
-            if isH ? high >= px : low <= px
+            float spx = array.get(swPrice, i)
+            bool sIsH = array.get(swIsHigh, i)
+            if sIsH ? high >= spx : low <= spx
                 array.set(swDone, i, true)
                 lastSweepBar := bar_index
-                lastSweepPrice := px
-                lastSweepIsHigh := isH
+                lastSweepPrice := spx
+                lastSweepIsHigh := sIsH
 
 // ---- the rays themselves
 type Liq
@@ -1327,11 +1305,12 @@ type Liq
     label  lb
     float  price
     bool   isHigh
-    int    startBi
+    int    startTime
     int    createdBar
     int    dayKey
     bool   swept
-    int    sweptBi
+    int    sweptTime
+    int    sweptBar
     string tag
 
 var array<Liq> liqs = array.new<Liq>()
@@ -1347,8 +1326,8 @@ f_liqText(Liq q) =>
     txt
 
 f_layoutLiq(Liq q) =>
-    int x2 = q.swept ? q.sweptBi : f_rx(liqExtendBars)
-    f_gapLine(q.lnA, q.lnB, q.lb, q.price, q.startBi, x2, liqLabelGap, f_liqText(q))
+    int x2 = q.swept ? q.sweptTime : f_rxT(liqExtendBars)
+    f_gapLine(q.lnA, q.lnB, q.lb, q.price, q.startTime, x2, liqLabelGap, f_liqText(q))
     0
 
 f_delLiq(array<Liq> qs, int i) =>
@@ -1378,12 +1357,12 @@ f_liqExists(array<Liq> qs, float px, bool isHigh) =>
                 found := true
     found
 
-f_addLiq(array<Liq> qs, float px, bool isHigh, int anchorBi, int anchorMs) =>
-    if showLiq and not na(px) and not na(anchorBi) and not f_nearSessionLevel(levels, px, liqDedupTicks) and not f_liqExists(qs, px, isHigh)
-        line a = line.new(anchorBi, px, anchorBi, px, xloc = xloc.bar_index, color = liqColor, style = line.style_solid, width = 1)
-        line b = line.new(anchorBi, px, anchorBi, px, xloc = xloc.bar_index, color = liqColor, style = line.style_solid, width = 1)
-        label l = label.new(anchorBi, px, "", xloc = xloc.bar_index, style = label.style_none, color = color.new(color.black, 100), textcolor = liqColor, size = f_lblSize(), textalign = text.align_center)
-        Liq q = Liq.new(lnA = a, lnB = b, lb = l, price = px, isHigh = isHigh, startBi = anchorBi, createdBar = bar_index, dayKey = f_nyKey(anchorMs), swept = false, sweptBi = -1, tag = f_vpTag(px))
+f_addLiq(array<Liq> qs, float px, bool isHigh, int anchorTime) =>
+    if showLiq and not na(px) and not na(anchorTime) and not f_nearSessionLevel(levels, px, liqDedupTicks) and not f_liqExists(qs, px, isHigh)
+        line a = line.new(anchorTime, px, anchorTime, px, xloc = xloc.bar_time, color = liqColor, style = line.style_solid, width = 1)
+        line b = line.new(anchorTime, px, anchorTime, px, xloc = xloc.bar_time, color = liqColor, style = line.style_solid, width = 1)
+        label l = label.new(anchorTime, px, "", xloc = xloc.bar_time, style = label.style_none, color = color.new(color.black, 100), textcolor = liqColor, size = f_lblSize(), textalign = text.align_center)
+        Liq q = Liq.new(lnA = a, lnB = b, lb = l, price = px, isHigh = isHigh, startTime = anchorTime, createdBar = bar_index, dayKey = f_nyKey(anchorTime), swept = false, sweptTime = na, sweptBar = -1, tag = f_vpTag(px))
         array.push(qs, q)
         f_layoutLiq(q)
     0
@@ -1397,28 +1376,24 @@ f_countLiq(array<Liq> qs, bool swept) =>
     n
 
 // Requesting a timeframe at or below the chart's own silently samples once per
-// chart bar instead of giving true resolution, so the chart's native series is
+// chart bar instead of giving real resolution, so the chart's native series is
 // used whenever the two match.
 simple string liqTfEff = timeframe.in_seconds(liqPivotTf) <= chartSeconds ? timeframe.period : liqPivotTf
 bool liqNative = timeframe.in_seconds(liqTfEff) == chartSeconds
+int  liqTfSec  = timeframe.in_seconds(liqTfEff)
 [liqSecPh, liqSecPl, liqSecPt] = f_pivFeed(syminfo.tickerid, liqTfEff, liqSwingLen)
 float liqPh = liqNative ? ta.pivothigh(high, liqSwingLen, liqSwingLen) : liqSecPh
 float liqPl = liqNative ? ta.pivotlow(low, liqSwingLen, liqSwingLen) : liqSecPl
 int   liqPt = liqNative ? time[liqSwingLen] : liqSecPt
-int   liqTfSec = timeframe.in_seconds(liqTfEff)
 
 var int lastLiqPhTime = na
 var int lastLiqPlTime = na
 if showLiq and not na(liqPh) and not na(liqPt) and (na(lastLiqPhTime) or liqPt != lastLiqPhTime)
     lastLiqPhTime := liqPt
-    int offH = liqNative ? liqSwingLen : f_snapOffset(liqPh, liqPt, liqTfSec, true)
-    if not na(offH)
-        f_addLiq(liqs, liqPh, true, bar_index - offH, liqPt)
+    f_addLiq(liqs, liqPh, true, liqNative ? liqPt : f_snapTime(liqPh, liqPt, liqTfSec, true))
 if showLiq and not na(liqPl) and not na(liqPt) and (na(lastLiqPlTime) or liqPt != lastLiqPlTime)
     lastLiqPlTime := liqPt
-    int offL = liqNative ? liqSwingLen : f_snapOffset(liqPl, liqPt, liqTfSec, false)
-    if not na(offL)
-        f_addLiq(liqs, liqPl, false, bar_index - offL, liqPt)
+    f_addLiq(liqs, liqPl, false, liqNative ? liqPt : f_snapTime(liqPl, liqPt, liqTfSec, false))
 
 bool liqSweptThisBar = false
 if array.size(liqs) > 0
@@ -1428,11 +1403,12 @@ if array.size(liqs) > 0
         if not q.swept
             if levelsChanged and f_nearSessionLevel(levels, q.price, liqDedupTicks)
                 drop := true
-            else if bar_index - q.createdBar > liqMaxAgeDays * 1440 * 60 / math.max(60, chartSeconds)
+            else if time - q.startTime > liqMaxAgeDays * 86400000
                 drop := true
             else if q.isHigh ? high >= q.price : low <= q.price
                 q.swept := true
-                q.sweptBi := bar_index
+                q.sweptTime := time
+                q.sweptBar := bar_index
                 line.set_style(q.lnA, line.style_dashed)
                 line.set_style(q.lnB, line.style_dashed)
                 array.set(liqs, i, q)
@@ -1440,7 +1416,7 @@ if array.size(liqs) > 0
                 lastSweepBar := bar_index
                 lastSweepPrice := q.price
                 lastSweepIsHigh := q.isHigh
-        else if bar_index - q.sweptBi >= liqSweptHold or newTradingDay
+        else if bar_index - q.sweptBar >= liqSweptHold or newTradingDay
             drop := true
         if drop
             f_delLiq(liqs, i)
@@ -1466,15 +1442,16 @@ while f_countLiq(liqs, false) > liqMaxUnswept and liqGuard < 100
 // =============================================================================
 // FVG / IFVG / BPR
 // 3-candle pattern. Candle 1 = most recent closed, candle 2 = the displacement
-// candle, candle 3 = the oldest. Bullish: low[1] > high[3]. Bearish: high[1] <
-// low[3]. Candle 2 must be a real displacement - its body a large majority of
-// its range, pointing the same way as the gap - or ordinary noise reads as a gap.
+// candle, candle 3 = the oldest. Bullish: candle 1's low > candle 3's high.
+// Bearish: candle 1's high < candle 3's low. Candle 2 must be a real
+// displacement - body a large majority of its range, pointing the same way as
+// the gap - or ordinary noise reads as a gap.
 //
-// Look: black outline, dark grey fill, dashed CE line through the middle and the
-// text both coloured green or red by direction, text sitting inside the box at
-// its right edge. Once it inverts the fill turns white and it reads "1m IFVG".
-// The higher the timeframe the further right the box runs, which is also what
-// keeps a 1m label off a 15m label when one is nested in the other.
+// Look: black outline, dark grey fill, a dashed CE line through the middle and
+// the text both coloured green or red by direction, text inside the box at its
+// right edge. Once it inverts the fill turns white and it reads "1m IFVG". The
+// higher the timeframe the further right the box runs, which is what keeps a 1m
+// label off a 15m label when one is nested inside the other.
 // =============================================================================
 groupFvg = "FVG / IFVG / BPR"
 showFvg       = input.bool(true, "Show gaps", group = groupFvg)
@@ -1487,7 +1464,7 @@ fvgTf4        = input.timeframe("60", "TF 4", group = groupFvg)
 fvgTf5        = input.timeframe("240", "TF 5", group = groupFvg)
 fvgBodyPct    = input.float(50.0, "Displacement body % of range", minval = 10, maxval = 95, group = groupFvg)
 gapExtendBars = input.int(10, "Gap right extension (bars)", minval = 2, maxval = 100, group = groupFvg)
-gapExtendStep = input.int(5, "Extra extension per timeframe step (bars)", minval = 0, maxval = 40, group = groupFvg, tooltip = "The higher the timeframe the further into the future the box runs, so nested boxes never share a label position.")
+gapExtendStep = input.int(5, "Extra extension per timeframe step (bars)", minval = 0, maxval = 40, group = groupFvg, tooltip = "The higher the timeframe the further right the box runs, so nested boxes never share a label position.")
 gapMergeTicks = input.int(8, "Treat gaps within N ticks as the same gap", minval = 1, maxval = 100, group = groupFvg)
 gapOverlapFrac = input.float(0.7, "Overlap fraction that kills the lower timeframe", minval = 0.3, maxval = 1.0, step = 0.05, group = groupFvg, tooltip = "1H beats 15m beats 5m when this much of the lower gap sits inside the higher one. 30s/1m are a SEPARATE band and are never removed by a 5m+ gap - an HTF gap fill with an LTF inversion out of it IS the setup, so those two must coexist.")
 gapFirstLast  = input.bool(true, "Keep only the first and last gap of each leg", group = groupFvg)
@@ -1504,7 +1481,7 @@ bullAccent    = input.color(#089981, "Bullish accent", group = groupFvg)
 bearAccent    = input.color(#F23645, "Bearish accent", group = groupFvg)
 
 type Bar3
-    array<int>   sb
+    array<int>   t
     array<float> o
     array<float> h
     array<float> l
@@ -1524,7 +1501,7 @@ type Gap
     bool   bull
     bool   inverted
     bool   bpr
-    int    leftBi
+    int    leftTime
     int    bornBar
     bool   touched
     bool   respected
@@ -1538,17 +1515,17 @@ var array<int> legId  = array.new_int(6, 0)
 var array<int> legIdx = array.new_int(6, 0)
 
 f_newBar3() =>
-    Bar3.new(sb = array.new_int(), o = array.new_float(), h = array.new_float(), l = array.new_float(), c = array.new_float())
+    Bar3.new(t = array.new_int(), o = array.new_float(), h = array.new_float(), l = array.new_float(), c = array.new_float())
 
-f_pushBar(Bar3 b, int sb, float bo, float bh, float bl, float bc) =>
-    if not na(bh) and not na(bl) and not na(sb)
-        array.unshift(b.sb, sb)
+f_pushBar(Bar3 b, int bt, float bo, float bh, float bl, float bc) =>
+    if not na(bt) and not na(bh) and not na(bl)
+        array.unshift(b.t, bt)
         array.unshift(b.o, bo)
         array.unshift(b.h, bh)
         array.unshift(b.l, bl)
         array.unshift(b.c, bc)
-        while array.size(b.sb) > 3
-            array.pop(b.sb)
+        while array.size(b.t) > 3
+            array.pop(b.t)
             array.pop(b.o)
             array.pop(b.h)
             array.pop(b.l)
@@ -1564,8 +1541,8 @@ f_gapAccent(Gap g) =>
 f_gapText(Gap g) =>
     g.tfName + " " + (g.bpr ? "BPR" : g.inverted ? "IFVG" : "FVG") + " "
 
-f_gapRight(int rank) =>
-    f_rx(gapExtendBars + rank * gapExtendStep)
+f_gapRightT(int rank) =>
+    f_rxT(gapExtendBars + rank * gapExtendStep)
 
 f_styleGap(Gap g) =>
     int trFill = math.min(95, gapFillTransp + g.rank * gapTranspStep)
@@ -1578,12 +1555,11 @@ f_styleGap(Gap g) =>
     0
 
 f_layoutGap(Gap g) =>
-    int rx = f_gapRight(g.rank)
-    int lx = f_lx(g.leftBi)
+    int rx = f_gapRightT(g.rank)
     float mid = (g.top + g.bot) / 2
-    box.set_lefttop(g.bx, lx, g.top)
+    box.set_lefttop(g.bx, g.leftTime, g.top)
     box.set_rightbottom(g.bx, rx, g.bot)
-    line.set_xy1(g.ce, lx, mid)
+    line.set_xy1(g.ce, g.leftTime, mid)
     line.set_xy2(g.ce, rx, mid)
     label.set_xy(g.lb, rx, mid)
     0
@@ -1634,19 +1610,18 @@ f_nearestHtfCe(array<Gap> gs, float px, bool up) =>
 f_sameTier(int a, int b) =>
     (a <= 1 and b <= 1) or (a >= 2 and b >= 2)
 
-f_makeGap(float top, float bot, float wickHi, float wickLo, int leftBi, int tfSec, string tfName, int rank, bool bull, bool bpr, int lId, int lIdx) =>
-    int rx = f_gapRight(rank)
-    int lx = f_lx(leftBi)
+f_makeGap(float top, float bot, float wickHi, float wickLo, int leftTime, int tfSec, string tfName, int rank, bool bull, bool bpr, int lId, int lIdx) =>
+    int rx = f_gapRightT(rank)
     float mid = (top + bot) / 2
-    box bx = box.new(lx, top, rx, bot, xloc = xloc.bar_index, border_color = color.black, border_width = 1)
-    line ce = line.new(lx, mid, rx, mid, xloc = xloc.bar_index, style = line.style_dashed, width = 1)
-    label lb = label.new(rx, mid, "", xloc = xloc.bar_index, style = label.style_label_right, color = color.new(color.black, 100), size = f_lblSize(), textalign = text.align_right)
-    Gap g = Gap.new(bx = bx, ce = ce, lb = lb, top = top, bot = bot, wickHi = wickHi, wickLo = wickLo, tfSec = tfSec, tfName = tfName, rank = rank, bull = bull, inverted = false, bpr = bpr, leftBi = leftBi, bornBar = bar_index, touched = false, respected = false, legId = lId, legIdx = lIdx)
+    box bx = box.new(leftTime, top, rx, bot, xloc = xloc.bar_time, border_color = color.black, border_width = 1)
+    line ce = line.new(leftTime, mid, rx, mid, xloc = xloc.bar_time, style = line.style_dashed, width = 1)
+    label lb = label.new(rx, mid, "", xloc = xloc.bar_time, style = label.style_label_right, color = color.new(color.black, 100), size = f_lblSize(), textalign = text.align_right)
+    Gap g = Gap.new(bx = bx, ce = ce, lb = lb, top = top, bot = bot, wickHi = wickHi, wickLo = wickLo, tfSec = tfSec, tfName = tfName, rank = rank, bull = bull, inverted = false, bpr = bpr, leftTime = leftTime, bornBar = bar_index, touched = false, respected = false, legId = lId, legIdx = lIdx)
     f_styleGap(g)
     g
 
 f_detectGap(array<Gap> gs, Bar3 b, int tfSec, string tfName, int rank, bool allowed, array<int> lDir, array<int> lId, array<int> lIdx) =>
-    if allowed and array.size(b.sb) >= 3
+    if allowed and array.size(b.t) >= 3
         float h1 = array.get(b.h, 0)
         float l1 = array.get(b.l, 0)
         float h2 = array.get(b.h, 1)
@@ -1655,7 +1630,7 @@ f_detectGap(array<Gap> gs, Bar3 b, int tfSec, string tfName, int rank, bool allo
         float c2 = array.get(b.c, 1)
         // the box starts at the DISPLACEMENT candle, so it reads as attached to
         // the move that created it rather than floating off the recent bar
-        int   sb2 = array.get(b.sb, 1)
+        int   t2 = array.get(b.t, 1)
         float h3 = array.get(b.h, 2)
         float l3 = array.get(b.l, 2)
         float rng2 = h2 - l2
@@ -1692,7 +1667,7 @@ f_detectGap(array<Gap> gs, Bar3 b, int tfSec, string tfName, int rank, bool allo
                     array.set(lIdx, rank, 0)
                 else
                     array.set(lIdx, rank, array.get(lIdx, rank) + 1)
-                array.push(gs, f_makeGap(top, bot, wHi, wLo, sb2, tfSec, tfName, rank, bullGap, isBpr, array.get(lId, rank), array.get(lIdx, rank)))
+                array.push(gs, f_makeGap(top, bot, wHi, wLo, t2, tfSec, tfName, rank, bullGap, isBpr, array.get(lId, rank), array.get(lIdx, rank)))
                 if gapFirstLast and array.size(gs) > 0
                     int newest = array.get(lIdx, rank)
                     int curLeg = array.get(lId, rank)
@@ -1737,10 +1712,10 @@ f_feed(simple string tf) =>
 f_feedAtr(simple string tf) =>
     request.security(syminfo.tickerid, tf, [time, open, high, low, close, ta.atr(14)], lookahead = barmerge.lookahead_off)
 
-// A timeframe at or below the chart's own is served by the chart's NATIVE series.
-// Routing it through request.security samples once per chart bar instead of
-// giving real resolution - silently, with no error - which is exactly why an
-// earlier build detected zero gaps.
+// A timeframe at or below the chart's own is served by the chart's NATIVE
+// series. Routing it through request.security samples once per chart bar
+// instead of giving real resolution - silently, with no error - which is
+// exactly why an earlier build detected zero gaps.
 simple string tf0Eff = enable30s and timeframe.in_seconds(fvgTf0) > chartSeconds ? fvgTf0 : timeframe.period
 simple string tf1Eff = timeframe.in_seconds(fvgTf1) > chartSeconds ? fvgTf1 : timeframe.period
 simple string tf2Eff = timeframe.in_seconds(fvgTf2) > chartSeconds ? fvgTf2 : timeframe.period
@@ -1750,7 +1725,7 @@ simple string tf5Eff = timeframe.in_seconds(fvgTf5) > chartSeconds ? fvgTf5 : ti
 
 [q0t, q0o, q0h, q0l, q0c] = f_feed(tf0Eff)
 [q1t, q1o, q1h, q1l, q1c] = f_feed(tf1Eff)
-[q2t, q2o, q2h, q2l, q2c, atr5ref] = f_feedAtr(tf2Eff)
+[q2t, q2o, q2h, q2l, q2c, atrRef] = f_feedAtr(tf2Eff)
 [q3t, q3o, q3h, q3l, q3c] = f_feed(tf3Eff)
 [q4t, q4o, q4h, q4l, q4c] = f_feed(tf4Eff)
 [q5t, q5o, q5h, q5l, q5c] = f_feed(tf5Eff)
@@ -1807,15 +1782,6 @@ var Bar3 buf3 = f_newBar3()
 var Bar3 buf4 = f_newBar3()
 var Bar3 buf5 = f_newBar3()
 
-// Chart bar index each HTF candle STARTED on. This is what anchors an HTF box to
-// the right place - the security call only hands back the candle's open time.
-var int hb0 = na
-var int hb1 = na
-var int hb2 = na
-var int hb3 = na
-var int hb4 = na
-var int hb5 = na
-
 bool new0 = ok0 and not na(r0t) and not na(r0t[1]) and r0t != r0t[1]
 bool new1 = ok1 and not na(r1t) and not na(r1t[1]) and r1t != r1t[1]
 bool new2 = ok2 and not na(r2t) and not na(r2t[1]) and r2t != r2t[1]
@@ -1834,25 +1800,18 @@ int tfSec5 = timeframe.in_seconds(fvgTf5)
 // offsetting inside resolves in the security context and will not line up as
 // three consecutive candles of that timeframe.
 if new0
-    f_pushBar(buf0, nz(hb0, bar_index - 1), r0o[1], r0h[1], r0l[1], r0c[1])
-    hb0 := bar_index
+    f_pushBar(buf0, r0t[1], r0o[1], r0h[1], r0l[1], r0c[1])
 if new1
-    f_pushBar(buf1, nz(hb1, bar_index - 1), r1o[1], r1h[1], r1l[1], r1c[1])
-    hb1 := bar_index
+    f_pushBar(buf1, r1t[1], r1o[1], r1h[1], r1l[1], r1c[1])
 if new2
-    f_pushBar(buf2, nz(hb2, bar_index - 1), r2o[1], r2h[1], r2l[1], r2c[1])
-    hb2 := bar_index
+    f_pushBar(buf2, r2t[1], r2o[1], r2h[1], r2l[1], r2c[1])
 if new3
-    f_pushBar(buf3, nz(hb3, bar_index - 1), r3o[1], r3h[1], r3l[1], r3c[1])
-    hb3 := bar_index
+    f_pushBar(buf3, r3t[1], r3o[1], r3h[1], r3l[1], r3c[1])
 if new4
-    f_pushBar(buf4, nz(hb4, bar_index - 1), r4o[1], r4h[1], r4l[1], r4c[1])
-    hb4 := bar_index
+    f_pushBar(buf4, r4t[1], r4o[1], r4h[1], r4l[1], r4c[1])
 if new5
-    f_pushBar(buf5, nz(hb5, bar_index - 1), r5o[1], r5h[1], r5l[1], r5c[1])
-    hb5 := bar_index
+    f_pushBar(buf5, r5t[1], r5o[1], r5h[1], r5l[1], r5c[1])
 
-// ---- inversion, every bar
 var int  lastIfvgBar = na
 var bool lastIfvgBull = false
 var int  lastIfvgRank = -1
@@ -1865,7 +1824,6 @@ if showFvg
         lastIfvgBull := fB
         lastIfvgRank := fR
 
-// ---- detection (30s only after a sweep and only while no 1m gap exists)
 bool sweepFresh30 = not na(lastSweepBar) and bar_index - lastSweepBar <= sweep30sBars
 if showFvg
     if new1
@@ -1881,7 +1839,6 @@ if showFvg
     if new0
         f_detectGap(gaps, buf0, tfSec0, f_tfLabel(fvgTf0), 0, ok0 and sweepFresh30 and f_countGapsTf(gaps, tfSec1) == 0, legDir, legId, legIdx)
 
-// ---- per-bar maintenance
 bool gapSetChanged = array.size(gaps) != gapCountPrev
 if showFvg and array.size(gaps) > 0
     for i = array.size(gaps) - 1 to 0
@@ -1892,9 +1849,9 @@ if showFvg and array.size(gaps) > 0
                 g.touched := true
             if g.touched and not g.respected and (g.bull ? close > g.top : close < g.bot)
                 g.respected := true
-            if g.rank >= 3 and not na(atr5ref)
+            if g.rank >= 3 and not na(atrRef)
                 float dist = close > g.top ? close - g.top : close < g.bot ? g.bot - close : 0.0
-                if dist > htfDistAtr * atr5ref
+                if dist > htfDistAtr * atrRef
                     drop := true
             // daily wipe: 30s/1m/5m always, 15m+ only once run through unrespected
             if not drop and newTradingDay
@@ -1928,7 +1885,6 @@ if showFvg and gapSetChanged and array.size(gaps) > 1
             if drop
                 f_delGap(gaps, i)
 
-// hard ceiling so the drawing budget can never overrun
 int gapCapGuard = 0
 while array.size(gaps) > maxTotalGaps and gapCapGuard < 100
     gapCapGuard += 1
@@ -1956,24 +1912,24 @@ if doLayout and array.size(gaps) > 0
 // labelled "CHoCH" - the box that appears there reads "1m BB".
 //
 // The leg trackers matter more than anything else here. Rolling trackers update
-// on every new pivot and only exist to spot the BOS. The LEG trackers are frozen
-// the instant BOS fires and are never touched again until the leg resolves - the
-// box has to be anchored to the specific swing that got broken, a fixed point in
-// time, not to a running maximum that keeps climbing with price.
+// on every new pivot and exist only to spot the BOS. The LEG trackers are
+// frozen the instant BOS fires and never touched again until the leg resolves -
+// the box has to be anchored to the specific swing that got broken, a fixed
+// point in time, not to a running maximum that keeps climbing with price.
 //
 // Light grey, so it never reads as a fair value gap.
 // =============================================================================
 groupBB = "Breaker blocks"
-showBB      = input.bool(true, "Show breaker blocks", group = groupBB)
-bbSwingLen  = input.int(15, "Swing length for BOS / CHoCH", minval = 4, maxval = 60, group = groupBB, tooltip = "A short swing length treats every small pullback as a valid swing and buries the chart in breakers.")
-bbMaxBoxes  = input.int(4, "Max breaker boxes", minval = 1, maxval = 20, group = groupBB)
-bbMaxWidth  = input.int(120, "Max breaker width (bars)", minval = 20, maxval = 600, group = groupBB)
-bbExtend    = input.int(14, "Right extension (bars)", minval = 2, maxval = 100, group = groupBB)
-bbGateGap   = input.bool(true, "Only near an open 1H/4H gap or a fresh sweep", group = groupBB, tooltip = "Ungated breakers fire on every minor pullback.")
-bbGateBars  = input.int(25, "Bars a sweep stays fresh for the gate", minval = 3, maxval = 200, group = groupBB)
-bbShowCisd  = input.bool(true, "Draw the CISD line until confirmed", group = groupBB)
-bbFill      = input.color(#B2B5BE, "Breaker fill (light grey)", group = groupBB)
-bbTransp    = input.int(70, "Breaker fill transparency", minval = 0, maxval = 95, group = groupBB)
+showBB     = input.bool(true, "Show breaker blocks", group = groupBB)
+bbSwingLen = input.int(15, "Swing length for BOS / CHoCH", minval = 4, maxval = 60, group = groupBB, tooltip = "A short swing length treats every small pullback as a valid swing and buries the chart in breakers.")
+bbMaxBoxes = input.int(4, "Max breaker boxes", minval = 1, maxval = 20, group = groupBB)
+bbMaxWidth = input.int(120, "Max breaker width (bars)", minval = 20, maxval = 600, group = groupBB)
+bbExtend   = input.int(14, "Right extension (bars)", minval = 2, maxval = 100, group = groupBB)
+bbGateGap  = input.bool(true, "Only near an open 1H/4H gap or a fresh sweep", group = groupBB, tooltip = "Ungated breakers fire on every minor pullback.")
+bbGateBars = input.int(25, "Bars a sweep stays fresh for the gate", minval = 3, maxval = 200, group = groupBB)
+bbShowCisd = input.bool(true, "Draw the CISD line until confirmed", group = groupBB)
+bbFill     = input.color(#B2B5BE, "Breaker fill (light grey)", group = groupBB)
+bbTransp   = input.int(70, "Breaker fill transparency", minval = 0, maxval = 95, group = groupBB)
 
 type Brk
     box   bx
@@ -1982,7 +1938,7 @@ type Brk
     label lb
     float top
     float bot
-    int   leftBi
+    int   leftTime
     bool  bullBreaker
     float cisd
     bool  confirmAbove
@@ -1994,28 +1950,34 @@ var array<Brk> brks = array.new<Brk>()
 
 var float rollSwingHigh = na
 var float rollSwingHighBody = na
+var int   rollSwingHighTime = na
 var int   rollSwingHighBar = na
 var float rollSwingLow = na
 var float rollSwingLowBody = na
+var int   rollSwingLowTime = na
 var int   rollSwingLowBar = na
 
 var string bbBias = "None"
 var float legOriginLow = na
 var float legOriginLowBody = na
+var int   legOriginLowTime = na
 var int   legOriginLowBar = na
 var float legPeakHigh = na
 var float legPeakHighBody = na
+var int   legPeakHighTime = na
 var int   legPeakHighBar = na
 var float legOriginHigh = na
 var float legOriginHighBody = na
+var int   legOriginHighTime = na
 var int   legOriginHighBar = na
 var float legTroughLow = na
 var float legTroughLowBody = na
+var int   legTroughLowTime = na
 var int   legTroughLowBar = na
 
 // CISD level = the open of the FIRST candle in the consecutive same-direction
-// streak running into the break. Carried forward bar by bar so no series is ever
-// indexed with a runtime-computed offset.
+// streak running into the break. Carried forward bar by bar so no series is
+// ever indexed with a runtime-computed offset.
 var float dnStreakOpen = na
 var float upStreakOpen = na
 if close < open
@@ -2032,10 +1994,12 @@ float bbPl = ta.pivotlow(low, bbSwingLen, bbSwingLen)
 if not na(bbPh)
     rollSwingHigh := bbPh
     rollSwingHighBody := math.max(open[bbSwingLen], close[bbSwingLen])
+    rollSwingHighTime := time[bbSwingLen]
     rollSwingHighBar := bar_index - bbSwingLen
 if not na(bbPl)
     rollSwingLow := bbPl
     rollSwingLowBody := math.min(open[bbSwingLen], close[bbSwingLen])
+    rollSwingLowTime := time[bbSwingLen]
     rollSwingLowBar := bar_index - bbSwingLen
 
 f_delBrk(array<Brk> bs, int i) =>
@@ -2048,31 +2012,29 @@ f_delBrk(array<Brk> bs, int i) =>
     0
 
 f_layoutBrk(Brk b) =>
-    int rx = f_rx(bbExtend)
-    int lx = f_lx(b.leftBi)
+    int rx = f_rxT(bbExtend)
     float mid = (b.top + b.bot) / 2
-    box.set_lefttop(b.bx, lx, b.top)
+    box.set_lefttop(b.bx, b.leftTime, b.top)
     box.set_rightbottom(b.bx, rx, b.bot)
-    line.set_xy1(b.mid, lx, mid)
+    line.set_xy1(b.mid, b.leftTime, mid)
     line.set_xy2(b.mid, rx, mid)
     label.set_xy(b.lb, rx, mid)
-    if not na(b.cisdLn) and not b.confirmed
-        line.set_xy1(b.cisdLn, lx, b.cisd)
+    if not b.confirmed
+        line.set_xy1(b.cisdLn, b.leftTime, b.cisd)
         line.set_xy2(b.cisdLn, rx, b.cisd)
     0
 
-f_addBrk(array<Brk> bs, float top, float bot, int rawLeftBi, bool bullBreaker, float cisd, bool confirmAbove) =>
-    int rx = f_rx(bbExtend)
-    int leftBi = f_lx(rawLeftBi)
+f_addBrk(array<Brk> bs, float top, float bot, int leftTime, bool bullBreaker, float cisd, bool confirmAbove) =>
+    int rx = f_rxT(bbExtend)
     float mid = (top + bot) / 2
-    box bx = box.new(leftBi, top, rx, bot, xloc = xloc.bar_index, border_color = color.new(color.black, math.max(0, bbTransp - 40)), border_width = 1, bgcolor = color.new(bbFill, bbTransp))
-    line ml = line.new(leftBi, mid, rx, mid, xloc = xloc.bar_index, color = color.new(color.black, 0), style = line.style_dashed, width = 1)
-    // A ternary does NOT short-circuit in Pine - both branches are evaluated -
-    // so a line.new hidden in one arm still creates a drawing that is then
-    // thrown away. The line is always made and hidden with transparency instead.
-    line cl = line.new(leftBi, cisd, rx, cisd, xloc = xloc.bar_index, color = color.new(#FFB300, bbShowCisd ? 0 : 100), style = line.style_dotted, width = 1)
-    label lb = label.new(rx, mid, chartTfLabel + " BB ", xloc = xloc.bar_index, style = label.style_label_right, color = color.new(color.black, 100), textcolor = color.new(color.black, 0), size = f_lblSize(), textalign = text.align_right)
-    array.push(bs, Brk.new(bx = bx, mid = ml, cisdLn = cl, lb = lb, top = top, bot = bot, leftBi = leftBi, bullBreaker = bullBreaker, cisd = cisd, confirmAbove = confirmAbove, confirmed = false, bornBar = bar_index, confirmedBar = -1))
+    box bx = box.new(leftTime, top, rx, bot, xloc = xloc.bar_time, border_color = color.new(color.black, math.max(0, bbTransp - 40)), border_width = 1, bgcolor = color.new(bbFill, bbTransp))
+    line ml = line.new(leftTime, mid, rx, mid, xloc = xloc.bar_time, color = color.new(color.black, 0), style = line.style_dashed, width = 1)
+    // A ternary does NOT short-circuit in Pine - both arms are evaluated - so a
+    // line.new hidden in one arm still creates a drawing. It is always made and
+    // hidden with transparency instead.
+    line cl = line.new(leftTime, cisd, rx, cisd, xloc = xloc.bar_time, color = color.new(#FFB300, bbShowCisd ? 0 : 100), style = line.style_dotted, width = 1)
+    label lb = label.new(rx, mid, chartTfLabel + " BB ", xloc = xloc.bar_time, style = label.style_label_right, color = color.new(color.black, 100), textcolor = color.new(color.black, 0), size = f_lblSize(), textalign = text.align_right)
+    array.push(bs, Brk.new(bx = bx, mid = ml, cisdLn = cl, lb = lb, top = top, bot = bot, leftTime = leftTime, bullBreaker = bullBreaker, cisd = cisd, confirmAbove = confirmAbove, confirmed = false, bornBar = bar_index, confirmedBar = -1))
     while array.size(bs) > bbMaxBoxes
         f_delBrk(bs, 0)
     0
@@ -2089,7 +2051,7 @@ bool chochUp   = bbBias == "Bearish" and not na(legOriginHigh) and close > legOr
 
 if chochDown
     if showBB and bbGateOk and not na(legPeakHighBody) and not na(legOriginLowBody)
-        f_addBrk(brks, math.max(legPeakHighBody, legOriginLowBody), math.min(legPeakHighBody, legOriginLowBody), math.max(math.max(legOriginLowBar, legPeakHighBar), bar_index - bbMaxWidth), false, nz(dnStreakOpen, open), true)
+        f_addBrk(brks, math.max(legPeakHighBody, legOriginLowBody), math.min(legPeakHighBody, legOriginLowBody), math.max(math.max(legOriginLowTime, legPeakHighTime), time - bbMaxWidth * chartMs), false, nz(dnStreakOpen, open), true)
     bbBias := "None"
     legOriginLow := na
     legPeakHigh := na
@@ -2098,7 +2060,7 @@ if chochDown
 
 if chochUp
     if showBB and bbGateOk and not na(legTroughLowBody) and not na(legOriginHighBody)
-        f_addBrk(brks, math.max(legTroughLowBody, legOriginHighBody), math.min(legTroughLowBody, legOriginHighBody), math.max(math.max(legOriginHighBar, legTroughLowBar), bar_index - bbMaxWidth), true, nz(upStreakOpen, open), false)
+        f_addBrk(brks, math.max(legTroughLowBody, legOriginHighBody), math.min(legTroughLowBody, legOriginHighBody), math.max(math.max(legOriginHighTime, legTroughLowTime), time - bbMaxWidth * chartMs), true, nz(upStreakOpen, open), false)
     bbBias := "None"
     legOriginHigh := na
     legTroughLow := na
@@ -2111,17 +2073,21 @@ if bosUp
     bbBias := "Bullish"
     legOriginLow := rollSwingLow
     legOriginLowBody := rollSwingLowBody
+    legOriginLowTime := rollSwingLowTime
     legOriginLowBar := rollSwingLowBar
     legPeakHigh := rollSwingHigh
     legPeakHighBody := rollSwingHighBody
+    legPeakHighTime := rollSwingHighTime
     legPeakHighBar := rollSwingHighBar
 else if bosDn
     bbBias := "Bearish"
     legOriginHigh := rollSwingHigh
     legOriginHighBody := rollSwingHighBody
+    legOriginHighTime := rollSwingHighTime
     legOriginHighBar := rollSwingHighBar
     legTroughLow := rollSwingLow
     legTroughLowBody := rollSwingLowBody
+    legTroughLowTime := rollSwingLowTime
     legTroughLowBar := rollSwingLowBar
 
 if array.size(brks) > 0
@@ -2134,8 +2100,7 @@ if array.size(brks) > 0
                 b.confirmedBar := bar_index
                 array.set(brks, i, b)
                 box.set_border_width(b.bx, 2)
-                if not na(b.cisdLn)
-                    line.set_xy2(b.cisdLn, bar_index, b.cisd)
+                line.set_xy2(b.cisdLn, time, b.cisd)
                 lastBrkConfirmedBar := bar_index
                 lastBrkConfirmedBull := b.bullBreaker
         if drop
@@ -2145,7 +2110,7 @@ if array.size(brks) > 0
 
 // =============================================================================
 // SMT divergence - wick to wick, exactly where the pivots are
-// The pivot price comes from the comparison timeframe, but the ENDPOINT is
+// The pivot price comes from the comparison timeframe, but the ENDPOINT time is
 // snapped to the chart bar that actually printed that wick. request.security
 // returns the HTF candle's open time, which on a 1m chart puts the endpoint at
 // the start of the 15m candle - a few bars from the wick, which is why the line
@@ -2163,19 +2128,19 @@ smtColor    = input.color(color.black, "SMT color", group = groupSmt)
 
 type PivSeq
     array<float> p
-    array<int>   b
+    array<int>   t
 
 f_newPivSeq() =>
-    PivSeq.new(p = array.new_float(), b = array.new_int())
+    PivSeq.new(p = array.new_float(), t = array.new_int())
 
-f_pushPiv(PivSeq s, float px, int bi) =>
+f_pushPiv(PivSeq s, float px, int pt) =>
     bool added = false
-    if not na(px) and not na(bi) and (array.size(s.b) == 0 or array.get(s.b, 0) != bi)
+    if not na(px) and not na(pt) and (array.size(s.t) == 0 or array.get(s.t, 0) != pt)
         array.unshift(s.p, px)
-        array.unshift(s.b, bi)
-        while array.size(s.b) > 2
+        array.unshift(s.t, pt)
+        while array.size(s.t) > 2
             array.pop(s.p)
-            array.pop(s.b)
+            array.pop(s.t)
         added := true
     added
 
@@ -2190,49 +2155,44 @@ var PivSeq cmLtfLo = f_newPivSeq()
 
 simple string smtTfEff = timeframe.in_seconds(smtHtfTf) <= chartSeconds ? timeframe.period : smtHtfTf
 bool smtNative = timeframe.in_seconds(smtTfEff) == chartSeconds
-int  smtTfSec = timeframe.in_seconds(smtTfEff)
+int  smtTfSec  = timeframe.in_seconds(smtTfEff)
 
 [chSecPh, chSecPl, chSecPt] = f_pivFeed(syminfo.tickerid, smtTfEff, smtHtfLen)
 [cmSecPh, cmSecPl, cmSecPt] = f_pivFeed(smtCompSym, smtTfEff, smtHtfLen)
-// The LTF engine always runs on the CHART's own timeframe. A hardcoded "1m" on a
-// 5m chart is why the line used to sit off the candles entirely.
+// The LTF engine always runs on the CHART's own timeframe. A hardcoded "1m" on
+// a 5m chart is why the line used to sit off the candles entirely.
 [cmLtfPh, cmLtfPl, cmLive] = request.security(smtCompSym, timeframe.period, [ta.pivothigh(high, smtLtfLen, smtLtfLen), ta.pivotlow(low, smtLtfLen, smtLtfLen), close], lookahead = barmerge.lookahead_off)
 
 float chHtfPh = smtNative ? ta.pivothigh(high, smtHtfLen, smtHtfLen) : chSecPh
 float chHtfPl = smtNative ? ta.pivotlow(low, smtHtfLen, smtHtfLen) : chSecPl
-int   chHtfPt = chSecPt
 float chLtfPh = ta.pivothigh(high, smtLtfLen, smtLtfLen)
 float chLtfPl = ta.pivotlow(low, smtLtfLen, smtLtfLen)
+int   ltfPivT = time[smtLtfLen]
 
-int chHtfHiOff = smtNative ? smtHtfLen : f_snapOffset(chHtfPh, chHtfPt, smtTfSec, true)
-int chHtfLoOff = smtNative ? smtHtfLen : f_snapOffset(chHtfPl, chHtfPt, smtTfSec, false)
-int cmHtfHiOff = smtNative ? smtHtfLen : f_snapOffset(cmSecPh, cmSecPt, smtTfSec, true)
-int cmHtfLoOff = smtNative ? smtHtfLen : f_snapOffset(cmSecPl, cmSecPt, smtTfSec, false)
+int chHtfHiT = smtNative ? ltfPivT : f_snapTime(chHtfPh, chSecPt, smtTfSec, true)
+int chHtfLoT = smtNative ? ltfPivT : f_snapTime(chHtfPl, chSecPt, smtTfSec, false)
+int cmHtfHiT = smtNative ? ltfPivT : f_snapTime(cmSecPh, cmSecPt, smtTfSec, true)
+int cmHtfLoT = smtNative ? ltfPivT : f_snapTime(cmSecPl, cmSecPt, smtTfSec, false)
 
-// f_pushPiv already ignores an na price or an na bar, and `bar_index - na` is
-// itself na, so these are called flat rather than wrapped in a ternary - a
-// ternary evaluates BOTH branches, so a push hidden in one still fires.
-bool nHtfHi = f_pushPiv(chHtfHi, chHtfPh, bar_index - chHtfHiOff)
-bool nHtfLo = f_pushPiv(chHtfLo, chHtfPl, bar_index - chHtfLoOff)
-bool nLtfHi = f_pushPiv(chLtfHi, chLtfPh, bar_index - smtLtfLen)
-bool nLtfLo = f_pushPiv(chLtfLo, chLtfPl, bar_index - smtLtfLen)
-f_pushPiv(cmHtfHi, cmSecPh, bar_index - cmHtfHiOff)
-f_pushPiv(cmHtfLo, cmSecPl, bar_index - cmHtfLoOff)
-f_pushPiv(cmLtfHi, cmLtfPh, bar_index - smtLtfLen)
-f_pushPiv(cmLtfLo, cmLtfPl, bar_index - smtLtfLen)
-
-// Clamping the endpoint here would pull the line off the wick, which is the
-// whole point of it - so a pair of pivots too far apart to draw is skipped.
-f_smtDrawable(PivSeq s) =>
-    array.size(s.b) >= 2 and bar_index - array.get(s.b, 1) < drawReach
+// f_pushPiv already ignores an na price or an na time, so these are called flat
+// rather than wrapped in a ternary - a ternary evaluates BOTH arms, so a push
+// hidden in one still fires.
+bool nHtfHi = f_pushPiv(chHtfHi, chHtfPh, chHtfHiT)
+bool nHtfLo = f_pushPiv(chHtfLo, chHtfPl, chHtfLoT)
+bool nLtfHi = f_pushPiv(chLtfHi, chLtfPh, ltfPivT)
+bool nLtfLo = f_pushPiv(chLtfLo, chLtfPl, ltfPivT)
+f_pushPiv(cmHtfHi, cmSecPh, cmHtfHiT)
+f_pushPiv(cmHtfLo, cmSecPl, cmHtfLoT)
+f_pushPiv(cmLtfHi, cmLtfPh, ltfPivT)
+f_pushPiv(cmLtfLo, cmLtfPl, ltfPivT)
 
 f_drawSmt(PivSeq s) =>
     float p0 = array.get(s.p, 0)
     float p1 = array.get(s.p, 1)
-    int   b0 = array.get(s.b, 0)
-    int   b1 = array.get(s.b, 1)
-    line ln = line.new(b1, p1, b0, p0, xloc = xloc.bar_index, color = smtColor, style = line.style_solid, width = 1)
-    label lb = label.new(int((b0 + b1) / 2), (p0 + p1) / 2, "SMT", xloc = xloc.bar_index, style = label.style_none, color = color.new(color.black, 100), textcolor = smtColor, size = size.small, textalign = text.align_center)
+    int   t0 = array.get(s.t, 0)
+    int   t1 = array.get(s.t, 1)
+    line ln = line.new(t1, p1, t0, p0, xloc = xloc.bar_time, color = smtColor, style = line.style_solid, width = 1)
+    label lb = label.new(t1 + int((t0 - t1) / 2), (p0 + p1) / 2, "SMT", xloc = xloc.bar_time, style = label.style_none, color = color.new(color.black, 100), textcolor = smtColor, size = size.small, textalign = text.align_center)
     [ln, lb]
 
 // False-positive guard: if the comparison symbol is ALREADY trading through its
@@ -2267,7 +2227,7 @@ var bool  smtLtfBear = false
 var float smtLtfPiv = na
 var int   smtLtfBar = na
 
-if showSmt and nHtfHi and f_smtDrawable(chHtfHi) and f_smtBear(chHtfHi, cmHtfHi, cmLive)
+if showSmt and nHtfHi and f_smtBear(chHtfHi, cmHtfHi, cmLive)
     line.delete(smtHtfLn)
     label.delete(smtHtfLb)
     [a1, a2] = f_drawSmt(chHtfHi)
@@ -2277,7 +2237,7 @@ if showSmt and nHtfHi and f_smtDrawable(chHtfHi) and f_smtBear(chHtfHi, cmHtfHi,
     smtHtfBear := true
     smtHtfPiv := array.get(chHtfHi.p, 0)
     smtHtfBar := bar_index
-else if showSmt and nHtfLo and f_smtDrawable(chHtfLo) and f_smtBull(chHtfLo, cmHtfLo, cmLive)
+else if showSmt and nHtfLo and f_smtBull(chHtfLo, cmHtfLo, cmLive)
     line.delete(smtHtfLn)
     label.delete(smtHtfLb)
     [b1, b2] = f_drawSmt(chHtfLo)
@@ -2288,7 +2248,7 @@ else if showSmt and nHtfLo and f_smtDrawable(chHtfLo) and f_smtBull(chHtfLo, cmH
     smtHtfPiv := array.get(chHtfLo.p, 0)
     smtHtfBar := bar_index
 
-if showSmt and nLtfHi and f_smtDrawable(chLtfHi) and f_smtBear(chLtfHi, cmLtfHi, cmLive)
+if showSmt and nLtfHi and f_smtBear(chLtfHi, cmLtfHi, cmLive)
     line.delete(smtLtfLn)
     label.delete(smtLtfLb)
     [c1, c2] = f_drawSmt(chLtfHi)
@@ -2298,7 +2258,7 @@ if showSmt and nLtfHi and f_smtDrawable(chLtfHi) and f_smtBear(chLtfHi, cmLtfHi,
     smtLtfBear := true
     smtLtfPiv := array.get(chLtfHi.p, 0)
     smtLtfBar := bar_index
-else if showSmt and nLtfLo and f_smtDrawable(chLtfLo) and f_smtBull(chLtfLo, cmLtfLo, cmLive)
+else if showSmt and nLtfLo and f_smtBull(chLtfLo, cmLtfLo, cmLive)
     line.delete(smtLtfLn)
     label.delete(smtLtfLb)
     [d1, d2] = f_drawSmt(chLtfLo)
@@ -2333,7 +2293,7 @@ confirmWindow   = input.int(3, "Confirmation freshness (bars)", minval = 1, maxv
 mtfMemoryBars   = input.int(20, "Bars price stays \"in the MTF gap\" for continuation", minval = 3, maxval = 200, group = groupModel)
 requireConfirm  = input.bool(true, "Confirmation is a hard gate", group = groupModel)
 requireSequence = input.bool(true, "Enforce sweep -> MTF gap -> confirmation ORDER", group = groupModel, tooltip = "Without this the three legs are independent windows that only have to OVERLAP, so a sweep 18 bars ago, an unrelated gap touch 20 bars ago and an IFVG 3 bars ago in any direction produce a signal. This is the single biggest source of junk trades.")
-requireCoherent = input.bool(true, "Confirmation must point the same way as the sweep", group = groupModel, tooltip = "A high swept then a BULLISH IFVG is two unrelated events, not a setup.")
+requireCoherent = input.bool(true, "Confirmation must point the same way as the sweep", group = groupModel, tooltip = "A high swept, then a BULLISH IFVG, is two unrelated events - not a setup.")
 enterOnConfirm  = input.bool(true, "Enter only on the confirmation bar", group = groupModel, tooltip = "Off, the model can enter any bar inside the freshness window, which chases price away from the level.")
 minRR           = input.float(1.5, "Minimum RR to the nearest opposing liquidity (hard gate)", minval = 0.5, maxval = 10, step = 0.1, group = groupModel)
 tp1MinR         = input.float(1.0, "TP1 floor (R)", minval = 0.3, maxval = 5, step = 0.1, group = groupModel)
@@ -2381,7 +2341,7 @@ f_bestAnchor(float best, float cand, float from, bool up) =>
     out
 
 // Nearest REAL level beyond `from`: a swing wick, a session high/low, a BSL/SSL,
-// a fixed-profile level or an HTF gap CE. Never an arbitrary R multiple.
+// a profile level or an HTF gap CE. Never an arbitrary R multiple.
 f_nextAnchor(array<float> hiPool, array<float> loPool, array<Level> lv, array<Gap> gs, array<Liq> qs, float from, bool up) =>
     float best = na
     array<float> pool = up ? hiPool : loPool
@@ -2407,6 +2367,9 @@ f_nextAnchor(array<float> hiPool, array<float> loPool, array<Level> lv, array<Ga
     best := f_bestAnchor(best, wVah, from, up)
     best := f_bestAnchor(best, wVal, from, up)
     best := f_bestAnchor(best, wPoc, from, up)
+    best := f_bestAnchor(best, activeProfileVah, from, up)
+    best := f_bestAnchor(best, activeProfileVal, from, up)
+    best := f_bestAnchor(best, activeProfilePoc, from, up)
     best := f_bestAnchor(best, f_nearestHtfCe(gs, from, up), from, up)
     best
 
@@ -2435,7 +2398,7 @@ f_confWick(array<Gap> gs, array<Brk> bs, float px, bool wantHigh) =>
 // ---- components
 bool recentSweep = not na(lastSweepBar) and bar_index - lastSweepBar <= condSweepBars
 bool inHtfGap    = f_priceInGapRank(gaps, close, 4, 5) or f_priceInGapRank(gaps, close, 3, 3)
-bool nearProfile = f_near(close, dVah, profileToleranceTicks) or f_near(close, dVal, profileToleranceTicks) or f_near(close, dPoc, profileToleranceTicks) or f_near(close, wVah, profileToleranceTicks) or f_near(close, wVal, profileToleranceTicks) or f_near(close, wPoc, profileToleranceTicks)
+bool nearProfile = f_vpTag(close) != ""
 bool inMtfGap    = f_priceInGapRank(gaps, close, 2, 3)
 
 // mtfGapBar is the bar this VISIT into the gap began - the "pulled in" event.
@@ -2464,9 +2427,9 @@ bool cPullback      = inMtfGap or mtfMemory
 bool cPullbackPlus  = smtLtfFreshNow and (inMtfGap or mtfMemory)
 bool cConfirmation  = freshIfvg or freshBrk
 
-// Whichever confirmation landed MOST RECENTLY is the one that owns the entry.
-// Picking the breaker unconditionally meant a breaker from three bars ago
-// vetoed a fresh IFVG on this bar and the setup was skipped.
+// Whichever confirmation landed MOST RECENTLY owns the entry. Picking the
+// breaker unconditionally meant one from three bars ago vetoed a fresh IFVG on
+// this bar and the setup was skipped.
 bool brkNewer = freshBrk and (not freshIfvg or lastBrkConfirmedBar >= lastIfvgBar)
 int confBar = na
 int dirConfirm = 0
@@ -2509,21 +2472,21 @@ if modelDir != 0
     else if not na(wckStop)
         mStop := wckStop
         stopSource := "recent wick"
-    // a level-anchored stop that is absurdly wide is worse than no trade
-    if not na(mStop) and not na(atr5ref) and math.abs(mEntry - mStop) > stopMaxAtr * atr5ref
-        if not na(cnfStop) and math.abs(mEntry - cnfStop) <= stopMaxAtr * atr5ref
+    if not na(mStop) and not na(atrRef) and math.abs(mEntry - mStop) > stopMaxAtr * atrRef
+        if not na(cnfStop) and math.abs(mEntry - cnfStop) <= stopMaxAtr * atrRef
             mStop := cnfStop
             stopSource := "confirmation wick"
         else
             stopTooWide := true
-    if na(mStop) and not na(atr5ref)
-        mStop := modelDir == 1 ? mEntry - atrStopMult * atr5ref : mEntry + atrStopMult * atr5ref
+    if na(mStop) and not na(atrRef)
+        mStop := modelDir == 1 ? mEntry - atrStopMult * atrRef : mEntry + atrStopMult * atrRef
         stopSource := "reference ATR"
 
 float mRisk = na(mStop) ? na : math.abs(mEntry - mStop)
 bool goLong = modelDir == 1
 
-// ---- targets, every one snapped onto a real high or low
+// ---- targets, every one snapped onto a real high or low, each pushed out to
+// its own R floor first so TP2 and TP3 are never bunched up against TP1
 bool tpNeeded = showModel and modelDir != 0 and not na(mRisk) and mRisk > 0
 float tp1 = na
 float tp2 = na
@@ -2559,7 +2522,6 @@ int tpAnchorCount = (na(tp1) ? 0 : 1) + (na(tp2) ? 0 : 1) + (na(tp3) ? 0 : 1)
 float mRR = na(mRisk) or mRisk <= 0 or na(nearestOpp) ? na : math.abs(nearestOpp - mEntry) / mRisk
 bool cRiskReward = not na(mRR) and mRR >= minRR
 
-// ---- score and grade
 float mScoreRaw = (cCondition ? wCondition : 0.0) + (cConditionPlus ? wConditionPlus : 0.0) + (cPullback ? wPullback : 0.0) + (cPullbackPlus ? wPullbackPlus : 0.0) + (cConfirmation ? wConfirmation : 0.0) + (cRiskReward ? wRiskReward : 0.0)
 float mWeightSum = math.max(1, wCondition + wConditionPlus + wPullback + wPullbackPlus + wConfirmation + wRiskReward)
 float mScore = mScoreRaw / mWeightSum * 100.0
@@ -2574,7 +2536,6 @@ bool chopBlocked = useChopFilter and isChop
 bool gatesOk = sessionOk and cRiskReward and modelDir != 0 and not chopBlocked and not stopTooWide and coherent and seqOk and (not requireConfirm or cConfirmation)
 string mGrade = not showModel or not gatesOk ? "No Trade" : f_gradeFromScore(mScore)
 
-// ---- sizing
 float sizeMult = 1.0
 if f_gradeIdx(mGrade) > f_gradeIdx(sizeCutGrade) and f_gradeIdx(mGrade) >= 0
     sizeMult := sizeCutPct / 100.0
@@ -2612,7 +2573,7 @@ entryBe        = input.color(#000000, "Entry tag on breakeven", group = groupPla
 entryFade      = input.int(30, "Entry tag fade once resolved", minval = 0, maxval = 80, group = groupPlan)
 zoneUpper      = input.color(#0B0E14, "Zone above entry", group = groupPlan)
 zoneLower      = input.color(#F23645, "Zone below entry", group = groupPlan)
-zoneUpperTr    = input.int(62, "Upper zone transparency", minval = 30, maxval = 95, group = groupPlan, tooltip = "The black side is deliberately more opaque than the red so it is actually visible on a light chart.")
+zoneUpperTr    = input.int(62, "Upper zone transparency", minval = 30, maxval = 95, group = groupPlan, tooltip = "The black side is deliberately more opaque than the red so it is actually visible.")
 zoneLowerTr    = input.int(80, "Lower zone transparency", minval = 30, maxval = 95, group = groupPlan)
 
 type Trade
@@ -2628,8 +2589,9 @@ type Trade
     box    bxUpper
     box    bxLower
     label  lbEntry
-    int    startBi
-    int    endBi
+    int    startTime
+    int    startBar
+    int    endTime
     bool   active
     int    hits
     string grade
@@ -2650,9 +2612,9 @@ if newTradingDay
 // 0..6 grades, 7 continuation, 8 reversal
 var array<int>   stN     = array.new_int(9, 0)
 var array<int>   stFull  = array.new_int(9, 0)
-var array<int>   st3     = array.new_int(9, 0)
-var array<int>   st2     = array.new_int(9, 0)
-var array<int>   st1     = array.new_int(9, 0)
+var array<int>   stP3    = array.new_int(9, 0)
+var array<int>   stP2    = array.new_int(9, 0)
+var array<int>   stP1    = array.new_int(9, 0)
 var array<int>   stLoss  = array.new_int(9, 0)
 var array<float> stCap   = array.new_float(9, 0.0)
 var array<float> stR     = array.new_float(9, 0.0)
@@ -2706,30 +2668,30 @@ f_newTrade(bool isLong, float entry, float stop, float p1, float p2, float p3, f
         float py = draw ? p : entry
         color lc = k == 0 ? planLineColor : k == 1 ? planStopColor : planTpColor
         string ls = k <= 1 ? line.style_solid : line.style_dashed
-        line a = line.new(bar_index, py, bar_index, py, xloc = xloc.bar_index, color = lc, style = ls, width = 1)
-        line b = line.new(bar_index, py, bar_index, py, xloc = xloc.bar_index, color = lc, style = ls, width = 1)
-        label l = label.new(bar_index, py, "", xloc = xloc.bar_index, style = label.style_none, color = color.new(color.black, 100), textcolor = lc, size = size.small, textalign = text.align_center)
+        line a = line.new(time, py, time, py, xloc = xloc.bar_time, color = lc, style = ls, width = 1)
+        line b = line.new(time, py, time, py, xloc = xloc.bar_time, color = lc, style = ls, width = 1)
+        label l = label.new(time, py, "", xloc = xloc.bar_time, style = label.style_none, color = color.new(color.black, 100), textcolor = lc, size = size.small, textalign = text.align_center)
         array.push(la, a)
         array.push(lb, b)
         array.push(lbl, l)
-        array.push(ends, -1)
+        array.push(ends, 0)
         if k >= 2
             array.push(hits, false)
     float risk0 = math.abs(entry - stop)
     float plannedR = na(p2) or risk0 <= 0 ? na : math.abs(p2 - entry) / risk0
     float far = useTp4 and not na(p4) ? p4 : p3
-    int rx = f_rx(planExtendBars)
-    box bu = box.new(bar_index, isLong ? far : stop, rx, entry, xloc = xloc.bar_index, border_color = color.new(zoneUpper, 80), bgcolor = color.new(zoneUpper, zoneUpperTr))
-    box bl = box.new(bar_index, entry, rx, isLong ? stop : far, xloc = xloc.bar_index, border_color = color.new(zoneLower, 80), bgcolor = color.new(zoneLower, zoneLowerTr))
-    label le = label.new(bar_index, isLong ? low : high, "", xloc = xloc.bar_index, style = isLong ? label.style_label_up : label.style_label_down, color = entryActive, textcolor = color.white, size = size.small, textalign = text.align_left)
-    Trade t = Trade.new(isLong = isLong, entry = entry, stop = stop, px = px, lnA = la, lnB = lb, lbs = lbl, lnEnd = ends, tpHit = hits, bxUpper = bu, bxLower = bl, lbEntry = le, startBi = bar_index, endBi = -1, active = true, hits = 0, grade = grade, setup = setup, risk0 = risk0, plannedR = plannedR, contracts = contracts, beMoved = false, counted = false, riskGone = false)
+    int rx = f_rxT(planExtendBars)
+    box bu = box.new(time, isLong ? far : stop, rx, entry, xloc = xloc.bar_time, border_color = color.new(zoneUpper, 80), bgcolor = color.new(zoneUpper, zoneUpperTr))
+    box bl = box.new(time, entry, rx, isLong ? stop : far, xloc = xloc.bar_time, border_color = color.new(zoneLower, 80), bgcolor = color.new(zoneLower, zoneLowerTr))
+    label le = label.new(time, isLong ? low : high, "", xloc = xloc.bar_time, style = isLong ? label.style_label_up : label.style_label_down, color = entryActive, textcolor = color.white, size = size.small, textalign = text.align_left)
+    Trade t = Trade.new(isLong = isLong, entry = entry, stop = stop, px = px, lnA = la, lnB = lb, lbs = lbl, lnEnd = ends, tpHit = hits, bxUpper = bu, bxLower = bl, lbEntry = le, startTime = time, startBar = bar_index, endTime = 0, active = true, hits = 0, grade = grade, setup = setup, risk0 = risk0, plannedR = plannedR, contracts = contracts, beMoved = false, counted = false, riskGone = false)
     label.set_text(le, f_entryText(t))
     t
 
 // Anything that grows has to be recomputed every bar. A break position worked
 // out once at creation looks right for a moment and then drifts visibly off.
 f_layoutTrade(Trade t) =>
-    int rx = f_rx(planExtendBars)
+    int rx = f_rxT(planExtendBars)
     int n = useTp4 ? 6 : 5
     for k = 0 to 5
         float p = array.get(t.px, k)
@@ -2740,18 +2702,17 @@ f_layoutTrade(Trade t) =>
             live := false
         if live
             int e = array.get(t.lnEnd, k)
-            int x2 = e >= 0 ? e : (t.active ? rx : t.endBi)
+            int x2 = e > 0 ? e : (t.active ? rx : t.endTime)
             float lvlPx = k == 1 ? t.stop : p
             bool lvlHit = k >= 2 and array.size(t.tpHit) > k - 2 and array.get(t.tpHit, k - 2)
-            f_gapLine(array.get(t.lnA, k), array.get(t.lnB, k), array.get(t.lbs, k), lvlPx, t.startBi, x2, planLabelGap, f_planName(k, t.beMoved, lvlPx, lvlHit))
+            f_gapLine(array.get(t.lnA, k), array.get(t.lnB, k), array.get(t.lbs, k), lvlPx, t.startTime, x2, planLabelGap, f_planName(k, t.beMoved, lvlPx, lvlHit))
         else
-            int hx = f_lx(t.startBi)
-            line.set_xy1(array.get(t.lnA, k), hx, t.entry)
-            line.set_xy2(array.get(t.lnA, k), hx, t.entry)
-            line.set_xy1(array.get(t.lnB, k), hx, t.entry)
-            line.set_xy2(array.get(t.lnB, k), hx, t.entry)
+            line.set_xy1(array.get(t.lnA, k), t.startTime, t.entry)
+            line.set_xy2(array.get(t.lnA, k), t.startTime, t.entry)
+            line.set_xy1(array.get(t.lnB, k), t.startTime, t.entry)
+            line.set_xy2(array.get(t.lnB, k), t.startTime, t.entry)
             label.set_text(array.get(t.lbs, k), "")
-    int bx2 = f_cx(t.active ? rx : t.endBi)
+    int bx2 = t.active ? rx : t.endTime
     if not (t.riskGone and not t.isLong)
         box.set_right(t.bxUpper, bx2)
     if not (t.riskGone and t.isLong)
@@ -2784,7 +2745,7 @@ f_entryColor(Trade t, float rv) =>
     t.active ? entryActive : rv > 0.02 ? color.new(entryWin, entryFade) : rv < -0.02 ? color.new(entryLoss, entryFade) : color.new(entryBe, entryFade)
 
 f_updateTrade(Trade t) =>
-    if t.active and bar_index > t.startBi
+    if t.active and bar_index > t.startBar
         float stopForCheck = t.stop
         int n = useTp4 ? 4 : 3
         for k = 0 to n - 1
@@ -2792,7 +2753,7 @@ f_updateTrade(Trade t) =>
                 float lvl = array.get(t.px, k + 2)
                 if not na(lvl) and (t.isLong ? high >= lvl : low <= lvl)
                     array.set(t.tpHit, k, true)
-                    array.set(t.lnEnd, k + 2, bar_index)
+                    array.set(t.lnEnd, k + 2, time)
                     t.hits := k + 1
                     line.set_style(array.get(t.lnA, k + 2), line.style_solid)
                     line.set_style(array.get(t.lnB, k + 2), line.style_solid)
@@ -2802,16 +2763,16 @@ f_updateTrade(Trade t) =>
                         t.stop := t.entry
                         t.beMoved := true
                         array.set(t.px, 1, t.entry)
-                        array.set(t.lnEnd, 1, bar_index)
+                        array.set(t.lnEnd, 1, time)
                         box.delete(t.isLong ? t.bxLower : t.bxUpper)
                         t.riskGone := true
         bool stopped = t.isLong ? low <= stopForCheck : high >= stopForCheck
         if t.hits >= n or stopped
             t.active := false
-            t.endBi := bar_index
+            t.endTime := time
             for k = 0 to 5
-                if array.get(t.lnEnd, k) < 0
-                    array.set(t.lnEnd, k, bar_index)
+                if array.get(t.lnEnd, k) <= 0
+                    array.set(t.lnEnd, k, time)
     t.active
 
 f_record(array<int> n, array<int> fw, array<int> a3, array<int> a2, array<int> a1, array<int> ls, array<float> cp, array<float> rr, array<float> pr, int idx, int hits, float cap, float rval, float pval, int maxTp) =>
@@ -2860,12 +2821,12 @@ if array.size(trades) > 0
             label.set_text(t.lbEntry, f_entryText(t))
             label.set_color(t.lbEntry, f_entryColor(t, rv))
             label.set_textcolor(t.lbEntry, color.white)
-            f_record(stN, stFull, st3, st2, st1, stLoss, stCap, stR, stPlanR, f_gradeIdx(t.grade), t.hits, f_capPct(t), rv, t.plannedR, maxTp)
-            f_record(stN, stFull, st3, st2, st1, stLoss, stCap, stR, stPlanR, t.setup == "Continuation" ? 7 : 8, t.hits, f_capPct(t), rv, t.plannedR, maxTp)
+            f_record(stN, stFull, stP3, stP2, stP1, stLoss, stCap, stR, stPlanR, f_gradeIdx(t.grade), t.hits, f_capPct(t), rv, t.plannedR, maxTp)
+            f_record(stN, stFull, stP3, stP2, stP1, stLoss, stCap, stR, stPlanR, t.setup == "Continuation" ? 7 : 8, t.hits, f_capPct(t), rv, t.plannedR, maxTp)
             array.set(trades, i, t)
         // active plans grow every bar, a resolving plan is positioned once and
         // then frozen, and an old one is never touched again
-        if t.active or justResolved or (doLayout and bar_index - t.startBi <= drawReach)
+        if t.active or justResolved or doLayout
             f_layoutTrade(t)
 
 // Why the model is not producing a trade right now. First failing gate wins.
@@ -2903,8 +2864,7 @@ else if not na(lastTradeBar) and bar_index - lastTradeBar < planCooldown
 
 // =============================================================================
 // Panels
-// Never position.top_* - TradingView's own ticker header sits over the top of
-// the chart and covers anything anchored there.
+// Never position.top_* - TradingView's own ticker header covers the top.
 // =============================================================================
 groupPanel = "Panels"
 showChecklist = input.bool(true, "Show model checklist", group = groupPanel)
@@ -2968,7 +2928,6 @@ if showChecklist and barstate.islast
 if showDiag and barstate.islast
     table.set_position(dgTbl, f_pos(diagPos))
     table.clear(dgTbl, 0, 0, 1, 14)
-    f_r2(dgTbl, 14, "Sequence", whyText, panelText)
     f_r2(dgTbl, 0, "Leg bias", bbBias, panelText)
     f_r2(dgTbl, 1, "Frozen origin low", f_num(legOriginLow) + " @" + f_ago(legOriginLowBar), panelText)
     f_r2(dgTbl, 2, "Frozen peak high", f_num(legPeakHigh) + " @" + f_ago(legPeakHighBar), panelText)
@@ -2983,6 +2942,7 @@ if showDiag and barstate.islast
     f_r2(dgTbl, 11, "Last sweep", na(lastSweepBar) ? "n/a" : (lastSweepIsHigh ? "BSL " : "SSL ") + f_num(lastSweepPrice) + " @" + f_ago(lastSweepBar), panelText)
     f_r2(dgTbl, 12, "SMT HTF/LTF fresh", (smtHtfFreshNow ? (smtHtfBearNow ? "bear" : "bull") : "no") + " / " + (smtLtfFreshNow ? (smtLtfBearNow ? "bear" : "bull") : "no"), panelText)
     f_r2(dgTbl, 13, "Daily/Weekly POC", f_num(dPoc) + " / " + f_num(wPoc), panelText)
+    f_r2(dgTbl, 14, "Sequence", whyText, panelText)
 
 f_statName(int i) =>
     i == 0 ? "A+" : i == 1 ? "A" : i == 2 ? "A-" : i == 3 ? "B+" : i == 4 ? "B" : i == 5 ? "B-" : i == 6 ? "C" : i == 7 ? "Continuation" : "Reversal"
@@ -3019,30 +2979,30 @@ if showStats and barstate.islast
     table.cell(stTbl, 9, 0, "plan R", text_color = panelText, text_size = size.tiny)
     int tN = 0
     int tF = 0
-    int t3 = 0
-    int t2 = 0
-    int t1 = 0
+    int tA3 = 0
+    int tA2 = 0
+    int tA1 = 0
     int tL = 0
     float tC = 0.0
     float tR = 0.0
     float tP = 0.0
     int aN = 0
     int aF = 0
-    int a3s = 0
-    int a2s = 0
-    int a1s = 0
+    int aA3 = 0
+    int aA2 = 0
+    int aA1 = 0
     int aL = 0
     float aC = 0.0
     float aR = 0.0
     float aP = 0.0
     for gi = 0 to 8
-        f_statRow(stTbl, gi + 1, f_statName(gi), array.get(stN, gi), array.get(stFull, gi), array.get(st3, gi), array.get(st2, gi), array.get(st1, gi), array.get(stLoss, gi), array.get(stCap, gi), array.get(stR, gi), array.get(stPlanR, gi))
+        f_statRow(stTbl, gi + 1, f_statName(gi), array.get(stN, gi), array.get(stFull, gi), array.get(stP3, gi), array.get(stP2, gi), array.get(stP1, gi), array.get(stLoss, gi), array.get(stCap, gi), array.get(stR, gi), array.get(stPlanR, gi))
         if gi <= 6
             tN += array.get(stN, gi)
             tF += array.get(stFull, gi)
-            t3 += array.get(st3, gi)
-            t2 += array.get(st2, gi)
-            t1 += array.get(st1, gi)
+            tA3 += array.get(stP3, gi)
+            tA2 += array.get(stP2, gi)
+            tA1 += array.get(stP1, gi)
             tL += array.get(stLoss, gi)
             tC += array.get(stCap, gi)
             tR += array.get(stR, gi)
@@ -3050,15 +3010,15 @@ if showStats and barstate.islast
         if gi <= 2
             aN += array.get(stN, gi)
             aF += array.get(stFull, gi)
-            a3s += array.get(st3, gi)
-            a2s += array.get(st2, gi)
-            a1s += array.get(st1, gi)
+            aA3 += array.get(stP3, gi)
+            aA2 += array.get(stP2, gi)
+            aA1 += array.get(stP1, gi)
             aL += array.get(stLoss, gi)
             aC += array.get(stCap, gi)
             aR += array.get(stR, gi)
             aP += array.get(stPlanR, gi)
-    f_statRow(stTbl, 10, "A- to A+", aN, aF, a3s, a2s, a1s, aL, aC, aR, aP)
-    f_statRow(stTbl, 11, "Overall", tN, tF, t3, t2, t1, tL, tC, tR, tP)
+    f_statRow(stTbl, 10, "A- to A+", aN, aF, aA3, aA2, aA1, aL, aC, aR, aP)
+    f_statRow(stTbl, 11, "Overall", tN, tF, tA3, tA2, tA1, tL, tC, tR, tP)
 
 alertcondition(canFire, "NLM setup", "An NLM setup qualified and a trade plan was drawn.")
 alertcondition(gapFlips > 0, "Gap inverted", "A tracked fair value gap inverted.")
