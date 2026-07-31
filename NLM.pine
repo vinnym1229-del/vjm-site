@@ -191,9 +191,6 @@ f_nyKey(int t) =>
     int keyed = t - dayAnchorMs
     year(keyed, sessionTimezone) * 10000 + month(keyed, sessionTimezone) * 100 + dayofmonth(keyed, sessionTimezone)
 
-f_labelX() =>
-    time + labelOffsetBars * chartMs
-
 // Label anchor in BAR INDEX space. A future timestamp has no bar to sit on, so
 // TradingView projects it, and the projection moves with the visible bar
 // spacing whenever the chart is scrolled or zoomed. A bar index cannot drift.
@@ -1396,14 +1393,14 @@ var int lastLiqPhTime = na
 var int lastLiqPlTime = na
 if showLiq and not na(liqPh) and not na(liqPt) and (na(lastLiqPhTime) or liqPt != lastLiqPhTime)
     lastLiqPhTime := liqPt
-    int off = liqNative ? liqSwingLen : f_snapOffset(liqPh, liqPt, liqTfSec, true)
-    if not na(off)
-        f_addLiq(liqs, liqPh, true, bar_index - off, liqPt)
+    int offH = liqNative ? liqSwingLen : f_snapOffset(liqPh, liqPt, liqTfSec, true)
+    if not na(offH)
+        f_addLiq(liqs, liqPh, true, bar_index - offH, liqPt)
 if showLiq and not na(liqPl) and not na(liqPt) and (na(lastLiqPlTime) or liqPt != lastLiqPlTime)
     lastLiqPlTime := liqPt
-    int off = liqNative ? liqSwingLen : f_snapOffset(liqPl, liqPt, liqTfSec, false)
-    if not na(off)
-        f_addLiq(liqs, liqPl, false, bar_index - off, liqPt)
+    int offL = liqNative ? liqSwingLen : f_snapOffset(liqPl, liqPt, liqTfSec, false)
+    if not na(offL)
+        f_addLiq(liqs, liqPl, false, bar_index - offL, liqPt)
 
 bool liqSweptThisBar = false
 if array.size(liqs) > 0
@@ -1792,12 +1789,12 @@ var Bar3 buf5 = f_newBar3()
 
 // Chart bar index each HTF candle STARTED on. This is what anchors an HTF box to
 // the right place - the security call only hands back the candle's open time.
-var int st0 = na
-var int st1 = na
-var int st2 = na
-var int st3 = na
-var int st4 = na
-var int st5 = na
+var int hb0 = na
+var int hb1 = na
+var int hb2 = na
+var int hb3 = na
+var int hb4 = na
+var int hb5 = na
 
 bool new0 = ok0 and not na(r0t) and not na(r0t[1]) and r0t != r0t[1]
 bool new1 = ok1 and not na(r1t) and not na(r1t[1]) and r1t != r1t[1]
@@ -1817,23 +1814,23 @@ int tfSec5 = timeframe.in_seconds(fvgTf5)
 // offsetting inside resolves in the security context and will not line up as
 // three consecutive candles of that timeframe.
 if new0
-    f_pushBar(buf0, nz(st0, bar_index - 1), r0o[1], r0h[1], r0l[1], r0c[1])
-    st0 := bar_index
+    f_pushBar(buf0, nz(hb0, bar_index - 1), r0o[1], r0h[1], r0l[1], r0c[1])
+    hb0 := bar_index
 if new1
-    f_pushBar(buf1, nz(st1, bar_index - 1), r1o[1], r1h[1], r1l[1], r1c[1])
-    st1 := bar_index
+    f_pushBar(buf1, nz(hb1, bar_index - 1), r1o[1], r1h[1], r1l[1], r1c[1])
+    hb1 := bar_index
 if new2
-    f_pushBar(buf2, nz(st2, bar_index - 1), r2o[1], r2h[1], r2l[1], r2c[1])
-    st2 := bar_index
+    f_pushBar(buf2, nz(hb2, bar_index - 1), r2o[1], r2h[1], r2l[1], r2c[1])
+    hb2 := bar_index
 if new3
-    f_pushBar(buf3, nz(st3, bar_index - 1), r3o[1], r3h[1], r3l[1], r3c[1])
-    st3 := bar_index
+    f_pushBar(buf3, nz(hb3, bar_index - 1), r3o[1], r3h[1], r3l[1], r3c[1])
+    hb3 := bar_index
 if new4
-    f_pushBar(buf4, nz(st4, bar_index - 1), r4o[1], r4h[1], r4l[1], r4c[1])
-    st4 := bar_index
+    f_pushBar(buf4, nz(hb4, bar_index - 1), r4o[1], r4h[1], r4l[1], r4c[1])
+    hb4 := bar_index
 if new5
-    f_pushBar(buf5, nz(st5, bar_index - 1), r5o[1], r5h[1], r5l[1], r5c[1])
-    st5 := bar_index
+    f_pushBar(buf5, nz(hb5, bar_index - 1), r5o[1], r5h[1], r5l[1], r5c[1])
+    hb5 := bar_index
 
 // ---- inversion, every bar
 var int  lastIfvgBar = na
@@ -2048,7 +2045,10 @@ f_addBrk(array<Brk> bs, float top, float bot, int leftBi, bool bullBreaker, floa
     float mid = (top + bot) / 2
     box bx = box.new(leftBi, top, rx, bot, xloc = xloc.bar_index, border_color = color.new(color.black, math.max(0, bbTransp - 40)), border_width = 1, bgcolor = color.new(bbFill, bbTransp))
     line ml = line.new(leftBi, mid, rx, mid, xloc = xloc.bar_index, color = color.new(color.black, 0), style = line.style_dashed, width = 1)
-    line cl = bbShowCisd ? line.new(leftBi, cisd, rx, cisd, xloc = xloc.bar_index, color = color.new(#FFB300, 0), style = line.style_dotted, width = 1) : na
+    // A ternary does NOT short-circuit in Pine - both branches are evaluated -
+    // so a line.new hidden in one arm still creates a drawing that is then
+    // thrown away. The line is always made and hidden with transparency instead.
+    line cl = line.new(leftBi, cisd, rx, cisd, xloc = xloc.bar_index, color = color.new(#FFB300, bbShowCisd ? 0 : 100), style = line.style_dotted, width = 1)
     label lb = label.new(rx, mid, chartTfLabel + " BB ", xloc = xloc.bar_index, style = label.style_label_right, color = color.new(color.black, 100), textcolor = color.new(color.black, 0), size = f_lblSize(), textalign = text.align_right)
     array.push(bs, Brk.new(bx = bx, mid = ml, cisdLn = cl, lb = lb, top = top, bot = bot, leftBi = leftBi, bullBreaker = bullBreaker, cisd = cisd, confirmAbove = confirmAbove, confirmed = false, bornBar = bar_index, confirmedBar = -1))
     while array.size(bs) > bbMaxBoxes
