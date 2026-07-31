@@ -962,9 +962,14 @@ string chartTfLabel = f_tfLabel(timeframe.period)
 // Repositioning on every historical bar is wasted runtime.
 bool doLayout = barstate.islast
 
-// right edge, as a TIME, N bars past the current bar
-f_rxT(int bars) =>
-    time + math.max(1, bars) * chartMs
+// NEVER place a coordinate past the last bar. There is no bar there, so
+// TradingView extrapolates the position from the current bar spacing - and that
+// extrapolation moves when the chart is dragged or zoomed, which is exactly why
+// drawings would not stick to their candles. Every right edge below stops at the
+// CURRENT bar; anything that must run on to the right edge of the screen uses
+// extend.right, which needs no coordinate at all.
+f_nowX() =>
+    time
 
 // One level = two line segments with a real visual break and the text centred
 // in that break. This is the "on the line" look - text sitting in the line, not
@@ -981,7 +986,7 @@ f_gapLine(line a, line b, label lb, float price, int x1, int x2, int gapBars, st
         line.set_xy2(a, xr, price)
         line.set_xy1(b, xr, price)
         line.set_xy2(b, xr, price)
-        label.set_xy(lb, xr + half, price)
+        label.set_xy(lb, math.max(x1, xr - half), price)
     else
         line.set_xy1(a, x1, price)
         line.set_xy2(a, mid - half, price)
@@ -1131,13 +1136,15 @@ f_clearVp(array<VpLvl> vs) =>
 // middle of a week-long span
 f_layoutVp(VpLvl v) =>
     int x1 = na(v.startTime) ? time - chartMs : v.startTime
-    int mid = math.max(x1 + chartMs, time - vpLabelBack * chartMs)
     int half = math.max(chartMs, int(vpLabelGap * chartMs / 2))
+    // the break, and the label in it, must stay at or behind the last bar
+    int mid = math.min(time - half, math.max(x1 + chartMs, time - vpLabelBack * chartMs))
     int aEnd = math.max(x1, mid - half)
+    int bStart = math.min(time, math.max(aEnd, mid + half))
     line.set_xy1(v.a, x1, v.price)
     line.set_xy2(v.a, aEnd, v.price)
-    line.set_xy1(v.b, math.max(aEnd, mid + half), v.price)
-    line.set_xy2(v.b, math.max(aEnd, mid + half) + chartMs, v.price)
+    line.set_xy1(v.b, bStart, v.price)
+    line.set_xy2(v.b, time, v.price)
     label.set_xy(v.lb, mid, v.price)
     0
 
@@ -1243,7 +1250,6 @@ showLiq       = input.bool(true, "Show BSL / SSL", group = groupLiq)
 liqPivotTf    = input.timeframe("5", "Wick source timeframe", group = groupLiq)
 liqSwingLen   = input.int(6, "Swing length (bars each side)", minval = 2, maxval = 30, group = groupLiq)
 liqDedupTicks = input.int(10, "Dedup vs session levels (ticks)", minval = 1, maxval = 200, group = groupLiq, tooltip = "If it lands on an Asia/London/PDH/PDL/intraday level, that level already covers it and no second line is drawn.")
-liqExtendBars = input.int(16, "Ray right extension (bars)", minval = 2, maxval = 200, group = groupLiq)
 liqLabelGap   = input.int(7, "Label gap width (bars)", minval = 2, maxval = 60, group = groupLiq)
 liqSweptHold  = input.int(30, "Keep $$$ for N bars after the sweep", minval = 3, maxval = 400, group = groupLiq, tooltip = "Covers the sweep-then-reverse, which is the whole point of marking it.")
 liqMaxUnswept = input.int(10, "Max unswept rays", minval = 1, maxval = 60, group = groupLiq)
@@ -1326,7 +1332,7 @@ f_liqText(Liq q) =>
     txt
 
 f_layoutLiq(Liq q) =>
-    int x2 = q.swept ? q.sweptTime : f_rxT(liqExtendBars)
+    int x2 = q.swept ? q.sweptTime : f_nowX()
     f_gapLine(q.lnA, q.lnB, q.lb, q.price, q.startTime, x2, liqLabelGap, f_liqText(q))
     0
 
@@ -1360,7 +1366,7 @@ f_liqExists(array<Liq> qs, float px, bool isHigh) =>
 f_addLiq(array<Liq> qs, float px, bool isHigh, int anchorTime) =>
     if showLiq and not na(px) and not na(anchorTime) and not f_nearSessionLevel(levels, px, liqDedupTicks) and not f_liqExists(qs, px, isHigh)
         line a = line.new(anchorTime, px, anchorTime, px, xloc = xloc.bar_time, color = liqColor, style = line.style_solid, width = 1)
-        line b = line.new(anchorTime, px, anchorTime, px, xloc = xloc.bar_time, color = liqColor, style = line.style_solid, width = 1)
+        line b = line.new(anchorTime, px, anchorTime, px, xloc = xloc.bar_time, extend = extend.right, color = liqColor, style = line.style_solid, width = 1)
         label l = label.new(anchorTime, px, "", xloc = xloc.bar_time, style = label.style_none, color = color.new(color.black, 100), textcolor = liqColor, size = f_lblSize(), textalign = text.align_center)
         Liq q = Liq.new(lnA = a, lnB = b, lb = l, price = px, isHigh = isHigh, startTime = anchorTime, createdBar = bar_index, dayKey = f_nyKey(anchorTime), swept = false, sweptTime = na, sweptBar = -1, tag = f_vpTag(px))
         array.push(qs, q)
@@ -1411,6 +1417,8 @@ if array.size(liqs) > 0
                 q.sweptBar := bar_index
                 line.set_style(q.lnA, line.style_dashed)
                 line.set_style(q.lnB, line.style_dashed)
+                // the ray stops dead at the candle that took it
+                line.set_extend(q.lnB, extend.none)
                 array.set(liqs, i, q)
                 liqSweptThisBar := true
                 lastSweepBar := bar_index
@@ -1463,8 +1471,7 @@ fvgTf3        = input.timeframe("15", "TF 3", group = groupFvg)
 fvgTf4        = input.timeframe("60", "TF 4", group = groupFvg)
 fvgTf5        = input.timeframe("240", "TF 5", group = groupFvg)
 fvgBodyPct    = input.float(50.0, "Displacement body % of range", minval = 10, maxval = 95, group = groupFvg)
-gapExtendBars = input.int(10, "Gap right extension (bars)", minval = 2, maxval = 100, group = groupFvg)
-gapExtendStep = input.int(5, "Extra extension per timeframe step (bars)", minval = 0, maxval = 40, group = groupFvg, tooltip = "The higher the timeframe the further right the box runs, so nested boxes never share a label position.")
+gapLabelStagger = input.int(4, "Stagger gap labels per timeframe (bars)", minval = 0, maxval = 30, group = groupFvg, tooltip = "Every box ends at the current bar, so a nested 1m and 15m gap would print their text on the same spot. The highest timeframe sits at the right edge and each lower one steps left.")
 gapMergeTicks = input.int(8, "Treat gaps within N ticks as the same gap", minval = 1, maxval = 100, group = groupFvg)
 gapOverlapFrac = input.float(0.7, "Overlap fraction that kills the lower timeframe", minval = 0.3, maxval = 1.0, step = 0.05, group = groupFvg, tooltip = "1H beats 15m beats 5m when this much of the lower gap sits inside the higher one. 30s/1m are a SEPARATE band and are never removed by a 5m+ gap - an HTF gap fill with an LTF inversion out of it IS the setup, so those two must coexist.")
 gapFirstLast  = input.bool(true, "Keep only the first and last gap of each leg", group = groupFvg)
@@ -1541,8 +1548,8 @@ f_gapAccent(Gap g) =>
 f_gapText(Gap g) =>
     g.tfName + " " + (g.bpr ? "BPR" : g.inverted ? "IFVG" : "FVG") + " "
 
-f_gapRightT(int rank) =>
-    f_rxT(gapExtendBars + rank * gapExtendStep)
+f_gapLabelX(int rank) =>
+    time - (5 - rank) * gapLabelStagger * chartMs
 
 f_styleGap(Gap g) =>
     int trFill = math.min(95, gapFillTransp + g.rank * gapTranspStep)
@@ -1555,13 +1562,13 @@ f_styleGap(Gap g) =>
     0
 
 f_layoutGap(Gap g) =>
-    int rx = f_gapRightT(g.rank)
+    int rx = f_nowX()
     float mid = (g.top + g.bot) / 2
     box.set_lefttop(g.bx, g.leftTime, g.top)
     box.set_rightbottom(g.bx, rx, g.bot)
     line.set_xy1(g.ce, g.leftTime, mid)
     line.set_xy2(g.ce, rx, mid)
-    label.set_xy(g.lb, rx, mid)
+    label.set_xy(g.lb, math.max(g.leftTime, f_gapLabelX(g.rank)), mid)
     0
 
 f_delGap(array<Gap> gs, int i) =>
@@ -1611,11 +1618,11 @@ f_sameTier(int a, int b) =>
     (a <= 1 and b <= 1) or (a >= 2 and b >= 2)
 
 f_makeGap(float top, float bot, float wickHi, float wickLo, int leftTime, int tfSec, string tfName, int rank, bool bull, bool bpr, int lId, int lIdx) =>
-    int rx = f_gapRightT(rank)
+    int rx = f_nowX()
     float mid = (top + bot) / 2
     box bx = box.new(leftTime, top, rx, bot, xloc = xloc.bar_time, border_color = color.black, border_width = 1)
     line ce = line.new(leftTime, mid, rx, mid, xloc = xloc.bar_time, style = line.style_dashed, width = 1)
-    label lb = label.new(rx, mid, "", xloc = xloc.bar_time, style = label.style_label_right, color = color.new(color.black, 100), size = f_lblSize(), textalign = text.align_right)
+    label lb = label.new(math.max(leftTime, f_gapLabelX(rank)), mid, "", xloc = xloc.bar_time, style = label.style_label_right, color = color.new(color.black, 100), size = f_lblSize(), textalign = text.align_right)
     Gap g = Gap.new(bx = bx, ce = ce, lb = lb, top = top, bot = bot, wickHi = wickHi, wickLo = wickLo, tfSec = tfSec, tfName = tfName, rank = rank, bull = bull, inverted = false, bpr = bpr, leftTime = leftTime, bornBar = bar_index, touched = false, respected = false, legId = lId, legIdx = lIdx)
     f_styleGap(g)
     g
@@ -1924,7 +1931,6 @@ showBB     = input.bool(true, "Show breaker blocks", group = groupBB)
 bbSwingLen = input.int(15, "Swing length for BOS / CHoCH", minval = 4, maxval = 60, group = groupBB, tooltip = "A short swing length treats every small pullback as a valid swing and buries the chart in breakers.")
 bbMaxBoxes = input.int(4, "Max breaker boxes", minval = 1, maxval = 20, group = groupBB)
 bbMaxWidth = input.int(120, "Max breaker width (bars)", minval = 20, maxval = 600, group = groupBB)
-bbExtend   = input.int(14, "Right extension (bars)", minval = 2, maxval = 100, group = groupBB)
 bbGateGap  = input.bool(true, "Only near an open 1H/4H gap or a fresh sweep", group = groupBB, tooltip = "Ungated breakers fire on every minor pullback.")
 bbGateBars = input.int(25, "Bars a sweep stays fresh for the gate", minval = 3, maxval = 200, group = groupBB)
 bbShowCisd = input.bool(true, "Draw the CISD line until confirmed", group = groupBB)
@@ -2012,7 +2018,7 @@ f_delBrk(array<Brk> bs, int i) =>
     0
 
 f_layoutBrk(Brk b) =>
-    int rx = f_rxT(bbExtend)
+    int rx = f_nowX()
     float mid = (b.top + b.bot) / 2
     box.set_lefttop(b.bx, b.leftTime, b.top)
     box.set_rightbottom(b.bx, rx, b.bot)
@@ -2025,7 +2031,7 @@ f_layoutBrk(Brk b) =>
     0
 
 f_addBrk(array<Brk> bs, float top, float bot, int leftTime, bool bullBreaker, float cisd, bool confirmAbove) =>
-    int rx = f_rxT(bbExtend)
+    int rx = f_nowX()
     float mid = (top + bot) / 2
     box bx = box.new(leftTime, top, rx, bot, xloc = xloc.bar_time, border_color = color.new(color.black, math.max(0, bbTransp - 40)), border_width = 1, bgcolor = color.new(bbFill, bbTransp))
     line ml = line.new(leftTime, mid, rx, mid, xloc = xloc.bar_time, color = color.new(color.black, 0), style = line.style_dashed, width = 1)
@@ -2557,7 +2563,6 @@ tp1Alloc       = input.float(50, "TP1 allocation %", minval = 0, maxval = 100, g
 tp2Alloc       = input.float(40, "TP2 allocation %", minval = 0, maxval = 100, group = groupPlan)
 tp3Alloc       = input.float(5, "TP3 allocation %", minval = 0, maxval = 100, group = groupPlan)
 tp4Alloc       = input.float(5, "TP4 allocation %", minval = 0, maxval = 100, group = groupPlan)
-planExtendBars = input.int(20, "Plan right extension (bars)", minval = 2, maxval = 200, group = groupPlan)
 planLabelGap   = input.int(11, "Plan label gap (bars)", minval = 2, maxval = 60, group = groupPlan)
 planShowPrices = input.bool(true, "Show the price on each plan level", group = groupPlan)
 planCooldown   = input.int(25, "Bars between trades", minval = 0, maxval = 500, group = groupPlan)
@@ -2680,7 +2685,7 @@ f_newTrade(bool isLong, float entry, float stop, float p1, float p2, float p3, f
     float risk0 = math.abs(entry - stop)
     float plannedR = na(p2) or risk0 <= 0 ? na : math.abs(p2 - entry) / risk0
     float far = useTp4 and not na(p4) ? p4 : p3
-    int rx = f_rxT(planExtendBars)
+    int rx = f_nowX()
     box bu = box.new(time, isLong ? far : stop, rx, entry, xloc = xloc.bar_time, border_color = color.new(zoneUpper, 80), bgcolor = color.new(zoneUpper, zoneUpperTr))
     box bl = box.new(time, entry, rx, isLong ? stop : far, xloc = xloc.bar_time, border_color = color.new(zoneLower, 80), bgcolor = color.new(zoneLower, zoneLowerTr))
     label le = label.new(time, isLong ? low : high, "", xloc = xloc.bar_time, style = isLong ? label.style_label_up : label.style_label_down, color = entryActive, textcolor = color.white, size = size.small, textalign = text.align_left)
@@ -2691,7 +2696,7 @@ f_newTrade(bool isLong, float entry, float stop, float p1, float p2, float p3, f
 // Anything that grows has to be recomputed every bar. A break position worked
 // out once at creation looks right for a moment and then drifts visibly off.
 f_layoutTrade(Trade t) =>
-    int rx = f_rxT(planExtendBars)
+    int rx = f_nowX()
     int n = useTp4 ? 6 : 5
     for k = 0 to 5
         float p = array.get(t.px, k)
