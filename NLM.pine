@@ -1328,6 +1328,14 @@ liqMaxUnswept = input.int(10, "Max unswept rays", minval = 1, maxval = 60, group
 liqMaxAgeDays = input.int(5, "Drop unswept rays older than (days)", minval = 1, maxval = 30, group = groupLiq)
 liqColor      = input.color(color.black, "Ray color", group = groupLiq)
 
+// separate from the 5m rays above: every 4H swing high stays marked all the
+// way back to whichever one is the all-time high (tagged "ATH" instead of
+// "BSL"), while 4H swing lows only matter - and only stay marked - within a
+// fixed point range of current price.
+show4hLiq       = input.bool(true, "Show 4H BSL (to ATH) / SSL", group = groupLiq)
+liq4hSwingLen   = input.int(10, "4H swing length (bars each side)", minval = 2, maxval = 40, group = groupLiq)
+liq4hSslRangePts = input.float(500, "4H SSL only within this many points of price", minval = 10, maxval = 5000, group = groupLiq)
+
 f_pivFeed(simple string sym, simple string tf, simple int len) =>
     request.security(sym, tf, [ta.pivothigh(high, len, len), ta.pivotlow(low, len, len), time[len]], lookahead = barmerge.lookahead_off)
 
@@ -1392,13 +1400,15 @@ type Liq
     string tag
 
 var array<Liq> liqs = array.new<Liq>()
+var array<Liq> liq4h = array.new<Liq>()
+var float ath4hPrice = na
 
 // The date suffix is recomputed every bar, never frozen at creation - otherwise
 // a level looks same-day forever, or wears a date an hour after it formed.
 f_liqText(Liq q) =>
     string txt = "$$$"
     if not q.swept
-        txt := (q.isHigh ? "BSL" : "SSL") + (q.tag == "" ? "" : "+" + q.tag)
+        txt := q.tag == "ATH" ? "ATH" : (q.isHigh ? "BSL" : "SSL") + (q.tag == "" ? "" : "+" + q.tag)
         if not na(q.dayKey) and q.dayKey != f_nyKey(time)
             txt := txt + " " + f_dateText(q.dayKey)
     txt
@@ -1519,6 +1529,80 @@ while f_countLiq(liqs, false) > liqMaxUnswept and liqGuard < 100
     else
         liqGuard := 999
 
+// ---- 4H BSL (kept all the way to the all-time high) / SSL (kept only
+// within range) - a separate ladder from the 5m rays above, no age or count
+// cap, because "all the way to ATH" means exactly that.
+bool liq4hNative = chartSeconds == 14400
+[liq4hSecPh, liq4hSecPl, liq4hSecPt] = f_pivFeed(syminfo.tickerid, "240", liq4hSwingLen)
+float liq4hPh = liq4hNative ? ta.pivothigh(high, liq4hSwingLen, liq4hSwingLen) : liq4hSecPh
+float liq4hPl = liq4hNative ? ta.pivotlow(low, liq4hSwingLen, liq4hSwingLen) : liq4hSecPl
+int   liq4hPt = liq4hNative ? time[liq4hSwingLen] : liq4hSecPt
+
+// The ATH entry is found by its tag, never by a stored array index - indexes
+// shift every time an earlier element is deleted, and a stale index would
+// silently relabel the wrong ray.
+f_clearAth4h(array<Liq> qs) =>
+    if array.size(qs) > 0
+        for k = 0 to array.size(qs) - 1
+            Liq qk = array.get(qs, k)
+            if qk.tag == "ATH"
+                qk.tag := ""
+                array.set(qs, k, qk)
+    0
+
+var int lastLiq4hPhTime = na
+var int lastLiq4hPlTime = na
+if show4hLiq and not na(liq4hPh) and not na(liq4hPt) and (na(lastLiq4hPhTime) or liq4hPt != lastLiq4hPhTime)
+    lastLiq4hPhTime := liq4hPt
+    int off4h = liq4hNative ? liq4hSwingLen : int(math.round((time - liq4hPt) / chartMs))
+    int sizeBefore = array.size(liq4h)
+    f_addLiq(liq4h, liq4hPh, true, bar_index - off4h, liq4hPt)
+    // a genuinely new pivot got pushed (not a dedup/duplicate reject) - check
+    // whether it is the new all-time high
+    if array.size(liq4h) > sizeBefore and (na(ath4hPrice) or liq4hPh > ath4hPrice)
+        f_clearAth4h(liq4h)
+        ath4hPrice := liq4hPh
+        Liq newAth = array.get(liq4h, array.size(liq4h) - 1)
+        newAth.tag := "ATH"
+        array.set(liq4h, array.size(liq4h) - 1, newAth)
+if show4hLiq and not na(liq4hPl) and not na(liq4hPt) and (na(lastLiq4hPlTime) or liq4hPt != lastLiq4hPlTime) and (close - liq4hPl) <= liq4hSslRangePts
+    lastLiq4hPlTime := liq4hPt
+    int offL4h = liq4hNative ? liq4hSwingLen : int(math.round((time - liq4hPt) / chartMs))
+    f_addLiq(liq4h, liq4hPl, false, bar_index - offL4h, liq4hPt)
+
+if array.size(liq4h) > 0
+    for i = array.size(liq4h) - 1 to 0
+        Liq q4 = array.get(liq4h, i)
+        bool drop4h = false
+        if not q4.swept
+            // highs never age out or drop for distance - that IS "all the way
+            // to ATH." Lows drop the moment they leave the 500-point range.
+            if not q4.isHigh and (close - q4.price) > liq4hSslRangePts
+                drop4h := true
+            else if levelsChanged and f_nearSessionLevel(levels, q4.price, liqDedupTicks)
+                drop4h := true
+            else if q4.isHigh ? high >= q4.price : low <= q4.price
+                q4.swept := true
+                q4.sweptB := bar_index
+                q4.sweptT := time
+                line.set_style(q4.lnA, line.style_dashed)
+                line.set_style(q4.lnB, line.style_dashed)
+                line.set_extend(q4.lnB, extend.none)
+                if q4.tag == "ATH"
+                    ath4hPrice := na
+                array.set(liq4h, i, q4)
+                lastSweepBar := bar_index
+                lastSweepPrice := q4.price
+                lastSweepIsHigh := q4.isHigh
+        else if bar_index - q4.sweptB >= liqSweptHold or newTradingDay
+            drop4h := true
+        if drop4h
+            if q4.tag == "ATH"
+                ath4hPrice := na
+            f_delLiq(liq4h, i)
+        else if doLayout
+            f_layoutLiq(array.get(liq4h, i))
+
 // =============================================================================
 // FVG / IFVG / BPR
 // 3 candles. c1 = most recent closed, c2 = the displacement candle, c3 = oldest.
@@ -1533,6 +1617,7 @@ while f_countLiq(liqs, false) > liqMaxUnswept and liqGuard < 100
 // =============================================================================
 groupFvg = "FVG / IFVG / BPR"
 showFvg       = input.bool(true, "Show gaps", group = groupFvg)
+showLtfGaps   = input.bool(false, "Also show 30s / 1m / 5m gaps", group = groupFvg, tooltip = "Off by default - stacking every LTF gap on top of the 15m/1H/4H ones buried the chart. 15m/1H/4H always show; this adds the three lower timeframes back in.")
 enable30s     = input.bool(true, "Enable the 30s feed", group = groupFvg, tooltip = "Only resolves on a 30s or lower chart. Steps in only when the 1m gap in the same zone is missing or tiny. Switch off if a seconds request errors on your symbol.")
 fvgTf0        = input.timeframe("30S", "TF 0 (after a sweep, only if no 1m gap)", group = groupFvg)
 fvgTf1        = input.timeframe("1", "TF 1", group = groupFvg)
@@ -1549,10 +1634,12 @@ ltfWakeAtrMult = input.float(10, "LTF gap sleeps beyond this many reference ATRs
 fvgTiny1mPts  = input.float(3.0, "1m gap treated as \"tiny\" below this many points", minval = 0.25, step = 0.25, group = groupFvg, tooltip = "30s only steps in when the 1m gap in the same zone is missing or smaller than this - unless an existing 30s gap is respected and clearly bigger, in which case the 30s keeps its spot.")
 tinyWinMult   = input.float(1.2, "A respected 30s must be at least this much bigger than the 1m to keep priority", minval = 1.0, maxval = 3.0, step = 0.05, group = groupFvg)
 gapOverlapFrac = input.float(0.7, "Overlap fraction that kills the lower timeframe", minval = 0.3, maxval = 1.0, step = 0.05, group = groupFvg, tooltip = "1H beats 15m beats 5m when this much of the lower gap sits inside the higher one. 30s/1m are a SEPARATE band and are never removed by a 5m+ gap - an HTF gap fill with an LTF inversion out of it IS the setup, so those two must coexist.")
+htfTinyPts     = input.float(3.0, "5m/15m/1H/4H gap treated as \"tiny\" below this many points", minval = 0.25, step = 0.25, group = groupFvg, tooltip = "The same tiny-gap exception as 30s vs 1m, one tier up: a tiny 1H gap does not get to erase a real 15m gap sitting under it.")
 gapFirstLast  = input.bool(true, "Keep only the first and last gap of each leg", group = groupFvg)
 maxTotalGaps  = input.int(16, "Max gaps on the chart (all timeframes)", minval = 2, maxval = 80, group = groupFvg)
 maxGapsPerTf  = input.int(3, "Max gaps per timeframe", minval = 1, maxval = 10, group = groupFvg, tooltip = "Stops one timeframe stacking boxes on top of each other. Combined with \"keep only the first and last gap of each leg\" below, 2 was pruning gaps that should have stayed on chart.")
 htfDistAtr    = input.float(25, "HTF gap max distance (x reference ATR)", minval = 2, maxval = 200, group = groupFvg)
+htfExtendPts  = input.float(150, "HTF gap right edge only chases price within this many points", minval = 10, maxval = 2000, group = groupFvg)
 sweep30sBars  = input.int(15, "30s gaps valid within N bars of a sweep", minval = 1, maxval = 100, group = groupFvg)
 gapFillTransp = input.int(55, "Fill transparency (lowest timeframe)", minval = 0, maxval = 95, group = groupFvg, tooltip = "Higher = more see-through. A real dark-grey tint, not a near-solid black box and not so faint it reads as a bare line.")
 gapBorderTransp = input.int(0, "Outline transparency (lowest timeframe)", minval = 0, maxval = 95, group = groupFvg)
@@ -1664,7 +1751,15 @@ f_layoutGap(Gap g) =>
     // ltfWakeAtrMult). A fixed-width freeze here used to hide a gap the moment
     // price ticked one bar away from it, even though it was still unfilled and
     // due for a retest.
-    int rx = math.max(lx + f_units(1), f_gapRight(g.rank))
+    //
+    // HTF (15m/1H/4H) is the opposite problem: those boxes are meant to run
+    // hundreds of bars, but only actively chasing price out to the current bar
+    // while price is actually near them (within htfExtendPts) - otherwise the
+    // right edge just holds still instead of stretching pointlessly across an
+    // empty chart toward a level nowhere near current price.
+    float distPts = close > g.top ? close - g.top : close < g.bot ? g.bot - close : 0.0
+    bool chase = g.rank < 3 or distPts <= htfExtendPts
+    int rx = chase ? math.max(lx + f_units(1), f_gapRight(g.rank)) : math.max(lx + f_units(1), box.get_right(g.bx))
     float mid = (g.top + g.bot) / 2
     box.set_lefttop(g.bx, lx, g.top)
     box.set_rightbottom(g.bx, rx, g.bot)
@@ -1700,7 +1795,7 @@ f_wakeGap(array<Gap> gs, int i) =>
         float mid = (g.top + g.bot) / 2
         g.bx := box.new(lx, g.top, rx, g.bot, xloc = xlMode, border_color = color.black, border_width = 1)
         g.ce := line.new(lx, mid, rx, mid, xloc = xlMode, style = line.style_dashed, width = 1)
-        g.lb := label.new(rx, mid, "", xloc = xlMode, style = label.style_label_left, color = color.new(color.black, 100), size = lblSize, textalign = text.align_right)
+        g.lb := label.new(rx, mid, "", xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), size = lblSize, textalign = text.align_right)
         if not na(g.bpTop)
             g.ovBx := box.new(lx, g.bpTop, rx, g.bpBot, xloc = xlMode, border_color = color(na))
         g.dormant := false
@@ -1779,7 +1874,7 @@ f_makeGap(float top, float bot, float wickHi, float wickLo, int leftB, int leftT
     // the box's right edge keeps the text inside the box. label_right at that
     // same anchor grew the text past rx, off the right edge of the box -
     // that's the "banner floating outside the box" look.
-    label lb = label.new(rx, mid, "", xloc = xlMode, style = label.style_label_left, color = color.new(color.black, 100), size = lblSize, textalign = text.align_right)
+    label lb = label.new(rx, mid, "", xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), size = lblSize, textalign = text.align_right)
     box obx = na(ovTop) ? na : box.new(lx, ovTop, rx, ovBot, xloc = xlMode, border_color = color(na))
     Gap g = Gap.new(bx = bx, ce = ce, lb = lb, top = top, bot = bot, wickHi = wickHi, wickLo = wickLo, tfSec = tfSec, tfName = tfName, rank = rank, bull = bull, inverted = false, bpr = bpr, leftB = leftB, leftT = leftT, bornBar = bar_index, touched = false, respected = false, legId = lId, legIdx = lIdx, dormant = false, bpTop = ovTop, bpBot = ovBot, ovBx = obx)
     f_styleGap(g)
@@ -2060,10 +2155,12 @@ if showFvg
 
 bool sweepFresh30 = not na(lastSweepBar) and bar_index - lastSweepBar <= sweep30sBars  // kept for the checklist/diagnostics only, no longer a gate on 30s detection
 if showFvg
+    // 15m/1H/4H always run. 30s/1m/5m only run when showLtfGaps is on -
+    // otherwise the lowest three timeframes buried the higher ones on chart.
     if new1
-        f_detectGap(gaps, buf1, tfSec1, f_tfLabel(fvgTf1), 1, ok1, legDir, legId, legIdx)
+        f_detectGap(gaps, buf1, tfSec1, f_tfLabel(fvgTf1), 1, showLtfGaps and ok1, legDir, legId, legIdx)
     if new2
-        f_detectGap(gaps, buf2, tfSec2, f_tfLabel(fvgTf2), 2, ok2, legDir, legId, legIdx)
+        f_detectGap(gaps, buf2, tfSec2, f_tfLabel(fvgTf2), 2, showLtfGaps and ok2, legDir, legId, legIdx)
     if new3
         f_detectGap(gaps, buf3, tfSec3, f_tfLabel(fvgTf3), 3, ok3, legDir, legId, legIdx)
     if new4
@@ -2073,7 +2170,7 @@ if showFvg
     if new0
         // 30s is a size/presence fallback now, not a sweep-gated one - the
         // missing-or-tiny-1m check inside f_detectGap does the real gating
-        f_detectGap(gaps, buf0, tfSec0, f_tfLabel(fvgTf0), 0, ok0, legDir, legId, legIdx)
+        f_detectGap(gaps, buf0, tfSec0, f_tfLabel(fvgTf0), 0, showLtfGaps and ok0, legDir, legId, legIdx)
 
 bool gapSetChanged = array.size(gaps) != gapCountPrev
 if showFvg and array.size(gaps) > 0
@@ -2136,8 +2233,11 @@ if showFvg and array.size(gaps) > 1
                         Gap o = array.get(gaps, j)
                         // a higher timeframe in the same band wins, and within ONE
                         // timeframe the newer gap wins - otherwise five overlapping
-                        // 1m boxes all survive and stack into a grey smear
-                        bool beaten = (o.rank > g.rank and f_sameTier(g.rank, o.rank)) or (o.rank == g.rank and o.bornBar > g.bornBar)
+                        // 1m boxes all survive and stack into a grey smear. A tiny
+                        // higher-timeframe gap does not get this win though - the
+                        // same exception 30s/1m already gets, one tier up.
+                        bool higherWins = o.rank > g.rank and f_sameTier(g.rank, o.rank) and (o.rank <= 1 or (o.top - o.bot) > htfTinyPts)
+                        bool beaten = higherWins or (o.rank == g.rank and o.bornBar > g.bornBar)
                         if beaten
                             float ovTop = math.min(g.top, o.top)
                             float ovBot = math.max(g.bot, o.bot)
@@ -2328,11 +2428,11 @@ f_addBrk(array<Brk> bs, float top, float bot, int leftB, int leftT, bool bullBre
     // line.new hidden in one arm still creates a drawing. It is always created
     // and hidden with transparency instead.
     line cl = line.new(lx, cisd, rx, cisd, xloc = xlMode, color = color.new(#FFB300, bbShowCisd ? 0 : 100), style = line.style_dotted, width = 1)
-    label lb = label.new(rx, mid, chartTfLabel + " BB", xloc = xlMode, style = label.style_label_left, color = color.new(color.black, 100), textcolor = color.new(color.black, 0), size = lblSize, textalign = text.align_right)
+    label lb = label.new(rx, mid, chartTfLabel + " BB", xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), textcolor = color.new(color.black, 0), size = lblSize, textalign = text.align_right)
     // CISD and BOS start fully hidden. They are only worth marking once this
     // breaker actually confirms - that is the moment it produces a trade signal
     // - so nothing is revealed for a breaker that never gets there.
-    label cisdLb = label.new(lx, cisd, "CISD", xloc = xlMode, style = label.style_label_right, color = color.new(color.black, 100), textcolor = color.new(#FFB300, 100), size = size.small, textalign = text.align_right)
+    label cisdLb = label.new(lx, cisd, "CISD", xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), textcolor = color.new(#FFB300, 100), size = size.small, textalign = text.align_left)
     label bosLb = label.new(f_xAt(bosB, bosT), bosPx, "BOS", xloc = xlMode, style = bullBreaker ? label.style_label_down : label.style_label_up, color = color.new(color.black, 100), textcolor = color.new(color.black, 100), size = size.small, textalign = text.align_center)
     array.push(bs, Brk.new(bx = bx, mid = ml, cisdLn = cl, lb = lb, top = top, bot = bot, leftB = leftB, leftT = leftT, bosPx = bosPx, bosB = bosB, bosT = bosT, cisdLb = cisdLb, bosLb = bosLb, bullBreaker = bullBreaker, cisd = cisd, confirmAbove = confirmAbove, confirmed = false, bornBar = bar_index, confirmedBar = -1))
     while array.size(bs) > bbMaxBoxes
@@ -2445,6 +2545,7 @@ smtHtfFresh = input.int(60, "HTF freshness (bars)", minval = 5, maxval = 400, gr
 smtLtfLen   = input.int(5, "LTF pivot length", minval = 2, maxval = 30, group = groupSmt)
 smtLtfFresh = input.int(15, "LTF freshness (bars)", minval = 3, maxval = 200, group = groupSmt)
 smtColor    = input.color(color.black, "SMT color", group = groupSmt)
+smtLabelGap = input.int(6, "Label gap width (bars)", minval = 2, maxval = 40, group = groupSmt)
 
 type PivSeq
     array<float> p
@@ -2513,14 +2614,28 @@ f_pushPiv(cmLtfLo, cmLtfPl, bar_index - ltfOff, na(cmLtfPl) ? na : time[ltfOff])
 f_smtDrawable(PivSeq s) =>
     array.size(s.t) >= 2 and bar_index - array.get(s.b, 1) < drawReach
 
+// The line is diagonal (two different pivots at two different times), so the
+// "broken line, label centred in the break" treatment every other level on
+// this chart gets needs the break point interpolated along that diagonal,
+// not just centred on a flat price like f_gapLineAt assumes.
 f_drawSmt(PivSeq s) =>
     float p0 = array.get(s.p, 0)
     float p1 = array.get(s.p, 1)
     int   x0 = f_xAt(array.get(s.b, 0), array.get(s.t, 0))
     int   x1 = f_xAt(array.get(s.b, 1), array.get(s.t, 1))
-    line ln = line.new(x1, p1, x0, p0, xloc = xlMode, color = smtColor, style = line.style_solid, width = 1)
-    label lb = label.new(x1 + int((x0 - x1) / 2), (p0 + p1) / 2, "SMT", xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), textcolor = smtColor, size = size.small, textalign = text.align_center)
-    [ln, lb]
+    int   mid = int((x0 + x1) / 2)
+    int   half = math.max(f_units(1), int(f_units(smtLabelGap) / 2))
+    int   xa = math.min(x0, math.max(x1, mid - half))
+    int   xb = math.max(x1, math.min(x0, mid + half))
+    float span = x0 - x1
+    float ta = span != 0 ? float(xa - x1) / span : 0.0
+    float tb = span != 0 ? float(xb - x1) / span : 0.0
+    float pa = p1 + (p0 - p1) * ta
+    float pb = p1 + (p0 - p1) * tb
+    line lnA = line.new(x1, p1, xa, pa, xloc = xlMode, color = smtColor, style = line.style_solid, width = 1)
+    line lnB = line.new(xb, pb, x0, p0, xloc = xlMode, color = smtColor, style = line.style_solid, width = 1)
+    label lb = label.new(mid, (p0 + p1) / 2, "SMT", xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), textcolor = smtColor, size = size.small, textalign = text.align_center)
+    [lnA, lnB, lb]
 
 // False-positive guard: if the comparison symbol is ALREADY trading through its
 // own last pivot in real time, its confirmed pivot is just lagging and there is
@@ -2541,13 +2656,15 @@ f_smtBull(PivSeq ch, PivSeq cm, float live) =>
             sig := false
     sig
 
-var line  smtHtfLn = na
+var line  smtHtfLnA = na
+var line  smtHtfLnB = na
 var label smtHtfLb = na
 var bool  smtHtfOn = false
 var bool  smtHtfBear = false
 var float smtHtfPiv = na
 var int   smtHtfBar = na
-var line  smtLtfLn = na
+var line  smtLtfLnA = na
+var line  smtLtfLnB = na
 var label smtLtfLb = na
 var bool  smtLtfOn = false
 var bool  smtLtfBear = false
@@ -2555,53 +2672,63 @@ var float smtLtfPiv = na
 var int   smtLtfBar = na
 
 if showSmt and nHtfHi and f_smtDrawable(chHtfHi) and f_smtBear(chHtfHi, cmHtfHi, cmLive)
-    line.delete(smtHtfLn)
+    line.delete(smtHtfLnA)
+    line.delete(smtHtfLnB)
     label.delete(smtHtfLb)
-    [a1, a2] = f_drawSmt(chHtfHi)
-    smtHtfLn := a1
-    smtHtfLb := a2
+    [a1, a2, a3] = f_drawSmt(chHtfHi)
+    smtHtfLnA := a1
+    smtHtfLnB := a2
+    smtHtfLb := a3
     smtHtfOn := true
     smtHtfBear := true
     smtHtfPiv := array.get(chHtfHi.p, 0)
     smtHtfBar := bar_index
 else if showSmt and nHtfLo and f_smtDrawable(chHtfLo) and f_smtBull(chHtfLo, cmHtfLo, cmLive)
-    line.delete(smtHtfLn)
+    line.delete(smtHtfLnA)
+    line.delete(smtHtfLnB)
     label.delete(smtHtfLb)
-    [b1, b2] = f_drawSmt(chHtfLo)
-    smtHtfLn := b1
-    smtHtfLb := b2
+    [b1, b2, b3] = f_drawSmt(chHtfLo)
+    smtHtfLnA := b1
+    smtHtfLnB := b2
+    smtHtfLb := b3
     smtHtfOn := true
     smtHtfBear := false
     smtHtfPiv := array.get(chHtfLo.p, 0)
     smtHtfBar := bar_index
 
 if showSmt and nLtfHi and f_smtDrawable(chLtfHi) and f_smtBear(chLtfHi, cmLtfHi, cmLive)
-    line.delete(smtLtfLn)
+    line.delete(smtLtfLnA)
+    line.delete(smtLtfLnB)
     label.delete(smtLtfLb)
-    [c1, c2] = f_drawSmt(chLtfHi)
-    smtLtfLn := c1
-    smtLtfLb := c2
+    [c1, c2, c3] = f_drawSmt(chLtfHi)
+    smtLtfLnA := c1
+    smtLtfLnB := c2
+    smtLtfLb := c3
     smtLtfOn := true
     smtLtfBear := true
     smtLtfPiv := array.get(chLtfHi.p, 0)
     smtLtfBar := bar_index
 else if showSmt and nLtfLo and f_smtDrawable(chLtfLo) and f_smtBull(chLtfLo, cmLtfLo, cmLive)
-    line.delete(smtLtfLn)
+    line.delete(smtLtfLnA)
+    line.delete(smtLtfLnB)
     label.delete(smtLtfLb)
-    [d1, d2] = f_drawSmt(chLtfLo)
-    smtLtfLn := d1
-    smtLtfLb := d2
+    [d1, d2, d3] = f_drawSmt(chLtfLo)
+    smtLtfLnA := d1
+    smtLtfLnB := d2
+    smtLtfLb := d3
     smtLtfOn := true
     smtLtfBear := false
     smtLtfPiv := array.get(chLtfLo.p, 0)
     smtLtfBar := bar_index
 
 if smtHtfOn and not na(smtHtfPiv) and (smtHtfBear ? close > smtHtfPiv : close < smtHtfPiv)
-    line.delete(smtHtfLn)
+    line.delete(smtHtfLnA)
+    line.delete(smtHtfLnB)
     label.delete(smtHtfLb)
     smtHtfOn := false
 if smtLtfOn and not na(smtLtfPiv) and (smtLtfBear ? close > smtLtfPiv : close < smtLtfPiv)
-    line.delete(smtLtfLn)
+    line.delete(smtLtfLnA)
+    line.delete(smtLtfLnB)
     label.delete(smtLtfLb)
     smtLtfOn := false
 
@@ -3256,7 +3383,7 @@ f_ago(int b) =>
     na(b) or b < 0 ? "n/a" : str.tostring(bar_index - b)
 
 var table clTbl = table.new(position.bottom_right, 3, 15, bgcolor = panelBg, border_width = 1, frame_width = 1, frame_color = color.new(color.gray, 40))
-var table dgTbl = table.new(position.middle_left, 2, 16, bgcolor = panelBg, border_width = 1, frame_width = 1, frame_color = color.new(color.gray, 40))
+var table dgTbl = table.new(position.middle_left, 2, 17, bgcolor = panelBg, border_width = 1, frame_width = 1, frame_color = color.new(color.gray, 40))
 var table stTbl = table.new(position.bottom_left, 10, 13, bgcolor = panelBg, border_width = 1, frame_width = 1, frame_color = color.new(color.gray, 40))
 
 f_r2(table tb, int r, string a, string b, color bc) =>
@@ -3291,7 +3418,7 @@ if showChecklist and barstate.islast
 
 if showDiag and barstate.islast
     table.set_position(dgTbl, f_pos(diagPos))
-    table.clear(dgTbl, 0, 0, 1, 15)
+    table.clear(dgTbl, 0, 0, 1, 16)
     f_r2(dgTbl, 0, "Anchor mode", anchorMode, panelText)
     f_r2(dgTbl, 1, "Leg bias", bbBias, panelText)
     f_r2(dgTbl, 2, "Frozen origin low", f_num(legOriginLow) + " @" + f_ago(legOriginLowBar), panelText)
@@ -3308,6 +3435,7 @@ if showDiag and barstate.islast
     f_r2(dgTbl, 13, "SMT HTF/LTF fresh", (smtHtfFreshNow ? (smtHtfBearNow ? "bear" : "bull") : "no") + " / " + (smtLtfFreshNow ? (smtLtfBearNow ? "bear" : "bull") : "no"), panelText)
     f_r2(dgTbl, 14, "Daily/Weekly POC", f_num(dPoc) + " / " + f_num(wPoc), panelText)
     f_r2(dgTbl, 15, "Sequence", whyText, panelText)
+    f_r2(dgTbl, 16, "4H BSL/SSL live/swept, ATH", str.tostring(f_countLiq(liq4h, false)) + " / " + str.tostring(f_countLiq(liq4h, true)) + (na(ath4hPrice) ? "" : ", " + f_num(ath4hPrice)), panelText)
 
 f_statName(int i) =>
     i == 0 ? "A+" : i == 1 ? "A" : i == 2 ? "A-" : i == 3 ? "B+" : i == 4 ? "B" : i == 5 ? "B-" : i == 6 ? "C" : i == 7 ? "Continuation" : "Reversal"
