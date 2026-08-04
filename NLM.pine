@@ -1058,9 +1058,6 @@ f_gapLineAt(line a, line b, label lb, float price, int x1, int x2, int gapBars, 
     label.set_text(lb, txt)
     0
 
-f_gapLine(line a, line b, label lb, float price, int x1, int x2, int gapBars, string txt) =>
-    f_gapLineAt(a, b, lb, price, x1, x2, gapBars, txt, true, 0)
-
 // ------------------------------------------------------------ instrument / risk
 groupRisk = "Risk & sizing"
 instrMode    = input.string("MNQ", "Instrument", options = ["Auto (charted symbol)", "MNQ", "NQ", "MES", "ES"], group = groupRisk, tooltip = "Chart NQ and execute MNQ by leaving this on MNQ.")
@@ -1414,8 +1411,23 @@ f_liqText(Liq q) =>
     txt
 
 f_layoutLiq(Liq q) =>
-    int x2 = q.swept ? f_xAt(q.sweptB, q.sweptT) : f_xNow()
-    f_gapLine(q.lnA, q.lnB, q.lb, q.price, f_xAt(q.startB, q.startT), x2, liqLabelGap, f_liqText(q))
+    int x1 = f_xAt(q.startB, q.startT)
+    if q.swept
+        // $$$ reads as one solid line, not a broken one with a centred
+        // gap - the label sits just past the ray's own frozen end instead.
+        int xr = f_xAt(q.sweptB, q.sweptT)
+        line.set_xy1(q.lnA, x1, q.price)
+        line.set_xy2(q.lnA, xr, q.price)
+        line.set_xy1(q.lnB, xr, q.price)
+        line.set_xy2(q.lnB, xr, q.price)
+        label.set_xy(q.lb, xr + f_units(2), q.price)
+        label.set_text(q.lb, f_liqText(q))
+    else
+        f_gapLineAt(q.lnA, q.lnB, q.lb, q.price, x1, f_xNow(), liqLabelGap, f_liqText(q), true, 0)
+        // nudged off the line itself so the wick price doesn't run straight
+        // through the text - above for a high, below for a low.
+        float tickOff = syminfo.mintick * 4
+        label.set_y(q.lb, q.isHigh ? q.price + tickOff : q.price - tickOff)
     0
 
 f_delLiq(array<Liq> qs, int i) =>
@@ -1732,6 +1744,13 @@ f_gapText(Gap g) =>
 f_gapRight(int rank) =>
     f_xFwd(gapExtendBars + rank * gapExtendStep)
 
+// Inset a few bars from the box's right edge rather than dead centre - reads
+// as "aligned right" without risking the label_center box spilling past rx
+// on a narrow gap. Falls back to the box's own centre if that inset would
+// land left of it.
+f_gapLabelX(int lx, int rx) =>
+    math.max(int((lx + rx) / 2), rx - f_units(4))
+
 f_styleGap(Gap g) =>
     int trFill = math.min(95, gapFillTransp + g.rank * gapTranspStep)
     int trLine = math.min(95, gapBorderTransp + g.rank * gapTranspStep)
@@ -1768,7 +1787,7 @@ f_layoutGap(Gap g) =>
     box.set_rightbottom(g.bx, rx, g.bot)
     line.set_xy1(g.ce, lx, mid)
     line.set_xy2(g.ce, rx, mid)
-    label.set_xy(g.lb, int((lx + rx) / 2), mid)
+    label.set_xy(g.lb, f_gapLabelX(lx, rx), mid)
     if not na(g.ovBx)
         box.set_lefttop(g.ovBx, lx, g.bpTop)
         box.set_rightbottom(g.ovBx, rx, g.bpBot)
@@ -1798,11 +1817,10 @@ f_wakeGap(array<Gap> gs, int i) =>
         float mid = (g.top + g.bot) / 2
         g.bx := box.new(lx, g.top, rx, g.bot, xloc = xlMode, border_color = color.black, border_width = 1)
         g.ce := line.new(lx, mid, rx, mid, xloc = xlMode, style = line.style_dashed, width = 1)
-        // label_center draws a plain box centred exactly on its anchor, both
-        // axes, so anchoring it at the box's own centre keeps it inside no
-        // matter the box width, with no pointer-direction or baseline
-        // guesswork left.
-        g.lb := label.new(int((lx + rx) / 2), mid, "", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), size = lblSize, textalign = text.align_center)
+        // label_center draws a plain box centred exactly on its anchor, so
+        // an inset-from-the-right anchor reads as right-aligned without
+        // risking it spilling past the box edge.
+        g.lb := label.new(f_gapLabelX(lx, rx), mid, "", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), size = lblSize, textalign = text.align_center)
         if not na(g.bpTop)
             g.ovBx := box.new(lx, g.bpTop, rx, g.bpBot, xloc = xlMode, border_color = color(na))
         g.dormant := false
@@ -1877,10 +1895,10 @@ f_makeGap(float top, float bot, float wickHi, float wickLo, int leftB, int leftT
     float mid = (top + bot) / 2
     box bx = box.new(lx, top, rx, bot, xloc = xlMode, border_color = color.black, border_width = 1)
     line ce = line.new(lx, mid, rx, mid, xloc = xlMode, style = line.style_dashed, width = 1)
-    // label_center draws a plain box centred exactly on its anchor - anchor
-    // it at the box's own centre and it can never end up outside the box,
-    // regardless of pointer direction or text baseline quirks.
-    label lb = label.new(int((lx + rx) / 2), mid, "", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), size = lblSize, textalign = text.align_center)
+    // label_center draws a plain box centred exactly on its anchor - reading
+    // right-aligned rather than dead-centre, without the overflow risk
+    // pointer-style labels had.
+    label lb = label.new(f_gapLabelX(lx, rx), mid, "", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), size = lblSize, textalign = text.align_center)
     box obx = na(ovTop) ? na : box.new(lx, ovTop, rx, ovBot, xloc = xlMode, border_color = color(na))
     Gap g = Gap.new(bx = bx, ce = ce, lb = lb, top = top, bot = bot, wickHi = wickHi, wickLo = wickLo, tfSec = tfSec, tfName = tfName, rank = rank, bull = bull, inverted = false, bpr = bpr, leftB = leftB, leftT = leftT, bornBar = bar_index, touched = false, respected = false, legId = lId, legIdx = lIdx, dormant = false, bpTop = ovTop, bpBot = ovBot, ovBx = obx)
     f_styleGap(g)
