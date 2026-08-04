@@ -1,5 +1,5 @@
 //@version=6
-indicator("Ifvg Model", shorttitle = "Ifvg Model", overlay = true, max_lines_count = 500, max_labels_count = 500, max_boxes_count = 500, max_bars_back = 2000)
+indicator("St ICT Indicator", shorttitle = "St ICT Indicator", overlay = true, max_lines_count = 500, max_labels_count = 500, max_boxes_count = 500, max_bars_back = 2000)
 
 // =============================================================================
 // PART 1 - SESSION ENGINE - unchanged from your script
@@ -1440,7 +1440,10 @@ f_addLiq(array<Liq> qs, float px, bool isHigh, int anchorB, int anchorT) =>
         int x1 = f_xAt(anchorB, anchorT)
         line a = line.new(x1, px, x1, px, xloc = xlMode, color = liqColor, style = line.style_solid, width = 1)
         line b = line.new(x1, px, x1, px, xloc = xlMode, extend = extend.right, color = liqColor, style = line.style_solid, width = 1)
-        label l = label.new(x1, px, "", xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), textcolor = liqColor, size = lblSize, textalign = text.align_center)
+        // label_center draws a plain box centred exactly on its anchor, both
+        // axes - no pointer/tail and no baseline-vs-middle ambiguity the way
+        // style_none had, so the text sits dead on the line's price.
+        label l = label.new(x1, px, "", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), textcolor = liqColor, size = lblSize, textalign = text.align_center)
         Liq q = Liq.new(lnA = a, lnB = b, lb = l, price = px, isHigh = isHigh, startB = anchorB, startT = anchorT, createdBar = bar_index, dayKey = f_nyKey(anchorT), swept = false, sweptB = -1, sweptT = na, tag = f_vpTag(px))
         array.push(qs, q)
         f_layoutLiq(q)
@@ -1765,7 +1768,7 @@ f_layoutGap(Gap g) =>
     box.set_rightbottom(g.bx, rx, g.bot)
     line.set_xy1(g.ce, lx, mid)
     line.set_xy2(g.ce, rx, mid)
-    label.set_xy(g.lb, rx, mid)
+    label.set_xy(g.lb, int((lx + rx) / 2), mid)
     if not na(g.ovBx)
         box.set_lefttop(g.ovBx, lx, g.bpTop)
         box.set_rightbottom(g.ovBx, rx, g.bpBot)
@@ -1795,7 +1798,11 @@ f_wakeGap(array<Gap> gs, int i) =>
         float mid = (g.top + g.bot) / 2
         g.bx := box.new(lx, g.top, rx, g.bot, xloc = xlMode, border_color = color.black, border_width = 1)
         g.ce := line.new(lx, mid, rx, mid, xloc = xlMode, style = line.style_dashed, width = 1)
-        g.lb := label.new(rx, mid, "", xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), size = lblSize, textalign = text.align_right)
+        // label_center draws a plain box centred exactly on its anchor, both
+        // axes, so anchoring it at the box's own centre keeps it inside no
+        // matter the box width, with no pointer-direction or baseline
+        // guesswork left.
+        g.lb := label.new(int((lx + rx) / 2), mid, "", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), size = lblSize, textalign = text.align_center)
         if not na(g.bpTop)
             g.ovBx := box.new(lx, g.bpTop, rx, g.bpBot, xloc = xlMode, border_color = color(na))
         g.dormant := false
@@ -1870,11 +1877,10 @@ f_makeGap(float top, float bot, float wickHi, float wickLo, int leftB, int leftT
     float mid = (top + bot) / 2
     box bx = box.new(lx, top, rx, bot, xloc = xlMode, border_color = color.black, border_width = 1)
     line ce = line.new(lx, mid, rx, mid, xloc = xlMode, style = line.style_dashed, width = 1)
-    // label_left grows the text LEFTWARD from its anchor, so anchoring it at
-    // the box's right edge keeps the text inside the box. label_right at that
-    // same anchor grew the text past rx, off the right edge of the box -
-    // that's the "banner floating outside the box" look.
-    label lb = label.new(rx, mid, "", xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), size = lblSize, textalign = text.align_right)
+    // label_center draws a plain box centred exactly on its anchor - anchor
+    // it at the box's own centre and it can never end up outside the box,
+    // regardless of pointer direction or text baseline quirks.
+    label lb = label.new(int((lx + rx) / 2), mid, "", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), size = lblSize, textalign = text.align_center)
     box obx = na(ovTop) ? na : box.new(lx, ovTop, rx, ovBot, xloc = xlMode, border_color = color(na))
     Gap g = Gap.new(bx = bx, ce = ce, lb = lb, top = top, bot = bot, wickHi = wickHi, wickLo = wickLo, tfSec = tfSec, tfName = tfName, rank = rank, bull = bull, inverted = false, bpr = bpr, leftB = leftB, leftT = leftT, bornBar = bar_index, touched = false, respected = false, legId = lId, legIdx = lIdx, dormant = false, bpTop = ovTop, bpBot = ovBot, ovBx = obx)
     f_styleGap(g)
@@ -2409,11 +2415,11 @@ f_layoutBrk(Brk b) =>
     box.set_rightbottom(b.bx, rx, b.bot)
     line.set_xy1(b.mid, lx, mid)
     line.set_xy2(b.mid, rx, mid)
-    label.set_xy(b.lb, rx, mid)
+    label.set_xy(b.lb, int((lx + rx) / 2), mid)
     if not b.confirmed
         line.set_xy1(b.cisdLn, lx, b.cisd)
         line.set_xy2(b.cisdLn, rx, b.cisd)
-        label.set_xy(b.cisdLb, lx, b.cisd)
+        label.set_xy(b.cisdLb, lx + f_units(4), b.cisd)
     if not na(b.bosPx)
         label.set_xy(b.bosLb, f_xAt(b.bosB, b.bosT), b.bosPx)
     0
@@ -2428,11 +2434,13 @@ f_addBrk(array<Brk> bs, float top, float bot, int leftB, int leftT, bool bullBre
     // line.new hidden in one arm still creates a drawing. It is always created
     // and hidden with transparency instead.
     line cl = line.new(lx, cisd, rx, cisd, xloc = xlMode, color = color.new(#FFB300, bbShowCisd ? 0 : 100), style = line.style_dotted, width = 1)
-    label lb = label.new(rx, mid, chartTfLabel + " BB", xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), textcolor = color.new(color.black, 0), size = lblSize, textalign = text.align_right)
+    // label_center draws a plain box centred exactly on its anchor, so
+    // anchoring at the breaker box's own centre keeps the text inside it.
+    label lb = label.new(int((lx + rx) / 2), mid, chartTfLabel + " BB", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), textcolor = color.new(color.black, 0), size = lblSize, textalign = text.align_center)
     // CISD and BOS start fully hidden. They are only worth marking once this
     // breaker actually confirms - that is the moment it produces a trade signal
     // - so nothing is revealed for a breaker that never gets there.
-    label cisdLb = label.new(lx, cisd, "CISD", xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), textcolor = color.new(#FFB300, 100), size = size.small, textalign = text.align_left)
+    label cisdLb = label.new(lx + f_units(4), cisd, "CISD", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), textcolor = color.new(#FFB300, 100), size = size.small, textalign = text.align_center)
     label bosLb = label.new(f_xAt(bosB, bosT), bosPx, "BOS", xloc = xlMode, style = bullBreaker ? label.style_label_down : label.style_label_up, color = color.new(color.black, 100), textcolor = color.new(color.black, 100), size = size.small, textalign = text.align_center)
     array.push(bs, Brk.new(bx = bx, mid = ml, cisdLn = cl, lb = lb, top = top, bot = bot, leftB = leftB, leftT = leftT, bosPx = bosPx, bosB = bosB, bosT = bosT, cisdLb = cisdLb, bosLb = bosLb, bullBreaker = bullBreaker, cisd = cisd, confirmAbove = confirmAbove, confirmed = false, bornBar = bar_index, confirmedBar = -1))
     while array.size(bs) > bbMaxBoxes
@@ -2634,7 +2642,7 @@ f_drawSmt(PivSeq s) =>
     float pb = p1 + (p0 - p1) * tb
     line lnA = line.new(x1, p1, xa, pa, xloc = xlMode, color = smtColor, style = line.style_solid, width = 1)
     line lnB = line.new(xb, pb, x0, p0, xloc = xlMode, color = smtColor, style = line.style_solid, width = 1)
-    label lb = label.new(mid, (p0 + p1) / 2, "SMT", xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), textcolor = smtColor, size = size.small, textalign = text.align_center)
+    label lb = label.new(mid, (p0 + p1) / 2, "SMT", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), textcolor = smtColor, size = size.small, textalign = text.align_center)
     [lnA, lnB, lb]
 
 // False-positive guard: if the comparison symbol is ALREADY trading through its
@@ -3156,7 +3164,7 @@ f_newTrade(bool isLong, float entry, float stop, float p1, float p2, float p3, f
         string ls = k <= 1 ? line.style_solid : line.style_dashed
         line a = line.new(x0, py, x0, py, xloc = xlMode, color = lc, style = ls, width = 1)
         line b = line.new(x0, py, x0, py, xloc = xlMode, color = lc, style = ls, width = 1)
-        label l = label.new(x0, py, "", xloc = xlMode, style = label.style_none, color = color.new(color.black, 100), textcolor = lc, size = size.small, textalign = text.align_center)
+        label l = label.new(x0, py, "", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), textcolor = lc, size = size.small, textalign = text.align_center)
         array.push(la, a)
         array.push(lb, b)
         array.push(lbl, l)
