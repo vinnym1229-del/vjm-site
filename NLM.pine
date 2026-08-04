@@ -1522,7 +1522,6 @@ gapExtendBars = input.int(8, "Gap right extension (bars)", minval = 1, maxval = 
 gapExtendStep = input.int(4, "Extra extension per timeframe step (bars)", minval = 0, maxval = 30, group = groupFvg, tooltip = "The higher the timeframe the further right the box runs, so nested boxes never share a label position.")
 gapMergeTicks = input.int(8, "Treat gaps within N ticks as the same gap", minval = 1, maxval = 100, group = groupFvg)
 gapMinTicks   = input.int(4, "Minimum gap height (ticks)", minval = 1, maxval = 200, group = groupFvg, tooltip = "A gap smaller than this is noise, not a level - it is never created. This is most of what keeps every single micro-IFVG off the chart.")
-ltfGapMaxBars = input.int(30, "LTF gap max width while price is away (bars)", minval = 5, maxval = 300, group = groupFvg, tooltip = "A 1m/30s gap does not need to run hundreds of bars ahead of price. It stops growing at this width until price is back inside it, then it extends normally again.")
 ltfWakeAtrMult = input.float(10, "LTF gap sleeps beyond this many reference ATRs away", minval = 2, maxval = 60, group = groupFvg, tooltip = "Once price is this far from a 1m/30s gap its drawing is removed to keep the chart clean - the gap itself is NOT deleted, and its box reappears the moment price is back in range.")
 fvgTiny1mPts  = input.float(3.0, "1m gap treated as \"tiny\" below this many points", minval = 0.25, step = 0.25, group = groupFvg, tooltip = "30s only steps in when the 1m gap in the same zone is missing or smaller than this - unless an existing 30s gap is respected and clearly bigger, in which case the 30s keeps its spot.")
 tinyWinMult   = input.float(1.2, "A respected 30s must be at least this much bigger than the 1m to keep priority", minval = 1.0, maxval = 3.0, step = 0.05, group = groupFvg)
@@ -1532,7 +1531,7 @@ maxTotalGaps  = input.int(8, "Max gaps on the chart (all timeframes)", minval = 
 maxGapsPerTf  = input.int(2, "Max gaps per timeframe", minval = 1, maxval = 10, group = groupFvg, tooltip = "Stops one timeframe stacking boxes on top of each other.")
 htfDistAtr    = input.float(25, "HTF gap max distance (x reference ATR)", minval = 2, maxval = 200, group = groupFvg)
 sweep30sBars  = input.int(15, "30s gaps valid within N bars of a sweep", minval = 1, maxval = 100, group = groupFvg)
-gapFillTransp = input.int(22, "Fill transparency (lowest timeframe)", minval = 0, maxval = 95, group = groupFvg)
+gapFillTransp = input.int(80, "Fill transparency (lowest timeframe)", minval = 0, maxval = 95, group = groupFvg, tooltip = "Higher = more see-through. The old default of 22 rendered as a near-solid black box over the candles.")
 gapBorderTransp = input.int(0, "Outline transparency (lowest timeframe)", minval = 0, maxval = 95, group = groupFvg)
 gapTranspStep = input.int(11, "Extra transparency per timeframe step", tooltip = "Each step up the timeframes gets lighter, so a 4H gap sits behind a 1m gap.", minval = 0, maxval = 15, group = groupFvg)
 fvgFill       = input.color(#161A25, "FVG fill (dark grey)", group = groupFvg)
@@ -1622,11 +1621,13 @@ f_styleGap(Gap g) =>
 
 f_layoutGap(Gap g) =>
     int lx = f_xAt(g.leftB, g.leftT)
-    // an LTF gap price is not currently inside stops growing at a fixed width
-    // instead of chasing the current bar out to the edge of the screen
-    bool priceInLtf = g.rank <= 1 and low <= g.top and high >= g.bot
-    int rxFull = math.max(lx + f_units(1), f_gapRight(g.rank))
-    int rx = g.rank <= 1 and not priceInLtf ? math.min(rxFull, math.max(lx + f_units(1), lx + f_units(ltfGapMaxBars))) : rxFull
+    // An unfilled gap is still a live level and keeps extending to the current
+    // bar for as long as it exists - it only stops when invalidated (inverted)
+    // or when it goes dormant (f_sleepGap, price too far away per
+    // ltfWakeAtrMult). A fixed-width freeze here used to hide a gap the moment
+    // price ticked one bar away from it, even though it was still unfilled and
+    // due for a retest.
+    int rx = math.max(lx + f_units(1), f_gapRight(g.rank))
     float mid = (g.top + g.bot) / 2
     box.set_lefttop(g.bx, lx, g.top)
     box.set_rightbottom(g.bx, rx, g.bot)
@@ -2277,9 +2278,15 @@ bool bbGateOk = not bbGateGap or nearHtfGap or sweepFreshBb
 bool chochDown = bbBias == "Bullish" and not na(legOriginLow) and close < legOriginLow
 bool chochUp   = bbBias == "Bearish" and not na(legOriginHigh) and close > legOriginHigh
 
+// The breaker box is the single candle at the swing that just failed - its
+// wick-to-body range - not the whole leg back to the origin. A bearish
+// breaker is the last up-candle that made the swept high (legPeakHigh); a
+// bullish breaker is the last down-candle that made the swept low
+// (legTroughLow). Spanning all the way to the origin drew a box the height
+// of the entire leg instead of a real breaker candle.
 if chochDown
-    if showBB and bbGateOk and not na(legPeakHighBody) and not na(legOriginLowBody)
-        f_addBrk(brks, math.max(legPeakHighBody, legOriginLowBody), math.min(legPeakHighBody, legOriginLowBody), math.max(math.max(legOriginLowBar, legPeakHighBar), bar_index - bbMaxWidth), math.max(math.max(legOriginLowTime, legPeakHighTime), time - bbMaxWidth * chartMs), false, nz(dnStreakOpen, open), true, legPeakHigh, legPeakHighBar, legPeakHighTime)
+    if showBB and bbGateOk and not na(legPeakHigh) and not na(legPeakHighBody)
+        f_addBrk(brks, legPeakHigh, legPeakHighBody, math.max(legPeakHighBar, bar_index - bbMaxWidth), math.max(legPeakHighTime, time - bbMaxWidth * chartMs), false, nz(dnStreakOpen, open), true, legPeakHigh, legPeakHighBar, legPeakHighTime)
     bbBias := "None"
     legOriginLow := na
     legPeakHigh := na
@@ -2287,8 +2294,8 @@ if chochDown
     legPeakHighBody := na
 
 if chochUp
-    if showBB and bbGateOk and not na(legTroughLowBody) and not na(legOriginHighBody)
-        f_addBrk(brks, math.max(legTroughLowBody, legOriginHighBody), math.min(legTroughLowBody, legOriginHighBody), math.max(math.max(legOriginHighBar, legTroughLowBar), bar_index - bbMaxWidth), math.max(math.max(legOriginHighTime, legTroughLowTime), time - bbMaxWidth * chartMs), true, nz(upStreakOpen, open), false, legTroughLow, legTroughLowBar, legTroughLowTime)
+    if showBB and bbGateOk and not na(legTroughLow) and not na(legTroughLowBody)
+        f_addBrk(brks, legTroughLowBody, legTroughLow, math.max(legTroughLowBar, bar_index - bbMaxWidth), math.max(legTroughLowTime, time - bbMaxWidth * chartMs), true, nz(upStreakOpen, open), false, legTroughLow, legTroughLowBar, legTroughLowTime)
     bbBias := "None"
     legOriginHigh := na
     legTroughLow := na
