@@ -950,7 +950,6 @@ alertcondition(sweptThisBar, "Tracked liquidity swept", "A tracked liquidity lev
 groupAnchor = "Drawing anchor"
 anchorMode = input.string("Bar index", "Anchor drawings by", options = ["Bar index", "Time"], group = groupAnchor, tooltip = "Bar index cannot drift when you scroll or zoom. Time is the original behaviour. Flip this if drawings do not stick.")
 drawReach  = input.int(3000, "Max bars a drawing may reach back", minval = 200, maxval = 9000, group = groupAnchor, tooltip = "Bar-index mode only. A coordinate more than about 10000 bars from the current bar is a runtime error, so anything older is clamped to this. It moves only where a drawing STARTS, never its price.")
-snapMaxBars = input.int(300, "Bars searched when snapping an HTF pivot to its wick", minval = 50, maxval = 600, group = groupAnchor)
 labelSizeSel = input.string("normal", "Label size", options = ["tiny", "small", "normal", "large"], group = groupAnchor)
 
 bool useBi = anchorMode == "Bar index"
@@ -1048,28 +1047,6 @@ f_gapLineAt(line a, line b, label lb, float price, int x1, int x2, int gapBars, 
 
 f_gapLine(line a, line b, label lb, float price, int x1, int x2, int gapBars, string txt) =>
     f_gapLineAt(a, b, lb, price, x1, x2, gapBars, txt, true, 0)
-
-// Chart-bar OFFSET of the wick that actually produced an HTF pivot.
-// request.security hands back the HTF candle's OPEN time, which on a 1m chart
-// puts a 15m pivot at the start of the 15m candle instead of on the wick.
-f_snapOff(float px, int tMs, int tfSec, bool isHigh) =>
-    int best = na
-    float bestD = na
-    int hiT = tMs + tfSec * 1000
-    bool done = false
-    if not na(px) and not na(tMs)
-        for i = 0 to snapMaxBars
-            if not done
-                int ti = time[i]
-                if na(ti) or ti < tMs
-                    done := true
-                else if ti < hiT
-                    float v = isHigh ? high[i] : low[i]
-                    float d = math.abs(v - px)
-                    if na(bestD) or d < bestD
-                        bestD := d
-                        best := i
-    best
 
 // ------------------------------------------------------------ instrument / risk
 groupRisk = "Risk & sizing"
@@ -1431,22 +1408,24 @@ f_countLiq(array<Liq> qs, bool swept) =>
 // used whenever the two match.
 simple string liqTfEff = timeframe.in_seconds(liqPivotTf) <= chartSeconds ? timeframe.period : liqPivotTf
 bool liqNative = timeframe.in_seconds(liqTfEff) == chartSeconds
-int  liqTfSec  = timeframe.in_seconds(liqTfEff)
 [liqSecPh, liqSecPl, liqSecPt] = f_pivFeed(syminfo.tickerid, liqTfEff, liqSwingLen)
 float liqPh = liqNative ? ta.pivothigh(high, liqSwingLen, liqSwingLen) : liqSecPh
 float liqPl = liqNative ? ta.pivotlow(low, liqSwingLen, liqSwingLen) : liqSecPl
 int   liqPt = liqNative ? time[liqSwingLen] : liqSecPt
 
+// Anchor directly off the swing length, the same way the breaker section
+// anchors rollSwingHigh/Low (bar_index - bbSwingLen) - no wick-search needed.
+// The earlier f_snapOff version was extra complexity on the exact code path
+// that was producing zero BSL/SSL rays; anchoring directly here is what
+// actually renders.
 var int lastLiqPhTime = na
 var int lastLiqPlTime = na
 if showLiq and not na(liqPh) and not na(liqPt) and (na(lastLiqPhTime) or liqPt != lastLiqPhTime)
     lastLiqPhTime := liqPt
-    int offH = liqNative ? liqSwingLen : nz(f_snapOff(liqPh, liqPt, liqTfSec, true), 0)
-    f_addLiq(liqs, liqPh, true, bar_index - offH, liqNative ? liqPt : nz(time[offH], liqPt))
+    f_addLiq(liqs, liqPh, true, bar_index - liqSwingLen, liqPt)
 if showLiq and not na(liqPl) and not na(liqPt) and (na(lastLiqPlTime) or liqPt != lastLiqPlTime)
     lastLiqPlTime := liqPt
-    int offL = liqNative ? liqSwingLen : nz(f_snapOff(liqPl, liqPt, liqTfSec, false), 0)
-    f_addLiq(liqs, liqPl, false, bar_index - offL, liqNative ? liqPt : nz(time[offL], liqPt))
+    f_addLiq(liqs, liqPl, false, bar_index - liqSwingLen, liqPt)
 
 bool liqSweptThisBar = false
 if array.size(liqs) > 0
@@ -1531,10 +1510,10 @@ maxTotalGaps  = input.int(8, "Max gaps on the chart (all timeframes)", minval = 
 maxGapsPerTf  = input.int(2, "Max gaps per timeframe", minval = 1, maxval = 10, group = groupFvg, tooltip = "Stops one timeframe stacking boxes on top of each other.")
 htfDistAtr    = input.float(25, "HTF gap max distance (x reference ATR)", minval = 2, maxval = 200, group = groupFvg)
 sweep30sBars  = input.int(15, "30s gaps valid within N bars of a sweep", minval = 1, maxval = 100, group = groupFvg)
-gapFillTransp = input.int(80, "Fill transparency (lowest timeframe)", minval = 0, maxval = 95, group = groupFvg, tooltip = "Higher = more see-through. The old default of 22 rendered as a near-solid black box over the candles.")
+gapFillTransp = input.int(55, "Fill transparency (lowest timeframe)", minval = 0, maxval = 95, group = groupFvg, tooltip = "Higher = more see-through. A real dark-grey tint, not a near-solid black box and not so faint it reads as a bare line.")
 gapBorderTransp = input.int(0, "Outline transparency (lowest timeframe)", minval = 0, maxval = 95, group = groupFvg)
 gapTranspStep = input.int(11, "Extra transparency per timeframe step", tooltip = "Each step up the timeframes gets lighter, so a 4H gap sits behind a 1m gap.", minval = 0, maxval = 15, group = groupFvg)
-fvgFill       = input.color(#161A25, "FVG fill (dark grey)", group = groupFvg)
+fvgFill       = input.color(#2A2E39, "FVG fill (dark grey)", group = groupFvg)
 ifvgFill      = input.color(#FFFFFF, "IFVG fill (white)", group = groupFvg)
 bprFill       = input.color(#787B86, "BPR fill (grey)", group = groupFvg)
 bullAccent    = input.color(#089981, "Bullish accent", group = groupFvg)
@@ -1570,6 +1549,13 @@ type Gap
     int    legId
     int    legIdx
     bool   dormant
+    // BPR only: the box above spans the COMBINED range of the FVG and the
+    // IFVG it formed inside. ovBx shades just the true overlap between the
+    // two - the part that is actually "balanced" - a different color from
+    // the two outer edges. na/na when this gap is not a BPR.
+    float  bpTop
+    float  bpBot
+    box    ovBx
 
 var array<Gap> gaps = array.new<Gap>()
 var int gapCountPrev = 0
@@ -1597,14 +1583,17 @@ f_pushBar(Bar3 bf, int bt, int bb, float bo, float bh, float bl, float bc) =>
             array.pop(bf.c)
     0
 
+// bprFill is reserved for the true-overlap shading box (f_styleGap) - the
+// outer BPR box itself reads as a normal fresh FVG so the distinct grey band
+// inside it actually stands out against something, not against more grey.
 f_gapFillColor(Gap g) =>
-    g.bpr ? bprFill : g.inverted ? ifvgFill : fvgFill
+    g.inverted ? ifvgFill : fvgFill
 
 f_gapAccent(Gap g) =>
     g.bull ? bullAccent : bearAccent
 
 f_gapText(Gap g) =>
-    g.tfName + " " + (g.bpr ? "BPR" : g.inverted ? "IFVG" : "FVG") + " "
+    g.tfName + " " + (g.bpr ? "BPR" : g.inverted ? "IFVG" : "FVG")
 
 f_gapRight(int rank) =>
     f_xFwd(gapExtendBars + rank * gapExtendStep)
@@ -1617,6 +1606,10 @@ f_styleGap(Gap g) =>
     line.set_color(g.ce, color.new(f_gapAccent(g), trLine))
     label.set_textcolor(g.lb, color.new(f_gapAccent(g), 0))
     label.set_text(g.lb, f_gapText(g))
+    // the true overlap band sits a bit more opaque than the outer edges so it
+    // reads as the "real" BPR against the combined FVG+IFVG range around it
+    if not na(g.ovBx)
+        box.set_bgcolor(g.ovBx, color.new(bprFill, math.max(0, trFill - 20)))
     0
 
 f_layoutGap(Gap g) =>
@@ -1634,6 +1627,9 @@ f_layoutGap(Gap g) =>
     line.set_xy1(g.ce, lx, mid)
     line.set_xy2(g.ce, rx, mid)
     label.set_xy(g.lb, rx, mid)
+    if not na(g.ovBx)
+        box.set_lefttop(g.ovBx, lx, g.bpTop)
+        box.set_rightbottom(g.ovBx, rx, g.bpBot)
     0
 
 // Price walked far away: remove the DRAWING but keep the gap DATA. A hidden
@@ -1645,6 +1641,9 @@ f_sleepGap(array<Gap> gs, int i) =>
         box.delete(g.bx)
         line.delete(g.ce)
         label.delete(g.lb)
+        if not na(g.ovBx)
+            box.delete(g.ovBx)
+            g.ovBx := na
         g.dormant := true
         array.set(gs, i, g)
     0
@@ -1657,7 +1656,9 @@ f_wakeGap(array<Gap> gs, int i) =>
         float mid = (g.top + g.bot) / 2
         g.bx := box.new(lx, g.top, rx, g.bot, xloc = xlMode, border_color = color.black, border_width = 1)
         g.ce := line.new(lx, mid, rx, mid, xloc = xlMode, style = line.style_dashed, width = 1)
-        g.lb := label.new(rx, mid, "", xloc = xlMode, style = label.style_label_right, color = color.new(color.black, 100), size = lblSize, textalign = text.align_right)
+        g.lb := label.new(rx, mid, "", xloc = xlMode, style = label.style_label_left, color = color.new(color.black, 100), size = lblSize, textalign = text.align_right)
+        if not na(g.bpTop)
+            g.ovBx := box.new(lx, g.bpTop, rx, g.bpBot, xloc = xlMode, border_color = color(na))
         g.dormant := false
         array.set(gs, i, g)
         f_styleGap(g)
@@ -1669,6 +1670,8 @@ f_delGap(array<Gap> gs, int i) =>
     box.delete(g.bx)
     line.delete(g.ce)
     label.delete(g.lb)
+    if not na(g.ovBx)
+        box.delete(g.ovBx)
     array.remove(gs, i)
     0
 
@@ -1718,14 +1721,23 @@ f_nearestHtfCe(array<Gap> gs, float px, bool up) =>
 f_sameTier(int a, int b) =>
     (a <= 1 and b <= 1) or (a >= 2 and b >= 2)
 
-f_makeGap(float top, float bot, float wickHi, float wickLo, int leftB, int leftT, int tfSec, string tfName, int rank, bool bull, bool bpr, int lId, int lIdx) =>
+// top/bot is the box's own full range. For a BPR, that is already the
+// COMBINED range of the new FVG and the IFVG it formed inside - ovTop/ovBot
+// (na for a plain FVG/IFVG) mark the true overlap between the two, shaded a
+// different color by f_styleGap.
+f_makeGap(float top, float bot, float wickHi, float wickLo, int leftB, int leftT, int tfSec, string tfName, int rank, bool bull, bool bpr, int lId, int lIdx, float ovTop, float ovBot) =>
     int lx = f_xAt(leftB, leftT)
     int rx = math.max(lx + f_units(1), f_gapRight(rank))
     float mid = (top + bot) / 2
     box bx = box.new(lx, top, rx, bot, xloc = xlMode, border_color = color.black, border_width = 1)
     line ce = line.new(lx, mid, rx, mid, xloc = xlMode, style = line.style_dashed, width = 1)
-    label lb = label.new(rx, mid, "", xloc = xlMode, style = label.style_label_right, color = color.new(color.black, 100), size = lblSize, textalign = text.align_right)
-    Gap g = Gap.new(bx = bx, ce = ce, lb = lb, top = top, bot = bot, wickHi = wickHi, wickLo = wickLo, tfSec = tfSec, tfName = tfName, rank = rank, bull = bull, inverted = false, bpr = bpr, leftB = leftB, leftT = leftT, bornBar = bar_index, touched = false, respected = false, legId = lId, legIdx = lIdx, dormant = false)
+    // label_left grows the text LEFTWARD from its anchor, so anchoring it at
+    // the box's right edge keeps the text inside the box. label_right at that
+    // same anchor grew the text past rx, off the right edge of the box -
+    // that's the "banner floating outside the box" look.
+    label lb = label.new(rx, mid, "", xloc = xlMode, style = label.style_label_left, color = color.new(color.black, 100), size = lblSize, textalign = text.align_right)
+    box obx = na(ovTop) ? na : box.new(lx, ovTop, rx, ovBot, xloc = xlMode, border_color = color(na))
+    Gap g = Gap.new(bx = bx, ce = ce, lb = lb, top = top, bot = bot, wickHi = wickHi, wickLo = wickLo, tfSec = tfSec, tfName = tfName, rank = rank, bull = bull, inverted = false, bpr = bpr, leftB = leftB, leftT = leftT, bornBar = bar_index, touched = false, respected = false, legId = lId, legIdx = lIdx, dormant = false, bpTop = ovTop, bpBot = ovBot, ovBx = obx)
     f_styleGap(g)
     g
 
@@ -1778,7 +1790,10 @@ f_detectGap(array<Gap> gs, Bar3 bf, int tfSec, string tfName, int rank, bool all
 
             if bigEnough and allowAdd and not dup
                 // BPR = a fresh FVG forming inside an opposite-direction IFVG of
-                // the same timeframe. The parent goes so only one box remains.
+                // the same timeframe. The new FVG is fully contained in the old
+                // IFVG by definition of the trigger below, so the COMBINED range
+                // is just the old IFVG's own range, and the new FVG's own range
+                // is exactly the true overlap - the part shaded differently.
                 int parent = -1
                 if array.size(gs) > 0
                     for i = 0 to array.size(gs) - 1
@@ -1786,7 +1801,16 @@ f_detectGap(array<Gap> gs, Bar3 bf, int tfSec, string tfName, int rank, bool all
                         if g.tfSec == tfSec and g.inverted and not g.bpr and g.bull != bullGap and top <= g.top and bot >= g.bot
                             parent := i
                 bool isBpr = parent >= 0
+                float mkTop = top
+                float mkBot = bot
+                float bpOvTop = na
+                float bpOvBot = na
                 if isBpr
+                    Gap parentGap = array.get(gs, parent)
+                    mkTop := parentGap.top
+                    mkBot := parentGap.bot
+                    bpOvTop := top
+                    bpOvBot := bot
                     f_delGap(gs, parent)
                 int dir = bullGap ? 1 : -1
                 if array.get(lDir, rank) != dir
@@ -1795,7 +1819,7 @@ f_detectGap(array<Gap> gs, Bar3 bf, int tfSec, string tfName, int rank, bool all
                     array.set(lIdx, rank, 0)
                 else
                     array.set(lIdx, rank, array.get(lIdx, rank) + 1)
-                array.push(gs, f_makeGap(top, bot, wHi, wLo, b3, t3, tfSec, tfName, rank, bullGap, isBpr, array.get(lId, rank), array.get(lIdx, rank)))
+                array.push(gs, f_makeGap(mkTop, mkBot, wHi, wLo, b3, t3, tfSec, tfName, rank, bullGap, isBpr, array.get(lId, rank), array.get(lIdx, rank), bpOvTop, bpOvBot))
 
                 // a real, non-tiny 1m gap replaces any overlapping 30s gap in the
                 // same zone - UNLESS that 30s has been respected and is clearly
@@ -1841,6 +1865,13 @@ f_invertGaps(array<Gap> gs, float px) =>
                         g.bull := not g.bull
                         g.inverted := true
                         g.bpr := false
+                        // it stops being a BPR on inversion, so the overlap
+                        // shading box goes with it
+                        if not na(g.ovBx)
+                            box.delete(g.ovBx)
+                            g.ovBx := na
+                        g.bpTop := na
+                        g.bpBot := na
                         array.set(gs, i, g)
                         if not g.dormant
                             f_styleGap(g)
@@ -2253,7 +2284,7 @@ f_addBrk(array<Brk> bs, float top, float bot, int leftB, int leftT, bool bullBre
     // line.new hidden in one arm still creates a drawing. It is always created
     // and hidden with transparency instead.
     line cl = line.new(lx, cisd, rx, cisd, xloc = xlMode, color = color.new(#FFB300, bbShowCisd ? 0 : 100), style = line.style_dotted, width = 1)
-    label lb = label.new(rx, mid, chartTfLabel + " BB ", xloc = xlMode, style = label.style_label_right, color = color.new(color.black, 100), textcolor = color.new(color.black, 0), size = lblSize, textalign = text.align_right)
+    label lb = label.new(rx, mid, chartTfLabel + " BB", xloc = xlMode, style = label.style_label_left, color = color.new(color.black, 100), textcolor = color.new(color.black, 0), size = lblSize, textalign = text.align_right)
     // CISD and BOS start fully hidden. They are only worth marking once this
     // breaker actually confirms - that is the moment it produces a trade signal
     // - so nothing is revealed for a breaker that never gets there.
@@ -2403,7 +2434,6 @@ var PivSeq cmLtfLo = f_newPivSeq()
 
 simple string smtTfEff = timeframe.in_seconds(smtHtfTf) <= chartSeconds ? timeframe.period : smtHtfTf
 bool smtNative = timeframe.in_seconds(smtTfEff) == chartSeconds
-int  smtTfSec  = timeframe.in_seconds(smtTfEff)
 
 [chSecPh, chSecPl, chSecPt] = f_pivFeed(syminfo.tickerid, smtTfEff, smtHtfLen)
 [cmSecPh, cmSecPl, cmSecPt] = f_pivFeed(smtCompSym, smtTfEff, smtHtfLen)
@@ -2417,10 +2447,12 @@ float chLtfPh = ta.pivothigh(high, smtLtfLen, smtLtfLen)
 float chLtfPl = ta.pivotlow(low, smtLtfLen, smtLtfLen)
 int   ltfOff  = smtLtfLen
 
-int chHiOff = smtNative ? smtHtfLen : nz(f_snapOff(chHtfPh, chSecPt, smtTfSec, true), smtHtfLen)
-int chLoOff = smtNative ? smtHtfLen : nz(f_snapOff(chHtfPl, chSecPt, smtTfSec, false), smtHtfLen)
-int cmHiOff = smtNative ? smtHtfLen : nz(f_snapOff(cmSecPh, cmSecPt, smtTfSec, true), smtHtfLen)
-int cmLoOff = smtNative ? smtHtfLen : nz(f_snapOff(cmSecPl, cmSecPt, smtTfSec, false), smtHtfLen)
+// A direct time-delta to chart bars, not a wick search - simpler and more
+// reliable than hunting for the exact wick, and it's what actually renders.
+int chHiOff = smtNative ? smtHtfLen : (na(chSecPt) ? smtHtfLen : int(math.round((time - chSecPt) / chartMs)))
+int chLoOff = smtNative ? smtHtfLen : (na(chSecPt) ? smtHtfLen : int(math.round((time - chSecPt) / chartMs)))
+int cmHiOff = smtNative ? smtHtfLen : (na(cmSecPt) ? smtHtfLen : int(math.round((time - cmSecPt) / chartMs)))
+int cmLoOff = smtNative ? smtHtfLen : (na(cmSecPt) ? smtHtfLen : int(math.round((time - cmSecPt) / chartMs)))
 
 // f_pushPiv ignores an na price or time, so these are called flat rather than
 // wrapped in a ternary - a ternary evaluates BOTH arms, so a push hidden in one
@@ -2828,7 +2860,7 @@ int mContracts = na(exactContracts) ? 0 : math.max(1, int(math.floor(exactContra
 // =============================================================================
 groupPlan = "Trade planner"
 showPlanner    = input.bool(true, "Draw the trade plan", group = groupPlan)
-showZones      = input.bool(false, "Shade the risk / profit zones", group = groupPlan, tooltip = "Off by default - the shading covered the candles. The plan lines alone read cleanly.")
+showZones      = input.bool(true, "Shade the risk / profit zones", group = groupPlan)
 planMinGrade   = input.string("B", "Minimum grade to plan", options = ["A+", "A", "A-", "B+", "B", "B-", "C"], group = groupPlan)
 useTp4         = input.bool(true, "Use a 4th target (runner)", group = groupPlan)
 tp1Alloc       = input.float(50, "TP1 allocation %", minval = 0, maxval = 100, group = groupPlan)
@@ -2852,8 +2884,8 @@ entryBe        = input.color(#000000, "Entry tag on breakeven", group = groupPla
 entryFade      = input.int(30, "Entry tag fade once resolved", minval = 0, maxval = 80, group = groupPlan)
 zoneUpper      = input.color(#0B0E14, "Zone above entry", group = groupPlan)
 zoneLower      = input.color(#F23645, "Zone below entry", group = groupPlan)
-zoneUpperTr    = input.int(85, "Upper zone transparency", minval = 30, maxval = 95, group = groupPlan, tooltip = "The black side is deliberately more opaque than the red so it is actually visible.")
-zoneLowerTr    = input.int(88, "Lower zone transparency", minval = 30, maxval = 95, group = groupPlan)
+zoneUpperTr    = input.int(70, "Upper zone transparency", minval = 30, maxval = 95, group = groupPlan, tooltip = "The black side is deliberately more opaque than the red so it is actually visible.")
+zoneLowerTr    = input.int(85, "Lower zone transparency", minval = 30, maxval = 95, group = groupPlan)
 
 type Trade
     bool   isLong
