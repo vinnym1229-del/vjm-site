@@ -253,7 +253,7 @@ f_compactName(string name) =>
     compact
 
 f_levelText(string name, float price, bool swept, string confluence, string dateText) =>
-    string txt = confluence == "" ? name : f_compactName(name) + " " + confluence
+    string txt = confluence == "" ? name : f_compactName(name) + "+" + confluence
     if dateText != ""
         txt := txt + " " + dateText
     if showPricesInLabels
@@ -994,6 +994,19 @@ string chartTfLabel = f_tfLabel(timeframe.period)
 bool doLayout = barstate.islast
 bool newTradingDay = not na(time[1]) and f_nyKey(time) != f_nyKey(time[1])
 
+// Moved up from the liquidity section so the fixed volume profile can also
+// use it, to dedup a VAH/VAL/POC line against a session level at the same
+// price instead of drawing both on top of each other.
+f_nearSessionLevel(array<Level> lv, float px, int ticks) =>
+    bool found = false
+    if array.size(lv) > 0
+        for i = 0 to array.size(lv) - 1
+            if f_near(px, array.get(lv, i).price, ticks)
+                found := true
+    if f_near(px, asiaHigh, ticks) or f_near(px, asiaLow, ticks) or f_near(px, londonHigh, ticks) or f_near(px, londonLow, ticks) or f_near(px, intradayHigh, ticks) or f_near(px, intradayLow, ticks)
+        found := true
+    found
+
 // ---------------------------------------------------------------------------
 // DISTANCE CULL - an emergency net for ONE failure mode: a level carried over
 // from an earlier contract month that sits thousands of points away from the
@@ -1164,7 +1177,10 @@ f_layoutVp(VpLvl v) =>
     0
 
 f_drawVp(array<VpLvl> vs, string name, float price, color col, color txtCol, int startB, int startT, bool enabled) =>
-    if enabled and not na(price)
+    // A session level already at this price owns it (tagged via
+    // f_tagLevelsWithVp) - drawing a second line here would just sit on top
+    // of it.
+    if enabled and not na(price) and not f_nearSessionLevel(levels, price, profileToleranceTicks)
         int x1 = f_xAt(startB, startT)
         line a = line.new(x1, price, x1, price, xloc = xlMode, color = col, style = line.style_dashed, width = 1)
         line b = line.new(x1, price, x1, price, xloc = xlMode, extend = extend.right, color = col, style = line.style_dashed, width = 1)
@@ -1258,6 +1274,41 @@ f_vpTag(float px) =>
     else if f_near(px, dPoc, profileToleranceTicks) or f_near(px, wPoc, profileToleranceTicks) or f_near(px, activeProfilePoc, profileToleranceTicks)
         tg := "POC"
     tg
+
+// Same idea, but distinguishes Daily from Weekly ("VAH (D)") for the session
+// level confluence tag below - a session level reads "PDL+VAH (D)", not just
+// "PDL+VAH", so it's clear which profile put it there.
+f_vpTagDW(float px) =>
+    string tg = ""
+    if f_near(px, dVah, profileToleranceTicks)
+        tg := "VAH (D)"
+    else if f_near(px, dVal, profileToleranceTicks)
+        tg := "VAL (D)"
+    else if f_near(px, dPoc, profileToleranceTicks)
+        tg := "POC (D)"
+    else if f_near(px, wVah, profileToleranceTicks)
+        tg := "VAH (W)"
+    else if f_near(px, wVal, profileToleranceTicks)
+        tg := "VAL (W)"
+    else if f_near(px, wPoc, profileToleranceTicks)
+        tg := "POC (W)"
+    tg
+
+// A VAH/VAL/POC that lands on a session level (PDH/PDL/Asia/London/PWH/PWL)
+// is not a second line to draw - the session level already owns that price.
+// Tag the session level's own label instead ("PDL+VAH (D)") and skip drawing
+// the fixed-profile line entirely for that one.
+f_tagLevelsWithVp() =>
+    if array.size(levels) > 0
+        for i = 0 to array.size(levels) - 1
+            Level lvl = array.get(levels, i)
+            string tag = f_vpTagDW(lvl.price)
+            if tag != ""
+                f_addConfluenceToLevel(i, tag)
+    0
+
+if doLayout
+    f_tagLevelsWithVp()
 
 // =============================================================================
 // Liquidity - BSL / SSL
@@ -1365,16 +1416,6 @@ f_delLiq(array<Liq> qs, int i) =>
     array.remove(qs, i)
     0
 
-f_nearSessionLevel(array<Level> lv, float px, int ticks) =>
-    bool found = false
-    if array.size(lv) > 0
-        for i = 0 to array.size(lv) - 1
-            if f_near(px, array.get(lv, i).price, ticks)
-                found := true
-    if f_near(px, asiaHigh, ticks) or f_near(px, asiaLow, ticks) or f_near(px, londonHigh, ticks) or f_near(px, londonLow, ticks) or f_near(px, intradayHigh, ticks) or f_near(px, intradayLow, ticks)
-        found := true
-    found
-
 f_liqExists(array<Liq> qs, float px, bool isHigh) =>
     bool found = false
     if array.size(qs) > 0
@@ -1413,19 +1454,22 @@ float liqPh = liqNative ? ta.pivothigh(high, liqSwingLen, liqSwingLen) : liqSecP
 float liqPl = liqNative ? ta.pivotlow(low, liqSwingLen, liqSwingLen) : liqSecPl
 int   liqPt = liqNative ? time[liqSwingLen] : liqSecPt
 
-// Anchor directly off the swing length, the same way the breaker section
-// anchors rollSwingHigh/Low (bar_index - bbSwingLen) - no wick-search needed.
-// The earlier f_snapOff version was extra complexity on the exact code path
-// that was producing zero BSL/SSL rays; anchoring directly here is what
-// actually renders.
+// Native tf: the pivot bar is exactly liqSwingLen CHART bars back, same as
+// the breaker section's rollSwingHigh/Low. Non-native (the 5m default on a
+// faster chart): liqSwingLen is bars on the PIVOT timeframe, not the chart's,
+// so reusing it directly anchored a 5m pivot only ~6 chart-minutes back
+// instead of the ~30 minutes it actually happened - the ray landed nowhere
+// near its own wick. A straight time-delta to chart bars is correct for both.
 var int lastLiqPhTime = na
 var int lastLiqPlTime = na
 if showLiq and not na(liqPh) and not na(liqPt) and (na(lastLiqPhTime) or liqPt != lastLiqPhTime)
     lastLiqPhTime := liqPt
-    f_addLiq(liqs, liqPh, true, bar_index - liqSwingLen, liqPt)
+    int offH = liqNative ? liqSwingLen : int(math.round((time - liqPt) / chartMs))
+    f_addLiq(liqs, liqPh, true, bar_index - offH, liqPt)
 if showLiq and not na(liqPl) and not na(liqPt) and (na(lastLiqPlTime) or liqPt != lastLiqPlTime)
     lastLiqPlTime := liqPt
-    f_addLiq(liqs, liqPl, false, bar_index - liqSwingLen, liqPt)
+    int offL = liqNative ? liqSwingLen : int(math.round((time - liqPt) / chartMs))
+    f_addLiq(liqs, liqPl, false, bar_index - offL, liqPt)
 
 bool liqSweptThisBar = false
 if array.size(liqs) > 0
@@ -1506,8 +1550,8 @@ fvgTiny1mPts  = input.float(3.0, "1m gap treated as \"tiny\" below this many poi
 tinyWinMult   = input.float(1.2, "A respected 30s must be at least this much bigger than the 1m to keep priority", minval = 1.0, maxval = 3.0, step = 0.05, group = groupFvg)
 gapOverlapFrac = input.float(0.7, "Overlap fraction that kills the lower timeframe", minval = 0.3, maxval = 1.0, step = 0.05, group = groupFvg, tooltip = "1H beats 15m beats 5m when this much of the lower gap sits inside the higher one. 30s/1m are a SEPARATE band and are never removed by a 5m+ gap - an HTF gap fill with an LTF inversion out of it IS the setup, so those two must coexist.")
 gapFirstLast  = input.bool(true, "Keep only the first and last gap of each leg", group = groupFvg)
-maxTotalGaps  = input.int(8, "Max gaps on the chart (all timeframes)", minval = 2, maxval = 80, group = groupFvg)
-maxGapsPerTf  = input.int(2, "Max gaps per timeframe", minval = 1, maxval = 10, group = groupFvg, tooltip = "Stops one timeframe stacking boxes on top of each other.")
+maxTotalGaps  = input.int(16, "Max gaps on the chart (all timeframes)", minval = 2, maxval = 80, group = groupFvg)
+maxGapsPerTf  = input.int(3, "Max gaps per timeframe", minval = 1, maxval = 10, group = groupFvg, tooltip = "Stops one timeframe stacking boxes on top of each other. Combined with \"keep only the first and last gap of each leg\" below, 2 was pruning gaps that should have stayed on chart.")
 htfDistAtr    = input.float(25, "HTF gap max distance (x reference ATR)", minval = 2, maxval = 200, group = groupFvg)
 sweep30sBars  = input.int(15, "30s gaps valid within N bars of a sweep", minval = 1, maxval = 100, group = groupFvg)
 gapFillTransp = input.int(55, "Fill transparency (lowest timeframe)", minval = 0, maxval = 95, group = groupFvg, tooltip = "Higher = more see-through. A real dark-grey tint, not a near-solid black box and not so faint it reads as a bare line.")
