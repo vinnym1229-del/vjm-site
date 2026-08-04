@@ -1087,25 +1087,15 @@ monFriPct    = input.float(50, "Monday / Friday size %", minval = 10, maxval = 1
 float pointValue = instrMode == "Auto (charted symbol)" ? syminfo.pointvalue : instrMode == "MNQ" ? 2.0 : instrMode == "NQ" ? 20.0 : instrMode == "MES" ? 5.0 : 50.0
 string instrName = instrMode == "Auto (charted symbol)" ? syminfo.ticker : instrMode
 
-// --------------------------------------------------------- session / news gates
-groupGate = "Session & news gates"
+// --------------------------------------------------------- session gate
+// News windows are gone - a hand-maintained list of times isn't tied to any
+// real calendar and just goes stale. Nothing here reaches out to ForexFactory
+// or anywhere else; if you want news avoided, do it by eye.
+groupGate = "Session gate"
 rthSession   = input.session("0935-1500", "Primary trading window", group = groupGate)
 asiaTrading  = input.bool(false, "Also trade the Asia window", group = groupGate, tooltip = "Off by default - the Asia window supplied most of the low-grade losers.")
 asiaTradeSes = input.session("2000-2300", "Asia trading window", group = groupGate)
 blockMonday  = input.bool(false, "Block Mondays entirely", group = groupGate)
-useNewsBlock = input.bool(true, "Block news windows", group = groupGate)
-// Each window has its own switch. Never use an empty-looking session string as
-// an off sentinel: TradingView reads 0000-0000 as the FULL 24-hour day.
-news1On = input.bool(true, "Block 08:30 news", group = groupGate)
-news1   = input.session("0828-0836", "News window 1", group = groupGate)
-news2On = input.bool(true, "Block 10:00 news", group = groupGate)
-news2   = input.session("0958-1005", "News window 2", group = groupGate)
-news3On = input.bool(true, "Block 14:00 news", group = groupGate)
-news3   = input.session("1358-1405", "News window 3", group = groupGate)
-news4On = input.bool(false, "Block custom window 1", group = groupGate)
-news4   = input.session("0828-0836", "Custom news window 1", group = groupGate)
-news5On = input.bool(false, "Block custom window 2", group = groupGate)
-news5   = input.session("0828-0836", "Custom news window 2", group = groupGate)
 
 f_inSes(string ses) =>
     not na(time(timeframe.period, f_session(ses), sessionTimezone))
@@ -1114,8 +1104,7 @@ bool inRth      = f_inSes(rthSession)
 bool inAsiaTrad = asiaTrading and f_inSes(asiaTradeSes)
 bool isMonday   = dayofweek(time, sessionTimezone) == dayofweek.monday
 bool isFriday   = dayofweek(time, sessionTimezone) == dayofweek.friday
-bool inNews     = useNewsBlock and ((news1On and f_inSes(news1)) or (news2On and f_inSes(news2)) or (news3On and f_inSes(news3)) or (news4On and f_inSes(news4)) or (news5On and f_inSes(news5)))
-bool sessionOk  = (inRth or inAsiaTrad) and not inNews and not (blockMonday and isMonday)
+bool sessionOk  = (inRth or inAsiaTrad) and not (blockMonday and isMonday)
 
 // ------------------------------------------------------------------ chop filter
 groupChop = "Chop filter"
@@ -1857,7 +1846,8 @@ f_invertGaps(array<Gap> gs, float px) =>
                         g.inverted := true
                         g.bpr := false
                         array.set(gs, i, g)
-                        f_styleGap(g)
+                        if not g.dormant
+                            f_styleGap(g)
                         flips += 1
                         lastBull := g.bull
                         lastRank := g.rank
@@ -2814,8 +2804,11 @@ f_gradeFromScore(float sc) =>
 f_gradeIdx(string g) =>
     g == "A+" ? 0 : g == "A" ? 1 : g == "A-" ? 2 : g == "B+" ? 3 : g == "B" ? 4 : g == "B-" ? 5 : g == "C" ? 6 : -1
 
+// Chop stays visible on the checklist for context but never blocks a trade -
+// a filter that vetoes setups on a hunch about "choppiness" was costing more
+// good trades than it was saving bad ones.
 bool chopBlocked = useChopFilter and isChop
-bool gatesOk = sessionOk and cRiskReward and notIntoWall and modelDir != 0 and not chopBlocked and not stopTooWide and coherent and seqOk and (not requireConfirm or cConfirmation)
+bool gatesOk = sessionOk and cRiskReward and notIntoWall and modelDir != 0 and not stopTooWide and coherent and seqOk and (not requireConfirm or cConfirmation)
 string mGrade = not showModel or not gatesOk ? "No Trade" : f_gradeFromScore(mScore)
 
 float sizeMult = 1.0
@@ -3128,9 +3121,7 @@ string blockReason = "-"
 if not showModel
     blockReason := "model off"
 else if not sessionOk
-    blockReason := inNews ? "news window" : "outside session"
-else if chopBlocked
-    blockReason := "chop " + str.tostring(chopScore, "#")
+    blockReason := "outside session"
 else if modelDir == 0
     blockReason := "no direction yet"
 else if requireConfirm and not cConfirmation
@@ -3205,8 +3196,8 @@ if showChecklist and barstate.islast
     table.set_position(clTbl, f_pos(checklistPos))
     table.clear(clTbl, 0, 0, 2, 14)
     f_r3(clTbl, 0, "Ifvg " + setupType, mGrade, str.tostring(mScore, "#.#") + "%", mGrade == "No Trade" ? color.new(#F23645, 0) : color.new(#089981, 0))
-    f_r3(clTbl, 1, "Session / news", f_tick(sessionOk), inNews ? "news" : inAsiaTrad ? "asia" : inRth ? "rth" : "closed", f_tickCol(sessionOk))
-    f_r3(clTbl, 2, "Chop", f_tick(not chopBlocked), str.tostring(chopScore, "#") + "/100", f_tickCol(not chopBlocked))
+    f_r3(clTbl, 1, "Session", f_tick(sessionOk), inAsiaTrad ? "asia" : inRth ? "rth" : "closed", f_tickCol(sessionOk))
+    f_r3(clTbl, 2, "Chop (advisory)", f_tick(not chopBlocked), str.tostring(chopScore, "#") + "/100", f_tickCol(not chopBlocked))
     f_r3(clTbl, 3, "Condition", f_tick(cCondition), str.tostring(wCondition, "#") + "%", f_tickCol(cCondition))
     f_r3(clTbl, 4, "Condition+", f_tick(cConditionPlus), str.tostring(wConditionPlus, "#") + "%", f_tickCol(cConditionPlus))
     f_r3(clTbl, 5, "Pullback", f_tick(cPullback), str.tostring(wPullback, "#") + "%", f_tickCol(cPullback))
