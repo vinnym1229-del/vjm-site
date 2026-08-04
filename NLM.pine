@@ -996,31 +996,26 @@ bool doLayout = barstate.islast
 bool newTradingDay = not na(time[1]) and f_nyKey(time) != f_nyKey(time[1])
 
 // ---------------------------------------------------------------------------
-// DISTANCE CULL - this is the one that made the whole indicator look wrong.
+// DISTANCE CULL - an emergency net for ONE failure mode: a level carried over
+// from an earlier contract month that sits thousands of points away from the
+// current front month. That kind of stale price stretches the indicator's
+// auto-fitted scale and squashes every other drawing into a thin band.
 //
-// A level carried over from an earlier contract month sits ~1800 points away
-// from a chart trading 28,200. Drawings feed the indicator's price scale, so a
-// handful of those stretch its range and squash EVERY other drawing into a thin
-// band - labels then print nowhere near the price written on them. Worse, that
-// scale is auto-fitted, so it recomputes as you scroll and the drawings slide
-// VERTICALLY. That is the movement, and no amount of horizontal anchoring could
-// ever have fixed it.
-//
-// Anything further from price than this is deleted, in Part 1's level array and
-// in every Part 2 collection.
+// It is NOT for pruning levels a normal trend has simply moved away from -
+// Asia/London/PDH/PDL/PWH/PWL are routinely 5-15%+ from price on a strong
+// trend day and are still exactly the levels this indicator exists to show.
+// The default sits high enough that only a genuine contract-roll-sized jump
+// trips it. Part 1's own level array is never touched by this cull at all -
+// it already prunes itself daily (f_rollLevelsForNewDay / maxOldUnsweptSessionLevels),
+// and it is the untouched foundation.
 // ---------------------------------------------------------------------------
 groupSanity = "Sanity"
-cullFarPct = input.float(2.5, "Delete drawings further than this % from price", minval = 0.2, maxval = 25, step = 0.1, group = groupSanity, tooltip = "A stale level from a previous contract month is thousands of points away. It stretches the indicator's price scale and squashes everything else into a band, and because that scale is auto-fitted it also makes drawings slide vertically when you scroll.")
+cullFarPct = input.float(35, "Delete drawings further than this % from price", minval = 0.2, maxval = 100, step = 0.5, group = groupSanity, tooltip = "Safety net for a stale previous-contract level, not a trend filter. A normal trend can easily put Asia/London/PDH/PDL 10-20% away from current price - keep this high so real levels never get deleted, only a genuinely stale contract-roll price thousands of points away.")
 
 float cullDist = close * cullFarPct / 100.0
 
 f_tooFar(float px) =>
     na(px) or math.abs(px - close) > cullDist
-
-if array.size(levels) > 0
-    for i = array.size(levels) - 1 to 0
-        if f_tooFar(array.get(levels, i).price)
-            f_deleteLevel(i)
 
 // One level = two line segments with a real visual break, text centred in the
 // break. This is the "on the line" look, not text floating over a solid line.
