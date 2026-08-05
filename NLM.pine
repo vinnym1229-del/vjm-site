@@ -1679,6 +1679,7 @@ type Bar3
 type Gap
     box    bx
     line   ce
+    line   ceB
     label  lb
     float  top
     float  bot
@@ -1760,6 +1761,7 @@ f_styleGap(Gap g) =>
     box.set_bgcolor(g.bx, color.new(f_gapFillColor(g), trFill))
     box.set_border_color(g.bx, color.new(color.black, trLine))
     line.set_color(g.ce, color.new(f_gapAccent(g), trLine))
+    line.set_color(g.ceB, color.new(f_gapAccent(g), trLine))
     label.set_textcolor(g.lb, color.new(f_gapAccent(g), 0))
     label.set_text(g.lb, f_gapText(g))
     // the true overlap band sits a bit more opaque than the outer edges so it
@@ -1788,9 +1790,19 @@ f_layoutGap(Gap g) =>
     float mid = (g.top + g.bot) / 2
     box.set_lefttop(g.bx, lx, g.top)
     box.set_rightbottom(g.bx, rx, g.bot)
+    // the CE line breaks around wherever the label actually sits, instead of
+    // running the full width underneath it - same "line stops for the text"
+    // treatment as BSL/SSL and the trade planner, just centred on the
+    // label's own position rather than the box's.
+    int lblX = f_gapLabelX(lx, rx)
+    int gapHalf = f_units(3)
+    int ga = math.max(lx, lblX - gapHalf)
+    int gb = math.min(rx, lblX + gapHalf)
     line.set_xy1(g.ce, lx, mid)
-    line.set_xy2(g.ce, rx, mid)
-    label.set_xy(g.lb, f_gapLabelX(lx, rx), mid)
+    line.set_xy2(g.ce, ga, mid)
+    line.set_xy1(g.ceB, gb, mid)
+    line.set_xy2(g.ceB, rx, mid)
+    label.set_xy(g.lb, lblX, mid)
     if not na(g.ovBx)
         box.set_lefttop(g.ovBx, lx, g.bpTop)
         box.set_rightbottom(g.ovBx, rx, g.bpBot)
@@ -1804,6 +1816,7 @@ f_sleepGap(array<Gap> gs, int i) =>
     if not g.dormant
         box.delete(g.bx)
         line.delete(g.ce)
+        line.delete(g.ceB)
         label.delete(g.lb)
         if not na(g.ovBx)
             box.delete(g.ovBx)
@@ -1820,6 +1833,7 @@ f_wakeGap(array<Gap> gs, int i) =>
         float mid = (g.top + g.bot) / 2
         g.bx := box.new(lx, g.top, rx, g.bot, xloc = xlMode, border_color = color.black, border_width = 1)
         g.ce := line.new(lx, mid, rx, mid, xloc = xlMode, style = line.style_dashed, width = 1)
+        g.ceB := line.new(rx, mid, rx, mid, xloc = xlMode, style = line.style_dashed, width = 1)
         // label_center draws a plain box centred exactly on its anchor, so
         // an inset-from-the-right anchor reads as right-aligned without
         // risking it spilling past the box edge.
@@ -1836,6 +1850,7 @@ f_delGap(array<Gap> gs, int i) =>
     Gap g = array.get(gs, i)
     box.delete(g.bx)
     line.delete(g.ce)
+    line.delete(g.ceB)
     label.delete(g.lb)
     if not na(g.ovBx)
         box.delete(g.ovBx)
@@ -1898,12 +1913,13 @@ f_makeGap(float top, float bot, float wickHi, float wickLo, int leftB, int leftT
     float mid = (top + bot) / 2
     box bx = box.new(lx, top, rx, bot, xloc = xlMode, border_color = color.black, border_width = 1)
     line ce = line.new(lx, mid, rx, mid, xloc = xlMode, style = line.style_dashed, width = 1)
+    line ceB = line.new(rx, mid, rx, mid, xloc = xlMode, style = line.style_dashed, width = 1)
     // label_center draws a plain box centred exactly on its anchor - reading
     // right-aligned rather than dead-centre, without the overflow risk
     // pointer-style labels had.
     label lb = label.new(f_gapLabelX(lx, rx), mid, "", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), size = lblSize, textalign = text.align_center)
     box obx = na(ovTop) ? na : box.new(lx, ovTop, rx, ovBot, xloc = xlMode, border_color = color(na))
-    Gap g = Gap.new(bx = bx, ce = ce, lb = lb, top = top, bot = bot, wickHi = wickHi, wickLo = wickLo, tfSec = tfSec, tfName = tfName, rank = rank, bull = bull, inverted = false, bpr = bpr, leftB = leftB, leftT = leftT, bornBar = bar_index, touched = false, respected = false, legId = lId, legIdx = lIdx, dormant = false, bpTop = ovTop, bpBot = ovBot, ovBx = obx)
+    Gap g = Gap.new(bx = bx, ce = ce, ceB = ceB, lb = lb, top = top, bot = bot, wickHi = wickHi, wickLo = wickLo, tfSec = tfSec, tfName = tfName, rank = rank, bull = bull, inverted = false, bpr = bpr, leftB = leftB, leftT = leftT, bornBar = bar_index, touched = false, respected = false, legId = lId, legIdx = lIdx, dormant = false, bpTop = ovTop, bpBot = ovBot, ovBx = obx)
     f_styleGap(g)
     g
 
@@ -2574,7 +2590,7 @@ smtHtfFresh = input.int(60, "HTF freshness (bars)", minval = 5, maxval = 400, gr
 smtLtfLen   = input.int(5, "LTF pivot length", minval = 2, maxval = 30, group = groupSmt)
 smtLtfFresh = input.int(15, "LTF freshness (bars)", minval = 3, maxval = 200, group = groupSmt)
 smtColor    = input.color(color.black, "SMT color", group = groupSmt)
-smtLabelGap = input.int(6, "Label gap width (bars)", minval = 2, maxval = 40, group = groupSmt)
+smtLabelGap = input.int(4, "Label gap width (bars)", minval = 2, maxval = 40, group = groupSmt)
 
 type PivSeq
     array<float> p
