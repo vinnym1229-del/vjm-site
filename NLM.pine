@@ -1100,18 +1100,6 @@ chopThreshold = input.int(60, "Chop score threshold (0-100)", minval = 10, maxva
 chopAtrRef    = input.int(50, "ATR baseline length", minval = 10, maxval = 300, group = groupChop)
 
 float atrNow  = ta.atr(14)
-
-// Vertical clearance used by any label that must sit clear of its own line.
-// This MUST be a fixed-timeframe reference, not the chart's own ATR:
-// atrNow above is the chart's native-timeframe ATR, which is tiny on a 1m
-// chart and enormous on a 4H/Daily chart (a single 4H NQ candle can range
-// 100+ points). Using it here is exactly why a label flew 100+ points off
-// its own line on a 4H chart while looking fine on 1m - the offset was
-// scaling with candle size, not with anything the eye needs. Always
-// sampling the 5-minute ATR regardless of the chart's own timeframe gives
-// the same, sane offset everywhere.
-float liqLabelAtr = request.security(syminfo.tickerid, "5", ta.atr(14), lookahead = barmerge.lookahead_off)
-float liqLabelPad = nz(liqLabelAtr, syminfo.mintick * 40) * 0.5
 float atrBase = ta.sma(atrNow, chopAtrRef)
 float bodyRatio = (high - low) > 0 ? math.abs(close - open) / (high - low) : 0.0
 float chopComp1 = math.min(100.0, math.max(0.0, (1.0 - atrNow / math.max(syminfo.mintick, atrBase)) * 200.0))
@@ -1335,7 +1323,14 @@ showLiq       = input.bool(true, "Show BSL / SSL", group = groupLiq)
 liqPivotTf    = input.timeframe("5", "Wick source timeframe", group = groupLiq)
 liqSwingLen   = input.int(6, "Swing length (bars each side)", minval = 2, maxval = 30, group = groupLiq)
 liqDedupTicks = input.int(10, "Dedup vs session levels (ticks)", minval = 1, maxval = 200, group = groupLiq, tooltip = "If it lands on an Asia/London/PDH/PDL/intraday level, that level already covers it and no second line is drawn.")
-int liqLabelGap = 9
+// Widened from 9. This is a BAR count, not a pixel count - Pine has no way
+// to size a gap in fixed screen pixels, so it shrinks in screen-space the
+// further the chart is zoomed out. 9 bars was too narrow to clear the text
+// at anything but a very tight zoom; this is a genuinely wide gap at the
+// zoom levels this indicator is actually used at (intraday to a few months
+// visible). Extremely zoomed out (a year+ visible) it will read tighter
+// again - that is Pine's coordinate system, not something fixable here.
+int liqLabelGap = 30
 liqSweptHold  = input.int(30, "Keep $$$ for N bars after the sweep", minval = 3, maxval = 400, group = groupLiq, tooltip = "Covers the sweep-then-reverse, which is the point of marking it.")
 liqMaxUnswept = input.int(10, "Max unswept rays", minval = 1, maxval = 60, group = groupLiq)
 liqMaxAgeDays = input.int(5, "Drop unswept rays older than (days)", minval = 1, maxval = 30, group = groupLiq)
@@ -1439,13 +1434,17 @@ f_layoutLiq(Liq q) =>
         label.set_xy(q.lb, xr + f_units(2), q.price)
         label.set_text(q.lb, f_liqText(q))
     else
-        // Break the line where the text sits AND lift the text clear of the
-        // line's own price. A fixed tick count was the mistake here: 4 ticks
-        // on NQ is one point out of ~30,000, which is a fraction of a pixel -
-        // mathematically applied, visually nothing. Scaling off ATR makes the
-        // separation real at any zoom and on any instrument.
+        // Moving the label off the line's own price (previous two rounds)
+        // was the actual mistake: f_gapLineAt breaks the LINE around the
+        // label's X position at the line's own price, so nudging the label
+        // away from that price left an empty gap sitting in the line with
+        // nothing in it, and the text floating separately above - worse than
+        // the original overlap on a chart with several rays stacked close
+        // together, which is exactly what the last screenshot showed. The
+        // label now sits exactly on the line's own price again, and the fix
+        // for "the line runs through the text" is the gap itself: it's
+        // widened enough that nothing is drawn under the label at all.
         f_gapLineAt(q.lnA, q.lnB, q.lb, q.price, x1, f_xNow(), liqLabelGap, f_liqText(q), true, 0)
-        label.set_y(q.lb, q.isHigh ? q.price + liqLabelPad : q.price - liqLabelPad)
     0
 
 f_delLiq(array<Liq> qs, int i) =>
