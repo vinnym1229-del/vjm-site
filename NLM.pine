@@ -1021,8 +1021,12 @@ f_nearSessionLevel(array<Level> lv, float px, int ticks) =>
 // it already prunes itself daily (f_rollLevelsForNewDay / maxOldUnsweptSessionLevels),
 // and it is the untouched foundation.
 // ---------------------------------------------------------------------------
-groupSanity = "Sanity"
-cullFarPct = input.float(35, "Delete drawings further than this % from price", minval = 0.2, maxval = 100, step = 0.5, group = groupSanity, tooltip = "Safety net for a stale previous-contract level, not a trend filter. A normal trend can easily put Asia/London/PDH/PDL 10-20% away from current price - keep this high so real levels never get deleted, only a genuinely stale contract-roll price thousands of points away.")
+// NOT an input. TradingView keeps a chart's SAVED input values when the source
+// is edited, so changing an input's default does nothing to an indicator that
+// is already on a chart - which is exactly why every earlier "fix" that only
+// moved a default silently never took effect. Anything whose value actually
+// matters visually is a plain constant from here on.
+float cullFarPct = 35.0
 
 float cullDist = close * cullFarPct / 100.0
 
@@ -1096,6 +1100,11 @@ chopThreshold = input.int(60, "Chop score threshold (0-100)", minval = 10, maxva
 chopAtrRef    = input.int(50, "ATR baseline length", minval = 10, maxval = 300, group = groupChop)
 
 float atrNow  = ta.atr(14)
+
+// Vertical clearance used by any label that must sit clear of its own line.
+// Expressed as a fraction of ATR, never a raw tick count, so it is the same
+// visible distance on NQ at 30,000 as on a 5-point instrument.
+float liqLabelPad = nz(atrNow, syminfo.mintick * 40) * 0.35
 float atrBase = ta.sma(atrNow, chopAtrRef)
 float bodyRatio = (high - low) > 0 ? math.abs(close - open) / (high - low) : 0.0
 float chopComp1 = math.min(100.0, math.max(0.0, (1.0 - atrNow / math.max(syminfo.mintick, atrBase)) * 200.0))
@@ -1319,8 +1328,7 @@ showLiq       = input.bool(true, "Show BSL / SSL", group = groupLiq)
 liqPivotTf    = input.timeframe("5", "Wick source timeframe", group = groupLiq)
 liqSwingLen   = input.int(6, "Swing length (bars each side)", minval = 2, maxval = 30, group = groupLiq)
 liqDedupTicks = input.int(10, "Dedup vs session levels (ticks)", minval = 1, maxval = 200, group = groupLiq, tooltip = "If it lands on an Asia/London/PDH/PDL/intraday level, that level already covers it and no second line is drawn.")
-liqLabelGap   = input.int(7, "Label gap width (bars)", minval = 2, maxval = 60, group = groupLiq)
-liqLabelOffsetTicks = input.int(12, "BSL/SSL label vertical offset (ticks)", minval = 1, maxval = 100, group = groupLiq, tooltip = "How far the BSL/SSL text sits above/below its own line so the line doesn't run through it. Raise this if the text still touches the line at your zoom level.")
+int liqLabelGap = 9
 liqSweptHold  = input.int(30, "Keep $$$ for N bars after the sweep", minval = 3, maxval = 400, group = groupLiq, tooltip = "Covers the sweep-then-reverse, which is the point of marking it.")
 liqMaxUnswept = input.int(10, "Max unswept rays", minval = 1, maxval = 60, group = groupLiq)
 liqMaxAgeDays = input.int(5, "Drop unswept rays older than (days)", minval = 1, maxval = 30, group = groupLiq)
@@ -1424,13 +1432,13 @@ f_layoutLiq(Liq q) =>
         label.set_xy(q.lb, xr + f_units(2), q.price)
         label.set_text(q.lb, f_liqText(q))
     else
+        // Break the line where the text sits AND lift the text clear of the
+        // line's own price. A fixed tick count was the mistake here: 4 ticks
+        // on NQ is one point out of ~30,000, which is a fraction of a pixel -
+        // mathematically applied, visually nothing. Scaling off ATR makes the
+        // separation real at any zoom and on any instrument.
         f_gapLineAt(q.lnA, q.lnB, q.lb, q.price, x1, f_xNow(), liqLabelGap, f_liqText(q), true, 0)
-        // nudged off the line itself so the wick price doesn't run straight
-        // through the text - above for a high, below for a low. Configurable
-        // since how many ticks read as "a visible gap" depends on the
-        // symbol's tick size and how zoomed in the chart is.
-        float tickOff = syminfo.mintick * liqLabelOffsetTicks
-        label.set_y(q.lb, q.isHigh ? q.price + tickOff : q.price - tickOff)
+        label.set_y(q.lb, q.isHigh ? q.price + liqLabelPad : q.price - liqLabelPad)
     0
 
 f_delLiq(array<Liq> qs, int i) =>
@@ -1573,20 +1581,31 @@ var int lastLiq4hPlTime = na
 if show4hLiq and not na(liq4hPh) and not na(liq4hPt) and (na(lastLiq4hPhTime) or liq4hPt != lastLiq4hPhTime)
     lastLiq4hPhTime := liq4hPt
     int off4h = liq4hNative ? liq4hSwingLen : int(math.round((time - liq4hPt) / chartMs))
-    int sizeBefore = array.size(liq4h)
     f_addLiq(liq4h, liq4hPh, true, bar_index - off4h, liq4hPt)
-    // a genuinely new pivot got pushed (not a dedup/duplicate reject) - check
-    // whether it is the new all-time high
-    if array.size(liq4h) > sizeBefore and (na(ath4hPrice) or liq4hPh > ath4hPrice)
-        f_clearAth4h(liq4h)
-        ath4hPrice := liq4hPh
-        Liq newAth = array.get(liq4h, array.size(liq4h) - 1)
-        newAth.tag := "ATH"
-        array.set(liq4h, array.size(liq4h) - 1, newAth)
 if show4hLiq and not na(liq4hPl) and not na(liq4hPt) and (na(lastLiq4hPlTime) or liq4hPt != lastLiq4hPlTime) and (close - liq4hPl) <= liq4hSslRangePts
     lastLiq4hPlTime := liq4hPt
     int offL4h = liq4hNative ? liq4hSwingLen : int(math.round((time - liq4hPt) / chartMs))
     f_addLiq(liq4h, liq4hPl, false, bar_index - offL4h, liq4hPt)
+
+// ATH is re-derived from scratch every bar as "the highest unswept 4H high
+// currently on the array", instead of being latched onto whichever pivot
+// happened to be new at the time. The latched version silently lost the tag
+// whenever the true high was rejected by the dedup check or its ray was
+// later dropped, which is how ATH ended up sitting on a level that was
+// merely above price rather than the actual highest one.
+ath4hPrice := na
+int athIdx = -1
+if array.size(liq4h) > 0
+    f_clearAth4h(liq4h)
+    for k = 0 to array.size(liq4h) - 1
+        Liq qk = array.get(liq4h, k)
+        if qk.isHigh and not qk.swept and (na(ath4hPrice) or qk.price > ath4hPrice)
+            ath4hPrice := qk.price
+            athIdx := k
+    if athIdx >= 0
+        Liq qa = array.get(liq4h, athIdx)
+        qa.tag := "ATH"
+        array.set(liq4h, athIdx, qa)
 
 if array.size(liq4h) > 0
     for i = array.size(liq4h) - 1 to 0
@@ -1606,8 +1625,6 @@ if array.size(liq4h) > 0
                 line.set_style(q4.lnA, line.style_dashed)
                 line.set_style(q4.lnB, line.style_dashed)
                 line.set_extend(q4.lnB, extend.none)
-                if q4.tag == "ATH"
-                    ath4hPrice := na
                 array.set(liq4h, i, q4)
                 lastSweepBar := bar_index
                 lastSweepPrice := q4.price
@@ -1615,8 +1632,6 @@ if array.size(liq4h) > 0
         else if bar_index - q4.sweptB >= liqSweptHold or newTradingDay
             drop4h := true
         if drop4h
-            if q4.tag == "ATH"
-                ath4hPrice := na
             f_delLiq(liq4h, i)
         else if doLayout
             f_layoutLiq(array.get(liq4h, i))
@@ -1635,7 +1650,7 @@ if array.size(liq4h) > 0
 // =============================================================================
 groupFvg = "FVG / IFVG / BPR"
 showFvg       = input.bool(true, "Show gaps", group = groupFvg)
-showLtfGaps   = input.bool(false, "Also show 30s / 1m / 5m gaps", group = groupFvg, tooltip = "Off by default - stacking every LTF gap on top of the 15m/1H/4H ones buried the chart. 15m/1H/4H always show; this adds the three lower timeframes back in.")
+bool showLtfGaps = false
 enable30s     = input.bool(true, "Enable the 30s feed", group = groupFvg, tooltip = "Only resolves on a 30s or lower chart. Steps in only when the 1m gap in the same zone is missing or tiny. Switch off if a seconds request errors on your symbol.")
 fvgTf0        = input.timeframe("30S", "TF 0 (after a sweep, only if no 1m gap)", group = groupFvg)
 fvgTf1        = input.timeframe("1", "TF 1", group = groupFvg)
@@ -1654,12 +1669,12 @@ tinyWinMult   = input.float(1.2, "A respected 30s must be at least this much big
 gapOverlapFrac = input.float(0.7, "Overlap fraction that kills the lower timeframe", minval = 0.3, maxval = 1.0, step = 0.05, group = groupFvg, tooltip = "1H beats 15m beats 5m when this much of the lower gap sits inside the higher one. 30s/1m are a SEPARATE band and are never removed by a 5m+ gap - an HTF gap fill with an LTF inversion out of it IS the setup, so those two must coexist.")
 htfTinyPts     = input.float(3.0, "5m/15m/1H/4H gap treated as \"tiny\" below this many points", minval = 0.25, step = 0.25, group = groupFvg, tooltip = "The same tiny-gap exception as 30s vs 1m, one tier up: a tiny 1H gap does not get to erase a real 15m gap sitting under it.")
 gapFirstLast  = input.bool(true, "Keep only the first and last gap of each leg", group = groupFvg)
-maxTotalGaps  = input.int(16, "Max gaps on the chart (all timeframes)", minval = 2, maxval = 80, group = groupFvg)
-maxGapsPerTf  = input.int(3, "Max gaps per timeframe", minval = 1, maxval = 10, group = groupFvg, tooltip = "Stops one timeframe stacking boxes on top of each other. Combined with \"keep only the first and last gap of each leg\" below, 2 was pruning gaps that should have stayed on chart.")
+int maxTotalGaps = 16
+int maxGapsPerTf = 3
 htfDistAtr    = input.float(25, "HTF gap max distance (x reference ATR)", minval = 2, maxval = 200, group = groupFvg)
 htfExtendPts  = input.float(150, "HTF gap right edge only chases price within this many points", minval = 10, maxval = 2000, group = groupFvg)
 sweep30sBars  = input.int(15, "30s gaps valid within N bars of a sweep", minval = 1, maxval = 100, group = groupFvg)
-gapFillTransp = input.int(55, "Fill transparency (lowest timeframe)", minval = 0, maxval = 95, group = groupFvg, tooltip = "Higher = more see-through. A real dark-grey tint, not a near-solid black box and not so faint it reads as a bare line.")
+int gapFillTransp = 55
 gapBorderTransp = input.int(0, "Outline transparency (lowest timeframe)", minval = 0, maxval = 95, group = groupFvg)
 gapTranspStep = input.int(11, "Extra transparency per timeframe step", tooltip = "Each step up the timeframes gets lighter, so a 4H gap sits behind a 1m gap.", minval = 0, maxval = 15, group = groupFvg)
 fvgFill       = input.color(#2A2E39, "FVG fill (dark grey)", group = groupFvg)
@@ -2590,7 +2605,7 @@ smtHtfFresh = input.int(60, "HTF freshness (bars)", minval = 5, maxval = 400, gr
 smtLtfLen   = input.int(5, "LTF pivot length", minval = 2, maxval = 30, group = groupSmt)
 smtLtfFresh = input.int(15, "LTF freshness (bars)", minval = 3, maxval = 200, group = groupSmt)
 smtColor    = input.color(color.black, "SMT color", group = groupSmt)
-smtLabelGap = input.int(4, "Label gap width (bars)", minval = 2, maxval = 40, group = groupSmt)
+int smtLabelGap = 4
 
 type PivSeq
     array<float> p
