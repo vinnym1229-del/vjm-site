@@ -1320,6 +1320,7 @@ liqPivotTf    = input.timeframe("5", "Wick source timeframe", group = groupLiq)
 liqSwingLen   = input.int(6, "Swing length (bars each side)", minval = 2, maxval = 30, group = groupLiq)
 liqDedupTicks = input.int(10, "Dedup vs session levels (ticks)", minval = 1, maxval = 200, group = groupLiq, tooltip = "If it lands on an Asia/London/PDH/PDL/intraday level, that level already covers it and no second line is drawn.")
 liqLabelGap   = input.int(7, "Label gap width (bars)", minval = 2, maxval = 60, group = groupLiq)
+liqLabelOffsetTicks = input.int(12, "BSL/SSL label vertical offset (ticks)", minval = 1, maxval = 100, group = groupLiq, tooltip = "How far the BSL/SSL text sits above/below its own line so the line doesn't run through it. Raise this if the text still touches the line at your zoom level.")
 liqSweptHold  = input.int(30, "Keep $$$ for N bars after the sweep", minval = 3, maxval = 400, group = groupLiq, tooltip = "Covers the sweep-then-reverse, which is the point of marking it.")
 liqMaxUnswept = input.int(10, "Max unswept rays", minval = 1, maxval = 60, group = groupLiq)
 liqMaxAgeDays = input.int(5, "Drop unswept rays older than (days)", minval = 1, maxval = 30, group = groupLiq)
@@ -1425,8 +1426,10 @@ f_layoutLiq(Liq q) =>
     else
         f_gapLineAt(q.lnA, q.lnB, q.lb, q.price, x1, f_xNow(), liqLabelGap, f_liqText(q), true, 0)
         // nudged off the line itself so the wick price doesn't run straight
-        // through the text - above for a high, below for a low.
-        float tickOff = syminfo.mintick * 4
+        // through the text - above for a high, below for a low. Configurable
+        // since how many ticks read as "a visible gap" depends on the
+        // symbol's tick size and how zoomed in the chart is.
+        float tickOff = syminfo.mintick * liqLabelOffsetTicks
         label.set_y(q.lb, q.isHigh ? q.price + tickOff : q.price - tickOff)
     0
 
