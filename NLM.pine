@@ -194,8 +194,20 @@ var int lastWeekKey = na
 f_session(string sess) =>
     sess + ":" + sessionDays
 
+// Asia (2000-0200) starts on one calendar day and ends on the next - which
+// day the WHOLE session gets labelled as depends only on the SIGN of this
+// shift, not on dailyResetHour's value. Subtracting dayAnchorMs (the old
+// formula) named the "18:00 today through 17:59 tomorrow" trading day after
+// the day it STARTS on - so Asia H/L printed the date it opened (e.g. 8/4
+// for a session that ran 8/4 8pm to 8/5 2am), not the date it belongs to
+// under the standard convention (a session opening at the 18:00 futures
+// reopen belongs to the NEXT calendar day, same as CME/Globex "Sunday 6pm
+// opens Monday's session"). Adding the REMAINING hours to midnight instead
+// keeps the rollover at exactly the same real-world moment (still 18:00 ET -
+// a constant offset shifts WHICH number a bucket gets, never WHEN the bucket
+// changes) while flipping the label to the day the session is heading into.
 f_nyKey(int t) =>
-    int keyed = t - dayAnchorMs
+    int keyed = t + (86400000 - dayAnchorMs)
     year(keyed, sessionTimezone) * 10000 + month(keyed, sessionTimezone) * 100 + dayofmonth(keyed, sessionTimezone)
 
 f_labelXi() =>
@@ -1449,6 +1461,12 @@ int liqMaxUnswept = 40
 int liqMaxAgeDays = 60
 liqColor      = input.color(color.black, "Ray color", group = groupLiq)
 
+// A third, dedicated 15m tier - every 15m swing high/low that reverses gets
+// its own BSL/SSL, same rules as the 5m ladder (age/count caps, dedup vs
+// session levels, hold time), just fed from a slower, less noisy pivot.
+show15mLiq     = input.bool(true, "Show 15m BSL / SSL", group = groupLiq)
+liq15mSwingLen = input.int(6, "15m swing length (bars each side)", minval = 2, maxval = 30, group = groupLiq)
+
 // separate from the 5m rays above: every 4H swing high stays marked all the
 // way back to whichever one is the all-time high (tagged "ATH" instead of
 // "BSL"), while 4H swing lows only matter - and only stay marked - within a
@@ -1521,6 +1539,7 @@ type Liq
     string tag
 
 var array<Liq> liqs = array.new<Liq>()
+var array<Liq> liq15m = array.new<Liq>()
 var array<Liq> liq4h = array.new<Liq>()
 var float ath4hPrice = na
 
@@ -1676,6 +1695,78 @@ while f_countLiq(liqs, false) > liqMaxUnswept and liqGuard < 100
         f_delLiq(liqs, oldIdx)
     else
         liqGuard := 999
+
+// ---- 15m BSL/SSL - same machinery as the 5m ladder above, just a fixed 15m
+// pivot feed instead of the user-configurable liqPivotTf.
+bool liq15mNative = chartSeconds == 900
+[liq15mSecPh, liq15mSecPl, liq15mSecPt] = f_pivFeed(syminfo.tickerid, "15", liq15mSwingLen)
+float liq15mPh = liq15mNative ? ta.pivothigh(high, liq15mSwingLen, liq15mSwingLen) : liq15mSecPh
+float liq15mPl = liq15mNative ? ta.pivotlow(low, liq15mSwingLen, liq15mSwingLen) : liq15mSecPl
+int   liq15mPt = liq15mNative ? time[liq15mSwingLen] : liq15mSecPt
+
+var int lastLiq15mPhTime = na
+var int lastLiq15mPlTime = na
+if show15mLiq and not na(liq15mPh) and not na(liq15mPt) and (na(lastLiq15mPhTime) or liq15mPt != lastLiq15mPhTime)
+    lastLiq15mPhTime := liq15mPt
+    int off15H = liq15mNative ? liq15mSwingLen : int(math.round((time - liq15mPt) / chartMs))
+    f_addLiq(liq15m, liq15mPh, true, bar_index - off15H, liq15mPt)
+if show15mLiq and not na(liq15mPl) and not na(liq15mPt) and (na(lastLiq15mPlTime) or liq15mPt != lastLiq15mPlTime)
+    lastLiq15mPlTime := liq15mPt
+    int off15L = liq15mNative ? liq15mSwingLen : int(math.round((time - liq15mPt) / chartMs))
+    f_addLiq(liq15m, liq15mPl, false, bar_index - off15L, liq15mPt)
+
+bool liq15mSweptThisBar = false
+if array.size(liq15m) > 0
+    for i = array.size(liq15m) - 1 to 0
+        Liq q15 = array.get(liq15m, i)
+        bool drop15 = false
+        if not q15.swept
+            if f_tooFar(q15.price)
+                drop15 := true
+            else if levelsChanged and f_nearSessionLevel(levels, q15.price, liqDedupTicks)
+                drop15 := true
+            else if time - q15.startT > liqMaxAgeDays * 86400000
+                drop15 := true
+            else if q15.isHigh ? high >= q15.price : low <= q15.price
+                q15.swept := true
+                q15.sweptB := bar_index
+                q15.sweptT := time
+                line.set_style(q15.lnA, line.style_dashed)
+                line.set_style(q15.lnB, line.style_dashed)
+                line.set_extend(q15.lnB, extend.none)
+                array.set(liq15m, i, q15)
+                liq15mSweptThisBar := true
+                lastSweepBar := bar_index
+                lastSweepPrice := q15.price
+                lastSweepIsHigh := q15.isHigh
+        else if bar_index - q15.sweptB >= liqSweptHold or newTradingDay
+            drop15 := true
+        if drop15
+            f_delLiq(liq15m, i)
+        else if doLayout
+            f_layoutLiq(array.get(liq15m, i))
+
+if liq15mSweptThisBar and array.size(liq15m) > 0
+    for i = array.size(liq15m) - 1 to 0
+        Liq q15Old = array.get(liq15m, i)
+        if q15Old.swept and q15Old.sweptB != bar_index
+            f_delLiq(liq15m, i)
+
+int liq15mGuard = 0
+while f_countLiq(liq15m, false) > liqMaxUnswept and liq15mGuard < 100
+    liq15mGuard += 1
+    int old15Idx = -1
+    int old15Bar = 0
+    if array.size(liq15m) > 0
+        for i = 0 to array.size(liq15m) - 1
+            Liq q15g = array.get(liq15m, i)
+            if not q15g.swept and (old15Idx == -1 or q15g.createdBar < old15Bar)
+                old15Idx := i
+                old15Bar := q15g.createdBar
+    if old15Idx >= 0
+        f_delLiq(liq15m, old15Idx)
+    else
+        liq15mGuard := 999
 
 // ---- 4H BSL (kept all the way to the all-time high) / SSL (kept only
 // within range) - a separate ladder from the 5m rays above, no age or count
@@ -2433,9 +2524,17 @@ if showFvg and array.size(gaps) > 1
         if i < array.size(gaps)
             Gap g = array.get(gaps, i)
             bool drop = false
+            // "proven" (inverted/BPR/respected) used to exempt a gap from this
+            // whole pass, same-rank AND higher-rank alike - so a 15m IFVG that
+            // had already proven itself sat on the chart forever nested inside
+            // a 1H/4H gap that fully covered it. A higher timeframe should
+            // still always win a real nested overlap regardless of proven
+            // status - only the same-rank "newer bumps older" rule respects
+            // it, so an already-proven gap does not get replaced by a fresh
+            // gap on its OWN timeframe.
             bool proven = g.inverted or g.bpr or g.respected
             float gRange = g.top - g.bot
-            if not proven and gRange > 0
+            if gRange > 0
                 for j = 0 to array.size(gaps) - 1
                     if j != i and not drop
                         Gap o = array.get(gaps, j)
@@ -2445,7 +2544,7 @@ if showFvg and array.size(gaps) > 1
                         // higher-timeframe gap does not get this win though - the
                         // same exception 30s/1m already gets, one tier up.
                         bool higherWins = o.rank > g.rank and f_sameTier(g.rank, o.rank) and (o.rank <= 1 or (o.top - o.bot) > htfTinyPts)
-                        bool beaten = higherWins or (o.rank == g.rank and o.bornBar > g.bornBar)
+                        bool beaten = higherWins or (not proven and o.rank == g.rank and o.bornBar > g.bornBar)
                         if beaten
                             float ovTop = math.min(g.top, o.top)
                             float ovBot = math.max(g.bot, o.bot)
