@@ -1161,6 +1161,17 @@ f_gapLineAt(line a, line b, label lb, float price, int x1, int x2, int gapBars, 
     int gapW = math.max(unit, f_units(gapBars))
     int half = int(gapW / 2)
     int mid = atMid ? x1 + int(span / 2) : math.max(x1 + half + unit, xr - f_units(backBars))
+    // backBars smaller than the gap's own half-width (10 bars back, but a 30
+    // minute gap needs 15 bars either side) pushed "mid + half" PAST xr - the
+    // right segment (b) got a backwards/negative span, and the label ended up
+    // sitting almost on top of segment a's solid end instead of in a real
+    // gap. That's the strikethrough look on an old BSL/ATH ray that's been
+    // running for weeks. Clamping mid's ceiling here guarantees segment b
+    // always has real, positive length, whatever backBars is relative to
+    // gapW. Safe within the branch below: it only tightens the range, never
+    // pushes mid under the x1+half+unit floor already enforced above it
+    // (span > gapW + 2*unit in this branch is exactly what guarantees that).
+    mid := math.min(mid, xr - half - unit)
     if span <= gapW + 2 * unit
         line.set_xy1(a, x1, price)
         line.set_xy2(a, xr, price)
@@ -1581,12 +1592,16 @@ f_delLiq(array<Liq> qs, int i) =>
     array.remove(qs, i)
     0
 
+// Same fix as f_nearSessionLevel: only an UNSWEPT liquidity marker blocks a
+// new one at the same price. Otherwise an already-swept 5m/15m/4H ray kept
+// silently absorbing every fresh pivot that formed near where it got taken -
+// including, now, a 15m pivot checking against the 5m ladder.
 f_liqExists(array<Liq> qs, float px, bool isHigh) =>
     bool found = false
     if array.size(qs) > 0
         for i = 0 to array.size(qs) - 1
             Liq q = array.get(qs, i)
-            if q.isHigh == isHigh and f_near(px, q.price, liqDedupTicks)
+            if q.isHigh == isHigh and not q.swept and f_near(px, q.price, liqDedupTicks)
                 found := true
     found
 
@@ -1706,14 +1721,20 @@ int   liq15mPt = liq15mNative ? time[liq15mSwingLen] : liq15mSecPt
 
 var int lastLiq15mPhTime = na
 var int lastLiq15mPlTime = na
+// A 15m pivot and a 5m pivot land on the exact same swing often enough that,
+// without this, the two ladders drew two near-identical BSL/SSL lines a few
+// ticks apart right next to each other - the doubled-up "SSL" clutter. If the
+// 5m ladder already has a marker there, the 15m one is redundant and skipped.
 if show15mLiq and not na(liq15mPh) and not na(liq15mPt) and (na(lastLiq15mPhTime) or liq15mPt != lastLiq15mPhTime)
     lastLiq15mPhTime := liq15mPt
     int off15H = liq15mNative ? liq15mSwingLen : int(math.round((time - liq15mPt) / chartMs))
-    f_addLiq(liq15m, liq15mPh, true, bar_index - off15H, liq15mPt)
+    if not f_liqExists(liqs, liq15mPh, true)
+        f_addLiq(liq15m, liq15mPh, true, bar_index - off15H, liq15mPt)
 if show15mLiq and not na(liq15mPl) and not na(liq15mPt) and (na(lastLiq15mPlTime) or liq15mPt != lastLiq15mPlTime)
     lastLiq15mPlTime := liq15mPt
     int off15L = liq15mNative ? liq15mSwingLen : int(math.round((time - liq15mPt) / chartMs))
-    f_addLiq(liq15m, liq15mPl, false, bar_index - off15L, liq15mPt)
+    if not f_liqExists(liqs, liq15mPl, false)
+        f_addLiq(liq15m, liq15mPl, false, bar_index - off15L, liq15mPt)
 
 bool liq15mSweptThisBar = false
 if array.size(liq15m) > 0
