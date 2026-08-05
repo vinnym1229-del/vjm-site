@@ -104,6 +104,12 @@ type Level
     string confluence
     bool keepIfUnswept
     string dateText
+    // Part 2 only: not read anywhere in Part 1. Lets a level that has gone
+    // dormant (price too far away) be redrawn with its own original left
+    // anchor when price comes back, instead of only ever being able to
+    // delete it outright.
+    int    startTime
+    bool   dormant
 
 type ProfileDrawing
     line ln
@@ -509,7 +515,7 @@ f_addLevel(string name, float price, bool isHigh, color baseColor, color textCol
         label lb = na
         if showLabels
             lb := label.new(f_labelXi(), price, f_levelText(name, price, false, confluence, dateText), xloc = xloc.bar_index, style = label.style_label_left, color = color.new(baseColor, 0), textcolor = textColor, size = size.small, textalign = text.align_left)
-        array.push(levels, Level.new(ln, lb, price, isHigh, false, dayKey, name, baseColor, textColor, confluence, keepIfUnswept, dateText))
+        array.push(levels, Level.new(ln, lb, price, isHigh, false, dayKey, name, baseColor, textColor, confluence, keepIfUnswept, dateText, x1, false))
     0
 
 f_addPDLevels(float pdh, float pdl, int pdhTime, int pdlTime, int dayKey) =>
@@ -561,6 +567,51 @@ f_markSwept(int idx) =>
         label.set_textcolor(lvl.lb, lvl.textColor)
         label.set_textalign(lvl.lb, text.align_left)
     array.set(levels, idx, lvl)
+    0
+
+// Part 2's 1000-point dormancy feature (below, in the "distance cull"
+// section) deletes a far-away level's line/label (sets them to na) rather
+// than just hiding them, so a stale far-off level can't stretch the price
+// scale. f_sleepLevel/f_wakeLevel have to live here, ABOVE f_markSwept's
+// caller, not down in Part 2 where the rest of that feature is defined:
+// f_markSwept above restyles lvl.ln/lvl.lb with no na-guard on the line (by
+// design - every OTHER path that reaches it already guarantees a live line).
+// A dormant level only stays that way while price is 1000+ points off, so it
+// can only be swept by an implausible single-bar move that size - but
+// "implausible" still isn't "impossible" on a fast instrument, and a na line
+// hitting f_markSwept unguarded is a hard runtime error, not a cosmetic
+// glitch. The wake-before-sweep-check call below closes that gap without
+// touching f_markSwept or the sweep-check loop's own logic at all.
+f_sleepLevel(int idx) =>
+    Level lvl = array.get(levels, idx)
+    if not lvl.dormant
+        line.delete(lvl.ln)
+        if not na(lvl.lb)
+            label.delete(lvl.lb)
+        lvl.ln := na
+        lvl.lb := na
+        lvl.dormant := true
+        array.set(levels, idx, lvl)
+    0
+
+// Rebuilds the line/label exactly as f_addLevel would, from the level's own
+// stored state (price, swept, confluence, tags) - so a level that comes
+// back into range shows up looking exactly as it would have if it had never
+// gone dormant, not reset to some default look.
+f_wakeLevel(int idx) =>
+    Level lvl = array.get(levels, idx)
+    if lvl.dormant
+        int width = lvl.swept ? lineWidth : (lvl.confluence == "" ? lineWidth : confluenceLineWidth)
+        color lnColor = lvl.swept ? color.new(lvl.baseColor, sweptLineTransparency) : lvl.baseColor
+        line ln = line.new(lvl.startTime, lvl.price, f_lineRightX(lvl.startTime), lvl.price, xloc = xloc.bar_time, extend = extend.right, color = lnColor, style = lvl.swept ? line.style_dashed : line.style_solid, width = width)
+        label lb = na
+        if showLabels
+            color lbColor = lvl.swept ? color.new(lvl.baseColor, sweptLabelTransparency) : color.new(lvl.baseColor, 0)
+            lb := label.new(f_labelXi(), lvl.price, f_levelText(lvl.name, lvl.price, lvl.swept, lvl.confluence, lvl.dateText), xloc = xloc.bar_index, style = label.style_label_left, color = lbColor, textcolor = lvl.textColor, size = size.small, textalign = text.align_left)
+        lvl.ln := ln
+        lvl.lb := lb
+        lvl.dormant := false
+        array.set(levels, idx, lvl)
     0
 
 f_clearConfluenceTags() =>
@@ -885,6 +936,15 @@ if ltfCount > 0
             f_addLevel("London L", londonLow, false, londonColor, color.white, nyKey, londonLowTime, "", true, londonDateText)
             f_applyProfileToLevels(activeProfilePoc, activeProfileVah, activeProfileVal)
 
+        // See the comment on f_sleepLevel above: wake a dormant level the
+        // instant this sub-bar's wick reaches it, BEFORE the sweep check
+        // below can reach it with a deleted (na) line/label.
+        if array.size(levels) > 0
+            for i = 0 to array.size(levels) - 1
+                Level lvlWake = array.get(levels, i)
+                if lvlWake.dormant and (lvlWake.isHigh ? h >= lvlWake.price : l <= lvlWake.price)
+                    f_wakeLevel(i)
+
         if array.size(levels) > 0
             for i = 0 to array.size(levels) - 1
                 Level lvl = array.get(levels, i)
@@ -964,6 +1024,19 @@ lblSize = labelSizeSel == "tiny" ? size.tiny : labelSizeSel == "small" ? size.sm
 f_units(int bars) =>
     useBi ? bars : bars * chartMs
 
+// A fixed BAR count is the wrong unit for "how wide should this gap read on
+// screen" - the same 30 bars is 30 minutes on a 1m chart but 2.5 HOURS on a
+// 5m chart, which is exactly why a gap tuned to look right on 1m looked
+// stretched-out on 5m, and an inset tuned for a slower chart landed short on
+// a faster one. Converting a fixed WALL-CLOCK duration into however many
+// bars that represents on whichever timeframe is actually active keeps the
+// same real screen width everywhere. Floored at 2 bars so it never
+// collapses to nothing on a slow chart (1H/4H) where the target duration is
+// less than one bar.
+f_barsForMinutes(float minutes) =>
+    float perBarMin = math.max(1.0 / 60.0, chartSeconds / 60.0)
+    math.max(2, int(math.round(minutes / perBarMin)))
+
 // the current bar
 f_xNow() =>
     useBi ? bar_index : time
@@ -1017,9 +1090,16 @@ f_nearSessionLevel(array<Level> lv, float px, int ticks) =>
 // Asia/London/PDH/PDL/PWH/PWL are routinely 5-15%+ from price on a strong
 // trend day and are still exactly the levels this indicator exists to show.
 // The default sits high enough that only a genuine contract-roll-sized jump
-// trips it. Part 1's own level array is never touched by this cull at all -
-// it already prunes itself daily (f_rollLevelsForNewDay / maxOldUnsweptSessionLevels),
-// and it is the untouched foundation.
+// trips it. Part 1's own level array is never touched by THIS cull - it
+// already prunes itself daily (f_rollLevelsForNewDay / maxOldUnsweptSessionLevels).
+//
+// Session levels DO get one separate, deliberate distance rule below
+// (f_levelPointRange): stay marked - a month old, never swept, doesn't
+// matter - as long as price is within a fixed POINT distance, and go
+// dormant (not deleted - the data survives, so it reappears correctly if
+// price comes back) beyond that. That is a different mechanism from the
+// contract-roll safety net above: fixed points, not a scale-relative
+// percentage, and it only touches Part 1's `levels` array.
 // ---------------------------------------------------------------------------
 // NOT an input. TradingView keeps a chart's SAVED input values when the source
 // is edited, so changing an input's default does nothing to an indicator that
@@ -1027,11 +1107,24 @@ f_nearSessionLevel(array<Level> lv, float px, int ticks) =>
 // moved a default silently never took effect. Anything whose value actually
 // matters visually is a plain constant from here on.
 float cullFarPct = 35.0
+float levelPointRange = 1000.0
 
 float cullDist = close * cullFarPct / 100.0
 
 f_tooFar(float px) =>
     na(px) or math.abs(px - close) > cullDist
+
+// Re-evaluated every bar so a level sleeps or wakes the moment price crosses
+// the 1000-point line, in either direction. (f_sleepLevel/f_wakeLevel
+// themselves live up near f_markSwept - see the comment there for why.)
+if array.size(levels) > 0
+    for i = 0 to array.size(levels) - 1
+        Level lvl = array.get(levels, i)
+        bool inRange = math.abs(lvl.price - close) <= levelPointRange
+        if inRange and lvl.dormant
+            f_wakeLevel(i)
+        else if not inRange and not lvl.dormant
+            f_sleepLevel(i)
 
 // One level = two line segments with a real visual break, text centred in the
 // break. This is the "on the line" look, not text floating over a solid line.
@@ -1323,17 +1416,28 @@ showLiq       = input.bool(true, "Show BSL / SSL", group = groupLiq)
 liqPivotTf    = input.timeframe("5", "Wick source timeframe", group = groupLiq)
 liqSwingLen   = input.int(6, "Swing length (bars each side)", minval = 2, maxval = 30, group = groupLiq)
 liqDedupTicks = input.int(10, "Dedup vs session levels (ticks)", minval = 1, maxval = 200, group = groupLiq, tooltip = "If it lands on an Asia/London/PDH/PDL/intraday level, that level already covers it and no second line is drawn.")
-// Widened from 9. This is a BAR count, not a pixel count - Pine has no way
-// to size a gap in fixed screen pixels, so it shrinks in screen-space the
-// further the chart is zoomed out. 9 bars was too narrow to clear the text
-// at anything but a very tight zoom; this is a genuinely wide gap at the
-// zoom levels this indicator is actually used at (intraday to a few months
-// visible). Extremely zoomed out (a year+ visible) it will read tighter
-// again - that is Pine's coordinate system, not something fixable here.
-int liqLabelGap = 30
-liqSweptHold  = input.int(30, "Keep $$$ for N bars after the sweep", minval = 3, maxval = 400, group = groupLiq, tooltip = "Covers the sweep-then-reverse, which is the point of marking it.")
-liqMaxUnswept = input.int(10, "Max unswept rays", minval = 1, maxval = 60, group = groupLiq)
-liqMaxAgeDays = input.int(5, "Drop unswept rays older than (days)", minval = 1, maxval = 30, group = groupLiq)
+// 30 bars read correctly on a 1m chart and too wide on 5m (2.5 HOURS of gap
+// instead of 30 minutes) - a fixed bar count is the wrong unit across
+// timeframes. f_barsForMinutes keeps the target at 30 minutes of wall-clock
+// width on any timeframe: 30 bars on 1m, 6 bars on 5m, floored at 2 on
+// anything an hour or slower.
+int liqLabelGap = f_barsForMinutes(30)
+// Same bug, worse consequence: this was a raw BAR count, so "keep $$$ for 30
+// bars after the sweep" meant 30 minutes on a 1m chart but 2.5 hours on 5m.
+// On 1m the marker was gone long before anyone looked back at it - that's
+// "$$$ not shown at all on the lower timeframe." A plain constant (not an
+// input - a saved chart keeps its old input value, so tuning a default here
+// would silently do nothing) run through f_barsForMinutes holds it for the
+// same 3 hours of wall-clock time on any timeframe.
+int liqSweptHold = f_barsForMinutes(180)
+// "Keep extending until swept as price goes on and on" - these were pruning
+// legitimate, still-unswept BSL/SSL levels well before anything actually
+// invalidated them. Raised substantially (constants, not inputs - the same
+// input-default trap the rest of this file already hit: TradingView keeps a
+// chart's saved values, so tuning a default here would silently do nothing
+// on a chart that already has this indicator on it).
+int liqMaxUnswept = 40
+int liqMaxAgeDays = 60
 liqColor      = input.color(color.black, "Ray color", group = groupLiq)
 
 // separate from the 5m rays above: every 4H swing high stays marked all the
@@ -1423,28 +1527,16 @@ f_liqText(Liq q) =>
 
 f_layoutLiq(Liq q) =>
     int x1 = f_xAt(q.startB, q.startT)
-    if q.swept
-        // $$$ reads as one solid line, not a broken one with a centred
-        // gap - the label sits just past the ray's own frozen end instead.
-        int xr = f_xAt(q.sweptB, q.sweptT)
-        line.set_xy1(q.lnA, x1, q.price)
-        line.set_xy2(q.lnA, xr, q.price)
-        line.set_xy1(q.lnB, xr, q.price)
-        line.set_xy2(q.lnB, xr, q.price)
-        label.set_xy(q.lb, xr + f_units(2), q.price)
-        label.set_text(q.lb, f_liqText(q))
-    else
-        // Moving the label off the line's own price (previous two rounds)
-        // was the actual mistake: f_gapLineAt breaks the LINE around the
-        // label's X position at the line's own price, so nudging the label
-        // away from that price left an empty gap sitting in the line with
-        // nothing in it, and the text floating separately above - worse than
-        // the original overlap on a chart with several rays stacked close
-        // together, which is exactly what the last screenshot showed. The
-        // label now sits exactly on the line's own price again, and the fix
-        // for "the line runs through the text" is the gap itself: it's
-        // widened enough that nothing is drawn under the label at all.
-        f_gapLineAt(q.lnA, q.lnB, q.lb, q.price, x1, f_xNow(), liqLabelGap, f_liqText(q), true, 0)
+    // $$$ was drawn as one SOLID unbroken line all the way to the sweep
+    // point, with the label parked only 2 bars past its end - a
+    // style_label_center label grows symmetrically both ways from its
+    // anchor, so roughly half the "$$$" text overlapped the line's own solid
+    // end. That is the "$$" - really "$$$" with its first character painted
+    // over. Routed through the same broken-line-with-a-real-gap helper the
+    // unswept state already uses correctly, just frozen at the sweep point
+    // instead of chasing the current bar.
+    int x2 = q.swept ? f_xAt(q.sweptB, q.sweptT) : f_xNow()
+    f_gapLineAt(q.lnA, q.lnB, q.lb, q.price, x1, x2, liqLabelGap, f_liqText(q), true, 0)
     0
 
 f_delLiq(array<Liq> qs, int i) =>
@@ -1769,12 +1861,14 @@ f_gapText(Gap g) =>
 f_gapRight(int rank) =>
     f_xFwd(gapExtendBars + rank * gapExtendStep)
 
-// Inset a few bars from the box's right edge rather than dead centre - reads
-// as "aligned right" without risking the label_center box spilling past rx
-// on a narrow gap. Falls back to the box's own centre if that inset would
-// land left of it.
+// Inset from the box's right edge rather than dead centre - reads as
+// "aligned right" without risking the label_center box spilling past rx on
+// a narrow gap. Falls back to the box's own centre if that inset would land
+// left of it. A fixed 4-bar inset read fine on a slow chart (60 minutes of
+// clearance on 15m) and spilled outside the box on 1m (4 minutes of
+// clearance) - same wall-clock-vs-bar-count problem as the liquidity gap.
 f_gapLabelX(int lx, int rx) =>
-    math.max(int((lx + rx) / 2), rx - f_units(4))
+    math.max(int((lx + rx) / 2), rx - f_units(f_barsForMinutes(60)))
 
 f_styleGap(Gap g) =>
     int trFill = math.min(95, gapFillTransp + g.rank * gapTranspStep)
@@ -1816,7 +1910,7 @@ f_layoutGap(Gap g) =>
     // treatment as BSL/SSL and the trade planner, just centred on the
     // label's own position rather than the box's.
     int lblX = f_gapLabelX(lx, rx)
-    int gapHalf = f_units(3)
+    int gapHalf = f_units(f_barsForMinutes(30))
     int ga = math.max(lx, lblX - gapHalf)
     int gb = math.min(rx, lblX + gapHalf)
     line.set_xy1(g.ce, lx, mid)
@@ -2611,7 +2705,9 @@ smtHtfFresh = input.int(60, "HTF freshness (bars)", minval = 5, maxval = 400, gr
 smtLtfLen   = input.int(5, "LTF pivot length", minval = 2, maxval = 30, group = groupSmt)
 smtLtfFresh = input.int(15, "LTF freshness (bars)", minval = 3, maxval = 200, group = groupSmt)
 smtColor    = input.color(color.black, "SMT color", group = groupSmt)
-int smtLabelGap = 4
+// Same fixed-bar-count-across-timeframes problem as liqLabelGap: 4 bars was
+// right on 1m (4 minutes) and too wide on 5m (20 minutes). Same fix.
+int smtLabelGap = f_barsForMinutes(4)
 
 type PivSeq
     array<float> p
