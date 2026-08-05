@@ -1102,9 +1102,16 @@ chopAtrRef    = input.int(50, "ATR baseline length", minval = 10, maxval = 300, 
 float atrNow  = ta.atr(14)
 
 // Vertical clearance used by any label that must sit clear of its own line.
-// Expressed as a fraction of ATR, never a raw tick count, so it is the same
-// visible distance on NQ at 30,000 as on a 5-point instrument.
-float liqLabelPad = nz(atrNow, syminfo.mintick * 40) * 0.35
+// This MUST be a fixed-timeframe reference, not the chart's own ATR:
+// atrNow above is the chart's native-timeframe ATR, which is tiny on a 1m
+// chart and enormous on a 4H/Daily chart (a single 4H NQ candle can range
+// 100+ points). Using it here is exactly why a label flew 100+ points off
+// its own line on a 4H chart while looking fine on 1m - the offset was
+// scaling with candle size, not with anything the eye needs. Always
+// sampling the 5-minute ATR regardless of the chart's own timeframe gives
+// the same, sane offset everywhere.
+float liqLabelAtr = request.security(syminfo.tickerid, "5", ta.atr(14), lookahead = barmerge.lookahead_off)
+float liqLabelPad = nz(liqLabelAtr, syminfo.mintick * 40) * 0.5
 float atrBase = ta.sma(atrNow, chopAtrRef)
 float bodyRatio = (high - low) > 0 ? math.abs(close - open) / (high - low) : 0.0
 float chopComp1 = math.min(100.0, math.max(0.0, (1.0 - atrNow / math.max(syminfo.mintick, atrBase)) * 200.0))
