@@ -70,7 +70,15 @@ hvnBarColor = input.color(#26A69A, "HVN bar color", group = groupStyle, display 
 lineWidth = input.int(1, "Line width", minval = 1, maxval = 4, group = groupStyle, display = display.none)
 confluenceLineWidth = input.int(1, "Confluence line width", minval = 1, maxval = 4, group = groupStyle, display = display.none)
 sweptLineTransparency = input.int(14, "Swept line fade", minval = 0, maxval = 90, group = groupStyle, display = display.none)
-sweptLabelTransparency = input.int(52, "Swept tag fade", minval = 0, maxval = 90, group = groupStyle, display = display.none)
+// Was 52 vs the line's 14 - a swept level's line and its own label pill are
+// the same baseColor at two very different opacities, which is exactly a
+// "two different colors" look for what should read as one single marking
+// (e.g. "PDL ... swept"). Matched to the line's value by default. If this
+// still reads two-toned, the saved chart is holding an old value for this
+// input specifically - TradingView keeps a chart's saved inputs, so this
+// default only takes effect on a fresh add of the indicator; otherwise open
+// Settings and set "Swept tag fade" to match "Swept line fade" by hand.
+sweptLabelTransparency = input.int(14, "Swept tag fade", minval = 0, maxval = 90, group = groupStyle, display = display.none)
 showLabels = input.bool(true, "Show labels", group = groupStyle, display = display.none)
 showPricesInLabels = input.bool(true, "Show prices in labels", group = groupStyle, display = display.none)
 labelOffsetBars = input.int(14, "Right label offset", minval = 1, maxval = 100, group = groupStyle, display = display.none)
@@ -1178,13 +1186,15 @@ f_nearSessionLevel(array<Level> lv, float px, int ticks) =>
 // trips it. Part 1's own level array is never touched by THIS cull - it
 // already prunes itself daily (f_rollLevelsForNewDay / maxOldUnsweptSessionLevels).
 //
-// Session levels DO get one separate, deliberate distance rule below
-// (f_levelPointRange): stay marked - a month old, never swept, doesn't
-// matter - as long as price is within a fixed POINT distance, and go
-// dormant (not deleted - the data survives, so it reappears correctly if
-// price comes back) beyond that. That is a different mechanism from the
-// contract-roll safety net above: fixed points, not a scale-relative
-// percentage, and it only touches Part 1's `levels` array.
+// Session levels do NOT get any distance-based hiding, on explicit,
+// repeated instruction: an Asia/London/PDH/PWH high or low that never got
+// swept stays marked and dated no matter how old or how far from current
+// price it is - a month old, further than 1000 points, doesn't matter. The
+// only things that ever remove a session level are Part 1's own daily
+// roll/count cap (f_rollLevelsForNewDay / maxOldUnsweptSessionLevels) and
+// getting swept. f_sleepLevel/f_wakeLevel (up near f_markSwept) are kept in
+// place but nothing calls them any more - unused, not deleted, in case a
+// genuine contract-roll-scale distance problem shows up later.
 // ---------------------------------------------------------------------------
 // NOT an input. TradingView keeps a chart's SAVED input values when the source
 // is edited, so changing an input's default does nothing to an indicator that
@@ -1192,24 +1202,11 @@ f_nearSessionLevel(array<Level> lv, float px, int ticks) =>
 // moved a default silently never took effect. Anything whose value actually
 // matters visually is a plain constant from here on.
 float cullFarPct = 35.0
-float levelPointRange = 1000.0
 
 float cullDist = close * cullFarPct / 100.0
 
 f_tooFar(float px) =>
     na(px) or math.abs(px - close) > cullDist
-
-// Re-evaluated every bar so a level sleeps or wakes the moment price crosses
-// the 1000-point line, in either direction. (f_sleepLevel/f_wakeLevel
-// themselves live up near f_markSwept - see the comment there for why.)
-if array.size(levels) > 0
-    for i = 0 to array.size(levels) - 1
-        Level lvl = array.get(levels, i)
-        bool inRange = math.abs(lvl.price - close) <= levelPointRange
-        if inRange and lvl.dormant
-            f_wakeLevel(i)
-        else if not inRange and not lvl.dormant
-            f_sleepLevel(i)
 
 // One level = two line segments with a real visual break, text centred in the
 // break. This is the "on the line" look, not text floating over a solid line.
@@ -1516,6 +1513,14 @@ liqSwingLen   = input.int(6, "Swing length (bars each side)", minval = 2, maxval
 // width on any timeframe: 30 bars on 1m, 6 bars on 5m, floored at 2 on
 // anything an hour or slower.
 int liqLabelGap = f_barsForMinutes(12)
+// The swept "$$$" text is 3 characters and 12 minutes of gap clears it fine.
+// An unswept BSL/SSL/ATH label carries a lot more text - name, REH/REL tag,
+// a date, a price - and a bar-count gap has no idea how much SCREEN width
+// that text actually needs; it only knows wall-clock minutes. 12 minutes of
+// gap was consistently narrower on screen than the label itself, so the
+// text spilled over the solid line on either side - "lines through the
+// label." Unswept gets its own, wider target.
+int liqUnsweptLabelGap = f_barsForMinutes(30)
 // Same bug, worse consequence: this was a raw BAR count, so "keep $$$ for 30
 // bars after the sweep" meant 30 minutes on a 1m chart but 2.5 hours on 5m.
 // On 1m the marker was gone long before anyone looked back at it - that's
@@ -1631,7 +1636,7 @@ f_layoutLiq(Liq q) =>
     // centred label drifts toward the middle of the chart the older the ray
     // gets - nowhere near current price. atMid false anchors it near the
     // RIGHT (current-price) end instead, 10 bars in from the edge.
-    f_gapLineAt(q.lnA, q.lnB, q.lb, q.price, x1, x2, liqLabelGap, f_liqText(q), q.swept, q.swept ? 0 : 10)
+    f_gapLineAt(q.lnA, q.lnB, q.lb, q.price, x1, x2, q.swept ? liqLabelGap : liqUnsweptLabelGap, f_liqText(q), q.swept, q.swept ? 0 : 10)
     color useCol = q.tag == "ATH" ? #fe00e7 : liqColor
     line.set_color(q.lnA, useCol)
     line.set_color(q.lnB, useCol)
@@ -1831,12 +1836,24 @@ if not na(ath4hLiveH) and (na(athTrueHigh) or ath4hLiveH > athTrueHigh)
 // The ATH entry is found by its tag, never by a stored array index - indexes
 // shift every time an earlier element is deleted, and a stale index would
 // silently relabel the wrong ray.
+// This used to check qk.tag == "ATH" exactly - but f_addLiq's REH/REL merge
+// logic can compound the tag to something like "ATH+HTF REH" (existing.tag
+// == "ATH" ? f_appendUniqueTag(existing.tag, relTag) : relTag). Once
+// compounded, the exact-match check here never matched it again, so that
+// entry's "ATH"-ness never got cleared - it sat there permanently while a
+// FRESH entry also got freshly tagged "ATH" by the loop below, and
+// f_mergeNearbyLiqTags picked up the stale one as "another nearby ATH" and
+// appended "ATH" a second time. That is exactly "ATH+PDH+ATH". Strip "ATH"
+// out of whatever the tag currently is instead of requiring an exact match.
 f_clearAth4h(array<Liq> qs) =>
     if array.size(qs) > 0
         for k = 0 to array.size(qs) - 1
             qk = array.get(qs, k)
-            if qk.tag == "ATH"
-                qk.tag := ""
+            if str.contains(qk.tag, "ATH")
+                string cleaned = str.replace_all(qk.tag, "ATH+", "")
+                cleaned := str.replace_all(cleaned, "+ATH", "")
+                cleaned := cleaned == "ATH" ? "" : cleaned
+                qk.tag := cleaned
                 array.set(qs, k, qk)
     0
 
@@ -2289,16 +2306,26 @@ f_detectGap(array<Gap> gs, Bar3 bf, int tfSec, string tfName, int rank, bool all
                             allowAdd := false
 
             if bigEnough and allowAdd and not dup
-                // BPR = a fresh FVG forming inside an opposite-direction IFVG of
-                // the same timeframe. The new FVG is fully contained in the old
-                // IFVG by definition of the trigger below, so the COMBINED range
-                // is just the old IFVG's own range, and the new FVG's own range
-                // is exactly the true overlap - the part shaded differently.
+                // BPR = a fresh FVG forming inside an EXISTING IFVG of the SAME
+                // timeframe, direction of either one irrelevant - an inverted gap
+                // has already flipped once, so a new gap sharing its current
+                // label is not "two unrelated same-direction gaps," it is the
+                // same overlapping-inventory setup a BPR always is. Requiring
+                // opposite directions here was wrong and meant a same-direction
+                // pair (e.g. a bearish 4H FVG forming inside a bearish 4H IFVG)
+                // stayed as two separate, needlessly overlapping HTF boxes
+                // instead of merging into one BPR. Two DIFFERENT-timeframe gaps
+                // overlapping (a 15m gap inside a 4H one) is unaffected - this
+                // check only ever looks at gaps on the SAME tfSec.
+                // The new FVG is fully contained in the old IFVG by definition
+                // of the trigger below, so the COMBINED range is just the old
+                // IFVG's own range, and the new FVG's own range is exactly the
+                // true overlap - the part shaded differently.
                 int parent = -1
                 if array.size(gs) > 0
                     for i = 0 to array.size(gs) - 1
                         Gap g = array.get(gs, i)
-                        if g.tfSec == tfSec and g.inverted and not g.bpr and g.bull != bullGap and top <= g.top and bot >= g.bot
+                        if g.tfSec == tfSec and g.inverted and not g.bpr and top <= g.top and bot >= g.bot
                             parent := i
                 bool isBpr = parent >= 0
                 float mkTop = top
@@ -2686,6 +2713,14 @@ type Brk
     box   bx
     line  mid
     line  cisdLn
+    // Second segment for the broken-line-with-centred-label treatment every
+    // other level in this file uses. cisdLn was a single SOLID unbroken
+    // line the label sat directly on top of - "1m CISD floating in space"
+    // was really the opposite complaint (once confirmed, cisdLn's own
+    // coordinates stopped updating while the label kept chasing price every
+    // bar, so the two drifted apart) - both come from the same root cause:
+    // cisdLn was never treated as a real two-segment gap line.
+    line  cisdLnB
     label lb
     float top
     float bot
@@ -2800,48 +2835,53 @@ f_delBrk(array<Brk> bs, int i) =>
     box.delete(b.bx)
     line.delete(b.mid)
     line.delete(b.cisdLn)
+    line.delete(b.cisdLnB)
     label.delete(b.lb)
     label.delete(b.cisdLb)
     label.delete(b.bosLb)
     array.remove(bs, i)
     0
 
+// No box, no mid-line, no BOS label - just a plain black CISD line with the
+// "1m CISD" text centred in a real break, same treatment as every other
+// level on this chart. Keeps extending to current price whether or not it
+// has confirmed yet - a CISD that has confirmed is still a live level until
+// price actually invalidates it (f_delBrk below), not something that
+// freezes in place the moment it fires.
 f_layoutBrk(Brk b) =>
     int lx = f_xAt(b.leftB, b.leftT)
-    int rx = math.max(lx + f_units(1), f_xFwd(bbExtend))
-    float mid = (b.top + b.bot) / 2
-    box.set_lefttop(b.bx, lx, b.top)
-    box.set_rightbottom(b.bx, rx, b.bot)
-    line.set_xy1(b.mid, lx, mid)
-    line.set_xy2(b.mid, rx, mid)
-    label.set_xy(b.lb, f_gapLabelX(lx, rx), b.cisd)
-    if not b.confirmed
-        line.set_xy1(b.cisdLn, lx, b.cisd)
-        line.set_xy2(b.cisdLn, rx, b.cisd)
-        label.set_xy(b.cisdLb, lx + f_units(4), b.cisd)
-    if not na(b.bosPx)
-        label.set_xy(b.bosLb, f_xAt(b.bosB, b.bosT), b.bosPx)
+    int rx = f_xNow()
+    f_gapLineAt(b.cisdLn, b.cisdLnB, b.lb, b.cisd, lx, rx, liqUnsweptLabelGap, chartTfLabel + " CISD", false, 10)
+    line.set_color(b.cisdLn, color.new(color.black, 0))
+    line.set_color(b.cisdLnB, color.new(color.black, 0))
+    label.set_color(b.lb, color.new(color.black, 100))
+    label.set_textcolor(b.lb, color.new(color.black, 0))
     0
 
 f_addBrk(array<Brk> bs, float top, float bot, int leftB, int leftT, bool bullBreaker, float cisd, bool confirmAbove, float bosPx, int bosB, int bosT) =>
     int lx = f_xAt(leftB, leftT)
-    int rx = math.max(lx + f_units(1), f_xFwd(bbExtend))
-    float mid = (top + bot) / 2
-    box bx = box.new(lx, top, rx, bot, xloc = xlMode, border_color = color.new(color.black, 100), border_width = 1, bgcolor = color.new(bbFill, 100))
-    line ml = line.new(lx, mid, rx, mid, xloc = xlMode, color = color.new(color.black, 100), style = line.style_dashed, width = 1)
-    // A ternary does NOT short-circuit in Pine - both arms are evaluated - so a
-    // line.new hidden in one arm still creates a drawing. It is always created
-    // and hidden with transparency instead.
-    line cl = line.new(lx, cisd, rx, cisd, xloc = xlMode, color = color.new(color.black, bbShowCisd ? 0 : 100), style = line.style_solid, width = 1)
-    // label_center draws a plain box centred exactly on its anchor, so
-    // anchoring at the CISD line's right side keeps the text inside it.
-    label lb = label.new(f_gapLabelX(lx, rx), cisd, chartTfLabel + " CISD", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), textcolor = color.new(color.black, 0), size = lblSize, textalign = text.align_center)
-    // Hidden compatibility labels so the downstream planner keeps working.
-    label cisdLb = label.new(lx + f_units(4), cisd, "CISD", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), textcolor = color.new(color.black, 100), size = size.small, textalign = text.align_center)
-    label bosLb = label.new(f_xAt(bosB, bosT), bosPx, "", xloc = xlMode, style = bullBreaker ? label.style_label_down : label.style_label_up, color = color.new(color.black, 100), textcolor = color.new(color.black, 100), size = size.small, textalign = text.align_center)
-    array.push(bs, Brk.new(bx = bx, mid = ml, cisdLn = cl, lb = lb, top = top, bot = bot, leftB = leftB, leftT = leftT, bosPx = bosPx, bosB = bosB, bosT = bosT, cisdLb = cisdLb, bosLb = bosLb, bullBreaker = bullBreaker, cisd = cisd, confirmAbove = confirmAbove, confirmed = false, bornBar = bar_index, confirmedBar = -1))
+    int rx = f_xNow()
+    // A hidden, disused box/mid-line/BOS-label pair - kept only so the rest
+    // of the file (f_delBrk, Brk's own fields) does not need touching. None
+    // of these three are ever styled or positioned again after creation.
+    box bx = box.new(lx, top, rx, bot, xloc = xlMode, border_color = color(na), bgcolor = color(na))
+    line ml = line.new(lx, cisd, rx, cisd, xloc = xlMode, color = color(na))
+    label bosLb = label.new(lx, cisd, "", xloc = xlMode, color = color(na), textcolor = color(na))
+    line cl = line.new(lx, cisd, lx, cisd, xloc = xlMode, color = color.new(color.black, 0), style = line.style_solid, width = 1)
+    line clB = line.new(rx, cisd, rx, cisd, xloc = xlMode, color = color.new(color.black, 0), style = line.style_solid, width = 1)
+    label lb = label.new(lx, cisd, "", xloc = xlMode, style = label.style_label_center, color = color.new(color.black, 100), textcolor = color.new(color.black, 0), size = lblSize, textalign = text.align_center)
+    label cisdLb = label.new(lx, cisd, "", xloc = xlMode, color = color(na), textcolor = color(na))
+    array.push(bs, Brk.new(bx = bx, mid = ml, cisdLn = cl, cisdLnB = clB, lb = lb, top = top, bot = bot, leftB = leftB, leftT = leftT, bosPx = bosPx, bosB = bosB, bosT = bosT, cisdLb = cisdLb, bosLb = bosLb, bullBreaker = bullBreaker, cisd = cisd, confirmAbove = confirmAbove, confirmed = false, bornBar = bar_index, confirmedBar = -1))
     while array.size(bs) > bbMaxBoxes
         f_delBrk(bs, 0)
+    // Same-direction, very-recent CISD already on the chart? Something
+    // reversed and then instantly reversed right back - keep only the
+    // newest, delete the stale one instead of leaving both up.
+    if array.size(bs) > 1
+        for i = array.size(bs) - 2 to 0
+            Brk old = array.get(bs, i)
+            if bar_index - old.bornBar <= f_barsForMinutes(60)
+                f_delBrk(bs, i)
     0
 
 var int   lastBrkConfirmedBar = na
@@ -2926,11 +2966,6 @@ if array.size(brks) > 0
                 b.confirmed := true
                 b.confirmedBar := bar_index
                 array.set(brks, i, b)
-                box.set_border_width(b.bx, 2)
-                line.set_xy2(b.cisdLn, f_xNow(), b.cisd)
-                line.set_color(b.cisdLn, color.new(#FFB300, 0))
-                label.set_textcolor(b.cisdLb, color.new(#FFB300, 0))
-                label.set_textcolor(b.bosLb, color.new(color.black, 0))
                 lastBrkConfirmedBar := bar_index
                 lastBrkConfirmedBull := b.bullBreaker
                 lastBrkCisd := b.cisd
