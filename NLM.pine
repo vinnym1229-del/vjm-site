@@ -286,6 +286,11 @@ f_compactName(string name) =>
         compact := "London"
     compact
 
+// Same delimiter mismatch as f_appendUniqueTag: this pads the duplicate
+// check with "," but joins segments with "+", so the check never actually
+// matched anything once more than one name was in tags - e.g. two separate
+// unswept "Asia H" entries from different days both landing within 18
+// points of the same price could each add "Asia H" to the same string.
 f_mergeNearLevelTags(float price) =>
     string tags = ""
     if array.size(levels) > 0
@@ -294,12 +299,21 @@ f_mergeNearLevelTags(float price) =>
             Level lvl = array.get(levels, i)
             if not lvl.swept and f_near(price, lvl.price, ticks18)
                 string nm = lvl.name
-                if not str.contains("," + tags + ",", "," + nm + ",")
+                if not str.contains("+" + tags + "+", "+" + nm + "+")
                     tags := tags == "" ? nm : tags + "+" + nm
     tags
 
+// The delimiter check has to match the ACTUAL join delimiter used two lines
+// down ("+"), not an unrelated "|" - the old version padded with "|" while
+// segments are joined with "+", so "is this tag already one of the +
+// -joined segments" never matched once tags held more than one segment.
+// f_addLiq's merge path calls this on a PERSISTED tag across many bars, so
+// a duplicate check that never fires means the same tag keeps getting
+// appended again and again forever - unbounded, ever-growing label text on
+// any chart left running long enough. Padding with the real delimiter fixes
+// the match.
 f_appendUniqueTag(string tags, string tag) =>
-    tag == "" ? tags : (tags == "" ? tag : (str.contains("|" + tags + "|", "|" + tag + "|") ? tags : tags + "+" + tag))
+    tag == "" ? tags : (tags == "" ? tag : (str.contains("+" + tags + "+", "+" + tag + "+") ? tags : tags + "+" + tag))
 
 int liqDedupTicks = 10
 
@@ -1688,7 +1702,13 @@ f_addLiq(array<Liq> qs, float px, bool isHigh, int anchorB, int anchorT, float d
             if newBetter
                 f_delLiq(qs, bestIdx)
             else
-                existing.tag := existing.tag == "ATH" ? f_appendUniqueTag(existing.tag, relTag) : relTag
+                // Same fix as f_clearAth4h: an exact "ATH" match only ever
+                // catches the FIRST merge onto an ATH entry - the second
+                // nearby pivot to merge in sees a tag like "ATH+HTF REH"
+                // (already compounded), fails the exact match, and falls
+                // into the else branch that OVERWRITES the tag outright,
+                // silently dropping "ATH" the second time this fires.
+                existing.tag := str.contains(existing.tag, "ATH") ? f_appendUniqueTag(existing.tag, relTag) : relTag
                 array.set(qs, bestIdx, existing)
                 f_layoutLiq(existing)
                 createNew := false
@@ -1890,7 +1910,11 @@ if not na(athTrueHigh) and (na(ath4hPrice) or athTrueHigh > ath4hPrice)
     ath4hAnchorT := na(athTrueTime) ? time : athTrueTime
 if athIdx >= 0
     qa = array.get(liq4h, athIdx)
-    qa.tag := "ATH"
+    // qa.tag was just stripped of "ATH" by f_clearAth4h above, but any
+    // REH/REL suffix that survived that strip needs to stay - overwriting
+    // outright with "ATH" here would throw away exactly what the clearing
+    // fix was just careful to preserve.
+    qa.tag := qa.tag == "" ? "ATH" : "ATH+" + qa.tag
     qa.price := ath4hPrice
     qa.startB := na(ath4hAnchorB) ? qa.startB : ath4hAnchorB
     qa.startT := na(ath4hAnchorT) ? qa.startT : ath4hAnchorT
