@@ -6,6 +6,17 @@
 // (Settings > Environment variables) to the Apps Script Web App URL.
 
 export async function onRequestGet(context) {
+  // Top-level guard: whatever goes wrong below, always return valid JSON
+  // instead of letting an uncaught exception crash to Cloudflare's generic
+  // "error code: 502" page.
+  try {
+    return await handle(context);
+  } catch (err) {
+    return jsonResponse({ ok: false, error: 'Unexpected error: ' + (err && err.message ? err.message : String(err)) }, 500);
+  }
+}
+
+async function handle(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   const raw = (url.searchParams.get('discord') || '').trim().toLowerCase();
@@ -20,19 +31,26 @@ export async function onRequestGet(context) {
     return jsonResponse({ ok: false, error: 'MEMBERS_STATUS_URL is not configured' }, 500);
   }
 
-  let data;
+  let res, rawText, data;
   try {
-    const res = await fetch(sourceUrl, { cf: { cacheTtl: 15, cacheEverything: true } });
-    data = await res.json();
+    res = await fetch(sourceUrl, { cf: { cacheTtl: 15, cacheEverything: true } });
+    rawText = await res.text();
   } catch (err) {
     return jsonResponse({ ok: false, error: 'Could not reach the member status sheet' }, 502);
+  }
+
+  try {
+    data = JSON.parse(rawText);
+  } catch (err) {
+    return jsonResponse({ ok: false, error: 'Sheet bridge did not return JSON (got: ' + rawText.slice(0, 200) + ')', httpStatus: res.status }, 502);
   }
 
   if (!data || data.ok !== true) {
     return jsonResponse({ ok: false, error: (data && data.error) || 'Sheet bridge returned an error' }, 502);
   }
 
-  const status = String(data.statuses[username] || '').trim();
+  const statuses = data.statuses || {};
+  const status = String(statuses[username] || '').trim();
   const normalized = status.toLowerCase();
   const active = normalized === 'active' || normalized === 'renewed';
 
