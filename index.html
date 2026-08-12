@@ -2580,17 +2580,42 @@ function checkDashPw() {
 
 // ─── AM I ACTIVE STATUS CHECKER ───
 // Add member Discord usernames here as you get them
-const activeMembers = ['Ant','Gavine','SexyMonkey','Brayden','wank','SStryk3rr','Sneeky Frog','Mo'];
+// Fallback only — used if the live sheet bridge (/api/check-member-status) is
+// unreachable or not configured yet. Keep this reasonably in sync manually,
+// but the live sheet via Apps Script is the real source of truth now.
+const activeMembersFallback = ['Ant','Gavine','SexyMonkey','Brayden','wank','SStryk3rr','Sneeky Frog','Mo'];
 
-function checkStatus() {
-  const input = document.getElementById('status-discord-input').value.trim().toLowerCase();
+async function checkStatus() {
+  const inputEl = document.getElementById('status-discord-input');
+  const input = inputEl.value.trim().toLowerCase();
   const result = document.getElementById('status-result');
   const icon = document.getElementById('status-icon');
   const text = document.getElementById('status-text');
   const sub = document.getElementById('status-sub');
   if (!input) return;
-  const isActive = activeMembers.some(m => m.toLowerCase() === input);
+
   result.style.display = 'block';
+  result.style.background = 'rgba(124,143,163,0.08)';
+  result.style.border = '1px solid var(--border)';
+  icon.textContent = '⏳';
+  text.style.color = 'var(--muted)';
+  text.textContent = 'CHECKING...';
+  sub.style.color = 'var(--muted)';
+  sub.textContent = '';
+
+  let isActive, statusLabel, live = true;
+  try {
+    const res = await fetch('/api/check-member-status?discord=' + encodeURIComponent(input));
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'bridge error');
+    isActive = data.active;
+    statusLabel = data.status;
+  } catch (err) {
+    live = false;
+    isActive = activeMembersFallback.some(m => m.toLowerCase() === input);
+    statusLabel = isActive ? 'Active' : 'Not Found';
+  }
+
   if (isActive) {
     result.style.background = 'rgba(0,230,118,0.07)';
     result.style.border = '1px solid rgba(0,230,118,0.3)';
@@ -2598,15 +2623,15 @@ function checkStatus() {
     text.style.color = 'var(--green)';
     text.textContent = 'ACTIVE';
     sub.style.color = 'var(--muted)';
-    sub.textContent = 'Your premium is active. You should have your Discord role.';
+    sub.textContent = (live ? '' : '(offline check) ') + 'Your premium is active. You should have your Discord role.';
   } else {
     result.style.background = 'rgba(255,68,68,0.06)';
     result.style.border = '1px solid rgba(255,68,68,0.3)';
     icon.textContent = '❌';
     text.style.color = 'var(--red)';
-    text.textContent = 'NOT FOUND';
+    text.textContent = statusLabel === 'Not Found' ? 'NOT FOUND' : statusLabel.toUpperCase();
     sub.style.color = 'var(--muted)';
-    sub.textContent = 'Not found in active members. DM St1101 on Discord if you think this is wrong.';
+    sub.textContent = (live ? '' : '(offline check) ') + 'DM St1101 on Discord if you think this is wrong.';
   }
 }
 document.addEventListener('keydown', function(e) {
