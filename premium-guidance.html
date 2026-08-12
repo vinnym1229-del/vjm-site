@@ -93,13 +93,15 @@ function saveSession(data){if(data.token)localStorage.setItem(TOKEN_KEY,data.tok
 function clearSession(){localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(TOKEN_EXP_KEY);localStorage.removeItem(LEGACY_UNLOCK_KEY);}
 async function loadGuidanceWithToken(token){
   if(!token){msg('No saved premium session found. Enter your member access code.',false);return;}
-  loading(true); msg('Member session found. Loading guidance…',true);
+  loading(true); msg('Checking member session…',true);
   try{
-    const res=await fetch(GUIDANCE_ENDPOINT,{method:'GET',headers:{'Authorization':'Bearer '+token,'Accept':'text/html'},credentials:'same-origin',cache:'no-store'});
-    const text=await res.text();
-    if(!res.ok){let detail='Session expired or invalid. Sign in again.';try{detail=JSON.parse(text).message||detail}catch(e){} clearSession(); msg(detail,false); return;}
-    document.open(); document.write(text); document.close();
-  }catch(err){msg('Could not load the guidance. Refresh and try again, or DM St1101 if it keeps happening.',false);}
+    const res=await fetch('/api/verify-premium?token='+encodeURIComponent(token),{credentials:'same-origin',cache:'no-store'});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok||!data.ok||!data.active){clearSession(); msg(data.error||'Session expired or invalid. Sign in again.',false); return;}
+    const card=document.getElementById('signin');
+    if(card)card.innerHTML='<h2 id="signin-title">✅ Premium Verified</h2><p>Your access code is active. The full guidance modules for this page are still being built out — for now, DM <strong>St1101</strong> on Discord and you\'ll get the current lesson links and checklists directly.</p><button class="btn btn-ghost" type="button" onclick="clearSession();location.reload();">Sign Out</button>';
+    msg('',true);
+  }catch(err){msg('Could not verify your session. Refresh and try again, or DM St1101 if it keeps happening.',false);}
   finally{loading(false);}
 }
 async function unlockPremiumGuidance(){

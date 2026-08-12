@@ -1625,10 +1625,10 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
     <!-- DASHBOARD TAB -->
     <div id="pcontent-dashboard" style="display:none;max-width:700px;margin:0 auto;">
       <div id="dash-gate" style="text-align:center;">
-        <p style="color:var(--muted);margin-bottom:16px;">Enter your member password to access your dashboard.</p>
-        <input type="password" id="dash-pw-input" placeholder="Member password..." style="width:100%;max-width:360px;padding:12px 16px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;">
+        <p style="color:var(--muted);margin-bottom:16px;">Enter your premium access code to open your dashboard.</p>
+        <input type="text" id="dash-pw-input" placeholder="Access code (e.g. JOHN-2298)..." style="width:100%;max-width:360px;padding:12px 16px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;text-transform:uppercase;">
         <button onclick="checkDashPw()" class="btn btn-gold" style="width:100%;max-width:360px;">Unlock Dashboard</button>
-        <p id="dash-pw-error" style="color:var(--red);font-size:0.82rem;margin-top:8px;display:none;">Wrong password. DM St1101 on Discord.</p>
+        <p id="dash-pw-error" style="color:var(--red);font-size:0.82rem;margin-top:8px;display:none;">Incorrect code. DM St1101 on Discord.</p>
       </div>
       <div id="dash-content" style="display:none;">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;">
@@ -1642,8 +1642,8 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
             <div style="font-size:0.7rem;color:var(--muted);">Launch rate — locked in</div>
           </div>
           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;">
-            <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Website Password</div>
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--text);">TRADE2025</div>
+            <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Access Code</div>
+            <div id="dash-access-code" style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--text);">—</div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
@@ -1690,10 +1690,10 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
     <!-- TRADE REVIEWS TAB -->
     <div id="pcontent-reviews" style="display:none;max-width:700px;margin:0 auto;">
       <div class="review-gate" id="review-gate">
-        <p style="color:var(--muted);margin-bottom:20px;">Enter your member password to access trade reviews.</p>
-        <input type="password" id="review-password" placeholder="Member password..." />
+        <p style="color:var(--muted);margin-bottom:20px;">Enter your premium access code to view trade reviews.</p>
+        <input type="text" id="review-password" placeholder="Access code (e.g. JOHN-2298)..." style="text-transform:uppercase;" />
         <button class="btn btn-gold" onclick="checkReviewPassword()" style="width:100%;">Unlock Trade Reviews</button>
-        <p style="color:var(--red);font-size:0.82rem;margin-top:8px;display:none;" id="pw-error">Incorrect password. DM St1101 on Discord for access.</p>
+        <p style="color:var(--red);font-size:0.82rem;margin-top:8px;display:none;" id="pw-error">Incorrect code. DM St1101 on Discord for access.</p>
       </div>
       <div id="reviews-content">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
@@ -2270,9 +2270,8 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
       <p id="admin-error" style="color:var(--red);font-size:0.82rem;margin-top:8px;display:none;">Incorrect password.</p>
     </div>
     <div id="admin-content" style="display:none;">
-      <h3 style="color:var(--gold);margin-bottom:12px;">Member Password</h3>
-      <input type="text" id="new-member-pw" placeholder="New member password (current: TRADE2025)" />
-      <button class="admin-btn admin-btn-gold" onclick="updateMemberPw()">Update Member Password</button>
+      <h3 style="color:var(--gold);margin-bottom:12px;">Member Access</h3>
+      <p style="color:var(--muted);font-size:0.82rem;margin-bottom:16px;">Premium access codes are managed in the Member Tracker sheet's "Access Code" column — add or edit a code there and it works on the site within ~20 seconds. Nothing to update here.</p>
       <h3 style="color:var(--gold);margin:20px 0 12px;">Add Blog Post</h3>
       <input type="text" id="new-post-title" placeholder="Post title" />
       <textarea id="new-post-body" placeholder="Post content..." style="height:100px;"></textarea>
@@ -2286,18 +2285,69 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 </div>
 
 <script>
-// ─── PASSWORDS ───
-let MEMBER_PW = 'TRADE2025';
+// ─── ADMIN ───
 const ADMIN_PW = 'VINNY_ADMIN_01';
 
+// ─── PREMIUM SESSION (shared with Stock Lab, Guidance, Forex Calendar) ───
+const TOKEN_KEY = 'vjm_premium_session_token_v1';
+const TOKEN_EXP_KEY = 'vjm_premium_session_expires_v1';
+const CODE_KEY = 'vjm_premium_session_code_v1';
+
+function saveSession(data, code) {
+  if (data.token) localStorage.setItem(TOKEN_KEY, data.token);
+  if (data.expiresAt) localStorage.setItem(TOKEN_EXP_KEY, data.expiresAt);
+  if (code) localStorage.setItem(CODE_KEY, code);
+}
+
+async function verifyCode(code) {
+  const res = await fetch('/api/verify-premium', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.ok && data.ok) saveSession(data, code);
+  return data;
+}
+
+async function checkSavedSession() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return false;
+  try {
+    const res = await fetch('/api/verify-premium?token=' + encodeURIComponent(token));
+    const data = await res.json().catch(() => ({}));
+    return !!(data.ok && data.active);
+  } catch (err) {
+    return false;
+  }
+}
+
+function unlockDashAndReviews() {
+  document.getElementById('dash-gate').style.display = 'none';
+  document.getElementById('dash-content').style.display = 'block';
+  document.getElementById('review-gate').style.display = 'none';
+  document.getElementById('reviews-content').style.display = 'block';
+  const codeEl = document.getElementById('dash-access-code');
+  if (codeEl) codeEl.textContent = localStorage.getItem(CODE_KEY) || '—';
+}
+
+document.addEventListener('DOMContentLoaded', async function () {
+  const active = await checkSavedSession();
+  if (active) unlockDashAndReviews();
+});
+
 // ─── REVIEW UNLOCK ───
-function checkReviewPassword() {
-  const val = document.getElementById('review-password').value.trim();
+async function checkReviewPassword() {
+  const input = document.getElementById('review-password');
+  const code = input.value.trim();
   const err = document.getElementById('pw-error');
-  if (val === MEMBER_PW) {
-    document.getElementById('review-gate').style.display = 'none';
-    document.getElementById('reviews-content').style.display = 'block';
+  err.style.display = 'none';
+  if (!code) return;
+  const data = await verifyCode(code);
+  if (data.ok) {
+    unlockDashAndReviews();
   } else {
+    err.textContent = data.error || 'Incorrect code. DM St1101 on Discord for access.';
     err.style.display = 'block';
   }
 }
@@ -2338,7 +2388,6 @@ function verifyAdmin() {
     document.getElementById('admin-error').style.display='block';
   }
 }
-function updateMemberPw() { const v = document.getElementById('new-member-pw').value.trim(); if(v){ MEMBER_PW=v; log('Member password updated to: '+v); alert('Password updated! Tell members the new password.'); } }
 function savePost() { log('Post saved: '+document.getElementById('new-post-title').value); alert('Post noted — add it to the Insights section in the file.'); }
 function log(msg) { const el=document.getElementById('admin-log'); el.textContent += new Date().toLocaleTimeString()+': '+msg+'\n'; }
 document.getElementById('admin-pw-input').addEventListener('keydown', function(e){ if(e.key==='Enter') verifyAdmin(); });
@@ -2568,13 +2617,18 @@ function premTab(tab) {
   active.style.color = '#fff';
 }
 
-function checkDashPw() {
-  const val = document.getElementById('dash-pw-input').value;
-  if (val === MEMBER_PW) {
-    document.getElementById('dash-gate').style.display = 'none';
-    document.getElementById('dash-content').style.display = 'block';
+async function checkDashPw() {
+  const input = document.getElementById('dash-pw-input');
+  const code = input.value.trim();
+  const err = document.getElementById('dash-pw-error');
+  err.style.display = 'none';
+  if (!code) return;
+  const data = await verifyCode(code);
+  if (data.ok) {
+    unlockDashAndReviews();
   } else {
-    document.getElementById('dash-pw-error').style.display = 'block';
+    err.textContent = data.error || 'Incorrect code. DM St1101 on Discord.';
+    err.style.display = 'block';
   }
 }
 
