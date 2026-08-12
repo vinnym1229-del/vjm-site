@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Options Lab | St Trades</title>
-<meta name="description" content="Gamma exposure explained: how to read a GEX chart, worked scenarios, where to get real-time data, and how to translate it into QQQ/NQ and SPY/ES intraday.">
+<meta name="description" content="Options basics and how to trade them, plus gamma exposure explained: how to read a GEX chart, worked scenarios, where to get real-time data, and how to translate it into QQQ/NQ and SPY/ES intraday.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2306090d'/%3E%3Ctext y='50' x='8' font-size='50' font-family='Arial Black,sans-serif' font-weight='900' fill='%23dc2626'%3ES%3C/text%3E%3C/svg%3E">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
@@ -41,12 +41,21 @@ body.light-mode nav { background: rgba(244,246,249,0.95); }
 .lab-hero p { color: var(--muted); max-width: 620px; margin: 0 auto; font-size: 0.95rem; }
 
 .tabs { position: sticky; top: 57px; z-index: 40; display: flex; gap: 6px; overflow-x: auto; padding: 12px 24px; background: var(--bg); border-bottom: 1px solid var(--border); }
-.tab-btn { flex: 0 0 auto; background: transparent; border: 1px solid var(--border); color: var(--muted); font-family:'Inter',sans-serif; font-weight: 700; font-size: 0.82rem; padding: 9px 16px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all .15s; }
+.tab-btn { flex: 0 0 auto; background: transparent; border: 1px solid var(--border); color: var(--muted); font-family:'Inter',sans-serif; font-weight: 700; font-size: 0.86rem; padding: 10px 18px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all .15s; }
 .tab-btn.active { background: var(--gold); border-color: var(--gold); color: #fff; }
 .tab-btn:not(.active):hover { border-color: var(--gold); color: var(--gold); }
 
-.tab-panel { display: none; padding: 48px 24px 80px; }
+.subtabs { position: sticky; top: 106px; z-index: 39; display: flex; gap: 6px; overflow-x: auto; padding: 10px 24px; background: var(--bg2); border-bottom: 1px solid var(--border); }
+.subtab-btn { flex: 0 0 auto; background: transparent; border: 1px solid var(--border); color: var(--muted); font-family:'Inter',sans-serif; font-weight: 600; font-size: 0.76rem; padding: 7px 14px; border-radius: 20px; cursor: pointer; white-space: nowrap; transition: all .15s; }
+.subtab-btn.active { background: rgba(220,38,38,0.14); border-color: var(--gold); color: var(--gold); }
+.subtab-btn:not(.active):hover { border-color: var(--gold); color: var(--gold); }
+
+.tab-panel { display: none; }
 .tab-panel.active { display: block; }
+.tab-panel > .wrap { padding: 48px 0 80px; }
+
+.sub-panel { display: none; padding: 40px 24px 80px; }
+.sub-panel.active { display: block; }
 
 .section-tag { font-size:0.72rem; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--gold); margin-bottom:8px; }
 h2.panel-title { font-size: clamp(1.5rem,3.5vw,2.1rem); margin-bottom: 14px; }
@@ -54,6 +63,7 @@ h2.panel-title { font-size: clamp(1.5rem,3.5vw,2.1rem); margin-bottom: 14px; }
 
 .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 24px; }
 .grid-2 { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 16px; }
 .diagram-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin: 24px 0; }
 .diagram-wrap svg { width: 100%; height: auto; display: block; }
 .diagram-caption { font-size: 0.78rem; color: var(--muted); margin-top: 10px; text-align: center; }
@@ -70,6 +80,9 @@ table.datatab tr:last-child td { border-bottom: none; }
 .pill.free { background:rgba(0,230,118,0.12); color:var(--green); }
 .pill.cheap { background:rgba(220,38,38,0.12); color:var(--gold); }
 .pill.paid { background:rgba(124,143,163,0.15); color:var(--muted); }
+.pill.bull { background:rgba(0,230,118,0.12); color:var(--green); }
+.pill.bear { background:rgba(255,68,68,0.12); color:var(--red); }
+.pill.neutral { background:rgba(124,143,163,0.15); color:var(--muted); }
 
 .scenario { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 20px; }
 .scenario h3 { font-size: 1.25rem; margin-bottom: 6px; }
@@ -104,224 +117,298 @@ footer a:hover { color: var(--gold); }
 
 <div class="lab-hero">
   <div class="tag">Options Lab</div>
-  <h1>Read gamma exposure <span class="gold">like a dealer, not a retail chaser.</span></h1>
-  <p>What GEX actually measures, what a chart is telling you, where to pull real-time data without paying institutional prices, and how to translate SPY/QQQ levels into ES and NQ for intraday futures.</p>
+  <h1>Learn the mechanics. <span class="gold">Then read the dealer's hand.</span></h1>
+  <p>Start with how options actually work and how to trade them, then go deeper into gamma exposure — how to read a GEX chart, where to get real-time data cheap, and how to translate it into QQQ/NQ and SPY/ES intraday.</p>
 </div>
 
 <div class="tabs" id="tabs">
-  <button class="tab-btn active" data-tab="gex101">GEX 101</button>
-  <button class="tab-btn" data-tab="scenarios">Worked Scenarios</button>
-  <button class="tab-btn" data-tab="data">Where to Get Data</button>
-  <button class="tab-btn" data-tab="translate">QQQ/NQ · SPY/ES Translation</button>
+  <button class="tab-btn active" data-tab="basics">Options Basics</button>
+  <button class="tab-btn" data-tab="gex">Gamma Exposure (GEX)</button>
 </div>
 
-<!-- ============ TAB 1: GEX 101 ============ -->
-<div class="tab-panel active" id="panel-gex101">
+<!-- ============ PANEL: OPTIONS BASICS ============ -->
+<div class="tab-panel active" id="panel-basics">
   <div class="wrap">
-    <div class="section-tag">The Model</div>
-    <h2 class="panel-title">What gamma exposure actually is</h2>
-    <p class="lead">Options dealers (market makers) are usually short gamma on puts and long gamma on calls they've sold, and they hedge their book by buying and selling the underlying as price moves. GEX estimates, strike by strike, how much stock/futures dealers have to buy or sell per $1 move to stay hedged. That hedging flow is what turns options positioning into real support, resistance, and volatility regimes on the chart.</p>
+    <div class="section-tag">Fundamentals</div>
+    <h2 class="panel-title">Options, decoded — the parts and how to actually trade them</h2>
+    <p class="lead">Everything below is the concise version on purpose. You don't need a textbook to trade options well — you need to know what you're actually buying, what's working against you, and which structure fits the setup in front of you.</p>
 
-    <div class="diagram-wrap">
-      <svg viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg">
-        <line x1="40" y1="170" x2="740" y2="170" style="stroke:var(--border);stroke-width:1"/>
-        <text x="40" y="24" style="fill:var(--muted);font-size:11px;font-family:Inter,sans-serif;">Positive GEX (call-dominant)</text>
-        <text x="40" y="330" style="fill:var(--muted);font-size:11px;font-family:Inter,sans-serif;">Negative GEX (put-dominant)</text>
-
-        <!-- bars: strike positions x=80..700, baseline y=170 -->
-        <g style="fill:var(--green)">
-          <rect x="560" y="90" width="26" height="80"/>
-          <rect x="600" y="60" width="26" height="110"/>
-          <rect x="640" y="110" width="26" height="60"/>
-          <rect x="680" y="140" width="26" height="30"/>
-          <rect x="440" y="150" width="26" height="20"/>
-          <rect x="480" y="140" width="26" height="30"/>
-          <rect x="520" y="120" width="26" height="50"/>
-        </g>
-        <g style="fill:var(--red)">
-          <rect x="80" y="170" width="26" height="30"/>
-          <rect x="120" y="170" width="26" height="55"/>
-          <rect x="160" y="170" width="26" height="95"/>
-          <rect x="200" y="170" width="26" height="60"/>
-          <rect x="240" y="170" width="26" height="35"/>
-          <rect x="280" y="170" width="26" height="20"/>
-          <rect x="320" y="170" width="26" height="10"/>
-          <rect x="360" y="170" width="26" height="5"/>
-        </g>
-
-        <!-- zero gamma flip line -->
-        <line x1="405" y1="40" x2="405" y2="300" style="stroke:var(--gold);stroke-width:2;stroke-dasharray:5,4"/>
-        <text x="411" y="52" style="fill:var(--gold);font-size:12px;font-weight:700;font-family:Inter,sans-serif;">Zero Gamma Flip</text>
-
-        <!-- put wall label -->
-        <line x1="173" y1="265" x2="173" y2="278" style="stroke:var(--red);stroke-width:1"/>
-        <text x="173" y="294" text-anchor="middle" style="fill:var(--red);font-size:12px;font-weight:700;font-family:Inter,sans-serif;">Put Wall</text>
-        <text x="173" y="309" text-anchor="middle" style="fill:var(--muted);font-size:10px;font-family:Inter,sans-serif;">largest negative strike</text>
-
-        <!-- call wall label -->
-        <line x1="613" y1="48" x2="613" y2="60" style="stroke:var(--green);stroke-width:1"/>
-        <text x="613" y="38" text-anchor="middle" style="fill:var(--green);font-size:12px;font-weight:700;font-family:Inter,sans-serif;">Call Wall</text>
-
-        <text x="740" y="185" text-anchor="end" style="fill:var(--muted);font-size:10px;font-family:Inter,sans-serif;">Strike →</text>
-      </svg>
-      <p class="diagram-caption">A GEX profile: bars show net dealer gamma at each strike. The put wall tends to act as a floor while dealers are net long gamma there; the call wall acts as a magnet/ceiling. The dashed line is the zero gamma flip — the strike where the whole market's net dealer gamma crosses from positive to negative.</p>
-    </div>
-
-    <div class="grid-2">
-      <div class="card">
-        <h3 style="font-size:1.1rem;margin-bottom:8px;color:var(--green);">Positive / long gamma regime</h3>
-        <p style="font-size:0.86rem;color:var(--muted);">Price is above the zero gamma flip. Dealers are net long gamma, so they hedge by <b style="color:var(--text);">selling into rallies and buying into dips</b> — that flow dampens volatility. Expect chop, mean reversion, tighter ranges, and moves that get faded rather than extended. This is "pinning" behavior, especially into monthly/weekly OpEx.</p>
-      </div>
-      <div class="card">
-        <h3 style="font-size:1.1rem;margin-bottom:8px;color:var(--red);">Negative / short gamma regime</h3>
-        <p style="font-size:0.86rem;color:var(--muted);">Price is below the zero gamma flip. Dealers are net short gamma, so they hedge by <b style="color:var(--text);">selling into weakness and buying into strength</b> — that flow amplifies volatility in whichever direction price is already moving. Expect trend days, air pockets, and bigger-than-normal ranges once a level breaks.</p>
-      </div>
-    </div>
-
-    <div class="callout">
-      <b style="color:var(--gold);">Read order that actually matters intraday:</b> (1) where is price relative to the zero gamma flip, (2) where's the nearest wall in the direction you're trading, (3) is that wall growing or shrinking versus yesterday's print. The flip tells you the regime (chop vs trend). The walls tell you the levels. Rate of change tells you if dealer hedging is getting more or less aggressive.
-    </div>
-
-    <h3 style="font-size:1.2rem;margin:32px 0 10px;">The rough math, if you want to build your own</h3>
-    <p style="font-size:0.86rem;color:var(--muted);margin-bottom:10px;">You don't need this to trade GEX, but it demystifies what a vendor is computing:</p>
-    <div class="formula-box">
-      Gamma$ (per strike) = Open Interest × Contract Multiplier × Spot² × Gamma × 0.01<br>
-      Calls contribute positive, puts contribute negative (dealer-short-puts convention).<br>
-      Sum across strikes = Net GEX. The strike where cumulative GEX crosses 0 = Zero Gamma Flip.
-    </div>
-    <p style="font-size:0.82rem;color:var(--muted);">In practice: pull the option chain (strike, OI, implied vol) for SPX/SPY or NDX/QQQ, run Black-Scholes gamma per strike, multiply by OI and spot², and sum. This is exactly what the "cheap" vendors below are doing for you on a schedule.</p>
-  </div>
-</div>
-
-<!-- ============ TAB 2: WORKED SCENARIOS ============ -->
-<div class="tab-panel" id="panel-scenarios">
-  <div class="wrap">
-    <div class="section-tag">Applied</div>
-    <h2 class="panel-title">Three regimes, three plans</h2>
-    <p class="lead">These are illustrative — the exact strikes move every day. The point is the decision process: regime first, then level, then trade type.</p>
-
-    <div class="scenario">
-      <span class="verdict range">Range Day</span>
-      <h3>Price pinned between two walls, deep in positive gamma</h3>
-      <div class="num-row">
-        <div><b>+2,400M</b><span>Net GEX</span></div>
-        <div><b>Put wall −40</b><span>from spot</span></div>
-        <div><b>Call wall +55</b><span>from spot</span></div>
-        <div><b>Low</b><span>Realized vol</span></div>
-      </div>
-      <p><b style="color:var(--text);">What it means:</b> Dealers are heavily long gamma and actively suppressing movement. Breakouts from either wall tend to get sold/bought back into the range.</p>
-      <p><b style="color:var(--text);">How to trade it on NQ/ES:</b> Fade the edges of the translated wall levels (see Translation tab) rather than chase breakouts. Iron condors / credit spreads on the options side; on futures, favor mean-reversion scalps at the range extremes and take profit quickly — don't expect a level to just give way and run.</p>
-    </div>
-
-    <div class="scenario">
-      <span class="verdict short">Trend / Volatility Expansion</span>
-      <h3>Price breaks below the zero gamma flip</h3>
-      <div class="num-row">
-        <div><b>−1,800M</b><span>Net GEX</span></div>
-        <div><b>Flip level</b><span>just broken</span></div>
-        <div><b>No wall</b><span>for 2%+ below</span></div>
-        <div><b>Rising</b><span>Realized vol</span></div>
-      </div>
-      <p><b style="color:var(--text);">What it means:</b> Dealers flip to short gamma and start hedging with the move (selling as price falls), removing the cushion that was capping range. This is where air-pocket down days come from.</p>
-      <p><b style="color:var(--text);">How to trade it on NQ/ES:</b> Respect momentum — this is a "let winners run, don't fade the first pullback" environment. Trail stops instead of taking mean-reversion counter-trades. Size down slightly since realized ranges expand and stops need more room.</p>
-    </div>
-
-    <div class="scenario">
-      <span class="verdict long">Grind Higher / Melt-Up</span>
-      <h3>Price above flip, call wall climbing day over day</h3>
-      <div class="num-row">
-        <div><b>+900M</b><span>Net GEX</span></div>
-        <div><b>Call wall</b><span>rolling up daily</span></div>
-        <div><b>Flip</b><span>well below spot</span></div>
-        <div><b>Compressed</b><span>Intraday range</span></div>
-      </div>
-      <p><b style="color:var(--text);">What it means:</b> Still long-gamma (chop-dampening) but the call wall itself is migrating higher as traders keep buying calls above the market — a slow grind rather than a violent trend.</p>
-      <p><b style="color:var(--text);">How to trade it on NQ/ES:</b> Low-conviction environment for big directional swings; better suited to smaller-size continuation scalps in the direction of the drift, or premium-selling on the options side. Don't force short setups just because the market "feels stretched" — long gamma structurally resists that.</p>
-    </div>
-
-    <div class="callout warn">
-      <b>Reality check:</b> GEX is a positioning map, not a signal that fires on its own. It tells you which behavior (chop vs. trend) is more likely and where the pressure points sit. Combine it with your actual entry model (price action, levels, catalysts) — don't trade the GEX chart in isolation.
-    </div>
-  </div>
-</div>
-
-<!-- ============ TAB 3: DATA SOURCES ============ -->
-<div class="tab-panel" id="panel-data">
-  <div class="wrap">
-    <div class="section-tag">Sourcing</div>
-    <h2 class="panel-title">Where to actually get this data</h2>
-    <p class="lead">You don't need a $500/mo institutional feed. Here's the cheapest real path from free to real-time, cheapest first.</p>
-
+    <h3 style="font-size:1.15rem;margin-bottom:12px;">The core components</h3>
     <table class="datatab">
-      <tr><th>Source</th><th>Cost</th><th>What you get</th></tr>
-      <tr>
-        <td><b>Unusual Whales</b> — free Greek Exposure pages<br><span style="color:var(--muted);font-size:0.8rem;">unusualwhales.com/stock/SPY/greek-exposure (swap ticker for SPX, QQQ, etc.)</span></td>
-        <td><span class="pill free">Free</span></td>
-        <td>GEX, DEX, Vanna, and Charm exposure charts for any ticker, no account needed for the basic view. Best free starting point for SPY/SPX/QQQ.</td>
-      </tr>
-      <tr>
-        <td><b>Unusual Whales</b> — paid tiers</td>
-        <td><span class="pill cheap">~$50+/mo</span></td>
-        <td>Faster refresh, historical GEX, options flow, and API access on higher tiers. Verify current tier pricing on their site — it's changed more than once.</td>
-      </tr>
-      <tr>
-        <td><b>GEXBot</b></td>
-        <td><span class="pill cheap">Low-cost, dedicated</span></td>
-        <td>A tool built specifically around live gamma levels rather than a full options-flow platform — worth comparing against Unusual Whales' paid tier if all you want is GEX. Check current pricing directly.</td>
-      </tr>
-      <tr>
-        <td><b>SpotGamma</b></td>
-        <td><span class="pill paid">Paid, higher tier</span></td>
-        <td>The original institutional-grade GEX vendor — more model depth (Hedgewatch, key levels commentary) but priced above the retail tools above. Worth it once you're trading size, not for casual use.</td>
-      </tr>
-      <tr>
-        <td><b>Build it yourself</b></td>
-        <td><span class="pill free">Free (your time)</span></td>
-        <td>Pull SPX/SPY or NDX/QQQ option chains (strike, OI, IV) from your broker's free API (e.g. IBKR, ThinkOrSwim), run the gamma formula from the GEX 101 tab. Delayed unless your broker feed is real-time, but zero subscription cost.</td>
-      </tr>
+      <tr><th>Component</th><th>What it is</th></tr>
+      <tr><td><b>Underlying</b></td><td>The stock, ETF, or index the contract is based on (e.g. AAPL, SPY, SPX).</td></tr>
+      <tr><td><b>Call / Put</b></td><td>A call is the right to <b>buy</b> the underlying at the strike; a put is the right to <b>sell</b> it. Buying either is a defined-risk bet — you can only lose what you paid.</td></tr>
+      <tr><td><b>Strike price</b></td><td>The fixed price at which the contract lets you buy (call) or sell (put) the underlying.</td></tr>
+      <tr><td><b>Expiration / DTE</b></td><td>The date the contract stops existing. "DTE" = days to expiration. Shorter DTE = cheaper premium, faster decay, more sensitivity to price.</td></tr>
+      <tr><td><b>Premium</b></td><td>What you pay to buy the contract (or receive if you sell it) — quoted per share, but one contract = 100 shares, so a $2.00 premium costs $200.</td></tr>
+      <tr><td><b>Open interest / volume</b></td><td>OI = total contracts outstanding at that strike. Volume = contracts traded today. High OI at a strike is exactly what gamma exposure models are built on (see the GEX tab).</td></tr>
+    </table>
+
+    <h3 style="font-size:1.15rem;margin:32px 0 12px;">Moneyness, and intrinsic vs. extrinsic value</h3>
+    <div class="grid-3">
+      <div class="card">
+        <h3 style="font-size:1rem;color:var(--green);margin-bottom:6px;">ITM — In the Money</h3>
+        <p style="font-size:0.84rem;color:var(--muted);">Call: strike below spot. Put: strike above spot. Has real intrinsic value right now.</p>
+      </div>
+      <div class="card">
+        <h3 style="font-size:1rem;color:var(--gold);margin-bottom:6px;">ATM — At the Money</h3>
+        <p style="font-size:0.84rem;color:var(--muted);">Strike ≈ spot price. Highest extrinsic (time) value, most sensitive to a directional move.</p>
+      </div>
+      <div class="card">
+        <h3 style="font-size:1rem;color:var(--red);margin-bottom:6px;">OTM — Out of the Money</h3>
+        <p style="font-size:0.84rem;color:var(--muted);">Call: strike above spot. Put: strike below spot. Pure extrinsic value — worth $0 at expiration unless price gets there.</p>
+      </div>
+    </div>
+    <p style="font-size:0.85rem;color:var(--muted);margin-top:14px;"><b style="color:var(--text);">Intrinsic value</b> = how far ITM a contract is (real, locked-in value). <b style="color:var(--text);">Extrinsic (time) value</b> = everything else you're paying for — time remaining and implied volatility. Extrinsic value decays to zero by expiration no matter what — that decay is theta, and it works against every option buyer, every day, faster as expiration approaches.</p>
+
+    <h3 style="font-size:1.15rem;margin:32px 0 12px;">The Greeks — what you actually need to know</h3>
+    <table class="datatab">
+      <tr><th>Greek</th><th>Measures</th><th>Practical read</th></tr>
+      <tr><td><b style="color:var(--gold);">Delta</b></td><td>$ change in option price per $1 move in underlying</td><td>Also a rough proxy for "probability ITM at expiration." A 0.30 delta call ≈ ~30% odds of finishing ITM.</td></tr>
+      <tr><td><b style="color:var(--gold);">Gamma</b></td><td>Rate of change of delta</td><td>High near ATM strikes close to expiration — this is what makes 0DTE options move so violently, and what dealer GEX models are built from.</td></tr>
+      <tr><td><b style="color:var(--gold);">Theta</b></td><td>$ lost per day from time decay</td><td>Always working against option buyers, always working for option sellers. Accelerates hard in the final week before expiration.</td></tr>
+      <tr><td><b style="color:var(--gold);">Vega</b></td><td>$ change in option price per 1% change in implied volatility</td><td>Why options get crushed right after earnings even when you were "right" on direction — IV collapses (vega hits you) even as price moves your way.</td></tr>
+      <tr><td><b style="color:var(--gold);">Rho</b></td><td>Sensitivity to interest rates</td><td>Smallest practical impact for short-dated retail trading — mostly matters on long-dated (LEAPS) positions.</td></tr>
+    </table>
+
+    <h3 style="font-size:1.15rem;margin:32px 0 12px;">How to actually trade them — pick the structure to fit the setup</h3>
+    <table class="datatab">
+      <tr><th>Structure</th><th>Bias</th><th>Risk</th><th>Use it when</th></tr>
+      <tr><td><b>Long Call</b></td><td><span class="pill bull">Bullish</span></td><td>Defined — premium paid</td><td>High conviction directional move, and you're OK with theta/IV working against you.</td></tr>
+      <tr><td><b>Long Put</b></td><td><span class="pill bear">Bearish</span></td><td>Defined — premium paid</td><td>High conviction downside move, or hedging a long stock position.</td></tr>
+      <tr><td><b>Call Debit Spread</b></td><td><span class="pill bull">Bullish</span></td><td>Defined — net premium paid</td><td>Bullish but want to lower cost and reduce theta/vega exposure vs. a naked call, at the cost of a capped upside.</td></tr>
+      <tr><td><b>Put Debit Spread</b></td><td><span class="pill bear">Bearish</span></td><td>Defined — net premium paid</td><td>Same logic, downside direction.</td></tr>
+      <tr><td><b>Cash-Secured Put</b></td><td><span class="pill neutral">Neutral / Bullish</span></td><td>Defined if fully collateralized</td><td>You'd be happy owning the stock lower — collect premium while you wait for that price.</td></tr>
+      <tr><td><b>Covered Call</b></td><td><span class="pill neutral">Neutral / Bullish</span></td><td>Defined (you own the shares)</td><td>You already own the stock and want income while capping near-term upside.</td></tr>
+      <tr><td><b>Credit Spread (put or call)</b></td><td><span class="pill neutral">Neutral / Directional</span></td><td>Defined — max loss = width minus credit</td><td>You want to sell elevated IV without naked/undefined risk — a core "sell premium" structure.</td></tr>
+      <tr><td><b>Iron Condor</b></td><td><span class="pill neutral">Neutral</span></td><td>Defined both sides</td><td>You expect a range-bound, low-realized-vol day/week — pairs naturally with a deep positive-gamma regime (see GEX tab).</td></tr>
     </table>
 
     <div class="callout">
-      <b style="color:var(--gold);">Start here:</b> the free Unusual Whales Greek Exposure page covers 90% of what you need for SPY/QQQ/SPX day-to-day. Only pay for a faster refresh or API once you're actually trading around these levels live and the free 15-minute-ish delay starts costing you real entries.
+      <b style="color:var(--gold);">Decision order that actually works:</b> (1) direction — bullish, bearish, or range-bound, (2) conviction and timeframe — how sure, how soon, (3) implied volatility environment — is IV rich (favor selling premium) or cheap (favor buying), (4) then pick the structure from the table above. Direction alone is not a trade plan — the same bullish read is a long call in one IV environment and a credit put spread in another.
+    </div>
+
+    <div class="callout warn">
+      <b>Where most beginners actually lose money:</b> buying cheap, far-OTM, short-DTE contracts ("lotto plays") where theta and gamma both work violently against you; holding through earnings without accounting for IV crush; and sizing an undefined-risk trade (naked calls/puts) like it's a defined-risk one. Know your max loss before you're in the trade, not after.
     </div>
   </div>
 </div>
 
-<!-- ============ TAB 4: TRANSLATION ============ -->
-<div class="tab-panel" id="panel-translate">
-  <div class="wrap">
-    <div class="section-tag">Execution</div>
-    <h2 class="panel-title">Turning SPY/QQQ levels into ES/NQ</h2>
-    <p class="lead">GEX vendors quote levels in the underlying index/ETF strikes (SPX, SPY, NDX, QQQ). You're trading futures. Here's how to convert without guessing.</p>
+<!-- ============ PANEL: GEX (with its own sub-tabs) ============ -->
+<div class="tab-panel" id="panel-gex">
 
-    <div class="grid-2">
-      <div class="card">
-        <h3 style="font-size:1.1rem;margin-bottom:8px;">SPY / SPX → ES</h3>
-        <p style="font-size:0.86rem;color:var(--muted);">SPX ≈ SPY × 10 (SPY is designed to track 1/10th of SPX). ES tracks SPX almost 1:1, offset only by the small fair-value basis (cost of carry, usually a few points, bigger right after dividends/rate moves).</p>
-        <div class="formula-box" style="font-size:0.8rem;">ES level ≈ SPX GEX level + current ES-SPX basis<br>(or) ES level ≈ SPY GEX level × 10 + basis</div>
-        <p style="font-size:0.8rem;color:var(--muted);">Check the live basis yourself: ES price minus SPX cash price, right now, on your platform — it drifts through the day.</p>
+  <div class="subtabs" id="subtabs">
+    <button class="subtab-btn active" data-subtab="gex101">GEX 101</button>
+    <button class="subtab-btn" data-subtab="scenarios">Worked Scenarios</button>
+    <button class="subtab-btn" data-subtab="data">Where to Get Data</button>
+    <button class="subtab-btn" data-subtab="translate">QQQ/NQ · SPY/ES Translation</button>
+  </div>
+
+  <!-- SUB: GEX 101 -->
+  <div class="sub-panel active" id="subpanel-gex101">
+    <div class="wrap">
+      <div class="section-tag">The Model</div>
+      <h2 class="panel-title">What gamma exposure actually is</h2>
+      <p class="lead">Options dealers (market makers) are usually short gamma on puts and long gamma on calls they've sold, and they hedge their book by buying and selling the underlying as price moves. GEX estimates, strike by strike, how much stock/futures dealers have to buy or sell per $1 move to stay hedged. That hedging flow is what turns options positioning into real support, resistance, and volatility regimes on the chart.</p>
+
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg">
+          <line x1="40" y1="170" x2="740" y2="170" style="stroke:var(--border);stroke-width:1"/>
+          <text x="40" y="24" style="fill:var(--muted);font-size:11px;font-family:Inter,sans-serif;">Positive GEX (call-dominant)</text>
+          <text x="40" y="330" style="fill:var(--muted);font-size:11px;font-family:Inter,sans-serif;">Negative GEX (put-dominant)</text>
+
+          <g style="fill:var(--green)">
+            <rect x="560" y="90" width="26" height="80"/>
+            <rect x="600" y="60" width="26" height="110"/>
+            <rect x="640" y="110" width="26" height="60"/>
+            <rect x="680" y="140" width="26" height="30"/>
+            <rect x="440" y="150" width="26" height="20"/>
+            <rect x="480" y="140" width="26" height="30"/>
+            <rect x="520" y="120" width="26" height="50"/>
+          </g>
+          <g style="fill:var(--red)">
+            <rect x="80" y="170" width="26" height="30"/>
+            <rect x="120" y="170" width="26" height="55"/>
+            <rect x="160" y="170" width="26" height="95"/>
+            <rect x="200" y="170" width="26" height="60"/>
+            <rect x="240" y="170" width="26" height="35"/>
+            <rect x="280" y="170" width="26" height="20"/>
+            <rect x="320" y="170" width="26" height="10"/>
+            <rect x="360" y="170" width="26" height="5"/>
+          </g>
+
+          <line x1="405" y1="40" x2="405" y2="300" style="stroke:var(--gold);stroke-width:2;stroke-dasharray:5,4"/>
+          <text x="411" y="52" style="fill:var(--gold);font-size:12px;font-weight:700;font-family:Inter,sans-serif;">Zero Gamma Flip</text>
+
+          <line x1="173" y1="265" x2="173" y2="278" style="stroke:var(--red);stroke-width:1"/>
+          <text x="173" y="294" text-anchor="middle" style="fill:var(--red);font-size:12px;font-weight:700;font-family:Inter,sans-serif;">Put Wall</text>
+          <text x="173" y="309" text-anchor="middle" style="fill:var(--muted);font-size:10px;font-family:Inter,sans-serif;">largest negative strike</text>
+
+          <line x1="613" y1="48" x2="613" y2="60" style="stroke:var(--green);stroke-width:1"/>
+          <text x="613" y="38" text-anchor="middle" style="fill:var(--green);font-size:12px;font-weight:700;font-family:Inter,sans-serif;">Call Wall</text>
+
+          <text x="740" y="185" text-anchor="end" style="fill:var(--muted);font-size:10px;font-family:Inter,sans-serif;">Strike →</text>
+        </svg>
+        <p class="diagram-caption">A GEX profile: bars show net dealer gamma at each strike. The put wall tends to act as a floor while dealers are net long gamma there; the call wall acts as a magnet/ceiling. The dashed line is the zero gamma flip — the strike where the whole market's net dealer gamma crosses from positive to negative.</p>
       </div>
-      <div class="card">
-        <h3 style="font-size:1.1rem;margin-bottom:8px;">QQQ / NDX → NQ</h3>
-        <p style="font-size:0.86rem;color:var(--muted);">QQQ tracks NDX at roughly 1/41st, but that ratio drifts slowly over time (dividend drag on QQQ vs. the index), so don't hardcode an old number.</p>
-        <div class="formula-box" style="font-size:0.8rem;">Live ratio = NDX price ÷ QQQ price (recompute it, don't memorize it)<br>NQ level ≈ QQQ GEX level × live ratio + NQ-NDX basis</div>
-        <p style="font-size:0.8rem;color:var(--muted);">NQ vs NDX basis behaves the same way as ES vs SPX — small, moves with time-to-expiry and rates.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="font-size:1.1rem;margin-bottom:8px;color:var(--green);">Positive / long gamma regime</h3>
+          <p style="font-size:0.86rem;color:var(--muted);">Price is above the zero gamma flip. Dealers are net long gamma, so they hedge by <b style="color:var(--text);">selling into rallies and buying into dips</b> — that flow dampens volatility. Expect chop, mean reversion, tighter ranges, and moves that get faded rather than extended. This is "pinning" behavior, especially into monthly/weekly OpEx.</p>
+        </div>
+        <div class="card">
+          <h3 style="font-size:1.1rem;margin-bottom:8px;color:var(--red);">Negative / short gamma regime</h3>
+          <p style="font-size:0.86rem;color:var(--muted);">Price is below the zero gamma flip. Dealers are net short gamma, so they hedge by <b style="color:var(--text);">selling into weakness and buying into strength</b> — that flow amplifies volatility in whichever direction price is already moving. Expect trend days, air pockets, and bigger-than-normal ranges once a level breaks.</p>
+        </div>
       </div>
-    </div>
 
-    <h3 style="font-size:1.2rem;margin:32px 0 10px;">Putting it together intraday</h3>
-    <ol style="font-size:0.88rem;color:var(--muted);padding-left:20px;display:flex;flex-direction:column;gap:10px;">
-      <li><b style="color:var(--text);">Pull the GEX profile</b> pre-market on SPX (for ES) and NDX or QQQ (for NQ) from your source.</li>
-      <li><b style="color:var(--text);">Convert the flip and both walls</b> to futures terms using the ratios above, using that morning's actual basis — not yesterday's.</li>
-      <li><b style="color:var(--text);">Mark those 3 levels on your ES/NQ chart</b> before the open, same as you would any other key level.</li>
-      <li><b style="color:var(--text);">Pick your playbook by regime:</b> above the flip with converted walls nearby → range/fade playbook (Tab 2, Range Day). Below the flip → trend playbook (Tab 2, Trend/Volatility Expansion).</li>
-      <li><b style="color:var(--text);">Reconcile at midday.</b> GEX profiles shift as the day's flow prints — a level that was a wall at 9:30 can erode by 11am. Re-pull if price is chopping around a level that isn't holding.</li>
-    </ol>
+      <div class="callout">
+        <b style="color:var(--gold);">Read order that actually matters intraday:</b> (1) where is price relative to the zero gamma flip, (2) where's the nearest wall in the direction you're trading, (3) is that wall growing or shrinking versus yesterday's print. The flip tells you the regime (chop vs trend). The walls tell you the levels. Rate of change tells you if dealer hedging is getting more or less aggressive.
+      </div>
 
-    <div class="callout green">
-      <b>Which is "more volatile," NQ or ES?</b> NQ (Nasdaq-100) is structurally the higher-beta contract — mega-cap tech concentration means bigger swings in both directions versus the broader, more diversified S&amp;P 500 in ES. When GEX shows both indices in a short-gamma / negative regime together, NQ typically gives the larger and faster move — that's usually the better long (or short) for realized range on a trend day. When both are deep in positive gamma, NQ can also chop harder against you at the wall, so size down there rather than assuming "more volatile" always means "better long."
+      <h3 style="font-size:1.2rem;margin:32px 0 10px;">The rough math, if you want to build your own</h3>
+      <p style="font-size:0.86rem;color:var(--muted);margin-bottom:10px;">You don't need this to trade GEX, but it demystifies what a vendor is computing:</p>
+      <div class="formula-box">
+        Gamma$ (per strike) = Open Interest × Contract Multiplier × Spot² × Gamma × 0.01<br>
+        Calls contribute positive, puts contribute negative (dealer-short-puts convention).<br>
+        Sum across strikes = Net GEX. The strike where cumulative GEX crosses 0 = Zero Gamma Flip.
+      </div>
+      <p style="font-size:0.82rem;color:var(--muted);">In practice: pull the option chain (strike, OI, implied vol) for SPX/SPY or NDX/QQQ, run Black-Scholes gamma per strike, multiply by OI and spot², and sum. This is exactly what the "cheap" vendors below are doing for you on a schedule.</p>
     </div>
   </div>
+
+  <!-- SUB: WORKED SCENARIOS -->
+  <div class="sub-panel" id="subpanel-scenarios">
+    <div class="wrap">
+      <div class="section-tag">Applied</div>
+      <h2 class="panel-title">Three regimes, three plans</h2>
+      <p class="lead">These are illustrative — the exact strikes move every day. The point is the decision process: regime first, then level, then trade type.</p>
+
+      <div class="scenario">
+        <span class="verdict range">Range Day</span>
+        <h3>Price pinned between two walls, deep in positive gamma</h3>
+        <div class="num-row">
+          <div><b>+2,400M</b><span>Net GEX</span></div>
+          <div><b>Put wall −40</b><span>from spot</span></div>
+          <div><b>Call wall +55</b><span>from spot</span></div>
+          <div><b>Low</b><span>Realized vol</span></div>
+        </div>
+        <p><b style="color:var(--text);">What it means:</b> Dealers are heavily long gamma and actively suppressing movement. Breakouts from either wall tend to get sold/bought back into the range.</p>
+        <p><b style="color:var(--text);">How to trade it on NQ/ES:</b> Fade the edges of the translated wall levels (see Translation tab) rather than chase breakouts. Iron condors / credit spreads on the options side; on futures, favor mean-reversion scalps at the range extremes and take profit quickly — don't expect a level to just give way and run.</p>
+      </div>
+
+      <div class="scenario">
+        <span class="verdict short">Trend / Volatility Expansion</span>
+        <h3>Price breaks below the zero gamma flip</h3>
+        <div class="num-row">
+          <div><b>−1,800M</b><span>Net GEX</span></div>
+          <div><b>Flip level</b><span>just broken</span></div>
+          <div><b>No wall</b><span>for 2%+ below</span></div>
+          <div><b>Rising</b><span>Realized vol</span></div>
+        </div>
+        <p><b style="color:var(--text);">What it means:</b> Dealers flip to short gamma and start hedging with the move (selling as price falls), removing the cushion that was capping range. This is where air-pocket down days come from.</p>
+        <p><b style="color:var(--text);">How to trade it on NQ/ES:</b> Respect momentum — this is a "let winners run, don't fade the first pullback" environment. Trail stops instead of taking mean-reversion counter-trades. Size down slightly since realized ranges expand and stops need more room.</p>
+      </div>
+
+      <div class="scenario">
+        <span class="verdict long">Grind Higher / Melt-Up</span>
+        <h3>Price above flip, call wall climbing day over day</h3>
+        <div class="num-row">
+          <div><b>+900M</b><span>Net GEX</span></div>
+          <div><b>Call wall</b><span>rolling up daily</span></div>
+          <div><b>Flip</b><span>well below spot</span></div>
+          <div><b>Compressed</b><span>Intraday range</span></div>
+        </div>
+        <p><b style="color:var(--text);">What it means:</b> Still long-gamma (chop-dampening) but the call wall itself is migrating higher as traders keep buying calls above the market — a slow grind rather than a violent trend.</p>
+        <p><b style="color:var(--text);">How to trade it on NQ/ES:</b> Low-conviction environment for big directional swings; better suited to smaller-size continuation scalps in the direction of the drift, or premium-selling on the options side. Don't force short setups just because the market "feels stretched" — long gamma structurally resists that.</p>
+      </div>
+
+      <div class="callout warn">
+        <b>Reality check:</b> GEX is a positioning map, not a signal that fires on its own. It tells you which behavior (chop vs. trend) is more likely and where the pressure points sit. Combine it with your actual entry model (price action, levels, catalysts) — don't trade the GEX chart in isolation.
+      </div>
+    </div>
+  </div>
+
+  <!-- SUB: DATA SOURCES -->
+  <div class="sub-panel" id="subpanel-data">
+    <div class="wrap">
+      <div class="section-tag">Sourcing</div>
+      <h2 class="panel-title">Where to actually get this data</h2>
+      <p class="lead">You don't need a $500/mo institutional feed. Here's the cheapest real path from free to real-time, cheapest first.</p>
+
+      <table class="datatab">
+        <tr><th>Source</th><th>Cost</th><th>What you get</th></tr>
+        <tr>
+          <td><b>Unusual Whales</b> — free Greek Exposure pages<br><span style="color:var(--muted);font-size:0.8rem;">unusualwhales.com/stock/SPY/greek-exposure (swap ticker for SPX, QQQ, etc.)</span></td>
+          <td><span class="pill free">Free</span></td>
+          <td>GEX, DEX, Vanna, and Charm exposure charts for any ticker, no account needed for the basic view. Best free starting point for SPY/SPX/QQQ.</td>
+        </tr>
+        <tr>
+          <td><b>Unusual Whales</b> — paid tiers</td>
+          <td><span class="pill cheap">~$50+/mo</span></td>
+          <td>Faster refresh, historical GEX, options flow, and API access on higher tiers. Verify current tier pricing on their site — it's changed more than once.</td>
+        </tr>
+        <tr>
+          <td><b>GEXBot</b></td>
+          <td><span class="pill cheap">Low-cost, dedicated</span></td>
+          <td>A tool built specifically around live gamma levels rather than a full options-flow platform — worth comparing against Unusual Whales' paid tier if all you want is GEX. Check current pricing directly.</td>
+        </tr>
+        <tr>
+          <td><b>SpotGamma</b></td>
+          <td><span class="pill paid">Paid, higher tier</span></td>
+          <td>The original institutional-grade GEX vendor — more model depth (Hedgewatch, key levels commentary) but priced above the retail tools above. Worth it once you're trading size, not for casual use.</td>
+        </tr>
+        <tr>
+          <td><b>Build it yourself</b></td>
+          <td><span class="pill free">Free (your time)</span></td>
+          <td>Pull SPX/SPY or NDX/QQQ option chains (strike, OI, IV) from your broker's free API (e.g. IBKR, ThinkOrSwim), run the gamma formula from the GEX 101 tab. Delayed unless your broker feed is real-time, but zero subscription cost.</td>
+        </tr>
+      </table>
+
+      <div class="callout">
+        <b style="color:var(--gold);">Start here:</b> the free Unusual Whales Greek Exposure page covers 90% of what you need for SPY/QQQ/SPX day-to-day. Only pay for a faster refresh or API once you're actually trading around these levels live and the free 15-minute-ish delay starts costing you real entries.
+      </div>
+    </div>
+  </div>
+
+  <!-- SUB: TRANSLATION -->
+  <div class="sub-panel" id="subpanel-translate">
+    <div class="wrap">
+      <div class="section-tag">Execution</div>
+      <h2 class="panel-title">Turning SPY/QQQ levels into ES/NQ</h2>
+      <p class="lead">GEX vendors quote levels in the underlying index/ETF strikes (SPX, SPY, NDX, QQQ). You're trading futures. Here's how to convert without guessing.</p>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3 style="font-size:1.1rem;margin-bottom:8px;">SPY / SPX → ES</h3>
+          <p style="font-size:0.86rem;color:var(--muted);">SPX ≈ SPY × 10 (SPY is designed to track 1/10th of SPX). ES tracks SPX almost 1:1, offset only by the small fair-value basis (cost of carry, usually a few points, bigger right after dividends/rate moves).</p>
+          <div class="formula-box" style="font-size:0.8rem;">ES level ≈ SPX GEX level + current ES-SPX basis<br>(or) ES level ≈ SPY GEX level × 10 + basis</div>
+          <p style="font-size:0.8rem;color:var(--muted);">Check the live basis yourself: ES price minus SPX cash price, right now, on your platform — it drifts through the day.</p>
+        </div>
+        <div class="card">
+          <h3 style="font-size:1.1rem;margin-bottom:8px;">QQQ / NDX → NQ</h3>
+          <p style="font-size:0.86rem;color:var(--muted);">QQQ tracks NDX at roughly 1/41st, but that ratio drifts slowly over time (dividend drag on QQQ vs. the index), so don't hardcode an old number.</p>
+          <div class="formula-box" style="font-size:0.8rem;">Live ratio = NDX price ÷ QQQ price (recompute it, don't memorize it)<br>NQ level ≈ QQQ GEX level × live ratio + NQ-NDX basis</div>
+          <p style="font-size:0.8rem;color:var(--muted);">NQ vs NDX basis behaves the same way as ES vs SPX — small, moves with time-to-expiry and rates.</p>
+        </div>
+      </div>
+
+      <h3 style="font-size:1.2rem;margin:32px 0 10px;">Putting it together intraday</h3>
+      <ol style="font-size:0.88rem;color:var(--muted);padding-left:20px;display:flex;flex-direction:column;gap:10px;">
+        <li><b style="color:var(--text);">Pull the GEX profile</b> pre-market on SPX (for ES) and NDX or QQQ (for NQ) from your source.</li>
+        <li><b style="color:var(--text);">Convert the flip and both walls</b> to futures terms using the ratios above, using that morning's actual basis — not yesterday's.</li>
+        <li><b style="color:var(--text);">Mark those 3 levels on your ES/NQ chart</b> before the open, same as you would any other key level.</li>
+        <li><b style="color:var(--text);">Pick your playbook by regime:</b> above the flip with converted walls nearby → range/fade playbook (Worked Scenarios, Range Day). Below the flip → trend playbook (Worked Scenarios, Trend/Volatility Expansion).</li>
+        <li><b style="color:var(--text);">Reconcile at midday.</b> GEX profiles shift as the day's flow prints — a level that was a wall at 9:30 can erode by 11am. Re-pull if price is chopping around a level that isn't holding.</li>
+      </ol>
+
+      <div class="callout green">
+        <b>Which is "more volatile," NQ or ES?</b> NQ (Nasdaq-100) is structurally the higher-beta contract — mega-cap tech concentration means bigger swings in both directions versus the broader, more diversified S&amp;P 500 in ES. When GEX shows both indices in a short-gamma / negative regime together, NQ typically gives the larger and faster move — that's usually the better long (or short) for realized range on a trend day. When both are deep in positive gamma, NQ can also chop harder against you at the wall, so size down there rather than assuming "more volatile" always means "better long."
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <div class="disclosure">Educational content only — not financial advice. Options and futures involve substantial risk of loss and are not suitable for all investors. Verify all data-source pricing directly before subscribing.</div>
@@ -334,11 +421,21 @@ footer a:hover { color: var(--gold); }
 document.getElementById('tabs').addEventListener('click', function(e) {
   const btn = e.target.closest('.tab-btn');
   if (!btn) return;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#tabs .tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
-  window.scrollTo({ top: document.getElementById('tabs').offsetTop - 8, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+document.getElementById('subtabs').addEventListener('click', function(e) {
+  const btn = e.target.closest('.subtab-btn');
+  if (!btn) return;
+  document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('subpanel-' + btn.dataset.subtab).classList.add('active');
+  window.scrollTo({ top: document.getElementById('subtabs').offsetTop - 8, behavior: 'smooth' });
 });
 
 function toggleTheme() {
