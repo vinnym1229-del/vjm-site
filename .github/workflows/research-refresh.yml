@@ -1,0 +1,80 @@
+name: Refresh VJM research snapshots
+
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Research group to refresh
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - options
+          - daily
+  schedule:
+    - cron: '*/30 13-21 * * 1-5'
+    - cron: '30 22 * * 1-5'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vjm-research-refresh-${{ github.event.schedule || inputs.scope || 'manual' }}
+  cancel-in-progress: true
+
+jobs:
+  options:
+    if: github.event.schedule == '*/30 13-21 * * 1-5' || inputs.scope == 'options' || inputs.scope == 'all'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      RESEARCH_REFRESH_URL: ${{ secrets.RESEARCH_REFRESH_URL }}
+      RESEARCH_CRON_SECRET: ${{ secrets.RESEARCH_CRON_SECRET }}
+    steps:
+      - name: Validate configuration
+        run: test -n "$RESEARCH_REFRESH_URL" && test -n "$RESEARCH_CRON_SECRET"
+      - name: Refresh QQQ and SPY option snapshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          refresh() {
+            local endpoint="$1"
+            local response
+            response="$(curl --fail-with-body --silent --show-error --retry 3 --max-time 90 \
+              -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
+              "${RESEARCH_REFRESH_URL%/}${endpoint}")"
+            RESPONSE="$response" node -e "const p=JSON.parse(process.env.RESPONSE); if(!p.ok) process.exit(1); console.log(p.module, p.asOf)"
+          }
+          refresh "/api/research-engine?module=options&symbol=QQQ&expiryDays=7"
+          refresh "/api/research-engine?module=options&symbol=SPY&expiryDays=7"
+
+  daily:
+    if: github.event.schedule == '30 22 * * 1-5' || inputs.scope == 'daily' || inputs.scope == 'all'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      RESEARCH_REFRESH_URL: ${{ secrets.RESEARCH_REFRESH_URL }}
+      RESEARCH_CRON_SECRET: ${{ secrets.RESEARCH_CRON_SECRET }}
+    steps:
+      - name: Validate configuration
+        run: test -n "$RESEARCH_REFRESH_URL" && test -n "$RESEARCH_CRON_SECRET"
+      - name: Refresh daily research modules
+        shell: bash
+        run: |
+          set -euo pipefail
+          refresh() {
+            local endpoint="$1"
+            local response
+            response="$(curl --fail-with-body --silent --show-error --retry 3 --max-time 120 \
+              -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
+              "${RESEARCH_REFRESH_URL%/}${endpoint}")"
+            RESPONSE="$response" node -e "const p=JSON.parse(process.env.RESPONSE); if(!p.ok) process.exit(1); console.log(p.module, p.asOf)"
+          }
+          refresh "/api/research-engine?module=intraday&symbol=QQQ&days=20"
+          refresh "/api/research-engine?module=intraday&symbol=SPY&days=20"
+          refresh "/api/research-engine?module=sectors"
+          refresh "/api/research-engine?module=biotech"
+          for symbol in QQQ SPY NVDA AAPL MSFT AMD TSLA; do
+            refresh "/api/research-engine?module=stock&symbol=${symbol}&lookback=1095&horizon=40&timeframe=combined&pivot=5"
+          done

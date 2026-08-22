@@ -5,9 +5,9 @@
 //      used by check-member-status.js). If the code exists and its member's
 //      status is Active/Renewed, issues a signed session token.
 //
-// GET  /api/verify-premium?token=<token>
-//   -> validates a previously-issued token (used to restore a saved session
-//      on page load, e.g. "I already signed in on this device").
+// GET  /api/verify-premium with Authorization: Bearer <token>
+//   -> validates a previously-issued token without placing it in a URL.
+//      The legacy ?token= form remains accepted for compatibility.
 //
 // Env vars used:
 //   MEMBERS_STATUS_URL   - the Apps Script bridge URL (already configured)
@@ -64,7 +64,8 @@ async function handlePost(context) {
 async function handleGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
-  const token = url.searchParams.get('token') || '';
+  const authorization = request.headers.get('Authorization') || '';
+  const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : (url.searchParams.get('token') || '');
   if (!token) return jsonResponse({ ok: false, error: 'Missing token' }, 400);
 
   const payload = await verifyToken(token, signingSecret(env));
@@ -97,7 +98,8 @@ async function fetchBridge(env) {
 }
 
 function signingSecret(env) {
-  return env.PREMIUM_ACCESS_CODES || 'st-trades-fallback-signing-secret';
+  if (!env.PREMIUM_ACCESS_CODES) throw new Error('PREMIUM_ACCESS_CODES is not configured');
+  return env.PREMIUM_ACCESS_CODES;
 }
 
 async function signToken(payload, secret) {
@@ -138,6 +140,8 @@ function base64UrlDecode(str) {
 }
 
 function timingSafeEqual(a, b) {
+  a = String(a);
+  b = String(b);
   if (a.length !== b.length) return false;
   let diff = 0;
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
