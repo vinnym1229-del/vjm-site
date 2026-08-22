@@ -11,6 +11,8 @@
 const DATA_BASE = 'https://data.alpaca.markets';
 const PAPER_BASE = 'https://paper-api.alpaca.markets';
 const EQUITY_FEED = 'iex';
+const HISTORICAL_EQUITY_FEED = 'sip';
+const OVERNIGHT_FEED = 'boats';
 const OPTION_FEED = 'indicative';
 const ET_FORMATTER = new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
 
@@ -29,12 +31,12 @@ export async function onRequestGet(context) {
         premiumSecret: Boolean(context.env.PREMIUM_ACCESS_CODES),
         scheduledRefresh: Boolean(context.env.RESEARCH_CRON_SECRET),
       },
-      feeds: { equities: 'Alpaca IEX', options: 'Alpaca Indicative' },
+      feeds: { equities: 'Alpaca IEX live + delayed SIP/BOATS history', options: 'Alpaca Indicative' },
       limitations: [
-        'Basic equities are IEX-only rather than the consolidated SIP.',
+        'Current spot snapshots use IEX; intraday research uses consolidated SIP and BOATS history ending at least 16 minutes ago.',
         'Basic options use an indicative feed; trades are delayed and quotes are modified.',
         'Alpaca historical options begin in February 2024.',
-        'Asia/London futures-session levels require a separate CME NQ/ES source.',
+        'Asia and London are QQQ/SPY ETF price-action proxies, not actual CME NQ/ES volume or order flow.',
       ],
       asOf: new Date().toISOString(),
     });
@@ -127,23 +129,30 @@ async function intradayModule(params, env) {
   const days = clampInt(params.get('days'), 5, 40, 20);
   const paired = symbol === 'QQQ' ? 'SPY' : 'QQQ';
   const start = new Date(Date.now() - Math.ceil(days * 1.8) * 86400000).toISOString();
-  const barsBySymbol = await fetchStockBars([symbol, paired], '1Min', start, new Date().toISOString(), env, 25);
-  const primary = groupEtDays(barsBySymbol[symbol] || []);
-  const comparison = groupEtDays(barsBySymbol[paired] || []);
+  const delayedEnd = new Date(Date.now() - 16 * 60000).toISOString();
+  const [sipBars, overnightBars] = await Promise.all([
+    fetchStockBars([symbol, paired], '1Min', start, delayedEnd, env, 25, HISTORICAL_EQUITY_FEED),
+    fetchStockBars([symbol, paired], '1Min', start, delayedEnd, env, 25, OVERNIGHT_FEED),
+  ]);
+  const primary = groupProxyTradeDays(sipBars[symbol] || [], overnightBars[symbol] || []);
+  const comparison = groupProxyTradeDays(sipBars[paired] || [], overnightBars[paired] || []);
   const events = buildIntradayEvents(primary, days);
   const smt = buildSmtEvents(primary, comparison, symbol, paired, days);
-  const allEvents = events.concat(smt);
+  const model = buildPriceActionModel(primary, days);
+  const allEvents = events.concat(smt, model.events);
   return {
-    mode:'observed', source:{equities:'Alpaca IEX one-minute bars'}, parameters:{symbol,paired,days},
+    mode:'observed ETF proxy', source:{regularAndExtended:'Alpaca SIP historical bars (15-minute delayed on Free)',overnight:'Alpaca BOATS historical bars (15-minute delayed on Free)',proxy:'QQQ/SPY—not NQ/ES'}, parameters:{symbol,paired,days},
     data:{
       conditions:summarizeConditions(allEvents), timing:summarizeTiming(allEvents),
       eventCount:allEvents.length,
+      fvgStats:summarizeFvg(model.fvgRecords),
+      latestLevels:buildLatestLevels(primary),
+      coverage:coverageSummary(primary, days),
       unavailable:[
-        {condition:'Asia High/Low',reason:'QQQ/SPY do not trade through the Asia futures session.'},
-        {condition:'London High/Low',reason:'Requires NQ/ES data from a CME-licensed source.'},
+        {condition:'True NQ/ES futures order flow',reason:'QQQ/SPY SIP/BOATS price action is a proxy and does not contain CME volume or futures-only prints.'},
         {condition:'Exact option decay',reason:'Requires historical OPRA bid/ask-aware contract data.'},
       ],
-      definitions:{sweep:'Crosses the stored level from the expected side; an opening gap beyond the level is not counted.',continuation:'Extends 0.15% beyond the level before reversing 0.15%.',reversal:'Returns 0.15% through the swept level before continuation.',continuationModel:'Sweep → same-direction FVG → retest → post-sweep extreme break.',smt:'One ETF takes its prior-day extreme and the paired ETF remains unmatched for at least five minutes; outcome is measured from confirmation.'},
+      definitions:{overnightProxy:'6:00 PM–9:30 AM ET using SIP 6:00–8:00 PM, BOATS 8:00 PM–4:00 AM, and SIP 4:00–9:30 AM.',asiaProxy:'8:00 PM–12:00 AM ET BOATS.',londonProxy:'2:00–5:00 AM ET using BOATS through 4:00 AM and SIP after 4:00 AM.',sweep:'Crosses the stored level from the expected side; an opening gap beyond the level is not counted.',continuation:'Extends 0.15% beyond the level before reversing 0.15%.',reversal:'Returns 0.15% through the swept level before continuation.',fvg:'Three-candle imbalance; bullish when candle three low is above candle one high, bearish when candle three high is below candle one low.',ifvg:'An FVG whose far boundary is closed through before same-direction continuation.',displacement:'Five-minute body and range are each at least 1.5× their prior-20-bar medians and the close is in the outer 25% of the candle.',continuationModel:'Sweep → same-direction FVG → retest → post-sweep extreme break.',smt:'One ETF takes its comparable prior-session extreme and the paired ETF remains unmatched for at least five minutes; outcome is measured from confirmation.'},
     },
   };
 }
@@ -224,10 +233,10 @@ async function fetchOptionChain(symbol, start, end, strikeLow, strikeHigh, env) 
   return output;
 }
 
-async function fetchStockBars(symbols,timeframe,start,end,env,maxPages=20) {
+async function fetchStockBars(symbols,timeframe,start,end,env,maxPages=20,feed=EQUITY_FEED) {
   let pageToken=null, output=Object.fromEntries(symbols.map((s)=>[s,[]]));
   for(let page=0;page<maxPages;page++){
-    const data=await alpaca(`${DATA_BASE}/v2/stocks/bars`,{symbols:symbols.join(','),timeframe,start,end,adjustment:'all',feed:EQUITY_FEED,sort:'asc',limit:10000,page_token:pageToken},env);
+    const data=await alpaca(`${DATA_BASE}/v2/stocks/bars`,{symbols:symbols.join(','),timeframe,start,end,adjustment:'all',feed,sort:'asc',limit:10000,page_token:pageToken},env);
     for(const [symbol,rows] of Object.entries(data.bars||{})) output[symbol]=(output[symbol]||[]).concat(rows||[]);
     pageToken=data.next_page_token||null;if(!pageToken)break;
   }
@@ -279,8 +288,11 @@ function buildIntradayEvents(daysMap,limitDays) {
     const prev=splitSession(daysMap.get(dates[i-1])||[]),cur=splitSession(daysMap.get(dates[i])||[]);if(!prev.rth.length||!cur.rth.length)continue;
     const vwap=cumulativeVwap(cur.rth);
     const levels=[['PDH','high',maxField(prev.rth,'h')],['PDL','low',minField(prev.rth,'l')]];
-    if(cur.pre.length){levels.push(['Premarket High','high',maxField(cur.pre,'h')],['Premarket Low','low',minField(cur.pre,'l')])}
+    const priorWeek=priorWeekRange(daysMap,dates[i]);if(priorWeek)levels.push(['PWH','high',priorWeek.high],['PWL','low',priorWeek.low]);
+    const profile=marketProfileLevels(prev.rth);if(profile)levels.push(['Prior VAH','high',profile.vah],['Prior VAL','low',profile.val]);
+    for(const [name,rows] of [['Overnight',cur.overnight],['Asia Proxy',cur.asia],['London Proxy',cur.london],['Premarket',cur.pre]])if(rows.length)levels.push([`${name} High`,'high',maxField(rows,'h')],[`${name} Low`,'low',minField(rows,'l')]);
     for(const [condition,direction,level] of levels){if(level===null)continue;const event=classifySweep(cur.rth,level,direction,condition,dates[i],vwap);if(event)events.push(event)}
+    const liquidity=swingLiquidityLevels(resampleMinutes(cur.overnight,5),2);for(const row of liquidity.highs.slice(-3)){const event=classifySweep(cur.rth,row.price,'high','Overnight BSL',dates[i],vwap);if(event)events.push(event)}for(const row of liquidity.lows.slice(-3)){const event=classifySweep(cur.rth,row.price,'low','Overnight SSL',dates[i],vwap);if(event)events.push(event)}
     if(cur.rth.length>15){const opening=cur.rth.slice(0,15),after=cur.rth.slice(15),afterVwap=vwap.slice(15),high=maxField(opening,'h'),low=minField(opening,'l');if(high!==null){const event=classifySweep(after,high,'high','Opening Range High',dates[i],afterVwap);if(event)events.push(event)}if(low!==null){const event=classifySweep(after,low,'low','Opening Range Low',dates[i],afterVwap);if(event)events.push(event)}}
     if(cur.rth.length>60){const initial=cur.rth.slice(0,60),after=cur.rth.slice(60),afterVwap=vwap.slice(60),high=maxField(initial,'h'),low=minField(initial,'l');if(high!==null){const event=classifySweep(after,high,'high','Initial Balance High',dates[i],afterVwap);if(event)events.push(event)}if(low!==null){const event=classifySweep(after,low,'low','Initial Balance Low',dates[i],afterVwap);if(event)events.push(event)}}
   }
@@ -316,12 +328,14 @@ function detectContinuationModel(bars,sweepIndex,direction) {
 function buildSmtEvents(primary,comparison,symbol,paired,limitDays) {
   const dates=[...primary.keys()].filter((d)=>comparison.has(d)).sort().slice(-limitDays-1),events=[];
   for(let i=1;i<dates.length;i++){
-    const date=dates[i],pPrev=splitSession(primary.get(dates[i-1])||[]),pCur=splitSession(primary.get(date)||[]),cPrev=splitSession(comparison.get(dates[i-1])||[]),cCur=splitSession(comparison.get(date)||[]);if(!pPrev.rth.length||!pCur.rth.length||!cPrev.rth.length||!cCur.rth.length)continue;
-    const pHigh=maxField(pPrev.rth,'h'),cHigh=maxField(cPrev.rth,'h'),pLow=minField(pPrev.rth,'l'),cLow=minField(cPrev.rth,'l');
-    if([pHigh,cHigh,pLow,cLow].some((value)=>value===null))continue;
-    const pHighIndex=findSweepIndex(pCur.rth,pHigh,'high'),cHighIndex=findSweepIndex(cCur.rth,cHigh,'high'),pLowIndex=findSweepIndex(pCur.rth,pLow,'low'),cLowIndex=findSweepIndex(cCur.rth,cLow,'low');
-    const highEvent=confirmedSmtEvent(pCur.rth,cCur.rth,pHighIndex,cHighIndex,'down',`${symbol}/${paired} SMT high divergence`,date);if(highEvent)events.push(highEvent);
-    const lowEvent=confirmedSmtEvent(pCur.rth,cCur.rth,pLowIndex,cLowIndex,'up',`${symbol}/${paired} SMT low divergence`,date);if(lowEvent)events.push(lowEvent);
+    const date=dates[i],pPrev=splitSession(primary.get(dates[i-1])||[]),pCur=splitSession(primary.get(date)||[]),cPrev=splitSession(comparison.get(dates[i-1])||[]),cCur=splitSession(comparison.get(date)||[]);
+    for(const [key,label] of [['rth','PDH/PDL'],['overnight','Overnight'],['asia','Asia Proxy'],['london','London Proxy'],['pre','Premarket']]){
+      const pp=pPrev[key],pc=pCur[key],cp=cPrev[key],cc=cCur[key];if(!pp.length||!pc.length||!cp.length||!cc.length)continue;
+      const pHigh=maxField(pp,'h'),cHigh=maxField(cp,'h'),pLow=minField(pp,'l'),cLow=minField(cp,'l');if([pHigh,cHigh,pLow,cLow].some((value)=>value===null))continue;
+      const pHighIndex=findSweepIndex(pc,pHigh,'high'),cHighIndex=findSweepIndex(cc,cHigh,'high'),pLowIndex=findSweepIndex(pc,pLow,'low'),cLowIndex=findSweepIndex(cc,cLow,'low');
+      const highEvent=confirmedSmtEvent(pc,cc,pHighIndex,cHighIndex,'down',`${symbol}/${paired} ${label} SMT high`,date);if(highEvent)events.push(highEvent);
+      const lowEvent=confirmedSmtEvent(pc,cc,pLowIndex,cLowIndex,'up',`${symbol}/${paired} ${label} SMT low`,date);if(lowEvent)events.push(lowEvent);
+    }
   }
   return events;
 }
@@ -343,23 +357,87 @@ function classifyDirectionalOutcome(bars,index,expectedDirection,condition,date)
   return{date,condition,direction:expectedDirection,time,minute:timeToMinute(time),continuation,reversal,continuationModel:false,mfe:expectedDirection==='up'?(max/entry-1):(entry/min-1),mae:expectedDirection==='up'?(min/entry-1):-(max/entry-1)};
 }
 
+function buildPriceActionModel(daysMap,limitDays){
+  const dates=[...daysMap.keys()].sort().slice(-limitDays),events=[],fvgRecords=[];
+  for(const date of dates){const rth=splitSession(daysMap.get(date)||[]).rth;if(rth.length<30)continue;for(const timeframe of [1,5,15,60]){const scan=scanFvgs(rth,date,timeframe);events.push(...scan.events);fvgRecords.push(...scan.records)}events.push(...scanDisplacement(rth,date))}
+  return{events,fvgRecords};
+}
+
+function scanFvgs(rth,date,timeframe){
+  const bars=timeframe===1?rth:resampleMinutes(rth,timeframe),records=[],events=[];
+  for(let i=2;i<bars.length;i++){
+    const a=bars[i-2],c=bars[i],aHigh=finite(a.h),aLow=finite(a.l),cHigh=finite(c.h),cLow=finite(c.l),bull=aHigh!==null&&cLow!==null&&cLow>aHigh,bear=aLow!==null&&cHigh!==null&&cHigh<aLow;if(!bull&&!bear)continue;
+    const side=bull?'Bullish':'Bearish',zoneLow=bull?aHigh:cHigh,zoneHigh=bull?cLow:aLow,formationTime=Date.parse(c.t),start=rth.findIndex((bar)=>Date.parse(bar.t)>=formationTime);if(start<0)continue;
+    const formation=bars.slice(i-2,i+1),reference=bull?maxField(formation,'h'):minField(formation,'l'),end=Math.min(rth.length-1,start+180);let retest=null,fillAt=null,inversionAt=null,continuationAt=null;
+    for(let j=start+1;j<=end;j++){
+      const high=finite(rth[j].h),low=finite(rth[j].l),close=finite(rth[j].c);if(high===null||low===null)continue;
+      if(retest===null&&low<=zoneHigh&&high>=zoneLow)retest=j;
+      if(fillAt===null&&(bull?low<=zoneLow:high>=zoneHigh))fillAt=j;
+      if(retest!==null){if(inversionAt===null&&close!==null&&(bull?close<zoneLow:close>zoneHigh))inversionAt=j;if(continuationAt===null&&reference!==null&&(bull?high>reference:low<reference))continuationAt=j}
+    }
+    const continuation=continuationAt!==null&&(inversionAt===null||continuationAt<inversionAt),inverted=inversionAt!==null&&(continuationAt===null||inversionAt<continuationAt),retested=retest!==null,minutesToRetest=retested?Math.round((Date.parse(rth[retest].t)-formationTime)/60000):null;
+    const record={date,timeframe:`${timeframe}m`,side,formedAt:etParts(c.t).time,zoneLow,zoneHigh,retested,filled:fillAt!==null,continuation,inverted,minutesToRetest};records.push(record);
+    if(retested){const expected=bull?'up':'down',event=classifyDirectionalOutcome(rth,retest,expected,`${timeframe}m ${side} FVG`,date);if(event){event.continuation=continuation;event.reversal=inverted;event.continuationModel=continuation;events.push(event)}}
+    if(inverted){const expected=bull?'down':'up',event=classifyDirectionalOutcome(rth,inversionAt,expected,`${timeframe}m ${side} IFVG`,date);if(event)events.push(event)}
+  }
+  return{records,events};
+}
+
+function scanDisplacement(rth,date){
+  const bars=resampleMinutes(rth,5),events=[];let last=-10;
+  for(let i=20;i<bars.length;i++){
+    const open=finite(bars[i].o),close=finite(bars[i].c),high=finite(bars[i].h),low=finite(bars[i].l);if([open,close,high,low].some((x)=>x===null)||high<=low)continue;
+    const prior=bars.slice(i-20,i),bodyMedian=median(prior.map((bar)=>Math.abs((finite(bar.c)??0)-(finite(bar.o)??0)))),rangeMedian=median(prior.map((bar)=>{const h=finite(bar.h),l=finite(bar.l);return h===null||l===null?null:h-l})),body=Math.abs(close-open),range=high-low;if(!bodyMedian||!rangeMedian||body<bodyMedian*1.5||range<rangeMedian*1.5||i-last<3)continue;
+    const bullish=close>open&&close>=low+range*.75,bearish=close<open&&close<=low+range*.25;if(!bullish&&!bearish)continue;const index=rth.findIndex((bar)=>Date.parse(bar.t)>=Date.parse(bars[i].t));if(index<0)continue;const event=classifyDirectionalOutcome(rth,index,bullish?'up':'down',bullish?'Bullish Displacement':'Bearish Displacement',date);if(event){events.push(event);last=i}
+  }
+  return events;
+}
+
+function summarizeFvg(records){
+  const groups=new Map();for(const row of records){const key=`${row.timeframe} ${row.side}`,group=groups.get(key)||[];group.push(row);groups.set(key,group)}
+  return[...groups.entries()].map(([condition,rows])=>({condition,n:rows.length,retestRate:rate(rows,'retested'),fillRate:rate(rows,'filled'),continuationRate:rate(rows,'continuation'),ifvgRate:rate(rows,'inverted'),medianMinutesToRetest:median(rows.map((row)=>row.minutesToRetest))}));
+}
+
+function buildLatestLevels(daysMap){
+  const dates=[...daysMap.keys()].sort(),tradeDate=dates.at(-1);if(!tradeDate)return{tradeDate:null,rows:[]};const index=dates.length-1,current=splitSession(daysMap.get(tradeDate)||[]),previous=index>0?splitSession(daysMap.get(dates[index-1])||[]):null,rows=[];
+  const pushRange=(prefix,session,window)=>{if(!session?.length)return;const source=[...new Set(session.map((bar)=>bar._source).filter(Boolean))].join(' + ')||'Observed';rows.push({level:`${prefix} High`,price:maxField(session,'h'),window,source},{level:`${prefix} Low`,price:minField(session,'l'),window,source})};
+  if(previous?.rth.length){rows.push({level:'PDH',price:maxField(previous.rth,'h'),window:'Prior RTH',source:'SIP'},{level:'PDL',price:minField(previous.rth,'l'),window:'Prior RTH',source:'SIP'})}
+  const priorWeek=priorWeekRange(daysMap,tradeDate);if(priorWeek)rows.push({level:'PWH',price:priorWeek.high,window:`Week of ${priorWeek.weekStart}`,source:'SIP'},{level:'PWL',price:priorWeek.low,window:`Week of ${priorWeek.weekStart}`,source:'SIP'});
+  const profile=marketProfileLevels(previous?.rth||[]);if(profile)rows.push({level:'Prior VAH',price:profile.vah,window:'Prior RTH 70% value area',source:'SIP volume profile'},{level:'Prior VAL',price:profile.val,window:'Prior RTH 70% value area',source:'SIP volume profile'},{level:'Prior POC',price:profile.poc,window:'Prior RTH max-volume bin',source:'SIP volume profile'});
+  pushRange('Overnight',current.overnight,'6:00 PM–9:30 AM ET');pushRange('Asia Proxy',current.asia,'8:00 PM–12:00 AM ET');pushRange('London Proxy',current.london,'2:00–5:00 AM ET');pushRange('Premarket',current.pre,'4:00–9:30 AM ET');
+  const liquidity=swingLiquidityLevels(resampleMinutes(current.overnight,5),2),bsl=liquidity.highs.at(-1),ssl=liquidity.lows.at(-1);if(bsl)rows.push({level:'Latest Overnight BSL',price:bsl.price,window:'5m pivot',source:bsl.source});if(ssl)rows.push({level:'Latest Overnight SSL',price:ssl.price,window:'5m pivot',source:ssl.source});
+  return{tradeDate,rows:rows.filter((row)=>row.price!==null)};
+}
+
+function coverageSummary(daysMap,limitDays){
+  const dates=[...daysMap.keys()].sort().slice(-limitDays),summary={tradeDays:dates.length,boatsBars:0,sipBars:0,sessions:{overnight:0,asiaProxy:0,londonProxy:0,premarket:0,rth:0},note:'QQQ/SPY ETF proxy. SIP and BOATS results end at least 16 minutes before the request time on Alpaca Free.'};
+  for(const date of dates){const bars=daysMap.get(date)||[],session=splitSession(bars);summary.boatsBars+=bars.filter((bar)=>bar._source==='BOATS').length;summary.sipBars+=bars.filter((bar)=>bar._source==='SIP').length;if(session.overnight.length)summary.sessions.overnight++;if(session.asia.length)summary.sessions.asiaProxy++;if(session.london.length)summary.sessions.londonProxy++;if(session.pre.length)summary.sessions.premarket++;if(session.rth.length)summary.sessions.rth++}return summary;
+}
+
 function summarizeConditions(events) {
   const groups=new Map();for(const e of events){const g=groups.get(e.condition)||[];g.push(e);groups.set(e.condition,g)}
   const modelRows=events.filter((e)=>e.continuationModel);if(modelRows.length)groups.set('Continuation Model',modelRows);
   return [...groups.entries()].map(([condition,rows])=>{const medianMfe=median(rows.map((r)=>r.mfe)),medianMae=median(rows.map((r)=>r.mae)),vwapRows=rows.filter((r)=>typeof r.vwapHit==='boolean');return{condition,n:rows.length,continuationRate:rate(rows,'continuation'),reversalRate:rate(rows,'reversal'),vwapHitRate:vwapRows.length?rate(vwapRows,'vwapHit'):null,medianMinutesToVwap:median(vwapRows.map((r)=>r.minutesToVwap)),medianMfe,medianMae,rewardRisk:medianMfe!==null&&medianMae!==null&&medianMae!==0?medianMfe/Math.abs(medianMae):null}});
 }
 function summarizeTiming(events) {
-  const labels=['PDH sweep','PDL sweep','Premarket H/L'];
-  return labels.map((label)=>{const rows=events.filter((e)=>label==='Premarket H/L'?e.condition.startsWith('Premarket'):e.condition===label.replace(' sweep',''));
+  const specs=[['PDH/PDL sweep',(e)=>/^(?:PDH|PDL)$/.test(e.condition)],['PWH/PWL sweep',(e)=>/^(?:PWH|PWL)$/.test(e.condition)],['Prior VAH/VAL',(e)=>/^Prior VA[HL]$/.test(e.condition)],['Overnight H/L',(e)=>e.condition.startsWith('Overnight ')&&!/BSL|SSL/.test(e.condition)],['Asia proxy H/L',(e)=>e.condition.startsWith('Asia Proxy')],['London proxy H/L',(e)=>e.condition.startsWith('London Proxy')],['Premarket H/L',(e)=>e.condition.startsWith('Premarket')],['Overnight BSL/SSL',(e)=>/Overnight (?:BSL|SSL)/.test(e.condition)]];
+  return specs.map(([label,predicate])=>{const rows=events.filter(predicate);
     const result={label};for(const [key,cutoff] of [['before1000',600],['before1030',630],['before1100',660],['fullRth',960]]){const q=rows.filter((e)=>e.minute<=cutoff);result[key]=q.length?rate(q,'continuation'):null;result[key+'N']=q.length}return result});
 }
 
 function groupEtDays(bars){const map=new Map();for(const bar of bars){const p=etParts(bar.t),row={...bar,_time:p.time};if(!map.has(p.date))map.set(p.date,[]);map.get(p.date).push(row)}return map}
-function splitSession(bars){return{pre:bars.filter((b)=>{const m=timeToMinute(b._time);return m>=240&&m<570}),rth:bars.filter((b)=>{const m=timeToMinute(b._time);return m>=570&&m<960})}}
+function groupProxyTradeDays(sipBars,overnightBars){const grouped=new Map();const add=(bars,source)=>{for(const bar of bars){const p=etParts(bar.t),minute=timeToMinute(p.time);if(source==='BOATS'&&minute>=240&&minute<1200)continue;if(source==='SIP'&&(minute>=1200||minute<240))continue;const tradeDate=minute>=1080?addIsoDays(p.date,1):p.date,row={...bar,_time:p.time,_source:source,_tradeDate:tradeDate};if(!grouped.has(tradeDate))grouped.set(tradeDate,new Map());const day=grouped.get(tradeDate),existing=day.get(String(bar.t));if(!existing||source==='BOATS')day.set(String(bar.t),row)}};add(sipBars,'SIP');add(overnightBars,'BOATS');return new Map([...grouped.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([date,rows])=>[date,[...rows.values()].sort((a,b)=>String(a.t).localeCompare(String(b.t)))]))}
+function splitSession(bars){const minute=(b)=>timeToMinute(b._time);return{evening:bars.filter((b)=>minute(b)>=1080&&minute(b)<1200),overnight:bars.filter((b)=>minute(b)>=1080||minute(b)<570),asia:bars.filter((b)=>minute(b)>=1200),london:bars.filter((b)=>minute(b)>=120&&minute(b)<300),pre:bars.filter((b)=>minute(b)>=240&&minute(b)<570),rth:bars.filter((b)=>minute(b)>=570&&minute(b)<960)}}
+function resampleMinutes(bars,minutes){if(minutes===1)return bars.slice();const groups=new Map(),size=minutes*60000,anchor=Date.parse(bars[0]?.t);if(!Number.isFinite(anchor))return[];for(const bar of bars){const time=Date.parse(bar.t);if(!Number.isFinite(time))continue;const key=anchor+Math.floor((time-anchor)/size)*size;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(bar)}return[...groups.entries()].sort((a,b)=>a[0]-b[0]).map(([time,rows])=>({t:new Date(time).toISOString(),o:finite(rows[0].o),h:maxField(rows,'h'),l:minField(rows,'l'),c:finite(rows.at(-1).c),v:rows.reduce((sum,row)=>sum+(finite(row.v)||0),0),_time:etParts(new Date(time).toISOString()).time,_source:[...new Set(rows.map((row)=>row._source).filter(Boolean))].join(' + ')}))}
+function swingLiquidityLevels(bars,pivot=2){const highs=[],lows=[];for(let i=pivot;i<bars.length-pivot;i++){const high=finite(bars[i].h),low=finite(bars[i].l);if(high!==null&&bars.slice(i-pivot,i+pivot+1).every((bar,j)=>j===pivot||finite(bar.h)===null||finite(bar.h)<high))highs.push({price:high,time:bars[i].t,source:bars[i]._source||'Observed'});if(low!==null&&bars.slice(i-pivot,i+pivot+1).every((bar,j)=>j===pivot||finite(bar.l)===null||finite(bar.l)>low))lows.push({price:low,time:bars[i].t,source:bars[i]._source||'Observed'})}return{highs,lows}}
+function priorWeekRange(daysMap,currentDate){const currentStart=weekStart(currentDate),prior=[...daysMap.keys()].filter((date)=>weekStart(date)<currentStart).sort();if(!prior.length)return null;const target=weekStart(prior.at(-1)),bars=prior.filter((date)=>weekStart(date)===target).flatMap((date)=>splitSession(daysMap.get(date)||[]).rth);if(!bars.length)return null;return{weekStart:target,high:maxField(bars,'h'),low:minField(bars,'l')}}
+function marketProfileLevels(bars,bins=50,valueArea=.70){if(!bars.length)return null;const low=minField(bars,'l'),high=maxField(bars,'h');if(low===null||high===null||high<=low)return null;const size=(high-low)/bins,volume=Array(bins).fill(0);for(const bar of bars){const h=finite(bar.h),l=finite(bar.l),c=finite(bar.c),v=finite(bar.v);if(h===null||l===null||c===null||v===null||v<=0)continue;const typical=(h+l+c)/3,index=Math.max(0,Math.min(bins-1,Math.floor((typical-low)/size)));volume[index]+=v}const total=volume.reduce((sum,v)=>sum+v,0);if(total<=0)return null;let pocIndex=volume.indexOf(Math.max(...volume)),left=pocIndex,right=pocIndex,included=volume[pocIndex];while(included<total*valueArea&&(left>0||right<bins-1)){const leftVolume=left>0?volume[left-1]:-1,rightVolume=right<bins-1?volume[right+1]:-1;if(rightVolume>leftVolume){right++;included+=volume[right]}else{left--;included+=volume[left]}}return{poc:low+(pocIndex+.5)*size,val:low+left*size,vah:low+(right+1)*size,coverage:included/total,bins}}
 function findSweepIndex(bars,level,direction){for(let i=0;i<bars.length;i++){const open=finite(bars[i]?.o),high=finite(bars[i]?.h),low=finite(bars[i]?.l),previousClose=i>0?finite(bars[i-1]?.c):null;if(direction==='high'){const startedBelow=previousClose!==null?previousClose<level:open!==null&&open<=level;if(startedBelow&&low!==null&&low<=level&&high!==null&&high>=level)return i}else{const startedAbove=previousClose!==null?previousClose>level:open!==null&&open>=level;if(startedAbove&&high!==null&&high>=level&&low!==null&&low<=level)return i}}return-1}
 function cumulativeVwap(bars){let pv=0,volume=0;return bars.map((bar)=>{const high=finite(bar.h),low=finite(bar.l),close=finite(bar.c),v=finite(bar.v);if(high!==null&&low!==null&&close!==null&&v!==null&&v>0){pv+=((high+low+close)/3)*v;volume+=v}return volume>0?pv/volume:null})}
 function etParts(value){const parts=Object.fromEntries(ET_FORMATTER.formatToParts(new Date(value)).filter((p)=>p.type!=='literal').map((p)=>[p.type,p.value]));return{date:`${parts.year}-${parts.month}-${parts.day}`,time:`${parts.hour}:${parts.minute}`}}
 function timeToMinute(value){const [h,m]=String(value).split(':').map(Number);return h*60+m}
+function addIsoDays(value,days){const date=new Date(`${value}T12:00:00Z`);date.setUTCDate(date.getUTCDate()+days);return date.toISOString().slice(0,10)}
+function weekStart(value){const date=new Date(`${value}T12:00:00Z`),day=date.getUTCDay()||7;date.setUTCDate(date.getUTCDate()-day+1);return date.toISOString().slice(0,10)}
 
 function resampleWeekly(bars) {
   const groups=new Map();for(const b of bars){const d=new Date(b.t),day=d.getUTCDay(),monday=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()-(day===0?6:day-1))),key=monday.toISOString().slice(0,10);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(b)}
@@ -399,4 +477,4 @@ function dateOnly(value){return String(value||'').slice(0,10)}
 function isoDate(date){return date.toISOString().slice(0,10)}
 
 // Explicit exports allow deterministic calculation tests without exposing routes.
-export const __test = {analyseFib,statsFromFibEvents,combineFibStats,findGammaFlip,resampleWeekly,metrics,classifySweep,findSweepIndex,detectContinuationModel,summarizeConditions,summarizeTiming,cumulativeVwap,finite,median};
+export const __test = {analyseFib,statsFromFibEvents,combineFibStats,findGammaFlip,resampleWeekly,resampleMinutes,metrics,classifySweep,findSweepIndex,detectContinuationModel,groupProxyTradeDays,splitSession,scanFvgs,summarizeFvg,summarizeConditions,summarizeTiming,priorWeekRange,marketProfileLevels,cumulativeVwap,finite,median};

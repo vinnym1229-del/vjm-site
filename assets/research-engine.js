@@ -65,6 +65,10 @@
     const good = inverse ? n < 0 : n > 0;
     return good ? 'good' : n === 0 ? 'warn' : 'bad';
   }
+  function thresholdClass(value, threshold = .5, inverse = false) {
+    const n = numeric(value);
+    return n === null ? '' : classify(n - threshold, inverse);
+  }
 
   async function jsonFetch(url, options = {}) {
     const token = localStorage.getItem(TOKEN_KEY) || '';
@@ -156,9 +160,10 @@
     try {
       const symbol = $('optionsSymbol').value;
       const days = $('optionsExpiry').value;
+      const intradayDays = $('intradayDays').value;
       const [options, intraday] = await Promise.all([
         jsonFetch(`/api/research-engine?module=options&symbol=${encodeURIComponent(symbol)}&expiryDays=${encodeURIComponent(days)}`),
-        jsonFetch(`/api/research-engine?module=intraday&symbol=${encodeURIComponent(symbol)}&days=20`)
+        jsonFetch(`/api/research-engine?module=intraday&symbol=${encodeURIComponent(symbol)}&days=${encodeURIComponent(intradayDays)}`)
       ]);
       state.data.options = {options, intraday}; renderOptions(options, intraday); updateGlobal(options);
     } catch (err) { showModuleError('optionsSourceStatus', err); }
@@ -166,7 +171,8 @@
   }
   function renderOptions(response, intradayResponse) {
     const d = response.data || {}, intra = intradayResponse.data || {};
-    $('optionsSourceStatus').textContent = `${response.source?.equities || 'IEX'} • ${response.source?.options || 'Indicative'} • ${dateText(response.asOf)}`;
+    const coverage=intra.coverage||{};
+    $('optionsSourceStatus').textContent = `${response.source?.equities || 'IEX spot'} • ${num(coverage.sipBars)} SIP + ${num(coverage.boatsBars)} BOATS bars • ${response.source?.options || 'Indicative options'} • ${dateText(response.asOf)}`;
     $('optionsSourceStatus').style.color = '';
     setKpi('optSpot', money(d.spot));
     setKpi('optNetGex', (Number.isFinite(d.netGexMm) ? signedMoney(d.netGexMm) + 'mm' : '—'), d.netGexMm > 0 ? 'positive' : d.netGexMm < 0 ? 'negative' : '');
@@ -177,12 +183,14 @@
     renderGexChart(d.gexByStrike || []);
     renderConditions(intra.conditions || []);
     renderTiming(intra.timing || []);
+    renderSessionLevels(intra.latestLevels || {}, coverage);
+    renderFvgStats(intra.fvgStats || []);
     if (Number.isFinite(d.spot)) { $('labSpot').value = d.spot.toFixed(2); renderSlopeLab(); }
   }
   function renderConditions(rows) {
     const body = $('optionsConditionBody');
     if (!rows.length) { body.innerHTML = '<tr><td colspan="9">No qualified events were found in the selected sample.</td></tr>'; return; }
-    body.innerHTML = rows.map((r) => `<tr><td>${esc(r.condition)}</td><td class="num">${num(r.n)}</td><td class="num ${classify((r.continuationRate ?? 0)-.5)}">${pct(r.continuationRate)}</td><td class="num ${classify((r.reversalRate ?? 0)-.5)}">${pct(r.reversalRate)}</td><td class="num ${classify((r.vwapHitRate ?? 0)-.5)}">${pct(r.vwapHitRate)}</td><td class="num">${numeric(r.medianMinutesToVwap) === null ? '—' : num(r.medianMinutesToVwap)+' min'}</td><td class="num good">${pct(r.medianMfe)}</td><td class="num bad">${pct(r.medianMae)}</td><td class="num">${numeric(r.rewardRisk) === null ? '—' : num(r.rewardRisk,2)+'R'}</td></tr>`).join('');
+    body.innerHTML = rows.map((r) => `<tr><td>${esc(r.condition)}</td><td class="num">${num(r.n)}</td><td class="num ${thresholdClass(r.continuationRate)}">${pct(r.continuationRate)}</td><td class="num ${thresholdClass(r.reversalRate)}">${pct(r.reversalRate)}</td><td class="num ${thresholdClass(r.vwapHitRate)}">${pct(r.vwapHitRate)}</td><td class="num">${numeric(r.medianMinutesToVwap) === null ? '—' : num(r.medianMinutesToVwap)+' min'}</td><td class="num ${classify(r.medianMfe)}">${pct(r.medianMfe)}</td><td class="num ${classify(r.medianMae,true)}">${pct(r.medianMae)}</td><td class="num">${numeric(r.rewardRisk) === null ? '—' : num(r.rewardRisk,2)+'R'}</td></tr>`).join('');
   }
   function renderTiming(rows) {
     const root = $('timingHeatmap');
@@ -197,6 +205,15 @@
       }
     }
     root.innerHTML = cells.join('');
+  }
+  function renderSessionLevels(latest, coverage) {
+    const rows=latest.rows||[],body=$('sessionLevelBody');
+    body.innerHTML=rows.length?rows.map((row)=>`<tr><td><b>${esc(row.level)}</b></td><td class="num">${money(row.price)}</td><td>${esc(row.window)}</td><td><span class="mono">${esc(row.source)}</span></td></tr>`).join(''):'<tr><td colspan="4">No complete proxy session was returned.</td></tr>';
+    const chip=$('proxyCoverageChip'),sessions=coverage.sessions||{},complete=Math.min(sessions.overnight||0,sessions.rth||0);chip.textContent=`${num(complete)} observed trade days`;chip.className='chip '+(complete>=5?'green':'amber');
+  }
+  function renderFvgStats(rows) {
+    const body=$('fvgBody');
+    body.innerHTML=rows.length?rows.map((row)=>`<tr><td><b>${esc(row.condition)}</b></td><td class="num">${num(row.n)}</td><td class="num ${thresholdClass(row.retestRate)}">${pct(row.retestRate)}</td><td class="num ${thresholdClass(row.fillRate)}">${pct(row.fillRate)}</td><td class="num ${thresholdClass(row.continuationRate)}">${pct(row.continuationRate)}</td><td class="num ${thresholdClass(row.ifvgRate,.5,true)}">${pct(row.ifvgRate)}</td><td class="num">${numeric(row.medianMinutesToRetest)===null?'—':num(row.medianMinutesToRetest,0)+' min'}</td></tr>`).join(''):'<tr><td colspan="7">No FVG observations were returned.</td></tr>';
   }
   function renderGexChart(rows) {
     const data = rows.filter((r) => numeric(r.netGexMm) !== null).map((r) => ({label:String(r.strike),value:numeric(r.netGexMm)}));

@@ -41,6 +41,9 @@ globalThis.fetch = async (input) => {
       QQQ260828P00600000: { greeks: { gamma: 0.02 } },
     } });
   }
+  if (url.pathname === '/v2/stocks/bars') {
+    return Response.json({ bars: { QQQ: [], SPY: [] } });
+  }
   return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
 };
 
@@ -62,6 +65,23 @@ try {
   assert.ok(optionsData.data.netGexMm > 0, 'call OI exceeds put OI in the modeled test fixture');
   assert.ok(requested.some((url) => url.searchParams.get('feed') === 'indicative'), 'free options requests must explicitly select the indicative feed');
   assert.ok(requested.every((url) => !url.toString().includes('test-secret')), 'API secrets must stay in headers rather than URLs');
+
+  const intraday = await onRequestGet({
+    request: new Request('https://example.com/api/research-engine?module=intraday&symbol=QQQ&days=20', {
+      headers: { 'X-Research-Cron': 'cron-test-secret' },
+    }),
+    env: {
+      ALPACA_API_KEY: 'test-key',
+      ALPACA_SECRET_KEY: 'test-secret',
+      RESEARCH_CRON_SECRET: 'cron-test-secret',
+    },
+  });
+  assert.equal(intraday.status, 200);
+  const intradayData = await body(intraday);
+  assert.equal(intradayData.ok, true);
+  assert.ok(requested.some((url) => url.pathname === '/v2/stocks/bars' && url.searchParams.get('feed') === 'sip'), 'futures-style proxy must request consolidated SIP history');
+  assert.ok(requested.some((url) => url.pathname === '/v2/stocks/bars' && url.searchParams.get('feed') === 'boats'), 'futures-style proxy must request BOATS overnight history');
+  assert.equal(intradayData.source.proxy, 'QQQ/SPY—not NQ/ES');
 } finally {
   globalThis.fetch = originalFetch;
 }

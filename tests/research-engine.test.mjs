@@ -7,10 +7,16 @@ const {
   cumulativeVwap,
   detectContinuationModel,
   findSweepIndex,
+  groupProxyTradeDays,
   findGammaFlip,
   finite,
   metrics,
+  marketProfileLevels,
+  priorWeekRange,
+  resampleMinutes,
   resampleWeekly,
+  scanFvgs,
+  splitSession,
   summarizeConditions,
   summarizeTiming,
 } = __test;
@@ -83,6 +89,63 @@ assert.equal(sweep.reversal, false);
 assert.equal(findSweepIndex([bar('2026-08-20T13:30:00Z', 101, 102, 100.5, 101.5)], 100, 'high'), -1, 'a gap that opens entirely above a high must not count as a sweep');
 assert.equal(findSweepIndex([bar('2026-08-20T13:30:00Z', 99.5, 100.2, 99.4, 100.1)], 100, 'high'), 0, 'a bar crossing a high from below must count as a sweep');
 
+const proxyDays = groupProxyTradeDays([
+  bar('2026-08-24T22:30:00Z', 100, 101, 99, 100.5),
+  bar('2026-08-25T08:30:00Z', 103, 104, 102, 103.5),
+  bar('2026-08-25T13:30:00Z', 104, 105, 103, 104.5),
+], [
+  bar('2026-08-25T00:30:00Z', 101, 102, 100, 101.5),
+  bar('2026-08-25T06:30:00Z', 102, 103, 101, 102.5),
+]);
+assert.deepEqual([...proxyDays.keys()], ['2026-08-25'], 'evening bars must be assigned to the following ETF trade date');
+const proxySessions = splitSession(proxyDays.get('2026-08-25'));
+assert.equal(proxySessions.evening.length, 1);
+assert.equal(proxySessions.asia.length, 1);
+assert.equal(proxySessions.london.length, 2);
+assert.equal(proxySessions.pre.length, 1);
+assert.equal(proxySessions.rth.length, 1);
+
+const hourly = resampleMinutes([
+  bar('2026-08-25T13:30:00Z', 100, 101, 99, 100.5),
+  bar('2026-08-25T14:29:00Z', 100.5, 102, 100, 101.5),
+  bar('2026-08-25T14:30:00Z', 101.5, 103, 101, 102.5),
+], 60);
+assert.equal(hourly.length, 2, 'one-hour bars must anchor to the 9:30 ET session start');
+assert.equal(hourly[0].t, '2026-08-25T13:30:00.000Z');
+assert.equal(hourly[0].c, 101.5);
+
+const weeklyProxy = groupProxyTradeDays([
+  bar('2026-08-14T13:30:00Z', 90, 92, 89, 91),
+  bar('2026-08-17T13:30:00Z', 100, 105, 99, 104),
+  bar('2026-08-21T13:30:00Z', 104, 110, 98, 109),
+  bar('2026-08-25T13:30:00Z', 109, 112, 108, 111),
+], []);
+const priorWeek = priorWeekRange(weeklyProxy, '2026-08-25');
+assert.equal(priorWeek.weekStart, '2026-08-17');
+assert.equal(priorWeek.high, 110);
+assert.equal(priorWeek.low, 98);
+
+const profile = marketProfileLevels([
+  bar('2026-08-25T13:30:00Z', 100, 101, 99, 100, 1000),
+  bar('2026-08-25T13:31:00Z', 100, 102, 100, 101, 5000),
+  bar('2026-08-25T13:32:00Z', 101, 103, 101, 102, 1000),
+]);
+assert.ok(profile.val <= profile.poc && profile.poc <= profile.vah, 'POC must remain inside the calculated value area');
+assert.ok(profile.coverage >= .70, 'value area must include at least 70% of observed volume');
+
+const fvgBars = [
+  bar('2026-08-20T13:30:00Z', 99.5, 100, 99, 99.8),
+  bar('2026-08-20T13:31:00Z', 100, 101.2, 99.9, 101),
+  bar('2026-08-20T13:32:00Z', 101.2, 102.2, 101, 102),
+  bar('2026-08-20T13:33:00Z', 102, 102.1, 100.5, 101.2),
+  bar('2026-08-20T13:34:00Z', 101.2, 102.6, 101.1, 102.5),
+];
+const fvgScan = scanFvgs(fvgBars, '2026-08-20', 1);
+const bullishFvg = fvgScan.records.find((row) => row.side === 'Bullish');
+assert.equal(bullishFvg.retested, true);
+assert.equal(bullishFvg.continuation, true);
+assert.equal(bullishFvg.inverted, false);
+
 const modelBars = [
   bar('2026-08-20T13:30:00Z', 99.9, 100, 99.8, 99.95),
   bar('2026-08-20T13:31:00Z', 100, 100.15, 99.95, 100.1),
@@ -105,7 +168,7 @@ const timing = summarizeTiming([
   { condition: 'PDH', minute: 590, continuation: true },
   { condition: 'PDH', minute: 650, continuation: false },
 ]);
-const pdhTiming = timing.find((row) => row.label === 'PDH sweep');
+const pdhTiming = timing.find((row) => row.label === 'PDH/PDL sweep');
 assert.equal(pdhTiming.before1000, 1);
 assert.equal(pdhTiming.before1100, 0.5);
 

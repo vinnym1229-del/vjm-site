@@ -6,7 +6,7 @@
 
 | Module | Current capability | Deliberately unavailable until another source is connected |
 | --- | --- | --- |
-| Options | QQQ/SPY current option-chain Greeks, open-interest GEX model, gamma-flip estimate, PDH/PDL and premarket behavior, timing statistics, SMT proxy, interactive contract/hedge scenarios | Exact historical contract decay, observed dealer positioning, CME Asia/London levels |
+| Options / Price Action | QQQ/SPY current option-chain Greeks, open-interest GEX model, gamma-flip estimate, futures-style overnight/Asia/London proxy levels, PDH/PDL, BSL/SSL, sweeps, 1m/5m/15m/1h FVG and IFVG, displacement, QQQ/SPY SMT, continuation models, timing statistics, VWAP, MFE/MAE, and interactive contract/hedge scenarios | Exact historical contract decay, observed dealer positioning, and true CME NQ/ES volume/order flow |
 | Stocks | Daily, weekly, or combined Fibonacci retracement studies; fill/new-high rates; MFE/MAE; ATR; current swing map | Fundamentals and earnings-calendar causality |
 | Sectors | 1/5/20-session sector ETF momentum, relative strength, ETF up-day share, ATR | Constituent-level market breadth |
 | Biotech | Price, volume, gap, ATR, and mechanical volatility flags | FDA/PDUFA dates, trial milestones, cash runway, dilution risk, validated short interest |
@@ -51,13 +51,39 @@ Add these GitHub Actions repository secrets:
 
 `.github/workflows/research-refresh.yml` then refreshes QQQ/SPY option-chain snapshots every 30 minutes across the broad U.S. market-hours window and refreshes intraday studies, sectors, biotech, and the stock watchlist once after the close. The workflow can also be run manually with `options`, `daily`, or `all` scope.
 
+## QQQ/SPY futures-style model
+
+Each QQQ/SPY trade date is assembled from these Eastern Time windows:
+
+| Model window | Time | Data used |
+| --- | --- | --- |
+| Evening | 6:00–8:00 PM on the prior calendar day | Consolidated SIP history |
+| Asia proxy | 8:00 PM–12:00 AM | BOATS history |
+| London proxy | 2:00–5:00 AM | BOATS through 4:00 AM, then SIP |
+| Premarket | 4:00–9:30 AM | Consolidated SIP history |
+| Overnight proxy | 6:00 PM–9:30 AM | Combined SIP + BOATS windows above |
+| RTH | 9:30 AM–4:00 PM | Consolidated SIP history |
+
+The scanner compares QQQ with SPY and calculates:
+
+- prior-day, prior-week, prior-session VAH/VAL, overnight, Asia-proxy, London-proxy, premarket, opening-range, and initial-balance high/low sweeps;
+- prior-session POC plus a 70% value area derived from one-minute SIP volume in 50 price bins;
+- overnight buy-side/sell-side liquidity from confirmed five-minute pivot highs/lows;
+- one-, five-, fifteen-, and sixty-minute three-candle FVGs, retests, full fills, continuation, and inversion into IFVG;
+- five-minute displacement when both body and range are at least 1.5 times their respective prior-20-bar medians and the close lands in the candle's outer 25%;
+- QQQ/SPY SMT when one ETF takes the comparable session extreme and the other remains unmatched for at least five minutes;
+- sweep → same-direction FVG → retest → post-sweep extreme-break continuation models;
+- conditional continuation/reversal rates, VWAP touches, time to VWAP, MFE, MAE, MFE:MAE, and before-10:00/10:30/11:00 timing splits.
+
+The selectable sample is 5, 20, or 40 trade days. Every displayed probability includes its observation count. These are descriptive historical frequencies, not a prediction or recommendation.
+
 ## Data definitions and guardrails
 
-- Equities use Alpaca's IEX feed on the Basic plan. This is not consolidated SIP coverage.
+- Current spot snapshots use Alpaca IEX. The intraday model requests consolidated SIP history for 6:00–8:00 PM, 4:00 AM–4:00 PM and BOATS history for 8:00 PM–4:00 AM. The request ends 16 minutes before the current time so it stays inside the Free plan's historical-data delay.
 - Basic-plan options use Alpaca's indicative feed. The options panel never labels it OPRA-precise.
 - Historical option data begins in February 2024. Exact historical contract-path/decay studies require bid/ask-aware OPRA data and are disabled here.
 - Current GEX is modeled as `gamma × open interest × 100 × spot² × 1%`, expressed in millions of dollars. Calls-positive/puts-negative is a declared sign convention, not observed dealer inventory.
-- QQQ and SPY do not trade through CME's Asia and London futures sessions. The engine does not relabel ETF premarket as Asia/London; add a licensed NQ/ES source before enabling those statistics.
+- The overnight, Asia, and London labels are QQQ/SPY ETF price-action proxies. They do not contain CME NQ/ES volume, order flow, futures-only prints, or the futures maintenance break. The interface labels this limitation everywhere the proxy is shown.
 - A sweep must cross the stored level from the expected side. An opening gap entirely beyond the level is not counted. Continuation means a 0.15% extension occurs before a 0.15% reversal. The continuation model is sweep → same-direction FVG → retest → post-sweep extreme break.
 - QQQ/SPY SMT requires one ETF to take its prior-day extreme while the paired ETF remains unmatched for at least five minutes. Outcomes begin at that confirmation time, preventing end-of-day look-ahead from qualifying the setup.
 - Fibonacci studies use the exact selected calendar lookback (one, three, or six years), visible pivot windows, and an explicit post-touch outcome horizon. Daily and weekly rows remain separate in the interface. Daily bars cannot establish the intrabar order when a retracement touch and fill happen in the same session. Rates with fewer than five observations remain visible but do not qualify as the “best” level.
@@ -76,14 +102,18 @@ git diff --check
 After deployment:
 
 1. Open `/api/research-engine?module=health`; confirm `configured.alpaca`, `premiumSecret`, and (if enabled) `database` are true.
-2. Open `/research-engine.html`, unlock with a valid premium code, and run each module.
+2. Open `/research-engine.html`, unlock with a valid premium code, choose QQQ or SPY, and run the full scan for 5, 20, and 40 days.
 3. Confirm the browser network inspector never receives Alpaca credentials.
-4. Confirm each result shows an as-of time and correct source/precision label.
-5. Run the GitHub workflow manually with `all`, then confirm D1 contains rows in both tables.
+4. Confirm the current-level table identifies SIP, BOATS, or the combined source; confirm every conditional row has `N`.
+5. Confirm unavailable observations render as `—`, never `0` or `0%`.
+6. Confirm each result shows an as-of time and correct source/precision label.
+7. Run the GitHub workflow manually with `all`, then confirm D1 contains rows in both tables.
 
 ## Primary documentation
 
 - Alpaca market-data plans: https://docs.alpaca.markets/us/docs/about-market-data-api
+- Alpaca 24/5 and BOATS trading/data windows: https://docs.alpaca.markets/us/docs/245-trading-for-trading-api
+- Alpaca historical stock bars and feed selection: https://docs.alpaca.markets/us/reference/stockbars
 - Alpaca historical options: https://docs.alpaca.markets/us/docs/historical-option-data
 - Alpaca option-chain snapshots: https://docs.alpaca.markets/us/reference/optionchain
 - Cloudflare Pages Functions: https://developers.cloudflare.com/pages/functions/
