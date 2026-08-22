@@ -95,7 +95,7 @@ async function loadGuidanceWithToken(token){
   if(!token){msg('No saved premium session found. Enter your member access code.',false);return;}
   loading(true); msg('Checking member session…',true);
   try{
-    const res=await fetch('/api/verify-premium?token='+encodeURIComponent(token),{credentials:'same-origin',cache:'no-store'});
+    const res=await fetch('/api/verify-premium',{headers:{Authorization:'Bearer '+token},credentials:'same-origin',cache:'no-store'});
     const data=await res.json().catch(()=>({}));
     if(!res.ok||!data.ok||!data.active){clearSession(); msg(data.error||'Session expired or invalid. Sign in again.',false); return;}
     const card=document.getElementById('signin');

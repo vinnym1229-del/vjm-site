@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>VJM Research Engine | St Trades</title>
+  <meta name="description" content="Private VJM market research engine for options, stocks, sectors, and biotech. Conditional statistics, Fibonacci studies, gamma exposure, session-pattern testing, and auditable data-source status.">
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="icon" href="assets/logo-nav.jpg">
+  <link rel="stylesheet" href="assets/research-engine.css">
+</head>
+<body>
+<a class="skip" href="#engine">Skip to research engine</a>
+<div class="top-strip"><strong>Research, not prediction.</strong> Every result shows its source, precision, sample size, and last refresh.</div>
+<nav class="nav" aria-label="Main navigation">
+  <a class="brand" href="index.html">ST TRADES</a>
+  <div class="nav-links">
+    <a href="index.html">Home</a><a href="stock-lab.html">Stock Lab</a><a href="options-lab.html">Options Lab</a>
+    <a class="active" href="research-engine.html">Research Engine</a><a href="premium-guidance.html">Guidance</a><a href="index.html#discord-cta">Discord</a>
+  </div>
+  <a class="nav-action" href="index.html#premium">Premium Access</a>
+</nav>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">VJM Research Engine</span>
+        <h1>Find the condition.<span>Test the outcome.</span></h1>
+        <p>A persistent research dashboard for QQQ/options, stock swing setups, sector rotation, and biotech-specific risk. It refreshes in place, archives snapshots when storage is connected, and exports the current result set to Excel-compatible CSV.</p>
+        <div class="hero-chips"><span class="chip green">Observed vs modeled separated</span><span class="chip">Conditional probabilities</span><span class="chip">MFE / MAE</span><span class="chip">GEX</span><span class="chip">Fib outcomes</span><span class="chip amber">Sample-size guardrails</span></div>
+      </div>
+      <aside class="system-card" aria-label="System status">
+        <h2>Data pipeline</h2>
+        <div class="system-list">
+          <div class="system-row"><span>Server connection</span><b><i class="dot" id="healthDot"></i> <span id="healthText">Checking</span></b></div>
+          <div class="system-row"><span>Equities</span><b id="equityFeed">Alpaca IEX</b></div>
+          <div class="system-row"><span>Options</span><b id="optionFeed">Indicative / delayed</b></div>
+          <div class="system-row"><span>Persistence</span><b id="storageStatus">Checking</b></div>
+          <div class="system-row"><span>Secrets</span><b>Server-side only</b></div>
+        </div>
+        <p class="panel-note" style="margin-top:14px">Alpaca keys never enter this page or browser storage. Only the premium session token is stored locally.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="gate" id="researchGate">
+    <div class="gate-grid">
+      <div><h2>Private research access</h2><p>This engine uses the same premium session as the rest of the site. Enter your code once, or restore a session already saved on this device.</p></div>
+      <div>
+        <div class="gate-form"><input class="field" id="premiumCode" type="password" autocomplete="current-password" placeholder="Premium access code" aria-label="Premium access code"><button class="btn" id="unlockButton" type="button">Unlock</button></div>
+        <button class="btn ghost" id="restoreButton" type="button" style="width:100%;margin-top:9px">Restore saved session</button>
+        <div class="message" id="gateMessage" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="engine" id="engine" aria-label="VJM Research Engine">
+    <div class="toolbar">
+      <div class="toolbar-left"><span class="status-pill"><i class="dot ok"></i><strong>Private session</strong></span><span class="status-pill">As of <strong id="globalAsOf">Not loaded</strong></span><span class="status-pill">Mode <strong id="globalMode">Observed</strong></span></div>
+      <div class="toolbar-right"><button class="btn ghost small" id="refreshButton" type="button">Refresh current</button><button class="btn ghost small" id="exportButton" type="button">Export CSV</button><button class="btn ghost small" id="signOutButton" type="button">Sign out</button></div>
+    </div>
+
+    <div class="module-nav" role="tablist" aria-label="Research modules">
+      <button class="module-tab active" type="button" data-module="options" role="tab" aria-selected="true">Options</button>
+      <button class="module-tab" type="button" data-module="stocks" role="tab" aria-selected="false">Stocks</button>
+      <button class="module-tab" type="button" data-module="sectors" role="tab" aria-selected="false">Sectors</button>
+      <button class="module-tab" type="button" data-module="biotech" role="tab" aria-selected="false">Biotech</button>
+    </div>
+
+    <article class="module active" id="module-options" data-module-panel="options">
+      <header class="module-head"><div><h2>QQQ Options</h2><p>Intraday reference-level behavior, current option-chain Greeks, gamma exposure, contract-path modeling, and hedge scenarios. Exact historical contract decay stays unavailable until bid/ask-aware OPRA history is connected.</p></div><div class="module-controls"><div class="control"><label for="optionsSymbol">Underlying</label><select class="select" id="optionsSymbol"><option>QQQ</option><option>SPY</option></select></div><div class="control"><label for="optionsExpiry">Expiry window</label><select class="select" id="optionsExpiry"><option value="7">Next 7 days</option><option value="14">Next 14 days</option><option value="30">Next 30 days</option></select></div><button class="btn small" id="loadOptions" type="button">Run options scan</button></div></header>
+      <div class="source-bar"><span><b>Observed:</b> IEX equity bars + current Alpaca option snapshot</span><span><b>Modeled:</b> dealer GEX sign and Greeks slope lab</span><span id="optionsSourceStatus">Waiting to load</span></div>
+      <div class="kpis">
+        <div class="kpi"><span>Spot</span><b id="optSpot">—</b><small>Underlying snapshot</small></div><div class="kpi"><span>Net GEX</span><b id="optNetGex">—</b><small>Modeled dealer sign</small></div><div class="kpi"><span>Gamma flip</span><b id="optGammaFlip">—</b><small>Nearest sign change</small></div><div class="kpi"><span>Contracts analyzed</span><b id="optContracts">—</b><small>Joined snapshot + OI</small></div><div class="kpi caution"><span>Precision</span><b id="optPrecision">—</b><small id="optPrecisionNote">Feed entitlement</small></div>
+      </div>
+      <div class="grid-2">
+        <section class="panel"><div class="panel-head"><div><h3>Gamma exposure by strike</h3><p>Calls positive / puts negative by the selected model convention.</p></div><span class="chip amber">Modeled sign</span></div><div class="chart" id="gexChart"><div class="chart-empty">Run the options scan to load GEX.</div></div></section>
+        <section class="panel"><div class="panel-head"><div><h3>Reference-level outcomes</h3><p>PDH/PDL, premarket, opening-range, initial-balance, FVG continuation, SMT, and post-event VWAP tests use observable ETF hours. Asia/London requires a CME futures source.</p></div><span class="chip">Conditional</span></div><div class="table-wrap"><table><thead><tr><th>Condition</th><th>N</th><th>Continuation</th><th>Reversal</th><th>VWAP hit</th><th>Median min to VWAP</th><th>Median MFE</th><th>Median MAE</th><th>MFE:MAE</th></tr></thead><tbody id="optionsConditionBody"><tr><td colspan="9">Run the intraday scan to calculate observed outcomes.</td></tr></tbody></table></div><p class="panel-note red">QQQ/SPY do not trade through the Asia and London futures sessions. The engine refuses to label ETF premarket data as “Asia high” or “London high.” Add CME NQ/ES data for those tests.</p></section>
+      </div>
+      <section class="panel"><div class="panel-head"><div><h3>Interactive contract slope & hedge lab</h3><p>Transparent delta + gamma + theta + vega approximation. Adjust the scenario and inspect how contract profile and hedge size change the path.</p></div><span class="chip amber">Modeled, not observed</span></div>
+        <div class="lab-inputs">
+          <div class="control"><label for="labSpot">Spot</label><input class="field lab-control" id="labSpot" type="number" value="600" step="0.25"></div><div class="control"><label for="labMove">Target move $</label><input class="field lab-control" id="labMove" type="number" value="-3" step="0.25"></div><div class="control"><label for="labMinutes">Minutes</label><input class="field lab-control" id="labMinutes" type="number" value="90" min="5" max="390" step="5"></div><div class="control"><label for="labIv">IV change (points)</label><input class="field lab-control" id="labIv" type="number" value="3" step="0.25"></div><div class="control"><label for="labQty">Long qty</label><input class="field lab-control" id="labQty" type="number" value="3" min="1" step="1"></div><div class="control"><label for="labHedge">Hedge qty</label><input class="field lab-control" id="labHedge" type="number" value="1" min="0" step="1"></div>
+        </div>
+        <div class="profile-grid" id="slopeProfiles"></div><div class="formula" id="hedgeSummary" aria-live="polite"></div><div class="chart" id="slopeChart"></div><div class="formula">Synthetic profile estimate: premium(t) = max(0.01, premium₀ + delta·ΔS + ½·gamma·ΔS² + theta·minutes/390 + vega·IV-point change). Greeks are held constant; this is a scenario comparison, not a contract quote.</div>
+      </section>
+      <section class="panel"><div class="panel-head"><div><h3>Timing heatmap</h3><p>Observed event frequency and follow-through by cutoff.</p></div></div><div class="heatmap" id="timingHeatmap"><div class="h"></div><div class="h">Before 10:00</div><div class="h">Before 10:30</div><div class="h">Before 11:00</div><div class="h">Full RTH</div><div class="label">PDH sweep</div><div>—</div><div>—</div><div>—</div><div>—</div><div class="label">PDL sweep</div><div>—</div><div>—</div><div>—</div><div>—</div><div class="label">Premarket H/L</div><div>—</div><div>—</div><div>—</div><div>—</div></div></section>
+    </article>
+
+    <article class="module" id="module-stocks" data-module-panel="stocks">
+      <header class="module-head"><div><h2>Stock Swing Lab</h2><p>Daily and weekly swing retracements, Fibonacci-touch outcomes, prior-extreme fills, new highs, timing, MFE, MAE, ATR, and volume context.</p></div><div class="module-controls"><div class="control"><label for="stockSymbol">Ticker</label><input class="field" id="stockSymbol" value="NVDA" maxlength="8"></div><div class="control"><label for="stockTimeframe">Timeframe</label><select class="select" id="stockTimeframe"><option value="combined">Daily + weekly</option><option value="daily">Daily only</option><option value="weekly">Weekly only</option></select></div><div class="control"><label for="stockLookback">Lookback</label><select class="select" id="stockLookback"><option value="365">1 year</option><option value="1095">3 years</option><option value="2190">6 years</option></select></div><div class="control"><label for="stockHorizon">Outcome horizon</label><select class="select" id="stockHorizon"><option value="20">20 sessions</option><option value="40">40 sessions</option><option value="60">60 sessions</option></select></div><button class="btn small" id="loadStock" type="button">Run fib study</button></div></header>
+      <div class="source-bar"><span><b>Source:</b> Alpaca adjusted daily IEX bars</span><span><b>Definition:</b> visible pivot window + explicit outcome horizon</span><span id="stockSourceStatus">Waiting to load</span></div>
+      <div class="kpis"><div class="kpi"><span>Last price</span><b id="stockPrice">—</b><small id="stockAsOf">As of —</small></div><div class="kpi"><span>20-day return</span><b id="stockReturn20">—</b><small>Adjusted closes</small></div><div class="kpi"><span>ATR 14</span><b id="stockAtr">—</b><small>Percent of close</small></div><div class="kpi"><span>Fib setups</span><b id="stockSetups">—</b><small>Level touches tested</small></div><div class="kpi"><span>Best fill level</span><b id="stockBestFib">—</b><small>Minimum N guardrail</small></div></div>
+      <div class="grid-2"><section class="panel"><div class="panel-head"><div><h3>Fib outcome matrix</h3><p>Touch → prior-high fill → new high within the selected horizon.</p></div></div><div class="table-wrap"><table><thead><tr><th>Level</th><th>Touches</th><th>Fill rate</th><th>New-high rate</th><th>Median days</th><th>Median MFE</th><th>Median MAE</th></tr></thead><tbody id="fibBody"><tr><td colspan="7">Run a study to calculate results.</td></tr></tbody></table></div></section><section class="panel"><div class="panel-head"><div><h3>Fill vs new-high probability</h3><p>Conditional on the retracement level being touched.</p></div></div><div class="chart" id="fibChart"><div class="chart-empty">No study loaded.</div></div></section></div>
+      <section class="panel"><div class="panel-head"><div><h3>Latest swing map</h3><p>The exact pivot points and price levels used in the current study.</p></div><span class="chip">Auditable</span></div><div class="table-wrap"><table><thead><tr><th>Swing low date</th><th>Swing low</th><th>Swing high date</th><th>Swing high</th><th>38.2%</th><th>50%</th><th>61.8%</th><th>Status</th></tr></thead><tbody id="swingBody"><tr><td colspan="8">Run a study to display the current swing.</td></tr></tbody></table></div></section>
+    </article>
+
+    <article class="module" id="module-sectors" data-module-panel="sectors">
+      <header class="module-head"><div><h2>Sector Rotation</h2><p>Sector ETF relative strength, 1/5/20-day momentum, ETF up-day share, ATR, and confirmation context for stock and options setups.</p></div><div class="module-controls"><button class="btn small" id="loadSectors" type="button">Refresh sectors</button></div></header>
+      <div class="source-bar"><span><b>Source:</b> Alpaca adjusted daily IEX bars</span><span><b>Breadth:</b> ETF up-day share, not constituent breadth</span><span id="sectorSourceStatus">Waiting to load</span></div>
+      <div class="kpis"><div class="kpi positive"><span>Leading sector</span><b id="sectorLeader">—</b><small>20D relative to QQQ</small></div><div class="kpi negative"><span>Lagging sector</span><b id="sectorLaggard">—</b><small>20D relative to QQQ</small></div><div class="kpi"><span>Risk-on count</span><b id="sectorRiskOn">—</b><small>Positive relative strength</small></div><div class="kpi"><span>Average ATR</span><b id="sectorAtr">—</b><small>Sector ETF volatility</small></div><div class="kpi"><span>QQQ 20D</span><b id="sectorQqq">—</b><small>Benchmark return</small></div></div>
+      <div class="grid-2"><section class="panel"><div class="panel-head"><div><h3>Relative-strength ranking</h3><p>20-day return minus QQQ 20-day return.</p></div></div><div class="chart" id="sectorChart"><div class="chart-empty">Refresh to load sector data.</div></div></section><section class="panel"><div class="panel-head"><div><h3>Sector detail</h3><p>Conditional formatting highlights leadership, weakness, and volatility.</p></div></div><div class="table-wrap"><table><thead><tr><th>ETF</th><th>Sector</th><th>1D</th><th>5D</th><th>20D</th><th>RS</th><th>Up-day share</th><th>ATR</th></tr></thead><tbody id="sectorBody"><tr><td colspan="8">Refresh to load.</td></tr></tbody></table></div></section></div>
+    </article>
+
+    <article class="module" id="module-biotech" data-module-panel="biotech">
+      <header class="module-head"><div><h2>Biotech Lens</h2><p>Biotech price/volume risk is calculated separately. Clinical catalysts, FDA dates, trial phase, cash runway, dilution risk, and validated short interest remain blank until a specialized source is connected.</p></div><div class="module-controls"><button class="btn small" id="loadBiotech" type="button">Refresh biotech</button></div></header>
+      <div class="source-bar"><span><b>Observed:</b> Alpaca price and volume</span><span><b>Unavailable from Alpaca:</b> clinical/fundamental catalyst fields</span><span id="biotechSourceStatus">Waiting to load</span></div>
+      <div class="kpis"><div class="kpi"><span>Names scanned</span><b id="bioCount">—</b><small>ETFs + liquid names</small></div><div class="kpi caution"><span>High volatility</span><b id="bioHighRisk">—</b><small>Price/volume risk only</small></div><div class="kpi"><span>Median ATR</span><b id="bioAtr">—</b><small>14-session ATR</small></div><div class="kpi"><span>Volume spikes</span><b id="bioVolume">—</b><small>≥ 2x 20-day average</small></div><div class="kpi negative"><span>Missing catalysts</span><b id="bioMissing">All</b><small>External source required</small></div></div>
+      <section class="panel"><div class="panel-head"><div><h3>Biotech price/volume monitor</h3><p>Risk flags are mechanical and do not claim to know clinical outcomes.</p></div><span class="chip red">Catalysts not connected</span></div><div class="table-wrap"><table><thead><tr><th>Ticker</th><th>Type</th><th>5D</th><th>20D</th><th>ATR</th><th>Volume ratio</th><th>Gap</th><th>Risk flag</th><th>Catalyst</th></tr></thead><tbody id="biotechBody"><tr><td colspan="9">Refresh to load price/volume data.</td></tr></tbody></table></div><p class="panel-note red">The engine will not invent FDA dates or trial milestones. Connect a licensed catalyst/fundamental source before using this module for event-driven decisions.</p></section>
+    </article>
+  </section>
+</main>
+
+<footer class="footer"><div>Educational research only—not financial advice. Market data may be delayed, incomplete, or indicative. Verify live prices before trading.</div><div class="footer-links"><a href="index.html">Home</a><a href="stock-lab.html">Stock Lab</a><a href="options-lab.html">Options Lab</a><a href="risk-disclosure.html">Risk Disclosure</a><a href="privacy.html">Privacy</a></div></footer>
+<script src="assets/research-engine.js" defer></script>
+</body>
+</html>

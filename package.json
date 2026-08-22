@@ -1,0 +1,8 @@
+{
+  "name": "vjm-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --check assets/research-engine.js && node --check functions/api/research-engine.js && node --check functions/api/verify-premium.js && node --test tests/*.test.mjs"
+  }
+}
