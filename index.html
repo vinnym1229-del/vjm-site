@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NotFinancialAdviceVJM.com | Trading's Not Boring. You Just Had the Wrong Teacher.</title>
-<meta name="description" content="Join 300+ members learning to trade stocks, options, and futures with discipline — and actually have fun doing it. Real callouts. Real results. $1,200 → $50K+ in 30 days. Not financial advice.">
+<meta name="description" content="VJM / St Trades: trading education that makes markets understandable — price action, options, and risk management taught with discipline. Free tools, live education, and a premium research lab. Not financial advice.">
 <meta property="og:title" content="St Trades — Trading's Not Boring. You Just Had the Wrong Teacher.">
-<meta property="og:description" content="$1,200 → $50K+ in 30 days. Every trade called out free in Discord. Join 300+ members.">
+<meta property="og:description" content="Research-first trading education: free Discord callouts, interactive labs, and a premium research engine for serious students. Educational content only — not financial advice.">
 <meta property="og:url" content="https://notfinancialadvicevjm.com">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2306090d'/%3E%3Ctext y='34' x='32' text-anchor='middle' dominant-baseline='central' font-size='40' font-family='Arial Black,sans-serif' font-weight='900' fill='%23dc2626'%3ES%3C/text%3E%3C/svg%3E">
@@ -477,18 +477,6 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .modal ul li { margin-bottom:6px; }
 .modal-back { display:inline-block; margin-bottom:20px; color:var(--gold); cursor:pointer; font-weight:600; font-size:0.9rem; }
 
-/* ─── ADMIN ─── */
-#admin-panel { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; overflow-y:auto; }
-.admin-inner { max-width:560px; margin:60px auto; background:var(--bg2); border:1px solid var(--border); border-radius:16px; padding:36px; }
-.admin-inner h2 { font-family:'Barlow Condensed',sans-serif; font-size:2rem; font-weight:900; margin-bottom:24px; color:var(--gold); }
-.admin-inner input, .admin-inner textarea { width:100%; padding:12px 14px; background:var(--accent); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.95rem; margin-bottom:12px; outline:none; resize:vertical; }
-.admin-inner input:focus { border-color:var(--gold); }
-.admin-btn { display:inline-block; padding:11px 24px; border-radius:8px; font-weight:700; cursor:pointer; border:none; font-size:0.9rem; margin:4px; }
-.admin-btn-gold { background:var(--gold); color:#fff; }
-.admin-btn-red { background:#ff4444; color:#fff; }
-.admin-btn-gray { background:var(--accent); color:var(--text); border:1px solid var(--border); }
-#admin-log { background:var(--accent); border-radius:8px; padding:16px; margin-top:16px; font-size:0.8rem; color:var(--muted); min-height:80px; white-space:pre-wrap; }
-
 /* ─── QUIZ ─── */
 .quiz-btn {
   background: var(--accent); border: 1px solid var(--border);
@@ -617,7 +605,6 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   <span class="cd-label">📺 Next Stream</span>
   <span id="cd-display" class="cd-time">--:--:--</span>
   <span id="cd-status" class="cd-status"></span>
-  <span id="cd-viewers" style="display:none;background:rgba(255,68,68,0.1);border:1px solid rgba(255,68,68,0.3);border-radius:20px;padding:2px 10px;font-size:0.75rem;color:#ff6666;">👁 <span id="viewer-count">--</span> watching</span>
 </div>
 
 <!-- NAV -->
@@ -631,10 +618,10 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
     <a href="options-lab.html">Options Lab</a>
     <a href="stock-lab.html">Stock Lab</a>
     <a href="premium-guidance.html">Guidance</a>
+    <a href="research-engine.html">Research Engine</a>
     <a href="forex-calendar.html">Forex Calendar</a>
     <a href="#essay">Essay</a>
     <a href="#discord-cta">Discord</a>
-    <a href="#" onclick="openAdmin()">Admin</a>
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
     <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">🌙 <span id="theme-label">Dark</span></button>
@@ -662,7 +649,6 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   <a href="#discord-cta" onclick="closeMobileMenu()">💬 Discord</a>
   <a href="https://www.tiktok.com/@vinny.mistretta0" target="_blank" onclick="closeMobileMenu()">🎵 TikTok</a>
   <a href="https://www.instagram.com/vinny.mistretta1" target="_blank" onclick="closeMobileMenu()">📸 Instagram</a>
-  <a href="#" onclick="closeMobileMenu();openAdmin();" style="color:var(--muted);">🔐 Admin</a>
 </div>
 
 <!-- HERO -->
@@ -1190,7 +1176,7 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 </section>
 
 <!-- MEMBER WIN SCREENSHOTS -->
-<section id="member-wins" style="background:var(--bg);">
+<section id="member-wins-screenshots" style="background:var(--bg);">
   <div class="section-inner">
     <div class="section-tag">🏆 Community Wins</div>
     <h2 class="section-title">Members Are <span class="gold">Winning Too.</span></h2>
@@ -1587,17 +1573,9 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
     <!-- JOIN TAB -->
     <div id="pcontent-join" style="max-width:600px;margin:0 auto;">
       <div class="premium-box">
-        <div style="background:linear-gradient(135deg,rgba(220,38,38,0.15),rgba(220,38,38,0.05));border:1.5px solid rgba(220,38,38,0.5);border-radius:12px;padding:16px 20px;margin-bottom:24px;position:relative;overflow:hidden;">
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;">
-            <span style="background:var(--gold);color:#fff;font-size:0.65rem;font-weight:900;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:1px;">🔥 Launch Special</span>
-            <span style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;color:var(--gold);">First 20 Members Get $50/mo — Save $10</span>
-          </div>
-          <div style="margin-top:10px;display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:wrap;">
-            <span style="font-size:0.8rem;color:var(--muted);">Spots claimed:</span>
-            <div style="display:flex;gap:4px;" id="spots-bar"></div>
-            <span id="spots-left" style="font-size:0.8rem;color:var(--gold);font-weight:700;"></span>
-          </div>
-        </div>
+        <!-- Fabricated "First 20 members / spots claimed" scarcity banner removed.
+             Pricing below is owner-managed; any future offer limits must come
+             from a server-side offer record, not hard-coded counts. -->
         <div style="display:flex;align-items:baseline;justify-content:center;gap:12px;margin-bottom:8px;">
           <div style="font-family:'Barlow Condensed',sans-serif;font-size:3.5rem;font-weight:900;color:var(--gold);text-shadow:0 0 20px rgba(220,38,38,0.4);">$50<span style="font-size:1.2rem;color:var(--muted);">/mo</span></div>
           <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:700;color:var(--muted);text-decoration:line-through;">$60</div>
@@ -1642,8 +1620,8 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
             <div style="font-size:0.7rem;color:var(--muted);">Launch rate — locked in</div>
           </div>
           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;">
-            <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Access Code</div>
-            <div id="dash-access-code" style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--text);">—</div>
+            <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Membership</div>
+            <div id="dash-access-code" style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--text);">Premium</div>
           </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
@@ -1784,23 +1762,14 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
       </div>
     </div>
 
-    <!-- Admin add entry (hidden until admin login) -->
-    <div id="pnl-admin-panel" style="display:none;background:var(--card);border:1px solid rgba(220,38,38,0.3);border-radius:14px;padding:22px;margin-bottom:24px;">
-      <h4 style="color:var(--gold);font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:900;margin-bottom:14px;">+ Add Today's P&L</h4>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px;">
-        <div><label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:4px;">Date</label><input type="date" id="pnl-date" style="width:100%;padding:8px 10px;background:var(--accent);border:1px solid var(--border);border-radius:7px;color:var(--text);outline:none;box-sizing:border-box;"></div>
-        <div><label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:4px;">P&L ($)</label><input type="number" id="pnl-amount" placeholder="+1500 or -200" style="width:100%;padding:8px 10px;background:var(--accent);border:1px solid var(--border);border-radius:7px;color:var(--text);outline:none;box-sizing:border-box;"></div>
-        <div><label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:4px;">Tickers Traded</label><input type="text" id="pnl-tickers" placeholder="QQQ, GOOGL" style="width:100%;padding:8px 10px;background:var(--accent);border:1px solid var(--border);border-radius:7px;color:var(--text);outline:none;box-sizing:border-box;"></div>
-        <div><label style="font-size:0.75rem;color:var(--muted);display:block;margin-bottom:4px;">Notes</label><input type="text" id="pnl-notes" placeholder="Brief note..." style="width:100%;padding:8px 10px;background:var(--accent);border:1px solid var(--border);border-radius:7px;color:var(--text);outline:none;box-sizing:border-box;"></div>
-      </div>
-      <button onclick="addPnlEntry()" class="btn btn-gold">Add Entry</button>
-    </div>
+    <!-- Owner P&L entries are managed server-side (see docs/SECURITY.md);
+         client-side add-entry form removed with the browser admin panel. -->
 
     <!-- P&L log -->
     <div style="display:flex;flex-direction:column;gap:10px;" id="pnl-log">
       <!-- Entries injected by JS -->
     </div>
-    <p style="text-align:center;color:var(--muted);font-size:0.75rem;margin-top:20px;">Updated after market close each trading day. ⚠️ Not financial advice.</p>
+    <p style="text-align:center;color:var(--muted);font-size:0.75rem;margin-top:20px;">Owner-reported daily results, updated after market close. Trading involves substantial risk of loss; past results do not guarantee future performance. ⚠️ Not financial advice.</p>
   </div>
 </section>
 
@@ -2217,7 +2186,6 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
       <a href="#essay">Essay</a>
       <a href="#discord-cta">Discord</a>
       <a href="mailto:vjmtrading.contact@gmail.com">Email</a>
-      <a href="#" onclick="openAdmin();return false;">Admin</a>
     </div>
     <div class="footer-links" style="margin-top:8px;">
       <a href="privacy.html">Privacy</a>
@@ -2256,65 +2224,23 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   </div>
 </div>
 
-<!-- ADMIN PANEL -->
-<div id="admin-panel">
-  <div class="admin-inner">
-    <h2>⚙️ Admin Panel</h2>
-    <div id="admin-login">
-      <p style="color:var(--muted);margin-bottom:16px;">Enter admin password:</p>
-      <input type="password" id="admin-pw-input" placeholder="Admin password..." />
-      <div>
-        <button class="admin-btn admin-btn-gold" onclick="verifyAdmin()">Login</button>
-        <button class="admin-btn admin-btn-gray" onclick="closeAdmin()">Cancel</button>
-      </div>
-      <p id="admin-error" style="color:var(--red);font-size:0.82rem;margin-top:8px;display:none;">Incorrect password.</p>
-    </div>
-    <div id="admin-content" style="display:none;">
-      <h3 style="color:var(--gold);margin-bottom:12px;">Member Access</h3>
-      <p style="color:var(--muted);font-size:0.82rem;margin-bottom:16px;">Premium access codes are managed in the Member Tracker sheet's "Access Code" column — add or edit a code there and it works on the site within ~20 seconds. Nothing to update here.</p>
-      <h3 style="color:var(--gold);margin:20px 0 12px;">Add Blog Post</h3>
-      <input type="text" id="new-post-title" placeholder="Post title" />
-      <textarea id="new-post-body" placeholder="Post content..." style="height:100px;"></textarea>
-      <button class="admin-btn admin-btn-gold" onclick="savePost()">Save Post</button>
-      <div id="admin-log">Activity log will appear here...</div>
-      <div style="margin-top:16px;">
-        <button class="admin-btn admin-btn-gray" onclick="closeAdmin()">Close Admin</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
-// ─── ADMIN ───
-const ADMIN_PW = 'VINNY_ADMIN_01';
-
 // ─── PREMIUM SESSION (shared with Stock Lab, Guidance, Forex Calendar) ───
-const TOKEN_KEY = 'vjm_premium_session_token_v1';
-const TOKEN_EXP_KEY = 'vjm_premium_session_expires_v1';
-const CODE_KEY = 'vjm_premium_session_code_v1';
-
-function saveSession(data, code) {
-  if (data.token) localStorage.setItem(TOKEN_KEY, data.token);
-  if (data.expiresAt) localStorage.setItem(TOKEN_EXP_KEY, data.expiresAt);
-  if (code) localStorage.setItem(CODE_KEY, code);
-}
+// Sessions are HttpOnly cookies set by the server. No tokens in JS storage.
 
 async function verifyCode(code) {
   const res = await fetch('/api/verify-premium', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
     body: JSON.stringify({ code }),
   });
-  const data = await res.json().catch(() => ({}));
-  if (res.ok && data.ok) saveSession(data, code);
-  return data;
+  return res.json().catch(() => ({ ok: false }));
 }
 
 async function checkSavedSession() {
-  const token = localStorage.getItem(TOKEN_KEY);
-  if (!token) return false;
   try {
-    const res = await fetch('/api/verify-premium?token=' + encodeURIComponent(token));
+    const res = await fetch('/api/verify-premium', { credentials: 'same-origin' });
     const data = await res.json().catch(() => ({}));
     return !!(data.ok && data.active);
   } catch (err) {
@@ -2327,8 +2253,9 @@ function unlockDashAndReviews() {
   document.getElementById('dash-content').style.display = 'block';
   document.getElementById('review-gate').style.display = 'none';
   document.getElementById('reviews-content').style.display = 'block';
+  // Access codes are no longer displayed back to the member.
   const codeEl = document.getElementById('dash-access-code');
-  if (codeEl) codeEl.textContent = localStorage.getItem(CODE_KEY) || '—';
+  if (codeEl) codeEl.closest('[data-code-row]') ? codeEl.closest('[data-code-row]').style.display = 'none' : codeEl.textContent = '••••••••';
 }
 
 document.addEventListener('DOMContentLoaded', async function () {
@@ -2373,25 +2300,6 @@ function saveReview() {
 function openPost() { document.getElementById('post-modal').classList.add('active'); document.body.style.overflow='hidden'; }
 function closePost() { document.getElementById('post-modal').classList.remove('active'); document.body.style.overflow=''; }
 
-// ─── ADMIN ───
-function openAdmin() { document.getElementById('admin-panel').style.display='block'; document.body.style.overflow='hidden'; }
-function closeAdmin() { document.getElementById('admin-panel').style.display='none'; document.body.style.overflow=''; document.getElementById('admin-login').style.display='block'; document.getElementById('admin-content').style.display='none'; document.getElementById('admin-pw-input').value=''; document.getElementById('admin-error').style.display='none'; }
-function verifyAdmin() {
-  const val = document.getElementById('admin-pw-input').value.trim();
-  if (val === ADMIN_PW) {
-    document.getElementById('admin-login').style.display='none';
-    document.getElementById('admin-content').style.display='block';
-    const pnlPanel = document.getElementById('pnl-admin-panel');
-    if (pnlPanel) pnlPanel.style.display='block';
-    log('Admin logged in.');
-  } else {
-    document.getElementById('admin-error').style.display='block';
-  }
-}
-function savePost() { log('Post saved: '+document.getElementById('new-post-title').value); alert('Post noted — add it to the Insights section in the file.'); }
-function log(msg) { const el=document.getElementById('admin-log'); el.textContent += new Date().toLocaleTimeString()+': '+msg+'\n'; }
-document.getElementById('admin-pw-input').addEventListener('keydown', function(e){ if(e.key==='Enter') verifyAdmin(); });
-
 // ─── EXPAND / COLLAPSE SECTIONS ───
 function toggleSection(id, btn) {
   const el = document.getElementById(id);
@@ -2406,18 +2314,19 @@ function toggleSection(id, btn) {
 }
 
 // ─── DARK / LIGHT MODE ───
+function themeButtonHtml(isLight) {
+  return (isLight ? '☀️ <span class="theme-label-text">Light</span>' : '🌙 <span class="theme-label-text">Dark</span>');
+}
 function toggleTheme() {
   const isLight = document.body.classList.toggle('light-mode');
   const btn = document.getElementById('theme-toggle');
-  const label = document.getElementById('theme-label');
-  if (isLight) { btn.textContent = ''; btn.innerHTML = '☀️ <span id="theme-label">Light</span>'; }
-  else { btn.innerHTML = '🌙 <span id="theme-label">Dark</span>'; }
+  btn.innerHTML = themeButtonHtml(isLight);
   localStorage.setItem('st-theme', isLight ? 'light' : 'dark');
 }
 (function() {
   if (localStorage.getItem('st-theme') === 'light') {
     document.body.classList.add('light-mode');
-    document.getElementById('theme-toggle').innerHTML = '☀️ <span id="theme-label">Light</span>';
+    document.getElementById('theme-toggle').innerHTML = themeButtonHtml(true);
   }
 })();
 
@@ -2506,31 +2415,8 @@ function tickCountdown() {
 tickCountdown();
 setInterval(tickCountdown, 1000);
 
-// ─── LAUNCH SPOTS BAR ───
-(function() {
-  const total = 20;
-  const claimed = 7; // update this manually as people join
-  const bar = document.getElementById('spots-bar');
-  const label = document.getElementById('spots-left');
-  if (!bar) return;
-  for (let i = 0; i < total; i++) {
-    const dot = document.createElement('div');
-    dot.style.cssText = `width:14px;height:14px;border-radius:50%;border:1.5px solid rgba(220,38,38,0.4);background:${i < claimed ? 'var(--gold)' : 'transparent'};transition:all .3s;`;
-    bar.appendChild(dot);
-  }
-  label.textContent = `${total - claimed} spots left`;
-})();
-
-// ─── SIMULATED VIEWER COUNT (shows during live hours) ───
-function updateViewers() {
-  const info = getNextStreamTime();
-  if (info.live) {
-    const base = 28;
-    const jitter = Math.floor(Math.sin(Date.now()/8000)*6 + Math.random()*4);
-    document.getElementById('viewer-count').textContent = base + jitter;
-  }
-}
-setInterval(updateViewers, 5000);
+// Fabricated "launch spots" scarcity bar and simulated viewer counter were
+// removed: the site must never display invented urgency or fake live data.
 
 // ─── TRADER QUIZ ───
 const quizAnswers = {};
@@ -2633,11 +2519,8 @@ async function checkDashPw() {
 }
 
 // ─── AM I ACTIVE STATUS CHECKER ───
-// Add member Discord usernames here as you get them
-// Fallback only — used if the live sheet bridge (/api/check-member-status) is
-// unreachable or not configured yet. Keep this reasonably in sync manually,
-// but the live sheet via Apps Script is the real source of truth now.
-const activeMembersFallback = ['Ant','Gavine','SexyMonkey','Brayden','wank','SStryk3rr','Sneeky Frog','Mo'];
+// Live lookup only — there is intentionally NO client-side fallback list of
+// members. If the bridge is unreachable we say so instead of guessing.
 
 async function checkStatus() {
   const inputEl = document.getElementById('status-discord-input');
@@ -2657,17 +2540,26 @@ async function checkStatus() {
   sub.style.color = 'var(--muted)';
   sub.textContent = '';
 
-  let isActive, statusLabel, live = true;
+  let isActive = false, live = true;
   try {
-    const res = await fetch('/api/check-member-status?discord=' + encodeURIComponent(input));
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || 'bridge error');
-    isActive = data.active;
-    statusLabel = data.status;
+    const res = await fetch('/api/check-member-status?discord=' + encodeURIComponent(input), { credentials: 'same-origin' });
+    const data = await res.json().catch(() => ({ ok: false }));
+    if (!data.ok && !('active' in data)) throw new Error(data.error || 'lookup failed');
+    isActive = !!data.active;
   } catch (err) {
     live = false;
-    isActive = activeMembersFallback.some(m => m.toLowerCase() === input);
-    statusLabel = isActive ? 'Active' : 'Not Found';
+  }
+
+  if (!live) {
+    // Honest failure state: never guess membership from a local list.
+    result.style.background = 'rgba(124,143,163,0.08)';
+    result.style.border = '1px solid var(--border)';
+    icon.textContent = '⚠️';
+    text.style.color = 'var(--muted)';
+    text.textContent = 'LOOKUP UNAVAILABLE';
+    sub.style.color = 'var(--muted)';
+    sub.textContent = 'Status service is temporarily down. DM St1101 on Discord.';
+    return;
   }
 
   if (isActive) {
@@ -2677,15 +2569,15 @@ async function checkStatus() {
     text.style.color = 'var(--green)';
     text.textContent = 'ACTIVE';
     sub.style.color = 'var(--muted)';
-    sub.textContent = (live ? '' : '(offline check) ') + 'Your premium is active. You should have your Discord role.';
+    sub.textContent = 'Your premium is active. You should have your Discord role.';
   } else {
     result.style.background = 'rgba(255,68,68,0.06)';
     result.style.border = '1px solid rgba(255,68,68,0.3)';
     icon.textContent = '❌';
     text.style.color = 'var(--red)';
-    text.textContent = statusLabel === 'Not Found' ? 'NOT FOUND' : statusLabel.toUpperCase();
+    text.textContent = 'NOT ACTIVE';
     sub.style.color = 'var(--muted)';
-    sub.textContent = (live ? '' : '(offline check) ') + 'DM St1101 on Discord if you think this is wrong.';
+    sub.textContent = 'No active membership found for this handle. DM St1101 on Discord if you think this is wrong.';
   }
 }
 document.addEventListener('keydown', function(e) {
@@ -2734,20 +2626,6 @@ function renderPnl() {
   document.getElementById('pnl-loss-days').textContent = losses;
   document.getElementById('pnl-win-rate').textContent = winRate+'%';
   document.getElementById('pnl-best-day').textContent = best > -Infinity ? '+$'+Math.abs(best).toLocaleString() : '—';
-}
-
-function addPnlEntry() {
-  const date = document.getElementById('pnl-date').value;
-  const amount = parseFloat(document.getElementById('pnl-amount').value);
-  const tickers = document.getElementById('pnl-tickers').value;
-  const notes = document.getElementById('pnl-notes').value;
-  if (!date || isNaN(amount)) return alert('Fill in date and P&L amount');
-  pnlData.push({ date, pnl: amount, tickers: tickers||'—', notes: notes||'' });
-  renderPnl();
-  document.getElementById('pnl-date').value = '';
-  document.getElementById('pnl-amount').value = '';
-  document.getElementById('pnl-tickers').value = '';
-  document.getElementById('pnl-notes').value = '';
 }
 
 renderPnl();
