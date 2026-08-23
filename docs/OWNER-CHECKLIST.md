@@ -38,6 +38,13 @@
 - [ ] Discord/Whop: see docs/DISCORD-INTEGRATION.md — nothing is sent until
       you explicitly configure + approve dry-run outputs.
 
+## OpenCode GitHub agent (optional, 2 minutes)
+
+- [ ] Install the app on this repo: https://github.com/apps/opencode-agent
+- [ ] Repo Settings → Secrets and variables → Actions → add `ANTHROPIC_API_KEY`
+- [ ] Then comment `/oc explain this PR` or `/opencode fix this` on any issue
+      or PR and the agent runs inside your Actions runner.
+
 ## Verification after deploy
 
 - [ ] Sign-in works; DevTools shows ONLY an HttpOnly `vjm_session` cookie
