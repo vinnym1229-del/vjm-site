@@ -8,22 +8,26 @@ Upload the package to the repository connected to your existing Cloudflare Pages
 
 ## 2. Add Cloudflare secrets
 
-In **Cloudflare Dashboard → Workers & Pages → your Pages project → Settings → Variables and Secrets**, add these as encrypted secrets for Production and Preview:
+In **Cloudflare Dashboard â†’ Workers & Pages â†’ your Pages project â†’ Settings â†’ Variables and Secrets**, add these as encrypted secrets for Production and Preview:
 
+- `SESSION_SIGNING_SECRET` (REQUIRED — dedicated session key, ≥32 random chars)
 - `ALPACA_API_KEY`
 - `ALPACA_SECRET_KEY`
-- `PREMIUM_ACCESS_CODES`
-- `MEMBERS_STATUS_URL`
+- `PREMIUM_ACCESS_CODES` (legacy codes; no longer used as a signing key)
+- `MEMBERS_BRIDGE_URL` + `MEMBERS_BRIDGE_SECRET` (preferred authenticated bridge — see docs/APPS-SCRIPT-INTEGRATION.md)
+- `MEMBERS_STATUS_URL` (legacy bridge only; delete after migration)
 - `RESEARCH_CRON_SECRET` (recommended)
 
-Do not put secret values in any HTML or JavaScript file.
+Do not put secret values in any HTML or JavaScript file. Placeholder names live in `.env.example`.
 
 ## 3. Add persistent history (recommended)
 
-Create a Cloudflare D1 database, bind it as `RESEARCH_DB`, and apply:
+Create a Cloudflare D1 database, bind it as `RESEARCH_DB` (and `RATELIMIT_DB`
+for rate limits + audit events), and apply:
 
 ```bash
 npx wrangler d1 execute vjm-research --remote --file=migrations/0001_research_engine.sql
+npx wrangler d1 execute vjm-research --remote --file=migrations/0002_security_tables.sql
 ```
 
 Without D1, the dashboard still works, but historical snapshots and last-good-result fallback are disabled.
@@ -32,7 +36,7 @@ Without D1, the dashboard still works, but historical snapshots and last-good-re
 
 In GitHub repository secrets, add:
 
-- `RESEARCH_REFRESH_URL` = `https://not-financial-advice-vjm.com`
+- `RESEARCH_REFRESH_URL` = `https://notfinancialadvicevjm.com`
 - `RESEARCH_CRON_SECRET` = the same value configured in Cloudflare
 
 The included workflow at `.github/workflows/research-refresh.yml` then refreshes the saved research data automatically.
