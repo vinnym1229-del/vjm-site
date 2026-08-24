@@ -7,17 +7,21 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| ox-alpha | pj | docs/PJ-REDESIGN-BRAINSTORM.md + .opencode/board.md | Futures-first redesign brainstorm from owner Whop screenshots; queued as epics 0/6/7/8 | 2026-08-24 |
 
 ## Queued (unclaimed, safe to take)
 
 | # | Scope | Notes |
 |---|-------|-------|
-| 1 | index.html premium dashboard tab | Fix "$50/mo launch rate" copy vs $129/mo actual price |
-| 2 | index.html ticker block | Add loading="lazy" strategy to TradingView script for LCP |
+| 0 | docs/PJ-REDESIGN-BRAINSTORM.md | MASTER PLAN: futures-first redesign per owner Whop screenshots. Execute in the doc's phase order; §15 questions gate exact copy only |
+| 1 | index.html premium dashboard tab | Fix "$50/mo launch rate" copy vs actual price (subsumed by Phase 1 truth sweep) |
+| 2 | index.html ticker block | Swap to NQ/ES/MNQ/MES futures tape (subsumed by Phase 1) |
 | 3 | prop-firms.html + tokens.css | Client-side stale-while-revalidate cache for /api/content |
-| 4 | team section (index.html) | Power "Meet the Team" from the Sheets CMS like prop-firms does |
+| 4 | team section (index.html) | Power "Meet the Team" from Sheets CMS (Phase 3, needs backend PR) |
 | 5 | functions/api/_lib/ai.js ⚠ backend | Owner approval needed: expose model string config for smarter Workers AI models |
+| 6 | Phase 1 truth sweep (index.html, premarket.html, meta) | $129→$100 + 3 bundles, FAQ verbatim, stats, socials, futures-first nav/copy — brainstorm §11 checklist |
+| 7 | Phase 2 sections | Video slot (hosting TBD §2), Meet the Team, CMS-shaped schedule grid + countdown rewrite |
+| 8 | Phase 3 backend PR ⚠ owner-gated | content-sync + integrations-core: new tabs schedule/team/bundles/faqs/media/testimonials/stats |
 
 ## Done
 
