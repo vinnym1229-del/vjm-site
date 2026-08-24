@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Premium Guidance | St Trades</title>
-<meta name="description" content="Sign in to The Blueprint premium guidance by St Trades. Free Start Here preview, member-only modules, quizzes, stock lab links, and trading checklists.">
+<meta name="description" content="Sign in to The Blueprint premium guidance by PJ Trades x St. Free Start Here preview, member-only modules, quizzes, stock lab links, and trading checklists.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://notfinancialadvicevjm.com/premium-guidance/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,14 +18,14 @@
 <body>
 <a class="skip-link" href="#signin">Skip to sign in</a>
 <nav class="nav" aria-label="Guidance navigation">
-  <a class="brand" href="index.html">ST TRADES</a>
+  <a class="brand" href="index.html">PJ TRADES <span style='font-size:0.55em'>× ST</span></a>
   <div class="nav-links">
     <a href="index.html">Home</a>
     <a href="stock-lab.html">Stock Lab</a>
     <a href="forex-calendar.html">Forex Calendar</a>
     <a href="risk-disclosure.html">Risk</a>
     <a href="index.html#premium">Join Premium</a>
-    <a href="https://discord.gg/EpeGVaamu" target="_blank" rel="noopener noreferrer">Discord</a>
+    <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener noreferrer">Discord</a>
   </div>
 </nav>
 <main class="shell">
@@ -66,7 +66,7 @@
     <div class="resource-row" style="grid-template-columns:repeat(4,1fr);">
       <a class="resource" href="stock-lab.html"><strong>Stock Lab</strong><span>Basic TradingView chart, fibs, quote snapshot, and source links.</span></a>
       <a class="resource" href="stock-lab.html"><strong>Premium Stock Lab</strong><span>Sector watchlists, white TradingView chart, fib zones, and research briefs.</span></a>
-      <a class="resource" href="https://discord.gg/EpeGVaamu" target="_blank" rel="noopener noreferrer"><strong>Join Discord</strong><span>Free community first, then premium role after confirmation.</span></a>
+      <a class="resource" href="https://discord.gg/pjtrades" target="_blank" rel="noopener noreferrer"><strong>Join Discord</strong><span>Free community first, then premium role after confirmation.</span></a>
       <a class="resource" href="forex-calendar.html"><strong>Check News First</strong><span>Use the Forex Calendar before trading CPI, FOMC, NFP, GDP, PMI, and rate events.</span></a>
     </div>
     <div class="disclaimer">Educational content only. Trading options, futures, stocks, forex, and crypto involves risk. Results shown anywhere on this site are examples, not guarantees or typical outcomes. <a href="risk-disclosure.html" style="color:var(--gold);">Read the full risk disclosure</a>.</div>
@@ -79,30 +79,40 @@
     <a href="privacy.html" style="color:var(--gold);text-decoration:none;font-size:.8rem;">Privacy</a>
     <a href="index.html" style="color:var(--gold);text-decoration:none;font-size:.8rem;">Home</a>
   </div>
-  <p style="color:var(--muted);font-size:.75rem;">© 2026 St Trades · Educational content only · Not financial advice</p>
+  <p style="color:var(--muted);font-size:.75rem;">© 2026 PJ Trades x St · Educational content only · Not financial advice</p>
 </footer>
 <script>
 const VERIFY_ENDPOINT = '/api/verify-premium';
-const GUIDANCE_ENDPOINT = '/api/premium-guidance-page';
-const TOKEN_KEY = 'vjm_premium_session_token_v1';
-const TOKEN_EXP_KEY = 'vjm_premium_session_expires_v1';
-const LEGACY_UNLOCK_KEY = 'blueprint_premium_unlocked_v2';
+// Premium sessions are HttpOnly cookies issued by the server; no tokens are
+// stored in JavaScript-accessible storage.
 function msg(text, ok){const el=document.getElementById('guidance-msg');if(!el)return;el.textContent=text;el.className='msg '+(ok?'ok':'no');}
 function loading(on){const el=document.getElementById('guidance-loader');if(el)el.classList.toggle('show',!!on);}
-function saveSession(data){if(data.token)localStorage.setItem(TOKEN_KEY,data.token);if(data.expiresAt)localStorage.setItem(TOKEN_EXP_KEY,data.expiresAt);localStorage.setItem(LEGACY_UNLOCK_KEY,'yes');}
-function clearSession(){localStorage.removeItem(TOKEN_KEY);localStorage.removeItem(TOKEN_EXP_KEY);localStorage.removeItem(LEGACY_UNLOCK_KEY);}
-async function loadGuidanceWithToken(token){
-  if(!token){msg('No saved premium session found. Enter your member access code.',false);return;}
-  loading(true); msg('Checking member session…',true);
+function showVerifiedCard(){
+  const card=document.getElementById('signin');
+  if(card){
+    card.removeAttribute('aria-labelledby');
+    card.setAttribute('aria-label','Premium verified');
+    card.innerHTML='<h2>✅ Premium Verified</h2><p>Your membership is active. The full guidance modules for this page are still being built out — for now, DM <strong>St1101</strong> on Discord and you\'ll get the current lesson links and checklists directly.</p><button class="btn btn-ghost" type="button" onclick="signOutGuidance()">Sign Out</button>';
+  }
+  msg('',true);
+}
+async function signOutGuidance(){
+  try{await fetch('/api/logout-premium',{method:'POST',credentials:'same-origin'});}catch(e){}
+  location.reload();
+}
+async function checkSession(){
   try{
-    const res=await fetch('/api/verify-premium',{headers:{Authorization:'Bearer '+token},credentials:'same-origin',cache:'no-store'});
+    const res=await fetch(VERIFY_ENDPOINT,{credentials:'same-origin',cache:'no-store'});
     const data=await res.json().catch(()=>({}));
-    if(!res.ok||!data.ok||!data.active){clearSession(); msg(data.error||'Session expired or invalid. Sign in again.',false); return;}
-    const card=document.getElementById('signin');
-    if(card)card.innerHTML='<h2 id="signin-title">✅ Premium Verified</h2><p>Your access code is active. The full guidance modules for this page are still being built out — for now, DM <strong>St1101</strong> on Discord and you\'ll get the current lesson links and checklists directly.</p><button class="btn btn-ghost" type="button" onclick="clearSession();location.reload();">Sign Out</button>';
-    msg('',true);
-  }catch(err){msg('Could not verify your session. Refresh and try again, or DM St1101 if it keeps happening.',false);}
-  finally{loading(false);}
+    return !!(res.ok&&data.ok&&data.active);
+  }catch(err){return false;}
+}
+async function loadSavedSession(){
+  loading(true); msg('Checking member session…',true);
+  const active=await checkSession();
+  loading(false);
+  if(active){showVerifiedCard();return;}
+  msg('No saved premium session found. Enter your member access code.',false);
 }
 async function unlockPremiumGuidance(){
   const input=document.getElementById('premium-code-input');
@@ -112,14 +122,18 @@ async function unlockPremiumGuidance(){
   try{
     const res=await fetch(VERIFY_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({code})});
     const data=await res.json().catch(()=>({}));
-    if(res.ok&&data.ok&&data.token){saveSession(data); if(input)input.value=''; await loadGuidanceWithToken(data.token); return;}
-    msg(data.message||'Incorrect code. DM St1101 on Discord for access.',false);
+    if(res.ok&&data.ok){
+      if(input)input.value='';
+      msg('',true);
+      showVerifiedCard();
+      return;
+    }
+    msg(data.error||'Incorrect code. DM St1101 on Discord for access.',false);
   }catch(err){msg('Access check unavailable. Refresh and try again, or DM St1101.',false);}
   finally{loading(false);}
 }
-function loadSavedSession(){loadGuidanceWithToken(localStorage.getItem(TOKEN_KEY)||'');}
 document.getElementById('premium-code-input').addEventListener('keydown',function(e){if(e.key==='Enter')unlockPremiumGuidance();});
-window.addEventListener('DOMContentLoaded',function(){const token=localStorage.getItem(TOKEN_KEY); if(token) loadGuidanceWithToken(token);});
+window.addEventListener('DOMContentLoaded',async function(){if(await checkSession())showVerifiedCard();});
 </script>
 </body>
 </html>

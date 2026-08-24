@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Pre-Market Brief | VJM / St Trades</title>
+<meta name="description" content="Every morning: index posture, a futures-proxy lean for NQ/ES traders, biggest stock movers, and the news that matters — sourced, timestamped, and educational. Not financial advice.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://notfinancialadvicevjm.com/pre-market/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/tokens.css">
+<style>
+  body.vjm-page{margin:0}
+  .nav{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;
+    padding:0 22px;height:62px;background:rgba(6,9,13,.9);backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--vjm-border)}
+  .brand{font-family:var(--vjm-font-display);font-weight:900;font-size:1.25rem;letter-spacing:2px;
+    color:var(--vjm-red);text-decoration:none}
+  .navlinks{display:flex;gap:8px;flex-wrap:wrap}
+  .navlinks a{color:var(--vjm-muted);text-decoration:none;font-size:.76rem;font-weight:800;
+    border:1px solid var(--vjm-border);border-radius:999px;padding:7px 12px;background:rgba(255,255,255,.03)}
+  .navlinks a:hover,.navlinks a:focus-visible{color:var(--vjm-gold);border-color:var(--vjm-gold);outline:none}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:20px}
+  h2.sec{font-family:var(--vjm-font-display);font-weight:900;font-size:1.5rem;margin:34px 0 10px;
+    text-transform:uppercase;letter-spacing:.5px}
+  .lean-label{font-family:var(--vjm-font-display);font-weight:900;font-size:clamp(1.8rem,4vw,2.6rem);
+    text-transform:uppercase;line-height:1}
+  .lean-long{color:var(--vjm-green)} .lean-short{color:#ff7a7a} .lean-neutral{color:var(--vjm-amber)}
+  .mover-row{display:flex;justify-content:space-between;gap:10px;padding:7px 4px;border-bottom:1px solid var(--vjm-border);font-size:.86rem}
+  .mover-row:last-child{border-bottom:none}
+  .news-item{padding:9px 4px;border-bottom:1px solid var(--vjm-border)}
+  .news-item:last-child{border-bottom:none}
+  .news-item a{color:var(--vjm-text);text-decoration:none;font-size:.88rem;font-weight:500}
+  .news-item a:hover{color:var(--vjm-gold)}
+  .news-meta{font-size:.72rem;color:var(--vjm-muted);margin-top:2px}
+  .brief-body{white-space:pre-wrap;font-size:.95rem;color:#dbe6f3}
+  .skeleton{height:90px;border-radius:var(--vjm-radius-m);background:linear-gradient(90deg,#101623,#16203a,#101623);
+    background-size:200% 100%;animation:pulse 1.4s infinite}
+  @keyframes pulse{to{background-position:-200% 0}}
+  @media (prefers-reduced-motion:reduce){.skeleton{animation:none}}
+  footer{border-top:1px solid var(--vjm-border);padding:26px;text-align:center;color:var(--vjm-muted);font-size:.78rem}
+</style>
+</head>
+<body class="vjm-page">
+<a class="skip-link" href="#main" style="position:absolute;left:-999px;top:0;background:var(--vjm-gold);color:#000;padding:10px 14px;border-radius:8px;z-index:99"
+   onfocus="this.style.left='16px'" onblur="this.style.left='-999px'">Skip to brief</a>
+<nav class="nav">
+  <a class="brand" href="/">ST TRADES</a>
+  <div class="navlinks">
+    <a href="/">Home</a><a href="stock-lab.html">Stock Lab</a><a href="options-lab.html">Options Lab</a>
+    <a href="forex-calendar.html">Calendar</a><a href="prop-firms.html">Prop Firms</a><a href="premium-guidance.html">Premium</a>
+  </div>
+</nav>
+
+<main class="vjm-shell" id="main">
+  <span class="vjm-chip red">☕ Every weekday morning</span>
+  <h1 class="vjm-hero-title" style="margin-top:10px">Pre-Market <span class="gold">Brief</span></h1>
+  <p style="color:var(--vjm-muted);max-width:640px">Index posture, an explicitly low-confidence futures-proxy lean,
+  real movers, and headlines with sources — assembled automatically each morning and pushed to Discord.
+  Everything shows its data source and time.</p>
+  <div id="statusRow" style="margin-top:14px"></div>
+
+  <section aria-labelledby="narrative-h">
+    <h2 class="sec" id="narrative-h">The Brief</h2>
+    <div class="vjm-card"><div class="brief-body" id="narrative">Loading today's brief…</div></div>
+  </section>
+
+  <section aria-labelledby="lean-h">
+    <h2 class="sec" id="lean-h">Futures-proxy lean <span class="vjm-chip amber" style="vertical-align:middle">heuristic · low confidence</span></h2>
+    <div class="grid">
+      <div class="vjm-card" id="leanCard">
+        <div class="lean-label lean-neutral" id="leanLabel">—</div>
+        <p style="color:var(--vjm-muted);font-size:.82rem" id="leanMethod"></p>
+      </div>
+      <div class="vjm-card">
+        <strong style="font-size:.85rem">Why this label?</strong>
+        <ul id="leanDrivers" style="margin:10px 0 0;padding-left:18px;color:var(--vjm-muted);font-size:.84rem"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="movers-h">
+    <h2 class="sec" id="movers-h">Biggest movers</h2>
+    <div class="grid">
+      <div class="vjm-card"><strong>Gainers</strong><div id="gainers" style="margin-top:8px"></div></div>
+      <div class="vjm-card"><strong>Losers</strong><div id="losers" style="margin-top:8px"></div></div>
+    </div>
+    <p class="vjm-note" style="margin-top:10px" id="moverSource"></p>
+  </section>
+
+  <section aria-labelledby="news-h">
+    <h2 class="sec" id="news-h">Headlines worth knowing</h2>
+    <div class="vjm-card" id="headlines"></div>
+  </section>
+
+  <p class="vjm-note" style="margin-top:26px">Educational information only — not financial advice.
+  ETF proxies (SPY/QQQ) are not CME futures order flow. Verify everything on your platform before risking money.</p>
+</main>
+
+<footer>VJM / St Trades · <a href="/" style="color:var(--vjm-gold)">Home</a> · Automated brief · Sources labeled inline</footer>
+<script src="/assets/chatbot.js" defer></script>
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const pctCls = (v) => v >= 0 ? 'pos' : 'neg';
+  const fmtPct = (v) => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(2) + '%';
+
+  function statusChip(text, cls){ $('statusRow').innerHTML = '<span class="vjm-chip ' + cls + '">' + esc(text) + '</span>'; }
+
+  function moverRows(list){
+    if (!list || !list.length) return '<em style="color:var(--vjm-muted)">Unavailable this morning.</em>';
+    return list.slice(0,6).map(m =>
+      '<div class="mover-row"><strong>' + esc(m.symbol) + '</strong><span class="num ' + pctCls(m.changePct||0) + '">' +
+      fmtPct(m.changePct) + '</span></div>').join('');
+  }
+
+  async function load(){
+    try{
+      const res = await fetch('/api/market-brief', {credentials:'same-origin', cache:'no-store'});
+      const d = await res.json().catch(() => ({ok:false}));
+      if(!res.ok || !d.ok){
+        $('narrative').textContent = "No brief has been generated yet. It publishes automatically each weekday morning — or the owner can trigger it from GitHub Actions.";
+        statusChip('Awaiting first run', 'amber');
+        return;
+      }
+      statusChip('Generated ' + new Date(d.generatedAt).toLocaleString() + (d.dataOnly ? ' · data-only (AI engine offline)' : ''), d.dataOnly ? 'blue' : 'green');
+
+      if(d.narrative){ $('narrative').textContent = d.narrative; }
+      else { $('narrative').textContent = 'AI narrative unavailable this run — raw sections below.'; }
+
+      if(d.lean){
+        const map = {'long-leaning':'lean-long','short-leaning':'lean-short','neutral':'lean-neutral'};
+        $('leanLabel').textContent = d.lean.lean.replace('-', ' ');
+        $('leanLabel').className = 'lean-label ' + (map[d.lean.lean] || 'lean-neutral');
+        $('leanMethod').textContent = d.lean.method;
+        $('leanDrivers').innerHTML = (d.lean.drivers||[]).map(x=>'<li>'+esc(x)+'</li>').join('');
+      }
+
+      if(d.movers){
+        $('gainers').innerHTML = moverRows(d.movers.gainers);
+        $('losers').innerHTML = moverRows(d.movers.losers);
+        $('moverSource').textContent = 'Source: ' + d.movers.source + '.';
+      } else {
+        $('gainers').innerHTML = $('losers').innerHTML = '<em style="color:var(--vjm-muted)">Unavailable.</em>';
+        $('moverSource').textContent = '';
+      }
+
+      if(d.headlines && d.headlines.length){
+        $('headlines').innerHTML = d.headlines.map(h =>
+          '<div class="news-item"><a target="_blank" rel="noopener noreferrer" href="' + esc(h.link) + '">' + esc(h.title) + '</a>' +
+          '<div class="news-meta">' + esc(h.symbol) + ' · ' + esc(h.publisher) +
+          (h.publishedAt ? ' · ' + new Date(h.publishedAt).toLocaleString() : '') + '</div></div>').join('');
+      } else {
+        $('headlines').innerHTML = '<em style="color:var(--vjm-muted)">Headline feed unreachable this run.</em>';
+      }
+    }catch(e){
+      $('narrative').textContent = 'Could not reach the brief service just now.';
+      statusChip('Offline', 'red');
+    }
+  }
+  load();
+})();
+</script>
+</body>
+</html>

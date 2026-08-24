@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --check assets/research-engine.js && node --check functions/api/research-engine.js && node --check functions/api/verify-premium.js && node --test tests/*.test.mjs"
+    "check:syntax": "node --check assets/research-engine.js && node --check functions/api/research-engine.js && node --check functions/api/verify-premium.js && node --check functions/api/check-member-status.js && node --check functions/api/logout-premium.js && node --check functions/api/forex-calendar.js && node --check functions/api/yahoo-news.js && node --check functions/api/stock-research.js && node --check functions/api/premium-stock-research.js && node --check functions/api/_lib/session.js && node --check functions/api/_lib/http.js",
+    "test": "npm run check:syntax && node --test \"tests/*.test.mjs\""
   }
 }

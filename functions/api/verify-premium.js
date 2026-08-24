@@ -1,160 +1,201 @@
-// Cloudflare Pages Function backing premium access across the whole site.
+// Cloudflare Pages Function: /api/verify-premium
 //
-// POST /api/verify-premium   { "code": "JOHN-2298" }
-//   -> checks the code against the live sheet bridge (same MEMBERS_STATUS_URL
-//      used by check-member-status.js). If the code exists and its member's
-//      status is Active/Renewed, issues a signed session token.
+// POST /api/verify-premium   { "code": "XXXX-1234" }
+//   Validates a member access code against the owner's member bridge
+//   (Apps Script). On success issues an HttpOnly session cookie.
+//   The token is NEVER returned in the response body or accepted via URL.
 //
-// GET  /api/verify-premium with Authorization: Bearer <token>
-//   -> validates a previously-issued token without placing it in a URL.
-//      The legacy ?token= form remains accepted for compatibility.
+// GET /api/verify-premium
+//   Returns the current session state from the session cookie only.
+//   Used by pages to restore "already signed in" state on load.
 //
-// Env vars used:
-//   MEMBERS_STATUS_URL   - the Apps Script bridge URL (already configured)
-//   SESSION_DAYS         - how many days a session stays valid (default 7)
-//   PREMIUM_ACCESS_CODES - reused as the HMAC signing secret for tokens
+// Env vars:
+//   SESSION_SIGNING_SECRET   required (>=32 chars) dedicated signing key
+//   LEGACY_ALLOW_CODES_AS_KEY optional "true" migration escape hatch
+//   MEMBERS_STATUS_URL       legacy full-map bridge URL (deprecated)
+//   MEMBERS_BRIDGE_URL       new authenticated single-record bridge URL
+//   MEMBERS_BRIDGE_SECRET    shared secret for the authenticated bridge
+//   SESSION_DAYS             optional session lifetime (default 7, max 30)
+
+import {
+  resolveSigningSecret, signSession, getSession, sessionDays,
+} from './_lib/session.js';
+import { json, jsonWithSession, checkRateLimit } from './_lib/http.js';
+
+const GENERIC_BAD_CODE = 'We could not activate this code. Check it and try again, or DM St1101 on Discord.';
 
 export async function onRequestPost(context) {
   try { return await handlePost(context); }
-  catch (err) { return jsonResponse({ ok: false, error: 'Unexpected error: ' + describeError(err) }, 500); }
+  catch { return json({ ok: false, error: 'Service temporarily unavailable.' }, 500); }
 }
 
 export async function onRequestGet(context) {
   try { return await handleGet(context); }
-  catch (err) { return jsonResponse({ ok: false, error: 'Unexpected error: ' + describeError(err) }, 500); }
+  catch { return json({ ok: false, error: 'Service temporarily unavailable.' }, 500); }
 }
 
 async function handlePost(context) {
   const { request, env } = context;
 
+  const limit = await checkRateLimit(env, request, 'verify', 10);
+  if (!limit.allowed) {
+    return json({ ok: false, error: 'Too many attempts. Wait a minute and try again.' }, 429);
+  }
+
+  const secret = resolveSigningSecret(env);
+  if (!secret) {
+    // Fail closed: never sign sessions with improvised key material.
+    return json({ ok: false, error: 'Sign-in is not configured. Contact the admin.' }, 503);
+  }
+
   let body;
   try {
     body = await request.json();
-  } catch (err) {
-    return jsonResponse({ ok: false, error: 'Invalid JSON body' }, 400);
+  } catch {
+    return json({ ok: false, error: 'Invalid request.' }, 400);
   }
 
-  const code = String(body.code || '').trim().toUpperCase();
-  if (!code) {
-    return jsonResponse({ ok: false, error: 'Enter your premium access code.' }, 400);
+  const code = String((body && body.code) || '').trim().toUpperCase().slice(0, 64);
+  if (!code || code.length > 64 || !/^[A-Z0-9-]{4,64}$/.test(code)) {
+    return json({ ok: false, error: GENERIC_BAD_CODE }, 401);
   }
 
-  const bridge = await fetchBridge(env);
-  if (!bridge.ok) return jsonResponse({ ok: false, error: bridge.error }, 502);
-
-  const codes = bridge.data.codes || {};
-  const match = codes[code];
-  if (!match) {
-    return jsonResponse({ ok: false, error: 'Incorrect code. DM St1101 on Discord for access.' }, 401);
+  const record = await lookupByCode(env, code);
+  if (!record) {
+    // One generic message for unknown code AND inactive member: prevents
+    // probing the sheet for which codes exist.
+    await auditEvent(env, 'verify_code', 'rejected', code);
+    return json({ ok: false, error: GENERIC_BAD_CODE }, 401);
   }
 
-  const normalized = String(match.status || '').toLowerCase();
-  const active = normalized === 'active' || normalized === 'renewed';
-  if (!active) {
-    return jsonResponse({ ok: false, error: 'This code is on file but not currently active. DM St1101 on Discord.' }, 403);
-  }
+  const days = sessionDays(env);
+  const expiresAt = Date.now() + days * 24 * 60 * 60 * 1000;
+  const memberRef = await memberRefFor(code);
+  const token = await signSession(
+    { v: 1, mr: memberRef, dn: record.discord || '', exp: expiresAt },
+    secret
+  );
+  await auditEvent(env, 'verify_code', 'granted', code);
 
-  const sessionDays = Number(env.SESSION_DAYS) > 0 ? Number(env.SESSION_DAYS) : 7;
-  const expiresAt = Date.now() + sessionDays * 24 * 60 * 60 * 1000;
-  const token = await signToken({ code, discord: match.discord, exp: expiresAt }, signingSecret(env));
-
-  return jsonResponse({ ok: true, token, expiresAt: new Date(expiresAt).toISOString(), discord: match.discord });
+  return jsonWithSession(
+    { ok: true, expiresAt: new Date(expiresAt).toISOString(), discord: record.discord || null },
+    token,
+    days * 24 * 60 * 60
+  );
 }
 
 async function handleGet(context) {
   const { request, env } = context;
-  const url = new URL(request.url);
-  const authorization = request.headers.get('Authorization') || '';
-  const token = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : (url.searchParams.get('token') || '');
-  if (!token) return jsonResponse({ ok: false, error: 'Missing token' }, 400);
-
-  const payload = await verifyToken(token, signingSecret(env));
-  if (!payload) return jsonResponse({ ok: false, active: false, error: 'Invalid or tampered session token' }, 401);
-  if (payload.exp < Date.now()) return jsonResponse({ ok: false, active: false, error: 'Session expired' }, 401);
-
-  return jsonResponse({ ok: true, active: true, discord: payload.discord });
+  const session = await getSession(request, env);
+  if (!session) {
+    return json({ ok: true, active: false }, 200);
+  }
+  return json({
+    ok: true,
+    active: true,
+    discord: session.dn || null,
+    expiresAt: new Date(Number(session.exp)).toISOString(),
+  });
 }
 
-async function fetchBridge(env) {
-  const sourceUrl = env.MEMBERS_STATUS_URL;
-  if (!sourceUrl) return { ok: false, error: 'MEMBERS_STATUS_URL is not configured' };
+// ---------------------------------------------------------------------------
+// Member bridge access. Two modes:
+//  1) Authenticated single-record bridge (preferred): MEMBERS_BRIDGE_URL +
+//     MEMBERS_BRIDGE_SECRET. Server-to-server signed lookup; returns one row.
+//  2) Legacy full-map bridge (deprecated): MEMBERS_STATUS_URL. Kept ONLY so
+//     the site keeps working while the owner migrates the sheet. Never
+//     exposed to browsers; scheduled for removal (see APPS-SCRIPT-INTEGRATION).
+// ---------------------------------------------------------------------------
 
-  let res, rawText, data;
+async function lookupByCode(env, code) {
+  if (env.MEMBERS_BRIDGE_URL && env.MEMBERS_BRIDGE_SECRET) {
+    return lookupViaSecureBridge(env, { type: 'code', value: code });
+  }
+  if (env.MEMBERS_STATUS_URL) {
+    return lookupViaLegacyBridge(env, (data) => {
+      const entry = (data.codes || {})[code];
+      if (!entry) return null;
+      const status = String(entry.status || '').toLowerCase();
+      if (status !== 'active' && status !== 'renewed') return null;
+      return { discord: entry.discord || '' };
+    });
+  }
+  return null;
+}
+
+async function lookupViaSecureBridge(env, query) {
+  const timestamp = Date.now();
+  const nonce = crypto.randomUUID();
+  const bodyJson = JSON.stringify(query);
+  const mac = await bridgeMac(env.MEMBERS_BRIDGE_SECRET, timestamp, nonce, bodyJson);
+  let res;
   try {
-    res = await fetch(sourceUrl, { cf: { cacheTtl: 15, cacheEverything: true } });
-    rawText = await res.text();
-  } catch (err) {
-    return { ok: false, error: 'Could not reach the member status sheet' };
+    res = await fetch(String(env.MEMBERS_BRIDGE_URL), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ timestamp, nonce, payload: bodyJson, mac }),
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch {
+    throw Object.assign(new Error('bridge unreachable'), { status: 502 });
   }
-  try {
-    data = JSON.parse(rawText);
-  } catch (err) {
-    return { ok: false, error: 'Sheet bridge did not return JSON (got: ' + rawText.slice(0, 200) + ')' };
-  }
-  if (!data || data.ok !== true) {
-    return { ok: false, error: (data && data.error) || 'Sheet bridge returned an error' };
-  }
-  return { ok: true, data };
+  if (!res.ok) throw Object.assign(new Error('bridge error'), { status: 502 });
+  const data = await res.json().catch(() => null);
+  if (!data || data.ok !== true || !data.found) return null;
+  const status = String(data.status || '').toLowerCase();
+  if (status !== 'active' && status !== 'renewed') return null;
+  return { discord: String(data.discord || '') };
 }
 
-function signingSecret(env) {
-  if (!env.PREMIUM_ACCESS_CODES) throw new Error('PREMIUM_ACCESS_CODES is not configured');
-  return env.PREMIUM_ACCESS_CODES;
-}
-
-async function signToken(payload, secret) {
-  const payloadB64 = base64UrlEncode(JSON.stringify(payload));
-  const sigB64 = await hmac(payloadB64, secret);
-  return payloadB64 + '.' + sigB64;
-}
-
-async function verifyToken(token, secret) {
-  const parts = token.split('.');
-  if (parts.length !== 2) return null;
-  const [payloadB64, sigB64] = parts;
-  const expectedSig = await hmac(payloadB64, secret);
-  if (!timingSafeEqual(sigB64, expectedSig)) return null;
-  try {
-    return JSON.parse(base64UrlDecode(payloadB64));
-  } catch (err) {
-    return null;
-  }
-}
-
-async function hmac(message, secret) {
+async function bridgeMac(secret, timestamp, nonce, bodyJson) {
   const key = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(secret),
     { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
   );
-  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message));
-  return base64UrlEncode(String.fromCharCode(...new Uint8Array(sig)));
+  const msg = `${timestamp}\n${nonce}\n${bodyJson}`;
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(msg));
+  return [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-function base64UrlEncode(str) {
-  return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function lookupViaLegacyBridge(env, pick) {
+  let res;
+  try {
+    res = await fetch(String(env.MEMBERS_STATUS_URL), {
+      cf: { cacheTtl: 15, cacheEverything: true },
+      signal: AbortSignal.timeout(8000),
+    });
+  } catch {
+    throw Object.assign(new Error('bridge unreachable'), { status: 502 });
+  }
+  const text = await res.text().catch(() => '');
+  let data;
+  try { data = JSON.parse(text); } catch { 
+    throw Object.assign(new Error('bridge returned invalid JSON'), { status: 502 });
+  }
+  if (!data || data.ok !== true) {
+    throw Object.assign(new Error('bridge rejected request'), { status: 502 });
+  }
+  return pick(data);
 }
 
-function base64UrlDecode(str) {
-  const padded = str.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((str.length + 3) % 4);
-  return decodeURIComponent(escape(atob(padded)));
+async function memberRefFor(code) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('vjm-member:' + code));
+  return [...new Uint8Array(digest)].slice(0, 8).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-function timingSafeEqual(a, b) {
-  a = String(a);
-  b = String(b);
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
+async function auditEvent(env, type, outcome, subject) {
+  if (!env.RATELIMIT_DB && !env.RESEARCH_DB) return;
+  const db = env.RATELIMIT_DB || env.RESEARCH_DB;
+  try {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(subject));
+    const hash = [...new Uint8Array(digest)].slice(0, 6).map((b) => b.toString(16).padStart(2, '0')).join('');
+    await db.prepare(
+      'INSERT INTO audit_events (event_type, outcome, subject_hash) VALUES (?1, ?2, ?3)'
+    ).bind(type, outcome, hash).run();
+  } catch {
+    // Audit is best-effort; never block auth on logging failure.
+  }
 }
 
-function describeError(err) {
-  return err && err.message ? err.message : String(err);
-}
-
-function jsonResponse(obj, status = 200) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-  });
-}
+// Exported for contract tests.
+export { GENERIC_BAD_CODE };

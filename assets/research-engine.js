@@ -1,8 +1,6 @@
 (() => {
   'use strict';
 
-  const TOKEN_KEY = 'vjm_premium_session_token_v1';
-  const EXP_KEY = 'vjm_premium_session_expires_v1';
   const $ = (id) => document.getElementById(id);
   const state = { module: 'options', data: {}, loading: false };
   const COLORS = { red:'#dc2626', green:'#00e676', amber:'#f59e0b', blue:'#60a5fa', muted:'#8ea1b8', text:'#edf3fb', line:'#30445e' };
@@ -71,10 +69,8 @@
   }
 
   async function jsonFetch(url, options = {}) {
-    const token = localStorage.getItem(TOKEN_KEY) || '';
-    const headers = {...(options.headers || {})};
-    if (token) headers.Authorization = 'Bearer ' + token;
-    const res = await fetch(url, {...options, headers, credentials:'same-origin', cache:'no-store'});
+    // Session travels via HttpOnly cookie; no Authorization header needed.
+    const res = await fetch(url, {...options, credentials:'same-origin', cache:'no-store'});
     const payload = await res.json().catch(() => ({ok:false,error:'The server returned a non-JSON response.'}));
     if (!res.ok || payload.ok === false) {
       const err = new Error(payload.error || payload.message || `Request failed (${res.status})`);
@@ -101,22 +97,21 @@
     if (!code) { setMessage('Enter your premium access code.', 'error'); return; }
     $('unlockButton').disabled = true; setMessage('Checking access…');
     try {
-      const data = await jsonFetch('/api/verify-premium', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
-      if (data.token) localStorage.setItem(TOKEN_KEY, data.token);
-      if (data.expiresAt) localStorage.setItem(EXP_KEY, data.expiresAt);
+      await jsonFetch('/api/verify-premium', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
       setMessage('Access verified.', 'ok'); activateEngine();
     } catch (err) { setMessage(err.message, 'error'); }
     finally { $('unlockButton').disabled = false; }
   }
-  async function restore() {
-    const token = localStorage.getItem(TOKEN_KEY) || '';
-    if (!token) { setMessage('No saved session was found on this device.', 'error'); return; }
-    $('restoreButton').disabled = true; setMessage('Restoring session…');
+  async function restore(quiet = false) {
+    if (!quiet) { $('restoreButton').disabled = true; setMessage('Restoring session…'); }
     try {
       const data = await jsonFetch('/api/verify-premium');
-      if (!data.active) throw new Error('The saved session is no longer active.');
+      if (!data.active) {
+        if (!quiet) throw new Error('No active premium session was found on this device.');
+        return;
+      }
       setMessage('Session restored.', 'ok'); activateEngine();
-    } catch (err) { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(EXP_KEY); setMessage(err.message, 'error'); }
+    } catch (err) { setMessage(err.message, 'error'); }
     finally { $('restoreButton').disabled = false; }
   }
   function activateEngine() {
@@ -126,7 +121,7 @@
     loadCurrent();
   }
   function signOut() {
-    localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(EXP_KEY); location.reload();
+    fetch('/api/logout-premium', {method:'POST',credentials:'same-origin'}).finally(() => location.reload());
   }
 
   function setModule(module) {
@@ -151,7 +146,6 @@
   function showModuleError(statusId, err) {
     const node = $(statusId);
     if (node) { node.textContent = err.message; node.style.color = '#ff8a8a'; }
-    if (err.status === 401) { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(EXP_KEY); }
   }
 
   async function loadOptions() {
@@ -370,8 +364,8 @@
     $('loadOptions').addEventListener('click',()=>{delete state.data.options;loadOptions()}); $('loadStock').addEventListener('click',()=>{delete state.data.stocks;loadStock()}); $('loadSectors').addEventListener('click',()=>{delete state.data.sectors;loadSectors()}); $('loadBiotech').addEventListener('click',()=>{delete state.data.biotech;loadBiotech()});
     document.querySelectorAll('.lab-control').forEach((input)=>input.addEventListener('input',renderSlopeLab));
     renderSlopeLab(); loadHealth();
-    const expires=Date.parse(localStorage.getItem(EXP_KEY)||'');
-    if(localStorage.getItem(TOKEN_KEY)&&Number.isFinite(expires)&&expires>Date.now())restore();
+    // Quietly auto-restore when a valid session cookie exists.
+    restore(true);
   }
   document.addEventListener('DOMContentLoaded',wire);
 })();

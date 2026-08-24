@@ -40,7 +40,9 @@ for (const file of ['research-engine.html', 'assets/research-engine.js', 'functi
 
 assert.match(html, /meta name="robots" content="noindex,nofollow"/);
 assert.match(html, /Educational research only—not financial advice/);
-assert.match(javascript, /Authorization = 'Bearer ' \+ token/);
+// Sessions travel via HttpOnly cookies; no Bearer tokens in client code.
+assert.doesNotMatch(javascript, /Authorization\s*=\s*'Bearer '/, 'client code must not attach Bearer tokens');
+assert.doesNotMatch(javascript, /localStorage\.getItem\(/, 'client code must not read tokens from storage');
 assert.doesNotMatch(readFileSync(resolve(root, 'CNAME'), 'utf8'), /\s+\n/, 'CNAME must not contain trailing whitespace');
 
 console.log('VJM site structure and secret-leak tests passed.');
