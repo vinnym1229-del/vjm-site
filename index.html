@@ -128,17 +128,20 @@ nav {
   background: rgba(6,9,13,0.97);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
-  padding: 0 20px;
+  padding: 10px 20px;
   display: flex; align-items: center; justify-content: space-between;
-  height: 58px;
+  flex-wrap: wrap;
+  row-gap: 8px;
+  min-height: 58px;
 }
-.nav-brand { font-family: 'Barlow Condensed', sans-serif; font-size: 1.4rem; font-weight: 900; color: var(--gold); letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
-.nav-brand img { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; background: #06090d; }
-.nav-links { display: flex; gap: 4px; flex-wrap: wrap; }
+.nav-brand { font-family: 'Barlow Condensed', sans-serif; font-size: 1.15rem; font-weight: 900; color: var(--gold); letter-spacing: 1.5px; display: flex; align-items: center; gap: 8px; white-space: nowrap; flex: 0 0 auto; }
+.nav-brand img { width: 30px; height: 30px; border-radius: 8px; object-fit: cover; background: #06090d; flex-shrink: 0; }
+.nav-links { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; flex: 1 1 auto; }
 .nav-links a {
-  color: var(--muted); text-decoration: none; font-size: 0.72rem;
-  font-weight: 600; padding: 5px 9px; border-radius: 5px;
-  transition: all .2s; text-transform: uppercase; letter-spacing: .8px;
+  color: var(--muted); text-decoration: none; font-size: 0.68rem;
+  font-weight: 600; padding: 5px 8px; border-radius: 5px;
+  transition: all .2s; text-transform: uppercase; letter-spacing: .6px;
+  white-space: nowrap;
 }
 .nav-links a:hover { color: var(--emerald); background: rgba(16,185,129,0.08); }
 
@@ -496,7 +499,7 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 
 <!-- NAV -->
 <nav>
-  <div class="nav-brand"><img src="assets/logo-nav.jpg" alt="PJ Trades">PJ TRADES <span style="font-size:0.55em;color:var(--muted);font-weight:700;letter-spacing:1px;">× ST</span></div>
+  <div class="nav-brand">PJ TRADES <span style="font-size:0.55em;color:var(--muted);font-weight:700;letter-spacing:1px;">× St</span></div>
   <div class="nav-links">
     <a href="#services">Services</a>
     <a href="#tools">Tools</a>
@@ -545,9 +548,9 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   </div>
   <div class="hero-inner" style="position:relative;z-index:2;">
     <div class="hero-badge"><span class="pulse-dot"></span> 30,000+ members · growing every week</div>
-    <h1>PJ TRADES <span style="display:inline-block;"><span style="font-size:0.42em;vertical-align:middle;color:var(--muted);font-weight:700;letter-spacing:2px;">× ST</span></span><br>
+    <h1>PJ TRADES <span style="display:inline-block;"><span style="font-size:0.42em;vertical-align:middle;color:var(--muted);font-weight:700;letter-spacing:2px;">× St</span></span><br>
     <span class="gold">Markets, Made Simple.</span></h1>
-    <p class="hero-sub">Futures-first trading education with live streams and daily callouts — plus complete options and stock courses. No hype, no secrets withheld. Just a disciplined, repeatable process explained so simply it sticks.</p>
+    <p class="hero-sub">With ten years of hands on experience navigating the fast paced world of financial markets, PJ Trades is a seasoned day trader specializing in futures. Known for a disciplined approach to trading, PJ Trades combines technical analysis, market research, and risk management to consistently identify high probability setups and deliver results.</p>
     <div class="hero-ctas">
       <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-gold" style="font-size:1rem;padding:15px 30px;">⭐ Join Premium — $129/mo</a>
       <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;">💬 Join the Free Discord</a>
@@ -1167,7 +1170,7 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 <!-- FOOTER -->
 <footer>
   <div class="footer-inner">
-    <div class="footer-brand">PJ TRADES <span style="font-size:0.55em;color:var(--muted);">× ST</span></div>
+    <div class="footer-brand">PJ TRADES <span style="font-size:0.55em;color:var(--muted);">× St</span></div>
     <div class="footer-links">
       <a href="#tools">Tools</a>
       <a href="options-lab.html">Options Lab</a>
