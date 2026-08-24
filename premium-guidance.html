@@ -52,7 +52,7 @@
     </section>
   </section>
 
-  <section class="preview" aria-labelledby="preview-title">
+  <section class="preview" aria-labelledby="preview-title" id="free-preview">
     <h2 id="preview-title">Free Start Here Preview</h2>
     <p>This is the foundation every student should understand before touching the locked lessons. The paid guidance is built around one repeatable process: mark meaningful liquidity, wait for the condition, identify the correct zone, confirm, then manage risk.</p>
     <div class="steps">
@@ -70,6 +70,24 @@
       <a class="resource" href="forex-calendar.html"><strong>Check News First</strong><span>Use the Forex Calendar before trading CPI, FOMC, NFP, GDP, PMI, and rate events.</span></a>
     </div>
     <div class="disclaimer">Educational content only. Trading options, futures, stocks, forex, and crypto involves risk. Results shown anywhere on this site are examples, not guarantees or typical outcomes. <a href="risk-disclosure.html" style="color:var(--gold);">Read the full risk disclosure</a>.</div>
+  </section>
+
+  <!-- Lesson Assistant: verified members only. Server-side (functions/api/assistant.js)
+       restricts every answer to the LESSON TEXT collected from #free-preview, so the
+       assistant cannot invent material outside the lesson. -->
+  <!-- TODO: owner to point lessonText() at each paid module's text as modules ship;
+       the endpoint clamps lesson text to 6000 chars per request. -->
+  <section class="preview" id="lesson-companion" aria-labelledby="lesson-title" hidden>
+    <h2 id="lesson-title">Lesson <span class="gold">Assistant</span></h2>
+    <p>Ask questions about the guidance material. Answers come strictly from this page's foundation lessons — if something isn't covered there, the assistant says so instead of guessing.</p>
+    <div style="background:rgba(17,24,39,.72);border:1px solid var(--bdr);border-radius:14px;padding:16px;">
+      <div id="lesson-log" aria-live="polite" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:12px;"></div>
+      <form id="lesson-form" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input class="field" id="lesson-question" type="text" maxlength="500" placeholder="Ask about this lesson…" aria-label="Your lesson question" style="margin:0;flex:1;min-width:200px;">
+        <button class="btn btn-gold" type="submit" id="lesson-ask">Ask</button>
+      </form>
+      <p style="color:var(--muted);font-size:.72rem;margin-top:10px;">Answers are generated only from this lesson's text. Educational content — not financial advice.</p>
+    </div>
   </section>
 </main>
 <footer style="border-top:1px solid var(--bdr);padding:24px;text-align:center;background:#020508;">
@@ -94,7 +112,64 @@ function showVerifiedCard(){
     card.setAttribute('aria-label','Premium verified');
     card.innerHTML='<h2>✅ Premium Verified</h2><p>Your membership is active. The full guidance modules for this page are still being built out — for now, DM <strong>St1101</strong> on Discord and you\'ll get the current lesson links and checklists directly.</p><button class="btn btn-ghost" type="button" onclick="signOutGuidance()">Sign Out</button>';
   }
+  showLessonCompanion();
   msg('',true);
+}
+// ─── Lesson Assistant (verified members only) ───
+// Every answer is grounded server-side on the lesson text below; the model is
+// instructed to refuse anything the lesson does not cover.
+function lessonText(){
+  const parts=[];
+  const intro=document.querySelector('#free-preview > p');
+  if(intro) parts.push('OVERVIEW: '+intro.textContent.trim());
+  document.querySelectorAll('#free-preview .step').forEach((s,i)=>{
+    const h=s.querySelector('h3'), p=s.querySelector('p');
+    if(h) parts.push((i+1)+'. '+h.textContent.trim());
+    if(p) parts.push(p.textContent.trim());
+  });
+  return parts.join('\n').slice(0,6000);
+}
+function lessonRow(text, kind){
+  const log=document.getElementById('lesson-log');
+  const d=document.createElement('div');
+  d.style.padding='9px 13px';d.style.borderRadius='12px';d.style.fontSize='.86rem';
+  d.style.lineHeight='1.5';d.style.whiteSpace='pre-wrap';d.style.maxWidth='88%';
+  if(kind==='q'){d.style.background='var(--gold)';d.style.color='#fff';d.style.alignSelf='flex-end';}
+  else{d.style.border='1px solid var(--bdr)';d.style.color='var(--text)';}
+  d.textContent=text;
+  log.appendChild(d);
+  log.scrollTop=log.scrollHeight;
+  return d;
+}
+let lessonBusy=false;
+async function askLesson(event){
+  event.preventDefault();
+  if(lessonBusy) return;
+  const input=document.getElementById('lesson-question');
+  const q=(input.value||'').trim();
+  if(!q) return;
+  lessonBusy=true;
+  document.getElementById('lesson-ask').disabled=true;
+  input.value='';
+  lessonRow(q,'q');
+  const thinking=lessonRow('Checking the lesson…','a');
+  try{
+    const res=await fetch('/api/assistant',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({question:q,lessonText:lessonText()})});
+    const data=await res.json().catch(()=>({ok:false}));
+    thinking.remove();
+    lessonRow(data.ok&&data.narrative ? data.narrative : (data.error||'Assistant unavailable right now — try again shortly.'),'a');
+  }catch(err){
+    thinking.remove();
+    lessonRow('Network hiccup — try again in a moment.','a');
+  }finally{
+    lessonBusy=false;
+    document.getElementById('lesson-ask').disabled=false;
+  }
+}
+document.getElementById('lesson-form').addEventListener('submit',askLesson);
+function showLessonCompanion(){
+  const s=document.getElementById('lesson-companion');
+  if(s) s.hidden=false;
 }
 async function signOutGuidance(){
   try{await fetch('/api/logout-premium',{method:'POST',credentials:'same-origin'});}catch(e){}
