@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Prop Firms — Deals & Links | VJM / St Trades</title>
+<meta name="description" content="Prop firms Vinny's community trades with: links, current promo codes, and promo images. Owner-managed list, updated from one sheet. Educational directory only.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://notfinancialadvicevjm.com/prop-firms/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/tokens.css">
+<style>
+  body.vjm-page{margin:0}
+  .nav{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;
+    padding:0 22px;height:62px;background:rgba(6,9,13,.9);backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--vjm-border)}
+  .brand{font-family:var(--vjm-font-display);font-weight:900;font-size:1.25rem;letter-spacing:2px;color:var(--vjm-red);text-decoration:none}
+  .navlinks{display:flex;gap:8px;flex-wrap:wrap}
+  .navlinks a{color:var(--vjm-muted);text-decoration:none;font-size:.76rem;font-weight:800;
+    border:1px solid var(--vjm-border);border-radius:999px;padding:7px 12px;background:rgba(255,255,255,.03)}
+  .navlinks a:hover{color:var(--vjm-gold);border-color:var(--vjm-gold)}
+  .firms{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;margin-top:24px}
+  .firm img{width:100%;border-radius:12px;border:1px solid var(--vjm-border);aspect-ratio:3/2;object-fit:cover;background:#0a0f1a}
+  .firm h3{font-family:var(--vjm-font-display);text-transform:uppercase;font-weight:900;font-size:1.35rem;margin:12px 0 4px}
+  .code-row{display:flex;gap:8px;align-items:center;margin-top:10px}
+  .code-box{flex:1;font-family:var(--vjm-font-mono);background:#0a0f1a;border:1px dashed var(--vjm-border-strong);
+    border-radius:10px;padding:10px 12px;text-align:center;letter-spacing:2px}
+  .copy-btn{min-width:64px}
+  .empty{padding:60px 20px;text-align:center;color:var(--vjm-muted)}
+  footer{border-top:1px solid var(--vjm-border);padding:26px;text-align:center;color:var(--vjm-muted);font-size:.78rem;margin-top:50px}
+</style>
+</head>
+<body class="vjm-page">
+<nav class="nav">
+  <a class="brand" href="/">ST TRADES</a>
+  <div class="navlinks">
+    <a href="/">Home</a><a href="premarket.html">Pre-Market</a><a href="stock-lab.html">Stock Lab</a>
+    <a href="forex-calendar.html">Calendar</a><a href="premium-guidance.html">Premium</a>
+  </div>
+</nav>
+
+<main class="vjm-shell">
+  <span class="vjm-chip red">Community partners</span>
+  <h1 class="vjm-hero-title" style="margin-top:10px">Prop <span class="gold">Firms</span></h1>
+  <p style="color:var(--vjm-muted);max-width:640px">The prop firms our community uses, with current codes.
+  This directory is informational; evaluate payout rules and risk yourself. Funded accounts are not easy money.</p>
+
+  <div id="firms" class="firms" aria-live="polite"></div>
+  <noscript><p class="empty">Enable JavaScript to load the firm directory.</p></noscript>
+</main>
+
+<footer>VJM / St Trades · Owner-managed directory · Educational only — not financial advice</footer>
+
+<script src="assets/chatbot.js" defer></script>
+<script>
+(function(){
+  const root = document.getElementById('firms');
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+
+  function card(f){
+    const div = document.createElement('article');
+    div.className = 'vjm-card firm';
+    let html = '';
+    if (f.imageUrl) html += '<img src="' + esc(f.imageUrl) + '" alt="' + esc(f.name) + ' promotion" loading="lazy">';
+    html += '<h3>' + esc(f.name) + '</h3>';
+    if (f.discount) html += '<span class="vjm-chip green">' + esc(f.discount) + '</span>';
+    if (f.notes) html += '<p style="color:var(--vjm-muted);font-size:.84rem;margin-top:8px">' + esc(f.notes) + '</p>';
+    if (f.code) {
+      html += '<div class="code-row"><div class="code-box">' + esc(f.code) + '</div>' +
+              '<button type="button" class="vjm-btn vjm-btn-ghost copy-btn">Copy</button></div>';
+    }
+    html += '<a class="vjm-btn vjm-btn-primary" style="width:100%;margin-top:12px" target="_blank" rel="noopener noreferrer sponsored" href="' + esc(f.url) + '">Visit ' + esc(f.name) + ' ↗</a>';
+    div.innerHTML = html;
+    const btn = div.querySelector('.copy-btn');
+    if (btn) btn.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(f.code); btn.textContent = 'Copied'; }
+      catch { btn.textContent = f.code; }
+      setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
+    });
+    return div;
+  }
+
+  (async function load(){
+    try{
+      const res = await fetch('/api/content?type=prop_firms', {cache:'no-store'});
+      const d = await res.json().catch(() => ({ok:false}));
+      if(!res.ok || !d.ok){
+        root.innerHTML = '<p class="empty">Directory not connected yet on this deployment.<br>Owner: add the PropFirms tab + CONTENT_BRIDGE secrets (docs/APPS-SCRIPT-INTEGRATION.md).</p>';
+        return;
+      }
+      const active = d.items.filter((x) => x.active);
+      if (!active.length){ root.innerHTML = '<p class="empty">No active firms listed right now.</p>'; return; }
+      active.forEach((f) => root.append(card(f)));
+    }catch{
+      root.innerHTML = '<p class="empty">Could not load the directory just now.</p>';
+    }
+  })();
+})();
+</script>
+</body>
+</html>

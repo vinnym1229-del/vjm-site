@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PJ Trades x St | Markets, Made Simple.</title>
+<meta name="description" content="PJ Trades x St — futures-first trading education: live streams, daily callouts, and complete futures, options, and stock courses. 30,000+ members and growing. Educational only — not financial advice.">
+<meta property="og:title" content="PJ Trades x St — Trade With Discipline.">
+<meta property="og:description" content="Futures, options, and stock education with live streams and daily callouts. Join 30,000+ members. Educational content only — not financial advice.">
+<meta property="og:url" content="https://notfinancialadvicevjm.com">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2306090d'/%3E%3Ctext y='34' x='32' text-anchor='middle' dominant-baseline='central' font-size='34' font-family='Arial Black,sans-serif' font-weight='900' fill='%23dc2626'%3EPJ%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/tokens.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --gold: #dc2626;
+  --gold2: #b91c1c;
+  --green: #00e676;
+  --emerald: #10b981;
+  --emerald-dark: #059669;
+  --emerald-glow: rgba(16,185,129,0.12);
+  --red: #ff4444;
+  --bg: #06090d;
+  --bg2: #0a0f16;
+  --bg3: #0f1621;
+  --card: #111827;
+  --border: #1e2d3d;
+  --text: #e8edf3;
+  --muted: #7c8fa3;
+  --accent: #162032;
+  --mode-transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
+/* ─── LIGHT MODE ─── */
+body.light-mode {
+  --bg: #f4f6f9;
+  --bg2: #eaecf0;
+  --bg3: #dde1e8;
+  --card: #ffffff;
+  --border: #cdd3dc;
+  --text: #0f1621;
+  --muted: #5a6a7e;
+  --accent: #dde3ec;
+}
+body.light-mode { background: var(--bg); color: var(--text); }
+body.light-mode nav { background: rgba(244,246,249,0.97); border-bottom-color: var(--border); }
+body.light-mode .hero { background: radial-gradient(ellipse at 50% 0%,rgba(220,38,38,0.08) 0%,transparent 65%), linear-gradient(180deg,#f4f6f9 0%,#eaecf0 100%); }
+body.light-mode .proof-bar { background: var(--bg2); }
+body.light-mode #big-win { background: linear-gradient(135deg,#e8f5e9,#f1f8f2); border-color: var(--emerald); }
+body.light-mode .win-card, body.light-mode .account-card, body.light-mode .testimonial,
+body.light-mode .insight-card, body.light-mode .service-card, body.light-mode .review-card { background: var(--card); border-color: var(--border); }
+body.light-mode .premium-box { background: linear-gradient(135deg,#fffdf5,#f4f6f9); }
+body.light-mode .referral-box { background: linear-gradient(135deg,#fffdf5,#f4f6f9); }
+body.light-mode .mentor-box { background: linear-gradient(135deg,#f0faf4,#f4f9f6); }
+body.light-mode .modal { background: var(--bg2); }
+body.light-mode footer { background: #e2e6ed; }
+body.light-mode .disclosure { background: var(--bg2); }
+body.light-mode #stream-countdown-bar { background: #0f1621; }
+
+/* ─── THEME TOGGLE BUTTON ─── */
+#theme-toggle {
+  background: none; border: 1.5px solid var(--border); border-radius: 20px;
+  color: var(--muted); cursor: pointer; font-size: 1rem;
+  padding: 4px 10px; transition: all .2s; line-height: 1;
+  display: flex; align-items: center; gap: 5px;
+}
+#theme-toggle:hover { border-color: var(--gold); color: var(--gold); }
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ─── STREAM COUNTDOWN BAR ─── */
+#stream-countdown-bar {
+  background: #0a0f16;
+  border-bottom: 1px solid rgba(220,38,38,0.25);
+  padding: 9px 24px;
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  flex-wrap: wrap; text-align: center;
+}
+#stream-countdown-bar .cd-label {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--muted);
+}
+#stream-countdown-bar .cd-status {
+  font-size: 0.82rem; font-weight: 700;
+}
+#stream-countdown-bar .cd-time {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.3rem; font-weight: 900; color: var(--gold);
+  letter-spacing: 2px;
+  text-shadow: 0 0 14px rgba(220,38,38,0.5);
+}
+#stream-countdown-bar .cd-live {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(255,68,68,0.12); border: 1px solid rgba(255,68,68,0.4);
+  color: #ff4444; border-radius: 20px; padding: 3px 12px;
+  font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+}
+#stream-countdown-bar .cd-live-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #ff4444;
+  animation: pulse 1.2s infinite;
+}
+#stream-countdown-bar .cd-weekend {
+  color: var(--muted); font-size: 0.82rem; font-weight: 600;
+}
+
+/* ─── TICKER ─── */
+#ticker-wrap {
+  background: #020508;
+  border-bottom: 1px solid #1a2a3a;
+  height: 46px;
+  overflow: hidden;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: sticky; top: 0; z-index: 999;
+  background: rgba(6,9,13,0.97);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap;
+  row-gap: 8px;
+  min-height: 58px;
+}
+.nav-brand { font-family: 'Barlow Condensed', sans-serif; font-size: 1.15rem; font-weight: 900; color: var(--gold); letter-spacing: 1.5px; display: flex; align-items: center; gap: 8px; white-space: nowrap; flex: 0 0 auto; }
+.nav-brand img { width: 30px; height: 30px; border-radius: 8px; object-fit: cover; background: #06090d; flex-shrink: 0; }
+.nav-links { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; flex: 1 1 auto; }
+.nav-links a {
+  color: var(--muted); text-decoration: none; font-size: 0.68rem;
+  font-weight: 600; padding: 5px 8px; border-radius: 5px;
+  transition: all .2s; text-transform: uppercase; letter-spacing: .6px;
+  white-space: nowrap;
+}
+.nav-links a:hover { color: var(--emerald); background: rgba(16,185,129,0.08); }
+
+/* ─── HAMBURGER ─── */
+.hamburger {
+  display: none; flex-direction: column; gap: 5px;
+  cursor: pointer; padding: 6px; background: none; border: none;
+}
+.hamburger span {
+  display: block; width: 22px; height: 2px;
+  background: var(--gold); border-radius: 2px;
+  transition: all .3s;
+}
+.hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px,5px); }
+.hamburger.open span:nth-child(2) { opacity: 0; }
+.hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px,-5px); }
+
+.mobile-menu {
+  display: none; position: fixed; top: 58px; left: 0; right: 0;
+  background: rgba(6,9,13,0.98); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border); z-index: 998;
+  padding: 16px 20px; flex-direction: column; gap: 2px;
+}
+.mobile-menu.open { display: flex; }
+.mobile-menu a {
+  color: var(--muted); text-decoration: none; font-size: 0.88rem;
+  font-weight: 600; padding: 12px 14px; border-radius: 8px;
+  transition: all .2s; text-transform: uppercase; letter-spacing: .8px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.mobile-menu a:hover { color: var(--gold); background: rgba(220,38,38,0.06); }
+.mobile-menu a:last-child { border-bottom: none; }
+
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .hamburger { display: flex; }
+  #theme-toggle span { display: none; }
+}
+
+/* ─── HERO ─── */
+.hero {
+  min-height: 92vh;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  padding: 80px 24px 60px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(220,38,38,0.06) 0%, transparent 65%),
+              linear-gradient(180deg, #06090d 0%, #080e18 100%);
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content:'';
+  position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23dc2626' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.hero-inner { position: relative; max-width: 820px; }
+.hero-eyebrow {
+  display: inline-block;
+  background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.35);
+  color: var(--emerald); font-size: 0.72rem; font-weight: 700;
+  padding: 5px 16px; border-radius: 20px; margin-bottom: 22px;
+  text-transform: uppercase; letter-spacing: 2px;
+}
+.hero h1 {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(3rem, 9vw, 6.5rem);
+  font-weight: 900; line-height: 0.95;
+  letter-spacing: -1px; margin-bottom: 24px;
+}
+.hero h1 .gold { color: var(--gold); }
+.hero h1 .outline {
+  -webkit-text-stroke: 2px var(--gold);
+  color: transparent;
+}
+.hero-sub {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  color: var(--muted); max-width: 600px; margin: 0 auto 36px;
+  line-height: 1.7;
+}
+.hero-stats {
+  display: flex; justify-content: center; gap: 0;
+  margin-bottom: 40px; flex-wrap: wrap;
+}
+.hero-stat {
+  padding: 16px 32px;
+  border-right: 1px solid var(--border);
+}
+.hero-stat:last-child { border-right: none; }
+.hero-stat-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2.4rem; font-weight: 900; color: var(--gold);
+  line-height: 1;
+}
+.hero-stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+.hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  display: inline-block; padding: 14px 32px; border-radius: 8px;
+  font-weight: 700; text-decoration: none; font-size: 0.95rem;
+  transition: all .25s; cursor: pointer; border: none;
+  font-family: 'Inter', sans-serif;
+}
+.btn-gold { background: var(--gold); color: #fff; }
+.btn-gold:hover { background: #ef4444; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(220,38,38,0.3); }
+.btn-outline { background: transparent; color: var(--gold); border: 2px solid var(--gold); }
+.btn-outline:hover { background: rgba(220,38,38,0.08); transform: translateY(-2px); }
+.scroll-hint { margin-top: 48px; color: var(--muted); font-size: 0.75rem; animation: bounce 2s infinite; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
+
+/* ─── SOCIAL PROOF BAR ─── */
+.proof-bar {
+  background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex; align-items: center; justify-content: center; gap: 40px; flex-wrap: wrap;
+}
+.proof-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--muted); }
+.proof-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.proof-item strong { color: var(--text); }
+
+/* ─── SECTIONS ─── */
+section { padding: 90px 24px; }
+.section-inner { max-width: 1140px; margin: 0 auto; }
+.section-tag {
+  display: inline-block; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);
+  color: var(--emerald); font-size: 0.68rem; font-weight: 700;
+  padding: 4px 14px; border-radius: 20px; margin-bottom: 14px;
+  text-transform: uppercase; letter-spacing: 2px;
+}
+.section-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900; margin-bottom: 12px;
+}
+.section-title .gold { color: var(--gold); }
+.section-sub { color: var(--muted); max-width: 580px; margin-bottom: 50px; font-size: 1rem; }
+
+/* ─── PREMIUM ─── */
+#premium { background: var(--bg2); }
+.premium-box {
+  background: linear-gradient(135deg, #12100a, #0a0f16);
+  border: 2px solid var(--gold); border-radius: 20px;
+  padding: 50px; text-align:center; max-width:680px; margin:0 auto;
+  box-shadow: 0 0 60px rgba(220,38,38,0.08);
+}
+/* ─── ABOUT ─── */
+#about { background:var(--bg2); }
+.about-grid { display:grid; grid-template-columns:1fr 1.4fr; gap:50px; align-items:start; }
+@media(max-width:768px){ .about-grid { grid-template-columns:1fr; } }
+.about-quote-card { background:var(--card); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+.about-quote-card img { width:100%; display:block; }
+.about-quote-caption { padding:20px; }
+.about-quote-caption blockquote { font-style:italic; font-size:0.95rem; color:var(--text); margin-bottom:8px; }
+.about-quote-caption cite { color:var(--gold); font-size:0.78rem; font-weight:700; }
+.about-text h2 { font-family:'Barlow Condensed',sans-serif; font-size:2.6rem; font-weight:900; margin-bottom:20px; }
+.about-text p { color:var(--muted); margin-bottom:14px; font-size:0.95rem; line-height:1.75; }
+.about-text p strong { color:var(--text); }
+.about-text p.highlight { color:var(--text); background:rgba(220,38,38,0.05); border-left:3px solid var(--gold); padding:12px 16px; border-radius:0 8px 8px 0; }
+.badges { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
+.badge { background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); color:var(--emerald); border-radius:20px; padding:5px 14px; font-size:0.75rem; font-weight:600; }
+
+/* ─── INSIGHTS ─── */
+#insights { background:var(--bg); }
+.insights-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; }
+.insight-card { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; cursor:pointer; transition:all .2s; }
+.insight-card:hover { border-color:var(--gold); transform:translateY(-4px); }
+.insight-card-body { padding:20px; }
+.insight-tag { display:inline-block; background:rgba(220,38,38,0.1); color:var(--gold); font-size:0.68rem; font-weight:700; padding:3px 10px; border-radius:20px; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; }
+.insight-card h3 { font-size:1.05rem; font-weight:700; margin-bottom:8px; }
+.insight-card p { font-size:0.85rem; color:var(--muted); }
+.locked-card { position:relative; }
+.locked-overlay { position:absolute; inset:0; background:rgba(6,9,13,0.9); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
+.locked-overlay .lock-icon { font-size:2rem; }
+.locked-overlay p { color:var(--muted); font-size:0.82rem; }
+
+/* ─── SERVICES ─── */
+#services { background:var(--bg); }
+.services-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:20px; }
+.service-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:28px; text-align:center; transition:all .2s; }
+.service-card:hover { border-color:var(--gold); transform:translateY(-4px); }
+.service-icon { font-size:2.2rem; margin-bottom:12px; }
+.service-card h3 { font-size:1.1rem; font-weight:700; margin-bottom:8px; }
+.service-card p { color:var(--muted); font-size:0.85rem; margin-bottom:16px; }
+.service-price { font-family:'Barlow Condensed',sans-serif; font-size:2.4rem; font-weight:900; color:var(--gold); }
+.service-price span { font-size:0.9rem; color:var(--muted); font-family:'Inter',sans-serif; }
+
+/* ─── DISCORD CTA ─── */
+#discord-cta { background: linear-gradient(135deg, #0d0f1e, #06090d); text-align:center; }
+.discord-box { background: rgba(88,101,242,0.08); border:1px solid rgba(88,101,242,0.3); border-radius:20px; padding:50px 40px; max-width:680px; margin:0 auto; }
+.discord-logo { font-size:3rem; margin-bottom:16px; }
+.discord-box h2 { font-family:'Barlow Condensed',sans-serif; font-size:2.6rem; font-weight:900; margin-bottom:12px; }
+.discord-box p { color:var(--muted); margin-bottom:28px; }
+.discord-btn { display:inline-block; background:#5865F2; color:#fff; padding:14px 36px; border-radius:8px; font-weight:700; text-decoration:none; font-size:1rem; transition:all .2s; }
+.discord-btn:hover { background:#4752c4; transform:translateY(-2px); }
+
+/* ─── DISCLOSURE ─── */
+.disclosure { background:var(--bg2); border-top:1px solid var(--border); padding:30px 24px; }
+.disclosure p { font-size:0.75rem; color:var(--muted); max-width:900px; margin:0 auto; line-height:1.7; }
+
+/* ─── FOOTER ─── */
+footer { background:#020508; border-top:1px solid var(--border); padding:32px 24px; }
+.footer-inner { max-width:1140px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+.footer-links { display:flex; gap:20px; flex-wrap:wrap; }
+.footer-links a { color:var(--muted); text-decoration:none; font-size:0.8rem; transition:color .2s; }
+.footer-links a:hover { color:var(--gold); }
+.footer-copy { font-size:0.75rem; color:var(--muted); }
+
+
+/* ─── MODALS ─── */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:9999; overflow-y:auto; padding:20px; }
+.modal-overlay.active { display:flex; align-items:flex-start; justify-content:center; padding-top:40px; }
+.modal { background:var(--bg2); border:1px solid var(--border); border-radius:16px; max-width:800px; width:100%; padding:40px; position:relative; }
+.modal-close { position:absolute; top:16px; right:16px; background:none; border:none; color:var(--muted); font-size:1.5rem; cursor:pointer; transition:color .2s; }
+.modal-close:hover { color:var(--text); }
+.modal h2 { font-family:'Barlow Condensed',sans-serif; font-size:2rem; font-weight:900; margin-bottom:20px; }
+.modal p { color:var(--muted); margin-bottom:14px; line-height:1.7; }
+.modal h3 { font-size:1.1rem; font-weight:700; margin:20px 0 8px; color:var(--gold); }
+.modal ul { color:var(--muted); padding-left:20px; margin-bottom:14px; }
+.modal ul li { margin-bottom:6px; }
+.modal-back { display:inline-block; margin-bottom:20px; color:var(--gold); cursor:pointer; font-weight:600; font-size:0.9rem; }
+
+/* ─── QUIZ ─── */
+.quiz-btn {
+  background: var(--accent); border: 1px solid var(--border);
+  color: var(--text); padding: 12px 16px; border-radius:10px;
+  text-align:left; cursor:pointer; font-size:0.88rem; transition:all .2s;
+}
+.quiz-btn:hover { border-color:var(--gold); color:var(--gold); }
+
+/* ─── ENHANCED GLOW & POP EFFECTS ─── */
+@keyframes goldPulse {
+  0%,100%{text-shadow:0 0 18px rgba(220,38,38,0.6),0 0 40px rgba(220,38,38,0.3);}
+  50%{text-shadow:0 0 32px rgba(220,38,38,0.9),0 0 70px rgba(220,38,38,0.5),0 0 100px rgba(220,38,38,0.2);}
+}
+@keyframes greenGlow {
+  0%,100%{text-shadow:0 0 14px rgba(0,230,118,0.5),0 0 30px rgba(0,230,118,0.2);}
+  50%{text-shadow:0 0 28px rgba(0,230,118,0.85),0 0 60px rgba(0,230,118,0.4);}
+}
+@keyframes cardFloat {
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-6px);}
+}
+@keyframes shimmer {
+  0%{background-position:-200% 0;}
+  100%{background-position:200% 0;}
+}
+.hero-stat-num { animation: goldPulse 3s ease-in-out infinite; }
+.big-win-num { animation: greenGlow 2.5s ease-in-out infinite; }
+.win-amount { animation: greenGlow 3.5s ease-in-out infinite; }
+.hero::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(ellipse at 20% 80%,rgba(16,185,129,0.04) 0%,transparent 55%),
+             radial-gradient(ellipse at 80% 20%,rgba(220,38,38,0.04) 0%,transparent 55%);
+  pointer-events:none;
+}
+.win-card:hover { box-shadow: 0 12px 40px rgba(0,230,118,0.18); }
+.premium-box { box-shadow: 0 0 80px rgba(220,38,38,0.12), 0 0 30px rgba(220,38,38,0.06); transition: box-shadow 0.4s; }
+.premium-box:hover { box-shadow: 0 0 120px rgba(220,38,38,0.22), 0 0 50px rgba(220,38,38,0.12); }
+.service-card:hover { box-shadow: 0 12px 40px rgba(220,38,38,0.14); }
+#big-win { box-shadow: inset 0 1px 0 rgba(0,230,118,0.1); }
+
+/* ─── EXPAND / COLLAPSE ─── */
+.expand-btn {
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.3);
+  color:var(--gold);font-size:0.8rem;font-weight:700;padding:7px 18px;
+  border-radius:20px;cursor:pointer;margin-top:20px;transition:all .2s;
+  font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;
+}
+.expand-btn:hover { background:rgba(220,38,38,0.15); }
+.collapsible-extra { overflow:hidden;transition:max-height .4s ease; }
+
+/* ─── ESSAY ─── */
+.essay-body p { margin-bottom: 0; }
+@media (max-width: 600px) {
+  .essay-body { padding: 28px 20px !important; }
+}
+
+/* ─── LIQUID MOTION SYSTEM ─── */
+.liquid-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;}
+.liquid-blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;will-change:transform;}
+.lb-1{width:520px;height:520px;left:-140px;top:-120px;background:radial-gradient(circle at 30% 30%,rgba(220,38,38,.35),transparent 65%);animation:drift1 26s ease-in-out infinite alternate;}
+.lb-2{width:420px;height:420px;right:-100px;top:10%;background:radial-gradient(circle at 60% 40%,rgba(240,180,41,.16),transparent 65%);animation:drift2 32s ease-in-out infinite alternate;}
+.lb-3{width:640px;height:640px;left:30%;bottom:-320px;background:radial-gradient(circle at 50% 50%,rgba(220,38,38,.14),transparent 60%);animation:drift3 38s ease-in-out infinite alternate;}
+@keyframes drift1{from{transform:translate(0,0) scale(1)}to{transform:translate(90px,60px) scale(1.12)}}
+@keyframes drift2{from{transform:translate(0,0) scale(1)}to{transform:translate(-70px,90px) scale(.92)}}
+@keyframes drift3{from{transform:translate(0,0) scale(1)}to{transform:translate(60px,-70px) scale(1.08)}}
+.liquid-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:44px 44px;mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,black,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 30%,black,transparent 75%);}
+@media (prefers-reduced-motion: reduce){.liquid-blob{animation:none!important;}}
+
+/* ─── HERO EXTRAS ─── */
+.hero-badge{display:inline-flex;align-items:center;gap:9px;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.4);border-radius:999px;padding:7px 16px;font-size:.8rem;font-weight:800;color:#ffb3b3;margin-bottom:22px;}
+.pulse-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(0,230,118,.5);animation:pulseDot 2s infinite;}
+@keyframes pulseDot{0%{box-shadow:0 0 0 0 rgba(0,230,118,.45)}70%{box-shadow:0 0 0 12px rgba(0,230,118,0)}100%{box-shadow:0 0 0 0 rgba(0,230,118,0)}}
+@media (prefers-reduced-motion: reduce){.pulse-dot{animation:none}}
+.hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:30px;}
+.hero-trust{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:26px;color:var(--muted);font-size:.82rem;}
+
+/* ─── BUFFETT QUOTE CARD ─── */
+.buffett-card{position:relative;margin:0;background:linear-gradient(145deg,#141b2b,#0d1320);border:1px solid var(--border-strong);border-radius:22px;padding:34px 30px 26px;overflow:hidden;box-shadow:0 16px 50px rgba(0,0,0,.4);}
+.buffett-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(240,180,41,.12),transparent 55%);pointer-events:none;}
+.buffett-card::after{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--gold),var(--red));border-radius:4px 0 0 4px;}
+.buffett-mark{position:absolute;top:2px;right:18px;font-family:Georgia,serif;font-size:7rem;line-height:1;color:rgba(240,180,41,.14);font-weight:900;pointer-events:none;}
+.buffett-card blockquote{position:relative;margin:0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:1.28rem;line-height:1.55;color:#f2e8d5;}
+.buffett-card figcaption{position:relative;margin-top:16px;font-size:.82rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold);}
+/* ─── RESPONSIVE ─── */
+@media(max-width:640px) {
+  .hero-stat { padding:12px 18px; }
+  .premium-box { padding:30px 20px; }
+  .about-text h2 { font-size:2rem; }
+  nav { height:auto; padding:10px 16px; flex-wrap:wrap; gap:6px; }
+  .nav-links { gap:2px; }
+  .nav-links a { font-size:0.65rem; padding:4px 7px; }
+}
+</style>
+</head>
+<body>
+
+<!-- TICKER -->
+<div id="ticker-wrap">
+  <div class="tradingview-widget-container" style="height:46px">
+    <div class="tradingview-widget-container__widget"></div>
+    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+    {
+      "symbols": [
+        {"proName":"CBOE:SPX","title":"SPX"},
+        {"proName":"NASDAQ:QQQ","title":"QQQ"},
+        {"proName":"BINANCE:BTCUSDT","title":"BTC"},
+        {"proName":"BINANCE:ETHUSDT","title":"ETH"},
+        {"proName":"BINANCE:XRPUSDT","title":"XRP"},
+        {"proName":"NASDAQ:AAPL","title":"AAPL"},
+        {"proName":"NASDAQ:MSFT","title":"MSFT"},
+        {"proName":"NASDAQ:NVDA","title":"NVDA"},
+        {"proName":"NASDAQ:META","title":"META"},
+        {"proName":"NASDAQ:GOOGL","title":"GOOGL"},
+        {"proName":"NASDAQ:AMZN","title":"AMZN"},
+        {"proName":"NASDAQ:TSLA","title":"TSLA"},
+        {"proName":"NYSE:SPY","title":"SPY"}
+      ],
+      "showSymbolLogo": true,
+      "isTransparent": true,
+      "displayMode": "compact",
+      "colorTheme": "dark",
+      "locale": "en"
+    }
+    </script>
+  </div>
+</div>
+
+<!-- STREAM COUNTDOWN BAR -->
+<div id="stream-countdown-bar">
+  <span class="cd-label">📺 Next Stream</span>
+  <span id="cd-display" class="cd-time">--:--:--</span>
+  <span id="cd-status" class="cd-status"></span>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">PJ TRADES <span style="font-size:0.55em;color:var(--muted);font-weight:700;letter-spacing:1px;">× St</span></div>
+  <div class="nav-links">
+    <a href="#services">Services</a>
+    <a href="#tools">Tools</a>
+    <a href="options-lab.html">Options Lab</a>
+    <a href="stock-lab.html">Stock Lab</a>
+    <a href="premarket.html">Pre-Market</a>
+    <a href="research-engine.html">Research Engine</a>
+    <a href="premium-guidance.html">Guidance</a>
+    <a href="forex-calendar.html">Forex Calendar</a>
+    <a href="#schedule">Schedule</a>
+    <a href="#about">About</a>
+    <a href="#discord-cta">Discord</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">🌙 <span id="theme-label">Dark</span></button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" title="PJ Trades on Whop" style="color:var(--muted);font-size:1.1rem;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--muted)'">⭐</a>
+      <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" title="Discord" style="color:var(--muted);font-size:1.1rem;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--muted)'">💬</a>
+    </div>
+    <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">☰</button>
+  </div>
+</nav>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#services" onclick="closeMobileMenu()">🛠️ Services</a>
+  <a href="#tools" onclick="closeMobileMenu()">🧰 Tools</a>
+  <a href="options-lab.html" onclick="closeMobileMenu()">📊 Options Lab</a>
+  <a href="stock-lab.html" onclick="closeMobileMenu()">📈 Stock Lab</a>
+  <a href="premarket.html" onclick="closeMobileMenu()">☕ Pre-Market</a>
+  <a href="research-engine.html" onclick="closeMobileMenu()">🔬 Research Engine</a>
+  <a href="premium-guidance.html" onclick="closeMobileMenu()">🎓 Guidance</a>
+  <a href="forex-calendar.html" onclick="closeMobileMenu()">📅 Forex Calendar</a>
+  <a href="#schedule" onclick="closeMobileMenu()">🗓️ Stream Schedule</a>
+  <a href="#about" onclick="closeMobileMenu()">👋 About</a>
+  <a href="#discord-cta" onclick="closeMobileMenu()">💬 Discord</a>
+  <a href="https://whop.com/pjtradespremium/" target="_blank" onclick="closeMobileMenu()">⭐ Join Premium</a>
+</div>
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="liquid-bg" aria-hidden="true">
+    <div class="liquid-blob lb-1"></div>
+    <div class="liquid-blob lb-2"></div>
+    <div class="liquid-blob lb-3"></div>
+    <div class="liquid-grid"></div>
+  </div>
+  <div class="hero-inner" style="position:relative;z-index:2;">
+    <div class="hero-badge"><span class="pulse-dot"></span> 30,000+ members · growing every week</div>
+    <h1>PJ TRADES <span style="display:inline-block;"><span style="font-size:0.42em;vertical-align:middle;color:var(--muted);font-weight:700;letter-spacing:2px;">× St</span></span><br>
+    <span class="gold">Markets, Made Simple.</span></h1>
+    <p class="hero-sub">With ten years of hands on experience navigating the fast paced world of financial markets, PJ Trades is a seasoned day trader specializing in futures. Known for a disciplined approach to trading, PJ Trades combines technical analysis, market research, and risk management to consistently identify high probability setups and deliver results.</p>
+    <div class="hero-ctas">
+      <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-gold" style="font-size:1rem;padding:15px 30px;">⭐ Join Premium — $129/mo</a>
+      <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;">💬 Join the Free Discord</a>
+    </div>
+    <div class="hero-trust">
+      <span>✅ Live streams every market day</span>
+      <span>✅ Daily callouts — futures, options, stocks</span>
+      <span>✅ Rated 5.0 on Whop</span>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF BAR -->
+<div class="proof-bar">
+  <div class="proof-item"><strong>30,000+</strong><span>members & growing</span></div>
+  <div class="proof-item"><strong>5.0 ★</strong><span>rated on Whop</span></div>
+  <div class="proof-item"><strong>Daily</strong><span>live streams + callouts</span></div>
+  <div class="proof-item"><strong>Futures · Options · Stocks</strong><span>one membership</span></div>
+</div>
+<!-- WEEKLY WIN STREAK + INTERACTIVE TOOLS -->
+<section id="tools" style="background:var(--bg2);">
+  <div class="section-inner">
+
+    <!-- What Type of Trader Are You -->
+    <div style="margin-bottom:56px;max-width:720px;margin-left:auto;margin-right:auto;">
+      <div style="text-align:center;margin-bottom:28px;">
+        <div class="section-tag">🧠 Trader Psychology</div>
+        <h2 class="section-title">What Kind of <span class="gold">Trader Are You?</span></h2>
+        <p style="color:var(--muted);font-size:0.9rem;">Answer 3 questions honestly. No sugarcoating.</p>
+      </div>
+      <div id="quiz-box" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:30px;">
+        <div id="quiz-content">
+          <div id="q1" class="quiz-q">
+            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">1 of 3 — You're in a trade and it's down 20%. What do you do?</p>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <button class="quiz-btn" onclick="quizAnswer(1,'a')">🚀 Average down — I believe in it</button>
+              <button class="quiz-btn" onclick="quizAnswer(1,'b')">✂️ Cut the loss — respect my stop</button>
+              <button class="quiz-btn" onclick="quizAnswer(1,'c')">😰 Panic and watch it bleed out</button>
+            </div>
+          </div>
+          <div id="q2" class="quiz-q" style="display:none;">
+            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">2 of 3 — How often do you follow your trading plan?</p>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <button class="quiz-btn" onclick="quizAnswer(2,'a')">📋 I have a strict plan and stick to it</button>
+              <button class="quiz-btn" onclick="quizAnswer(2,'b')">🎲 I have a plan but FOMO gets me</button>
+              <button class="quiz-btn" onclick="quizAnswer(2,'c')">❓ What plan? I wing it</button>
+            </div>
+          </div>
+          <div id="q3" class="quiz-q" style="display:none;">
+            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">3 of 3 — Why are you trading?</p>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <button class="quiz-btn" onclick="quizAnswer(3,'a')">🏗️ Building long-term wealth with discipline</button>
+              <button class="quiz-btn" onclick="quizAnswer(3,'b')">⚡ Quick profits — I want to get rich fast</button>
+              <button class="quiz-btn" onclick="quizAnswer(3,'c')">🤔 Honestly not sure yet — still learning</button>
+            </div>
+          </div>
+          <div id="quiz-result" style="display:none;text-align:center;">
+            <div id="quiz-result-icon" style="font-size:3rem;margin-bottom:12px;"></div>
+            <div id="quiz-result-title" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--gold);margin-bottom:10px;"></div>
+            <div id="quiz-result-text" style="color:var(--text);line-height:1.7;margin-bottom:20px;font-size:0.92rem;"></div>
+            <button onclick="resetQuiz()" style="background:var(--accent);border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;cursor:pointer;font-size:0.82rem;">Retake Quiz</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Growth Simulator + Options Calculator + R:R Calculator -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:28px;">
+
+      <!-- Account Growth Simulator -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;">
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">📈 Growth Simulator</h3>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">Trading daily gains or long-term investing — your choice.</p>
+
+        <!-- Mode toggle -->
+        <div style="display:flex;background:var(--accent);border-radius:10px;padding:3px;margin-bottom:18px;gap:3px;">
+          <button id="sim-mode-trading" onclick="setSimMode('trading')" style="flex:1;padding:8px;border:none;border-radius:8px;background:var(--gold);color:#fff;font-weight:800;font-size:0.8rem;cursor:pointer;transition:all .2s;">📈 Trading</button>
+          <button id="sim-mode-investing" onclick="setSimMode('investing')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-weight:700;font-size:0.8rem;cursor:pointer;transition:all .2s;">💰 Investing</button>
+        </div>
+
+        <!-- Trading mode inputs -->
+        <div id="sim-trading-inputs">
+          <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Starting Balance ($)</label>
+          <input id="sim-start" type="number" value="1200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+
+          <!-- % or $ toggle -->
+          <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
+            <span style="font-size:0.82rem;color:var(--muted);">Gain type:</span>
+            <button id="gain-dollar-btn" onclick="setGainMode('dollar')" style="padding:4px 12px;border:1.5px solid var(--gold);border-radius:20px;background:var(--gold);color:#fff;font-weight:700;font-size:0.75rem;cursor:pointer;">$ Per Day</button>
+            <button id="gain-pct-btn" onclick="setGainMode('pct')" style="padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);font-weight:700;font-size:0.75rem;cursor:pointer;">% Per Day</button>
+          </div>
+
+          <div id="sim-dollar-input">
+            <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Daily Gain ($)</label>
+            <input id="sim-daily-dollar" type="number" value="500" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+          </div>
+          <div id="sim-pct-input" style="display:none;">
+            <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Daily Gain (%)</label>
+            <input id="sim-daily-pct" type="number" value="5" min="0.1" step="0.1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+          </div>
+
+          <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Trading Days: <span id="sim-days-val">20</span></label>
+          <input id="sim-days" type="range" min="1" max="252" value="20" oninput="document.getElementById('sim-days-val').textContent=this.value" style="width:100%;margin-bottom:16px;">
+        </div>
+
+        <!-- Investing mode inputs -->
+        <div id="sim-investing-inputs" style="display:none;">
+          <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Starting Balance ($)</label>
+          <input id="inv-start" type="number" value="1000" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+          <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Annual Return (%)</label>
+          <input id="inv-rate" type="number" value="20" min="1" max="200" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+          <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Years: <span id="inv-years-val">5</span></label>
+          <input id="inv-years" type="range" min="1" max="30" value="5" oninput="document.getElementById('inv-years-val').textContent=this.value" style="width:100%;margin-bottom:16px;">
+          <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Monthly Contribution ($)</label>
+          <input id="inv-contrib" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+        </div>
+
+        <button onclick="runSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">SIMULATE</button>
+        <div id="sim-result" style="margin-top:16px;display:none;">
+          <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.2);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;" id="sim-result-label">Projected Balance</div>
+            <div id="sim-end-val" style="font-family:'Barlow Condensed',sans-serif;font-size:2.5rem;font-weight:900;color:var(--green);text-shadow:0 0 16px rgba(0,230,118,0.4);"></div>
+            <div id="sim-gain-val" style="font-size:0.82rem;color:var(--emerald);margin-top:4px;"></div>
+            <div id="sim-extra-val" style="font-size:0.78rem;color:var(--muted);margin-top:4px;"></div>
+          </div>
+          <p style="font-size:0.7rem;color:var(--muted);margin-top:10px;text-align:center;">Projections only. Not financial advice. Past performance ≠ future results.</p>
+        </div>
+      </div>
+
+      <!-- Options Profit Calculator -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;">
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">⚡ Options Calculator</h3>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;">Calculate P&L on a options trade instantly.</p>
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Entry Price (per contract)</label>
+        <input id="opt-entry" type="number" value="0.50" step="0.01" min="0.01" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Exit Price (per contract)</label>
+        <input id="opt-exit" type="number" value="2.05" step="0.01" min="0.01" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Number of Contracts</label>
+        <input id="opt-contracts" type="number" value="7" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+        <button onclick="calcOptions()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
+        <div id="opt-result" style="margin-top:16px;display:none;">
+          <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.2);border-radius:10px;padding:14px;text-align:center;">
+            <div id="opt-pnl" style="font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;"></div>
+            <div id="opt-pct" style="font-size:0.9rem;margin-top:4px;"></div>
+            <div id="opt-details" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Risk/Reward Calculator -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;">
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">🎯 Risk/Reward Calc</h3>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;">Know your R:R before you enter — discipline starts here.</p>
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Entry Price ($)</label>
+        <input id="rr-entry" type="number" value="100" step="0.01" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Stop Loss ($)</label>
+        <input id="rr-stop" type="number" value="95" step="0.01" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Target Price ($)</label>
+        <input id="rr-target" type="number" value="115" step="0.01" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+        <button onclick="calcRR()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
+        <div id="rr-result" style="margin-top:16px;display:none;">
+          <div style="border-radius:10px;padding:14px;text-align:center;" id="rr-card">
+            <div id="rr-ratio" style="font-family:'Barlow Condensed',sans-serif;font-size:2.5rem;font-weight:900;"></div>
+            <div id="rr-verdict" style="font-size:0.9rem;font-weight:700;margin-top:4px;"></div>
+            <div id="rr-breakdown" style="font-size:0.78rem;color:var(--muted);margin-top:6px;line-height:1.6;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Options Lab CTA -->
+      <div style="grid-column:1/-1;background:linear-gradient(135deg,rgba(220,38,38,0.1),rgba(185,28,28,0.04));border:1px solid rgba(220,38,38,0.3);border-radius:16px;padding:28px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;">
+        <div>
+          <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;margin-bottom:4px;">📊 Options Lab</h3>
+          <p style="font-size:0.85rem;color:var(--muted);max-width:520px;">Gamma exposure explained, worked scenarios, where to get real-time GEX data, and how to translate it into QQQ/NQ and SPY/ES intraday.</p>
+        </div>
+        <a href="options-lab.html" class="btn btn-gold" style="white-space:nowrap;">Open Options Lab →</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- PREMIUM HUB -->
+<section id="premium" style="background:var(--bg2);">
+  <div class="section-inner">
+    <div style="text-align:center;margin-bottom:40px;">
+      <div class="section-tag">Everything Premium</div>
+      <h2 class="section-title">Premium <span class="gold">Hub</span></h2>
+      <p class="section-sub" style="margin:0 auto 20px;">Join, access your dashboard, check your status, and unlock all member content — all in one place.</p>
+      <p style="max-width:660px;margin:0 auto;font-size:0.95rem;color:var(--text);line-height:1.8;padding:20px 24px;background:rgba(220,38,38,0.04);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;text-align:left;">I'm not going to beg anyone to join. If you don't want to invest in yourself, that's on you. But if you're serious and tired of being lost — the door is open.</p>
+    </div>
+
+<!-- Tab Nav -->
+<div class="prem-tabs" style="display:flex;gap:8px;justify-content:center;margin-bottom:28px;flex-wrap:wrap;">
+  <button onclick="premTab('join')" id="ptab-join" style="flex:1;max-width:150px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:var(--red);color:#fff;">Join</button>
+  <button onclick="premTab('dashboard')" id="ptab-dashboard" style="flex:1;max-width:150px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:transparent;color:var(--muted);">Dashboard</button>
+  <button onclick="premTab('status')" id="ptab-status" style="flex:1;max-width:150px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:transparent;color:var(--muted);">Am I Active?</button>
+</div>
+<!-- JOIN TAB -->
+<div id="pcontent-join" style="max-width:640px;margin:0 auto;">
+  <div class="premium-box">
+    <div style="text-align:center;margin-bottom:22px;">
+      <span class="vjm-chip red" style="font-size:0.7rem;">ALL-ACCESS MEMBERSHIP</span>
+      <div style="display:flex;align-items:baseline;justify-content:center;gap:12px;margin-top:14px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:3.8rem;font-weight:900;color:var(--gold);text-shadow:0 0 24px rgba(220,38,38,0.35);">$129<span style="font-size:1.2rem;color:var(--muted);">/mo</span></div>
+      </div>
+      <p style="color:var(--muted);font-size:0.92rem;">One bundle. Everything included.</p>
+    </div>
+    <ul style="list-style:none;padding:0;margin:0 0 24px;display:grid;gap:11px;">
+      <li style="font-size:0.92rem;color:var(--text);display:flex;gap:10px;"><span style="color:var(--green);font-weight:900;">✓</span> Full <strong>futures</strong> course — the PJ Trades playbook</li>
+      <li style="font-size:0.92rem;color:var(--text);display:flex;gap:10px;"><span style="color:var(--green);font-weight:900;">✓</span> Full <strong>options</strong> course + the Options Lab</li>
+      <li style="font-size:0.92rem;color:var(--text);display:flex;gap:10px;"><span style="color:var(--green);font-weight:900;">✓</span> Full <strong>stock</strong> course + the Stock Lab</li>
+      <li style="font-size:0.92rem;color:var(--text);display:flex;gap:10px;"><span style="color:var(--green);font-weight:900;">✓</span> <strong>Live streams every market day</strong> — watch the process in real time</li>
+      <li style="font-size:0.92rem;color:var(--text);display:flex;gap:10px;"><span style="color:var(--green);font-weight:900;">✓</span> <strong>Daily callouts</strong> posted in Discord</li>
+      <li style="font-size:0.92rem;color:var(--text);display:flex;gap:10px;"><span style="color:var(--green);font-weight:900;">✓</span> Community of 30,000+ traders on the same path</li>
+    </ul>
+    <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;font-size:1.05rem;padding:16px;">Join on Whop — instant access ⭐</a>
+    <p style="text-align:center;color:var(--muted);font-size:0.75rem;margin-top:14px;">Checkout and billing are handled securely by Whop. Cancel anytime from your Whop account. Educational content only — profits are never guaranteed.</p>
+  </div>
+</div>
+    <!-- DASHBOARD TAB -->
+    <div id="pcontent-dashboard" style="display:none;max-width:700px;margin:0 auto;">
+      <div id="dash-gate" style="text-align:center;">
+        <p style="color:var(--muted);margin-bottom:16px;">Enter your premium access code to open your dashboard.</p>
+        <input type="text" id="dash-pw-input" placeholder="Access code (e.g. JOHN-2298)..." style="width:100%;max-width:360px;padding:12px 16px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;text-transform:uppercase;">
+        <button onclick="checkDashPw()" class="btn btn-gold" style="width:100%;max-width:360px;">Unlock Dashboard</button>
+        <p id="dash-pw-error" style="color:var(--red);font-size:0.82rem;margin-top:8px;display:none;">Incorrect code. DM St1101 on Discord.</p>
+      </div>
+      <div id="dash-content" style="display:none;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;">
+          <div style="background:var(--card);border:1px solid rgba(220,38,38,0.3);border-radius:14px;padding:20px;text-align:center;">
+            <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Status</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--green);">✅ ACTIVE</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;">
+            <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Plan</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--gold);">$50/mo</div>
+            <div style="font-size:0.7rem;color:var(--muted);">Launch rate — locked in</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;">
+            <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Membership</div>
+            <div id="dash-access-code" style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--text);">Premium</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+          <a href="https://discord.gg/pjtrades" target="_blank" style="background:rgba(88,101,242,0.1);border:1px solid rgba(88,101,242,0.3);border-radius:12px;padding:16px;text-align:center;text-decoration:none;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#5865F2'" onmouseout="this.style.borderColor='rgba(88,101,242,0.3)'">
+            <div style="font-size:1.5rem;margin-bottom:6px;">💬</div>
+            <div style="font-weight:700;font-size:0.88rem;">Join Discord</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Get your Premium role</div>
+          </a>
+          <a href="https://discord.com/users/St1101" target="_blank" style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.25);border-radius:12px;padding:16px;text-align:center;text-decoration:none;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(220,38,38,0.25)'">
+            <div style="font-size:1.5rem;margin-bottom:6px;">📩</div>
+            <div style="font-weight:700;font-size:0.88rem;">DM Support</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Direct message St1101</div>
+          </a>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;">
+          <div style="font-weight:700;margin-bottom:10px;font-size:0.88rem;">📋 What you get as a member</div>
+          <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">
+            <li style="font-size:0.85rem;color:var(--text);display:flex;gap:8px;"><span style="color:var(--green);">✓</span> Live daily callouts in #premium-callouts</li>
+            <li style="font-size:0.85rem;color:var(--text);display:flex;gap:8px;"><span style="color:var(--green);">✓</span> Access to Trade Reviews below (use password above)</li>
+            <li style="font-size:0.85rem;color:var(--text);display:flex;gap:8px;"><span style="color:var(--green);">✓</span> Premium streams 9:15AM–2PM ET daily</li>
+            <li style="font-size:0.85rem;color:var(--text);display:flex;gap:8px;"><span style="color:var(--green);">✓</span> Direct support - DM the team anytime</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- AM I ACTIVE TAB -->
+    <div id="pcontent-status" style="display:none;max-width:500px;margin:0 auto;text-align:center;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px 28px;">
+        <div style="font-size:2rem;margin-bottom:12px;">🔍</div>
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;margin-bottom:8px;">Check Your Status</h3>
+        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:24px;">Enter your Discord username to check if your premium is active.</p>
+        <input type="text" id="status-discord-input" placeholder="Your Discord username..." style="width:100%;padding:12px 16px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;margin-bottom:12px;box-sizing:border-box;">
+        <button onclick="checkStatus()" class="btn btn-gold" style="width:100%;">Check Status</button>
+        <div id="status-result" style="display:none;margin-top:20px;border-radius:12px;padding:20px;">
+          <div id="status-icon" style="font-size:2rem;margin-bottom:8px;"></div>
+          <div id="status-text" style="font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:900;"></div>
+          <div id="status-sub" style="font-size:0.82rem;margin-top:6px;"></div>
+        </div>
+        <p style="color:var(--muted);font-size:0.75rem;margin-top:20px;">If your status is wrong, DM <strong>St1101</strong> on Discord or email <strong>vjmtrading.contact@gmail.com</strong></p>
+      </div>
+    </div>
+</div>
+</section>
+
+<!-- SERVICES & BOOKING -->
+<section id="services" style="background:var(--bg2);">
+  <div class="section-inner">
+    <div class="section-tag">Work With the Team</div>
+    <h2 class="section-title">Pick Your <span class="gold">Level</span></h2>
+    <p class="section-sub">Learn it, apply it, or have us look over your shoulder. Every option is built to make complex markets simple enough that a fifth grader could follow along.</p>
+
+    <div class="services-grid">
+
+      <div class="service-card">
+        <div style="font-size:2rem;margin-bottom:12px;">⭐</div>
+        <h3>Premium Membership</h3>
+        <div class="premium-price">$129<span>/mo</span></div>
+        <ul style="text-align:left;font-size:0.88rem;color:var(--muted);list-style:none;padding:0;margin:14px 0 20px;display:grid;gap:8px;">
+          <li>✓ Futures + options + stock courses</li>
+          <li>✓ Live streams every market day</li>
+          <li>✓ Daily callouts in Discord</li>
+          <li>✓ 30,000+ member community</li>
+        </ul>
+        <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;">Join on Whop</a>
+      </div>
+
+      <div class="service-card">
+        <div style="font-size:2rem;margin-bottom:12px;">📋</div>
+        <h3>Portfolio Review</h3>
+        <div class="premium-price">$100<span>/session</span></div>
+        <ul style="text-align:left;font-size:0.88rem;color:var(--muted);list-style:none;padding:0;margin:14px 0 20px;display:grid;gap:8px;">
+          <li>✓ A second set of experienced eyes on your book</li>
+          <li>✓ Risk, sizing, and structure feedback</li>
+          <li>✓ Clear action items — no vague advice</li>
+          <li>✓ Session booked at your pace</li>
+        </ul>
+        <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-outline" style="width:100%;">Book Through Whop</a>
+      </div>
+
+      <div class="service-card">
+        <div style="font-size:2rem;margin-bottom:12px;">🎓</div>
+        <h3>1-on-1 Bootcamp</h3>
+        <div class="premium-price">$100<span>/hour</span></div>
+        <ul style="text-align:left;font-size:0.88rem;color:var(--muted);list-style:none;padding:0;margin:14px 0 20px;display:grid;gap:8px;">
+          <li>✓ Deep, simple explanations — fifth-grader clear</li>
+          <li>✓ Your charts, your questions, your pace</li>
+          <li>✓ Futures, options, or stocks — you choose</li>
+          <li>✓ Leave with a written plan</li>
+        </ul>
+        <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-outline" style="width:100%;">Book Through Whop</a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- MEET THE TEAM -->
+<section id="team" style="background:var(--bg);">
+  <div class="section-inner">
+    <div class="section-tag">Meet the Team</div>
+    <h2 class="section-title">The People Behind <span class="gold">PJ Trades x St</span></h2>
+    <div style="max-width:640px;margin:0 auto;text-align:center;padding:48px 24px;border:1px dashed var(--border-strong);border-radius:22px;background:rgba(255,255,255,0.02);">
+      <div style="font-size:2.4rem;margin-bottom:12px;">🤝</div>
+      <h3 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.6rem;text-transform:uppercase;letter-spacing:1px;">Coming Soon</h3>
+      <p style="color:var(--muted);font-size:0.9rem;max-width:440px;margin:10px auto 0;">We're assembling the full team page — bios, roles, and favorite setups. Check back shortly, or ask in Discord who's who.</p>
+    </div>
+  </div>
+</section>
+
+<!-- WEEKLY STREAM SCHEDULE -->
+<section id="schedule" style="background:var(--bg2);">
+  <div class="section-inner">
+    <div class="section-tag">Weekly Stream Schedule</div>
+    <h2 class="section-title">Live, <span class="gold">Every Market Day</span></h2>
+    <p class="section-sub">Streams run inside the Discord. Times are ET and can shift around holidays and news days — the <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold);">#announcements channel</a> is always the source of truth.</p>
+    <div style="overflow-x:auto;">
+      <table class="vjm-table" style="max-width:720px;margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:16px;">
+        <thead><tr><th>Day</th><th>Time (ET)</th><th>What</th><th>Where</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Mon–Fri</strong></td><td class="num">9:00 AM</td><td>Pre-Market Brief — levels, lean, plan</td><td><a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold);">Discord</a></td></tr>
+          <tr><td><strong>Mon–Fri</strong></td><td class="num">9:30 AM–12:00 PM</td><td>Live trading stream — futures first</td><td><a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold);">Discord</a></td></tr>
+          <tr><td><strong>Mon–Fri</strong></td><td class="num">Post-close</td><td>Daily callouts + recap posted</td><td><a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold);">Discord</a></td></tr>
+          <tr><td><strong>Weekends</strong></td><td class="num">Varies</td><td>Education sessions & Q&A</td><td><a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold);">Discord</a></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="text-align:center;margin-top:26px;">
+      <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-gold" style="padding:14px 28px;">💬 See This Week's Schedule in Discord</a>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" style="background:var(--bg2);">
+  <div class="section-inner">
+    <div class="section-tag">About</div>
+    <h2 class="section-title">Who Is <span class="gold">PJ Trades</span>?</h2>
+    <div class="about-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:32px;margin-top:36px;align-items:start;">
+
+      <div>
+        <p style="font-size:1.02rem;line-height:1.75;color:var(--text);">With ten years of hands-on experience navigating the fast-paced world of financial markets, <strong>PJ Trades</strong> is a seasoned day trader specializing in <strong style="color:var(--gold);">futures</strong>.</p>
+        <p style="font-size:1.02rem;line-height:1.75;color:var(--text);margin-top:16px;">Known for a disciplined approach to trading, PJ combines technical analysis, market research, and risk management to consistently identify high-probability setups and deliver results.</p>
+        <p style="font-size:1.02rem;line-height:1.75;color:var(--text);margin-top:16px;">The mission is simple: make markets understandable. Every concept — from order flow to options Greeks — gets explained so clearly that anyone willing to put in the work can follow.</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;">
+          <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-gold">⭐ Whop — 5.0 ★</a>
+          <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-outline">💬 Discord</a>
+        </div>
+      </div>
+
+      <div>
+        <figure class="buffett-card">
+          <div class="buffett-mark" aria-hidden="true">"</div>
+          <blockquote>The stock market is a device for transferring money from the impatient to the patient.</blockquote>
+          <figcaption>— Warren Buffett</figcaption>
+        </figure>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--gold);">10</div>
+            <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Years in the markets</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--gold);">30K+</div>
+            <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Community members</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- INSIGHTS -->
+<section id="insights">
+  <div class="section-inner">
+    <div class="section-tag">Education</div>
+    <h2 class="section-title">Market <span class="gold">Insights</span></h2>
+    <p class="section-sub">Free education for all. Premium insights locked for subscribers.</p>
+    <div class="insights-grid">
+      <div class="insight-card" onclick="openPost()">
+        <div class="insight-card-body">
+          <div class="insight-tag">Free · Education</div>
+          <h3>How to Understand "The Markets"</h3>
+          <p>A complete breakdown of stocks, options, futures, forex, and crypto — simplified so anyone can understand it.</p>
+          <p style="color:var(--gold);font-size:0.82rem;margin-top:12px;font-weight:600;">Read the full guide →</p>
+        </div>
+      </div>
+      <div class="insight-card locked-card">
+        <div class="insight-card-body">
+          <div class="insight-tag">Premium</div>
+          <h3>Discipline: The Real Edge in Trading</h3>
+          <p>Why 90% of traders fail — and the exact behavioral patterns that separate winners from losers.</p>
+        </div>
+        <div class="locked-overlay">
+          <div class="lock-icon">🔒</div>
+          <p>Premium members only</p>
+          <a href="#premium" class="btn btn-gold" style="padding:8px 20px;font-size:0.8rem;">Unlock Access</a>
+        </div>
+      </div>
+      <div class="insight-card locked-card">
+        <div class="insight-card-body">
+          <div class="insight-tag">Premium</div>
+          <h3>Reading Options Flow: What the Big Money is Doing</h3>
+          <p>How to read unusual options activity and follow institutional money.</p>
+        </div>
+        <div class="locked-overlay">
+          <div class="lock-icon">🔒</div>
+          <p>Premium members only</p>
+          <a href="#premium" class="btn btn-gold" style="padding:8px 20px;font-size:0.8rem;">Unlock Access</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DISCIPLINE ESSAY -->
+<section id="essay" style="background:var(--bg);">
+  <div class="section-inner" style="max-width:860px;">
+
+    <div style="text-align:center;margin-bottom:48px;">
+      <div class="section-tag">Written by PJ Trades</div>
+      <h2 class="section-title">The Art of <span class="gold">Discipline</span></h2>
+      <p style="color:var(--muted);font-size:0.95rem;max-width:600px;margin:0 auto 16px;">Why Knowing the Rule Is Not the Same as Following It</p>
+      <div style="display:inline-flex;gap:16px;flex-wrap:wrap;justify-content:center;font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;">
+        <span>📖 Research Essay</span>
+        <span>·</span>
+        <span>Trading Psychology</span>
+        <span>·</span>
+        <span>~15 min read</span>
+      </div>
+    </div>
+
+    <!-- Essay body -->
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;">
+
+      <!-- Pull quote hero -->
+      <div style="background:linear-gradient(135deg,#0a0800,#120e00);padding:36px 40px;border-bottom:1px solid rgba(220,38,38,0.2);text-align:center;position:relative;overflow:hidden;">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(220,38,38,0.07) 0%,transparent 65%);pointer-events:none;"></div>
+        <p style="font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.3rem,3vw,1.9rem);font-weight:800;color:var(--gold);text-shadow:0 0 24px rgba(220,38,38,0.4);line-height:1.35;position:relative;">"Discipline is not a personality trait or a motivational slogan. It is the ability to follow rules despite pressure — in both markets and all other aspects of life."</p>
+        <p style="color:var(--muted);font-size:0.78rem;margin-top:14px;text-transform:uppercase;letter-spacing:2px;position:relative;">— PJ Trades</p>
+      </div>
+
+      <!-- Essay content -->
+      <div style="padding:44px 48px;line-height:1.9;font-size:0.97rem;color:var(--text);" class="essay-body">
+
+        <p>Today, almost everyone can access tools that were previously reserved for professionals. With a cellphone, a person has instant access to a stock brokerage or trading app. Gym memberships are affordable and located everywhere. A computer possesses more information than an entire library. But having access does not mean people will use it effectively.</p>
+
+        <p style="margin-top:1.4em;">The real challenge is using these resources consistently, especially in environments built to exploit impulse and emotion. The <strong style="color:var(--gold);">"knowledge-execution gap"</strong> explains this clearly: infinite access does not automatically come with the discipline necessary to succeed. This gap is the distance between knowing the correct answer and actually executing it once pressure, temptation, and emotion begin to cloud judgment. In high-stakes environments like financial markets, this gap is not simply personal — it is also structural.</p>
+
+        <p style="margin-top:1.4em;">The problem is that discipline is often treated as a fluctuating mood rather than a measurable, structured process. While this paper analyzes discipline through a trading lens, the same disciplinary failures are apparent in fitness, school, work, health, relationships, and any area where people know the right action but struggle to commit to it.</p>
+
+        <div style="background:rgba(220,38,38,0.05);border-left:3px solid var(--gold);border-radius:0 10px 10px 0;padding:18px 24px;margin:28px 0;">
+          <p style="margin:0;font-style:italic;color:var(--text);">Across fields such as athletics, academics, entrepreneurship, and personal finance, the same pattern appears: people rarely fail because they lack information. They fail because they cannot apply what they already know consistently.</p>
+        </div>
+
+        <p>Talent, intelligence, and opportunity all matter, but none of them compensate for inconsistency under pressure. Discipline is the quality that converts knowledge into results, goals into habits, and intentions into action. It is the quality that strengthens every other trait, because without it, even the best strategy or ability can collapse the moment emotion, boredom, or discomfort arises.</p>
+
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--gold);margin:36px 0 14px;">Trading as a Pressure Chamber</h3>
+
+        <p>Discipline is the ability to execute a system when short-term emotion conflicts with long-term goals. Day trading is an ideal pressure chamber for studying discipline because it compresses temptation, feedback, money, uncertainty, and emotion into seconds or minutes — revealing that people often fail more from inconsistency than from lack of knowledge. Markets are noisy, short-term outcomes are often random, and factors such as fees, slippage, and informational disadvantages all increase losses. But even when a strategy has an edge, that edge collapses without disciplined execution.</p>
+
+        <p style="margin-top:1.4em;">Some critics argue that the high failure rate among traders is not attributed to a disciplinary problem — it is the complex structure of the markets. They claim that professional firms, high-frequency algorithms, and a lack of information create an environment that is disproportionately against retail traders. This is a fair point. However, this claim reduces two separate problems into one. The question of whether a strategy has a genuine edge is different from the question of whether a trader executes that strategy when it matters.</p>
+
+        <p style="margin-top:1.4em;">Research consistently shows that traders with documented strategies still underperform compared to their own systems due to emotional interference, impulsive decisions, and inconsistent rule adherence. The most common documented losses among retail traders are not caused by a market that is simply too difficult to beat — they are caused by behavior that directly contrasts the trader's own stated plan: revenge trading, holding losers too long, and cutting winners too early. Discipline is not being claimed to guarantee profits, but without it guarantees unnecessary losses compounded with the structural disadvantages that could already exist.</p>
+
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--gold);margin:36px 0 14px;">Self-Control vs. Grit — They're Not the Same</h3>
+
+        <p>Duckworth and Gross help explain why access does not automatically translate into execution. People often confuse wanting a long-term outcome with having the ability to resist short-term temptation. They argue that two important determinants of success are self-control and grit — defining self-control as the "capacity to regulate attention, emotion, and behavior in the presence of temptation" and grit as "the tenacious pursuit of a dominant superordinate goal despite setbacks." These concepts are related but not identical. Someone might handle short-term temptation well while struggling to stay committed long-term. Another person may deeply care about a long-term goal but struggle to regulate immediate impulses.</p>
+
+        <p style="margin-top:1.4em;">Gollwitzer strengthens this point by demonstrating that intentions alone are weak predictors of behavior — accounting for only about 20% to 30% of behavioral variance. He argues that this problem improves when people form specific <em>implementation intentions</em> that connect a future situation to a predetermined response. Together, these sources reinforce the argument: discipline matters more than raw knowledge. This shows the knowledge-execution gap at its simplest level.</p>
+
+        <div style="background:rgba(16,185,129,0.05);border-left:3px solid var(--emerald);border-radius:0 10px 10px 0;padding:18px 24px;margin:28px 0;">
+          <p style="margin:0;color:var(--text);"><strong style="color:var(--emerald);">Key insight:</strong> Intentions alone account for only 20–30% of actual behavior. The gap between what you plan to do and what you actually do under pressure is where discipline lives.</p>
+        </div>
+
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--gold);margin:36px 0 14px;">Prospect Theory — Why Losing Feels Worse Than Winning Feels Good</h3>
+
+        <p>In Prospect Theory, Kahneman and Tversky argue that people evaluate outcomes relative to a reference point rather than in absolute terms, and that losses feel more painful than equivalent gains feel rewarding. Because of that, a trader who is down on the day is more willing to take irrational risk in order to get back to "even," while a trader who is up may become overly quick to lock in profits for emotional relief.</p>
+
+        <p style="margin-top:1.4em;">This same loss aversion also helps explain why traders cling too tightly to unrealized gains — because the pain of giving back profit can feel more immediate than the potential benefit of letting the trade develop. Traders anchor to emotionally meaningful reference points and resist exiting until the price reaches those internal thresholds. This leads to predictable patterns: after losses, traders increase their risk, and after gains, they do the opposite. Rule-breaking, then, is not random. It follows recurring psychological patterns that emerge whenever a person's short-term emotional reference point begins to overpower the longer-term system.</p>
+
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--gold);margin:36px 0 14px;">The Disposition Effect — Real Data, Not Just Theory</h3>
+
+        <p>Odean's research confirms that these conflicts — especially the tendency to cut winners and hold losers — are not just theoretical. In his study of 10,000 brokerage accounts, investors demonstrated a strong tendency to realize winners more readily than losers. More importantly, the winning trades that investors chose to sell continued to outperform the losing positions they held. This makes the disposition effect one of the clearest real-world examples of rule-breaking under pressure.</p>
+
+        <p style="margin-top:1.4em;">Investors did not merely think irrationally under pressure — they behaved in ways that damaged their later performance. This matters because it shows how emotional relief can override rational decision-making. Traders frequently violate their known process by favoring comfort in the moment over better probabilities in the future.</p>
+
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--gold);margin:36px 0 14px;">The Position-Size Paradox</h3>
+
+        <p>Emotional engagement complicates this problem further because a strategy can remain identical while its psychological difficulty changes dramatically. Bossaerts and colleagues found that heart-rate changes that anticipate mispricing events are associated with stronger earnings, while heart-rate changes that react to trades are associated with weaker earnings. Their conclusion: emotion must not disappear from trading, but the timing and regulation of emotion matter.</p>
+
+        <p style="margin-top:1.4em;">This is where the position-size paradox becomes especially important. A setup that appears rational and manageable at a small size can feel entirely different once the exposure becomes large enough to threaten comfort, confidence, or control. The setup remains unchanged, but the trader does not. As size increases, each price movement feels more intense, and adhering to the plan becomes even harder. Discipline, therefore, cannot depend on feeling calm. It must be strong enough to withstand changes in internal state — especially when position size amplifies the emotional weight of the trade.</p>
+
+        <div style="background:rgba(220,38,38,0.05);border-left:3px solid var(--gold);border-radius:0 10px 10px 0;padding:18px 24px;margin:28px 0;">
+          <p style="margin:0;font-style:italic;color:var(--text);">Experience by itself does not solve this problem. 80% of all day traders quit within two years, yet traders with a history of losses still account for over half of day-trading volume. Without honest feedback loops, experience can reinforce ego just as easily as it reinforces skill.</p>
+        </div>
+
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--gold);margin:36px 0 14px;">Beginners vs. Veterans — How They Measure Themselves</h3>
+
+        <p>Beginners often evaluate themselves through profit and loss alone. After a profitable day, they assume they traded well; after a losing day, they assume they traded poorly. Veterans are more likely to judge performance through <em>process</em>: Did I follow my plan? Did I respect my risk rules? Did I size appropriately? Did I violate my structure?</p>
+
+        <p style="margin-top:1.4em;">That shift is critical because it separates identity from immediate outcomes. A losing trade that follows a sound process can still be evidence of discipline, while a winning trade that violates a rule can still be evidence of failure. Long-term traders survive not because they predict every move correctly, but because they treat probability management, emotional regulation, and structural consistency as more important than short-term validation.</p>
+
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--gold);margin:36px 0 14px;">The Platform Problem — When the Environment Works Against You</h3>
+
+        <p>Studies on the gamblification of investing argue that certain platforms borrow from gambling by emphasizing rapid feedback, stimulation, and repeated engagement. Barber et al. show that Robinhood's simplified attention structures guide users toward concentrated buying — and that the most purchased stocks are followed by average 20-day abnormal returns of -4.7%.</p>
+
+        <p style="margin-top:1.4em;">When platforms highlight trending stocks or reward constant interaction, they eliminate the friction that could otherwise prevent impulsive executions. In that kind of setting, discipline is no longer just a private internal trait — it becomes a struggle against an external design that benefits from speed, stimulation, and repetition. The trader is not only fighting emotion; they are also fighting an environment designed to turn attention into action before reflection can intervene.</p>
+
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--gold);margin:36px 0 14px;">Building Discipline as a System</h3>
+
+        <p>For that reason, discipline must be built as a system. Implementation intentions matter because they reduce the knowledge-execution gap by moving the decision from the heated moment of temptation to the earlier cold moment of planning. Rather than in-the-moment decision-making, people link a critical situation to a predetermined action:</p>
+
+        <div style="background:var(--accent);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin:24px 0;">
+          <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px;">
+            <li style="display:flex;gap:12px;align-items:flex-start;"><span style="color:var(--gold);font-weight:800;min-width:20px;">→</span><span>If I take two consecutive losses, <strong>then I step away</strong></span></li>
+            <li style="display:flex;gap:12px;align-items:flex-start;"><span style="color:var(--gold);font-weight:800;min-width:20px;">→</span><span>If I feel the urge to size up out of emotion, <strong>then I cut my size in half</strong></span></li>
+            <li style="display:flex;gap:12px;align-items:flex-start;"><span style="color:var(--gold);font-weight:800;min-width:20px;">→</span><span>If I break one rule, <strong>then I stop trading for the session</strong></span></li>
+            <li style="display:flex;gap:12px;align-items:flex-start;"><span style="color:var(--gold);font-weight:800;min-width:20px;">→</span><span>If the chart does not match my setup, <strong>then I do not enter — period</strong></span></li>
+          </ul>
+        </div>
+
+        <p>This kind of planning makes the response more automatic, so the trader does not have to rely on willpower in the heat of the moment. Checklists, hard daily loss limits, position-size caps, and honest journaling systems all work by making it harder to violate the plan than it is to follow it. At that point, discipline becomes measurable. It becomes visible in whether a trader executes the system when pressure arises or succumbs to short-term temptation.</p>
+
+        <!-- Final takeaway -->
+        <div style="background:linear-gradient(135deg,#0a0800,#120e00);border:1px solid rgba(220,38,38,0.3);border-radius:14px;padding:28px 32px;margin:36px 0 0;">
+          <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:12px;">The Bottom Line</h3>
+          <p style="margin:0;line-height:1.85;color:var(--text);">Ultimately, trading is a useful case study not because it is the only place where discipline matters, but because it exposes the problem more quickly than ordinary life does. In fitness, school, work, or budgeting, weak discipline can hide behind a delay. Trading eliminates that delay. It shows that modern failure is often caused not by lack of access, knowledge, or tools — but by the inability to follow a structured process once emotion begins to compete with judgment. <strong style="color:var(--gold);">Discipline is the foundation that every other skill depends on. That consistency determines survival long before it determines success.</strong></p>
+        </div>
+
+        <!-- Works Cited -->
+        <div style="margin-top:40px;padding-top:28px;border-top:1px solid var(--border);">
+          <h4 style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;">Works Cited</h4>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:0.78rem;color:var(--muted);line-height:1.6;">
+            <p>Barber, B. M., Huang, X., Odean, T., and Schwarz, C. "Attention-Induced Trading and Returns: Evidence from Robinhood Users." <em>The Journal of Finance</em>, vol. 77, no. 6, 2022, pp. 3141-3190.</p>
+            <p>Barber, B. M., Lee, Y., Liu, Y., and Odean, T. "Do Day Traders Rationally Learn About Their Ability?" 2017.</p>
+            <p>Bossaerts, P., Fattinger, F., Rotaru, K., and Xu, K. "Emotional Engagement and Trading Performance." <em>Management Science</em>, vol. 70, no. 6, 2023, pp. 3381-3397.</p>
+            <p>Duckworth, A. L., and Gross, J. J. "Self-Control and Grit." <em>Current Directions in Psychological Science</em>, vol. 23, no. 5, 2014, pp. 319-325.</p>
+            <p>Gollwitzer, P. M. "Implementation Intentions." <em>American Psychologist</em>, vol. 54, no. 7, 1999, pp. 493-503.</p>
+            <p>Kahneman, D., and Tversky, A. "Prospect Theory." <em>Econometrica</em>, vol. 47, no. 2, 1979, pp. 263-291.</p>
+            <p>Newall, P. W. S., and Weiss-Cohen, L. "The Gamblification of Investing." <em>International Journal of Environmental Research and Public Health</em>, vol. 19, no. 9, 2022.</p>
+            <p>Odean, T. "Are Investors Reluctant to Realize Their Losses?" <em>The Journal of Finance</em>, vol. 53, no. 5, 1998, pp. 1775-1798.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:28px;">
+      <p style="color:var(--muted);font-size:0.82rem;margin-bottom:14px;">Want to apply this? The discipline system is built into every callout inside the Discord.</p>
+      <a href="https://discord.gg/pjtrades" target="_blank" class="btn btn-gold">Join the Free Discord</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- DISCORD CTA -->
+<section id="discord-cta">
+  <div class="section-inner" style="text-align:center;">
+    <div class="section-tag">Join the Community</div>
+    <h2 class="section-title">30,000+ Traders. <span class="gold">One Discord.</span></h2>
+    <p class="section-sub" style="max-width:560px;margin:0 auto 30px;">Free members get daily education, market discussion, and a front-row seat to the community. Premium members unlock the courses, live streams, and daily callouts. Start free — upgrade when you're ready.</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
+      <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-gold" style="font-size:1rem;padding:15px 30px;">💬 Join the Free Discord</a>
+      <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;">⭐ Go Premium — $129/mo</a>
+    </div>
+  </div>
+</section>
+
+<!-- DISCLOSURE -->
+<div class="disclosure">
+  <p><strong>⚠️ Important Disclosure:</strong> Investing in financial markets involves risk, including the loss of principal. Past performance is not indicative of future results. Always consider your investment objectives and risk tolerance before making decisions. I am not a licensed financial advisor. All content on this site is for educational purposes only and does not constitute financial advice. We recommend consulting with a licensed financial advisor for personalized advice. I am not in this for the money — but it is said to never give valuable information for free. I am dedicated to helping everyone no matter their situation.</p>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">PJ TRADES <span style="font-size:0.55em;color:var(--muted);">× St</span></div>
+    <div class="footer-links">
+      <a href="#tools">Tools</a>
+      <a href="options-lab.html">Options Lab</a>
+      <a href="stock-lab.html">Stock Lab</a>
+      <a href="premarket.html">Pre-Market</a>
+    <a href="research-engine.html">Research Engine</a>
+      <a href="prop-firms.html">Prop Firms</a>
+      <a href="premium-guidance.html">Guidance</a>
+      <a href="forex-calendar.html">Forex Calendar</a>
+      <a href="#schedule">Schedule</a>
+      <a href="#services">Services</a>
+      <a href="#about">About</a>
+      <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener">Whop</a>
+      <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener">Discord</a>
+      <a href="mailto:vjmtrading.contact@gmail.com">Email</a>
+    </div>
+    <div class="footer-links" style="margin-top:8px;">
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a href="risk-disclosure.html">Risk Disclosure</a>
+    </div>
+    <p style="margin-top:20px;color:var(--muted);font-size:0.75rem;max-width:640px;margin-left:auto;margin-right:auto;">© 2026 PJ Trades x St. All content is for educational purposes only and is not financial advice. Trading futures, options, and stocks involves substantial risk of loss. Past performance never guarantees future results.</p>
+  </div>
+</footer>
+<!-- BLOG POST MODAL -->
+<div class="modal-overlay" id="post-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closePost()">✕</button>
+    <span class="section-tag">Free Education</span>
+    <h2>How to Understand "The Markets"</h2>
+    <p><em>A complete, simplified breakdown of every major market — written so anyone can understand it.</em></p>
+    <h3>What Are the Markets?</h3>
+    <p>When people say "the markets," it sounds complex but it's simpler than it seems. All markets are places where buyers and sellers trade different types of assets. They're connected but each serves a different purpose. Everything that moves in the markets comes from the same core reasons: supply, demand, economic data, interest rates, and overall investor sentiment.</p>
+    <h3>The U.S. Stock Market</h3>
+    <p>The largest and most influential in the world. It includes the NYSE and NASDAQ. Tracked by the S&P 500, NASDAQ 100, and Dow Jones. You're buying and selling shares of companies.</p>
+    <h3>Trading Stock Options</h3>
+    <p>Options give you the right to buy (Call) or sell (Put) stock at a specific price by a specific date. Calls = betting the stock goes up. Puts = betting it goes down. The further the expiration, the more time value. Calls get cheaper as the stock drops — Puts get cheaper as the stock rises.</p>
+    <h3>Futures Trading</h3>
+    <p>Futures are leveraged contracts that track price movement of indices or commodities. You speculate on price movement without owning the asset. Trades 23 hours/day, 5 days a week. ES (E-mini S&P 500) is smoother and more stable. NQ (E-mini NASDAQ 100) is faster, more volatile, and offers bigger moves — but higher risk. 1 mini = $5 per tick on NQ.</p>
+    <h3>Crypto (Main Ones Only)</h3>
+    <p>Crypto trades 24/7. The only ones worth focusing on: Bitcoin (BTC) — "digital gold," Ethereum (ETH) — smart contracts and DeFi, XRP — fast payment settlement. These three matter due to liquidity, adoption, and institutional involvement. Smaller altcoins are gambling, not trading.</p>
+    <h3>Risk Tolerance</h3>
+    <p>Risk tolerance is how much volatility and potential loss YOU can handle. Higher risk tolerance = day trading, futures, options. Lower = long-term investing, ETFs, bonds. Emotional control (discipline) is the most important factor — if you can't strengthen discipline, stick to investing and do not trade.</p>
+    <h3>Trading vs. Investing</h3>
+    <p>Trading = short-term, technical analysis, buying &amp; selling for profit. Investing = long-term, fundamental analysis, buying &amp; holding for growth. Day trading futures/options is highest risk but highest potential. Swing trading is moderate. Long-term investing is the safest and most reliable wealth builder.</p>
+    <h3>Summary</h3>
+    <p>Markets are just places where buyers and sellers trade assets. All markets move from supply/demand, economic data, and sentiment. Discipline and risk management separate winning traders from losing ones. Start simple. Stay patient. Learn from every trade.</p>
+    <p style="margin-top:24px;padding:16px;background:rgba(220,38,38,0.05);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;font-size:0.85rem;color:var(--muted);">⚠️ This is not financial advice. All content is educational only.</p>
+    <button onclick="closePost()" class="btn btn-gold" style="margin-top:24px;">← Back to Insights</button>
+  </div>
+</div>
+
+<script>
+// ─── PREMIUM SESSION (shared with Stock Lab, Guidance, Forex Calendar) ───
+// Sessions are HttpOnly cookies set by the server. No tokens in JS storage.
+
+async function verifyCode(code) {
+  const res = await fetch('/api/verify-premium', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ code }),
+  });
+  return res.json().catch(() => ({ ok: false }));
+}
+
+async function checkSavedSession() {
+  try {
+    const res = await fetch('/api/verify-premium', { credentials: 'same-origin' });
+    const data = await res.json().catch(() => ({}));
+    return !!(data.ok && data.active);
+  } catch (err) {
+    return false;
+  }
+}
+
+function unlockDashAndReviews() {
+  document.getElementById('dash-gate').style.display = 'none';
+  document.getElementById('dash-content').style.display = 'block';
+  // Access codes are no longer displayed back to the member.
+  const codeEl = document.getElementById('dash-access-code');
+  if (codeEl) codeEl.textContent = 'Premium';
+}
+
+document.addEventListener('DOMContentLoaded', async function () {
+  const active = await checkSavedSession();
+  if (active) unlockDashAndReviews();
+});
+
+
+
+// ─── BLOG POST ───
+function openPost() { document.getElementById('post-modal').classList.add('active'); document.body.style.overflow='hidden'; }
+function closePost() { document.getElementById('post-modal').classList.remove('active'); document.body.style.overflow=''; }
+
+// ─── EXPAND / COLLAPSE SECTIONS ───
+function toggleSection(id, btn) {
+  const el = document.getElementById(id);
+  const isOpen = el.style.maxHeight && el.style.maxHeight !== '0px';
+  if (isOpen) {
+    el.style.maxHeight = '0';
+    btn.textContent = btn.textContent.replace('▲', '▼').replace('Hide', 'Show More');
+  } else {
+    el.style.maxHeight = el.scrollHeight + 'px';
+    btn.textContent = btn.textContent.replace('▼', '▲').replace('Show More', 'Hide');
+  }
+}
+
+// ─── DARK / LIGHT MODE ───
+function themeButtonHtml(isLight) {
+  return (isLight ? '☀️ <span class="theme-label-text">Light</span>' : '🌙 <span class="theme-label-text">Dark</span>');
+}
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  const btn = document.getElementById('theme-toggle');
+  btn.innerHTML = themeButtonHtml(isLight);
+  localStorage.setItem('st-theme', isLight ? 'light' : 'dark');
+}
+(function() {
+  if (localStorage.getItem('st-theme') === 'light') {
+    document.body.classList.add('light-mode');
+    document.getElementById('theme-toggle').innerHTML = themeButtonHtml(true);
+  }
+})();
+
+// ─── STREAM COUNTDOWN ───
+function getNextStreamTime() {
+  // Stream starts at 9:15 AM ET on weekdays (Mon–Fri)
+  // We work in ET by using America/New_York
+  const now = new Date();
+  const etStr = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+  const etNow = new Date(etStr);
+  const day = etNow.getDay(); // 0=Sun,1=Mon...5=Fri,6=Sat
+  const h = etNow.getHours();
+  const m = etNow.getMinutes();
+  const s = etNow.getSeconds();
+
+  // Is it currently a weekday?
+  const isWeekday = day >= 1 && day <= 5;
+  // Is stream live right now? (9:15 AM – 1:00 PM ET)
+  const minsSinceMidnight = h * 60 + m;
+  const streamStart = 9 * 60 + 15;  // 9:15 AM
+  const streamEnd   = 14 * 60;       // 2:00 PM
+
+  if (isWeekday && minsSinceMidnight >= streamStart && minsSinceMidnight < streamEnd) {
+    return { live: true };
+  }
+
+  // Find next 9:15 AM ET weekday
+  let target = new Date(etNow);
+  target.setHours(9, 15, 0, 0);
+
+  // If today is a weekday but stream hasn't started yet
+  if (isWeekday && minsSinceMidnight < streamStart) {
+    // target is already today at 9:15 — good
+  } else {
+    // Move to next weekday
+    target.setDate(target.getDate() + 1);
+    while (target.getDay() === 0 || target.getDay() === 6) {
+      target.setDate(target.getDate() + 1);
+    }
+  }
+
+  // Diff in ms (using real now, not etNow which is a fake Date)
+  const diffMs = target - etNow;
+  const totalSecs = Math.floor(diffMs / 1000);
+  const hh = Math.floor(totalSecs / 3600);
+  const mm = Math.floor((totalSecs % 3600) / 60);
+  const ss = totalSecs % 60;
+
+  const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][target.getDay()];
+  const isNextDay = target.getDate() !== etNow.getDate();
+
+  return {
+    live: false,
+    weekend: !isWeekday && (minsSinceMidnight >= streamEnd || !isWeekday),
+    time: `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`,
+    label: isNextDay ? `${dayName} 9:15 AM ET` : 'Today 9:15 AM ET'
+  };
+}
+
+function tickCountdown() {
+  const display = document.getElementById('cd-display');
+  const status  = document.getElementById('cd-status');
+  const bar     = document.getElementById('stream-countdown-bar');
+  const info = getNextStreamTime();
+
+  if (info.live) {
+    display.innerHTML = '';
+    status.innerHTML  = '<span class="cd-live"><span class="cd-live-dot"></span>🔴 LIVE NOW — 9:15 AM to 2:00 PM ET</span>';
+    bar.style.borderBottomColor = 'rgba(255,68,68,0.4)';
+  } else {
+    const etNow = new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+    const dow = etNow.getDay();
+    if (dow === 0 || dow === 6) {
+      display.innerHTML = '';
+      status.innerHTML  = '<span class="cd-weekend">🗓️ Markets closed — back Monday 9:15 AM ET</span>';
+    } else {
+      display.className = 'cd-time';
+      display.textContent = info.time;
+      status.innerHTML  = `<span style="color:var(--muted);font-size:0.78rem;">${info.label}</span>`;
+      bar.style.borderBottomColor = 'rgba(220,38,38,0.25)';
+    }
+  }
+}
+
+tickCountdown();
+setInterval(tickCountdown, 1000);
+
+// Fabricated "launch spots" scarcity bar and simulated viewer counter were
+// removed: the site must never display invented urgency or fake live data.
+
+// ─── TRADER QUIZ ───
+const quizAnswers = {};
+const quizResults = {
+  discipline: {
+    icon: '🏆', title: 'The Disciplined Trader',
+    text: "You've got the mindset. You cut losses, stick to a plan, and you're in it for the long game. This is exactly the type of trader St Trades Premium was built for. You understand that the edge isn't the trade — it's the consistency."
+  },
+  learning: {
+    icon: '📚', title: 'The Hungry Learner',
+    text: "You're doing some things right but emotion is still in the mix. That's normal — every great trader went through this. The difference between where you are and where you want to be is structure and guidance. That's what this community provides."
+  },
+  gambler: {
+    icon: '🎰', title: 'The Casino Trader',
+    text: "Real talk — you're gambling right now, not trading. No plan, panic decisions, chasing quick money. The good news? Awareness is step one. The bad news? The market will take everything if you don't change the approach. Come learn the right way."
+  }
+};
+
+function quizAnswer(q, ans) {
+  quizAnswers[q] = ans;
+  document.getElementById('q'+q).style.display='none';
+  if(q < 3) {
+    document.getElementById('q'+(q+1)).style.display='block';
+  } else {
+    showQuizResult();
+  }
+}
+
+function showQuizResult() {
+  const a = quizAnswers;
+  let type;
+  if(a[1]==='b' && a[2]==='a' && a[3]==='a') type='discipline';
+  else if(a[1]==='c' && a[2]==='c' && a[3]==='b') type='gambler';
+  else if((a[1]==='b'||a[1]==='a') && (a[3]==='a'||a[3]==='c')) type='learning';
+  else if(a[1]==='c'||a[2]==='c') type='gambler';
+  else type='learning';
+  const r = quizResults[type];
+  document.getElementById('quiz-result-icon').textContent=r.icon;
+  document.getElementById('quiz-result-title').textContent=r.title;
+  document.getElementById('quiz-result-text').textContent=r.text;
+  document.getElementById('quiz-result').style.display='block';
+}
+
+function resetQuiz() {
+  quizAnswers[1]=quizAnswers[2]=quizAnswers[3]=null;
+  document.getElementById('quiz-result').style.display='none';
+  document.getElementById('q1').style.display='block';
+  document.getElementById('q2').style.display='none';
+  document.getElementById('q3').style.display='none';
+}
+
+// ─── HAMBURGER MENU ───
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobile-menu');
+  const btn = document.getElementById('hamburger');
+  menu.classList.toggle('open');
+  btn.classList.toggle('open');
+}
+function closeMobileMenu() {
+  document.getElementById('mobile-menu').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+}
+// Close on outside click
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('mobile-menu');
+  const btn = document.getElementById('hamburger');
+  if (!menu.contains(e.target) && !btn.contains(e.target)) {
+    menu.classList.remove('open');
+    btn.classList.remove('open');
+  }
+});
+
+// ─── PREMIUM HUB TABS ───
+function premTab(tab) {
+  ['join','dashboard','status'].forEach(t => {
+    document.getElementById('pcontent-'+t).style.display = 'none';
+    const btn = document.getElementById('ptab-'+t);
+    btn.style.background = 'transparent';
+    btn.style.color = 'var(--muted)';
+  });
+  document.getElementById('pcontent-'+tab).style.display = 'block';
+  const active = document.getElementById('ptab-'+tab);
+  active.style.background = 'var(--gold)';
+  active.style.color = '#fff';
+}
+
+async function checkDashPw() {
+  const input = document.getElementById('dash-pw-input');
+  const code = input.value.trim();
+  const err = document.getElementById('dash-pw-error');
+  err.style.display = 'none';
+  if (!code) return;
+  const data = await verifyCode(code);
+  if (data.ok) {
+    unlockDashAndReviews();
+  } else {
+    err.textContent = data.error || 'Incorrect code. DM St1101 on Discord.';
+    err.style.display = 'block';
+  }
+}
+
+// ─── AM I ACTIVE STATUS CHECKER ───
+// Live lookup only — there is intentionally NO client-side fallback list of
+// members. If the bridge is unreachable we say so instead of guessing.
+
+async function checkStatus() {
+  const inputEl = document.getElementById('status-discord-input');
+  const input = inputEl.value.trim().toLowerCase();
+  const result = document.getElementById('status-result');
+  const icon = document.getElementById('status-icon');
+  const text = document.getElementById('status-text');
+  const sub = document.getElementById('status-sub');
+  if (!input) return;
+
+  result.style.display = 'block';
+  result.style.background = 'rgba(124,143,163,0.08)';
+  result.style.border = '1px solid var(--border)';
+  icon.textContent = '⏳';
+  text.style.color = 'var(--muted)';
+  text.textContent = 'CHECKING...';
+  sub.style.color = 'var(--muted)';
+  sub.textContent = '';
+
+  let isActive = false, live = true;
+  try {
+    const res = await fetch('/api/check-member-status?discord=' + encodeURIComponent(input), { credentials: 'same-origin' });
+    const data = await res.json().catch(() => ({ ok: false }));
+    if (!data.ok && !('active' in data)) throw new Error(data.error || 'lookup failed');
+    isActive = !!data.active;
+  } catch (err) {
+    live = false;
+  }
+
+  if (!live) {
+    // Honest failure state: never guess membership from a local list.
+    result.style.background = 'rgba(124,143,163,0.08)';
+    result.style.border = '1px solid var(--border)';
+    icon.textContent = '⚠️';
+    text.style.color = 'var(--muted)';
+    text.textContent = 'LOOKUP UNAVAILABLE';
+    sub.style.color = 'var(--muted)';
+    sub.textContent = 'Status service is temporarily down. DM St1101 on Discord.';
+    return;
+  }
+
+  if (isActive) {
+    result.style.background = 'rgba(0,230,118,0.07)';
+    result.style.border = '1px solid rgba(0,230,118,0.3)';
+    icon.textContent = '✅';
+    text.style.color = 'var(--green)';
+    text.textContent = 'ACTIVE';
+    sub.style.color = 'var(--muted)';
+    sub.textContent = 'Your premium is active. You should have your Discord role.';
+  } else {
+    result.style.background = 'rgba(255,68,68,0.06)';
+    result.style.border = '1px solid rgba(255,68,68,0.3)';
+    icon.textContent = '❌';
+    text.style.color = 'var(--red)';
+    text.textContent = 'NOT ACTIVE';
+    sub.style.color = 'var(--muted)';
+    sub.textContent = 'No active membership found for this handle. DM St1101 on Discord if you think this is wrong.';
+  }
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.getElementById('status-discord-input') === document.activeElement) checkStatus();
+});
+
+
+// ─── GROWTH SIMULATOR ───
+let simMode = 'trading';
+let gainMode = 'dollar';
+
+function setSimMode(mode) {
+  simMode = mode;
+  document.getElementById('sim-trading-inputs').style.display = mode === 'trading' ? 'block' : 'none';
+  document.getElementById('sim-investing-inputs').style.display = mode === 'investing' ? 'block' : 'none';
+  document.getElementById('sim-mode-trading').style.background = mode === 'trading' ? 'var(--gold)' : 'transparent';
+  document.getElementById('sim-mode-trading').style.color = mode === 'trading' ? '#fff' : 'var(--muted)';
+  document.getElementById('sim-mode-investing').style.background = mode === 'investing' ? 'var(--gold)' : 'transparent';
+  document.getElementById('sim-mode-investing').style.color = mode === 'investing' ? '#fff' : 'var(--muted)';
+  document.getElementById('sim-result').style.display = 'none';
+}
+
+function setGainMode(mode) {
+  gainMode = mode;
+  document.getElementById('sim-dollar-input').style.display = mode === 'dollar' ? 'block' : 'none';
+  document.getElementById('sim-pct-input').style.display = mode === 'pct' ? 'block' : 'none';
+  document.getElementById('gain-dollar-btn').style.background = mode === 'dollar' ? 'var(--gold)' : 'transparent';
+  document.getElementById('gain-dollar-btn').style.color = mode === 'dollar' ? '#fff' : 'var(--muted)';
+  document.getElementById('gain-dollar-btn').style.borderColor = mode === 'dollar' ? 'var(--gold)' : 'var(--border)';
+  document.getElementById('gain-pct-btn').style.background = mode === 'pct' ? 'var(--gold)' : 'transparent';
+  document.getElementById('gain-pct-btn').style.color = mode === 'pct' ? '#fff' : 'var(--muted)';
+  document.getElementById('gain-pct-btn').style.borderColor = mode === 'pct' ? 'var(--gold)' : 'var(--border)';
+}
+
+function runSim() {
+  let endVal, gain, extraText, label;
+  if (simMode === 'trading') {
+    const start = parseFloat(document.getElementById('sim-start').value) || 1200;
+    const days = parseInt(document.getElementById('sim-days').value) || 20;
+    let balance = start;
+    if (gainMode === 'dollar') {
+      const daily = parseFloat(document.getElementById('sim-daily-dollar').value) || 500;
+      balance = start + (daily * days);
+    } else {
+      const pct = parseFloat(document.getElementById('sim-daily-pct').value) || 5;
+      for (let i = 0; i < days; i++) { balance *= (1 + pct / 100); }
+    }
+    endVal = balance;
+    gain = balance - start;
+    label = `After ${days} Trading Days`;
+    extraText = `Starting $${start.toLocaleString()} · ${days} days`;
+  } else {
+    const start = parseFloat(document.getElementById('inv-start').value) || 1000;
+    const rate = parseFloat(document.getElementById('inv-rate').value) || 20;
+    const years = parseInt(document.getElementById('inv-years').value) || 5;
+    const monthly = parseFloat(document.getElementById('inv-contrib').value) || 0;
+    let balance = start;
+    const monthlyRate = rate / 100 / 12;
+    for (let m = 0; m < years * 12; m++) {
+      balance = balance * (1 + monthlyRate) + monthly;
+    }
+    endVal = balance;
+    gain = balance - start - (monthly * years * 12);
+    label = `After ${years} Years (Compounded)`;
+    const totalContrib = start + (monthly * years * 12);
+    extraText = `$${totalContrib.toLocaleString()} contributed · $${Math.round(gain).toLocaleString()} interest earned`;
+  }
+  const pct = (((endVal - (parseFloat(document.getElementById(simMode==='trading'?'sim-start':'inv-start').value)||1200)) / (parseFloat(document.getElementById(simMode==='trading'?'sim-start':'inv-start').value)||1200)) * 100).toFixed(0);
+  document.getElementById('sim-result-label').textContent = label;
+  document.getElementById('sim-end-val').textContent = '$' + Math.round(endVal).toLocaleString();
+  document.getElementById('sim-gain-val').textContent = '+$' + Math.round(gain).toLocaleString() + ' (+' + pct + '%)';
+  document.getElementById('sim-extra-val').textContent = extraText;
+  document.getElementById('sim-result').style.display = 'block';
+}
+
+// ─── OPTIONS PROFIT CALCULATOR ───
+function calcOptions() {
+  const entry = parseFloat(document.getElementById('opt-entry').value)||0;
+  const exit = parseFloat(document.getElementById('opt-exit').value)||0;
+  const contracts = parseInt(document.getElementById('opt-contracts').value)||1;
+  if(entry<=0||exit<=0) return;
+  const pnl = (exit-entry)*contracts*100;
+  const pct = ((exit-entry)/entry*100).toFixed(1);
+  const invested = entry*contracts*100;
+  const isWin = pnl >= 0;
+  document.getElementById('opt-pnl').textContent=(isWin?'+':'')+'$'+Math.abs(Math.round(pnl)).toLocaleString();
+  document.getElementById('opt-pnl').style.color=isWin?'var(--green)':'var(--red)';
+  document.getElementById('opt-pct').style.color=isWin?'var(--green)':'var(--red)';
+  document.getElementById('opt-pct').textContent=(isWin?'+':'')+pct+'%';
+  document.getElementById('opt-details').textContent=contracts+' contracts · $'+invested.toLocaleString()+' invested';
+  document.getElementById('opt-result').style.display='block';
+}
+
+// ─── R:R CALCULATOR ───
+function calcRR() {
+  const entry = parseFloat(document.getElementById('rr-entry').value)||0;
+  const stop = parseFloat(document.getElementById('rr-stop').value)||0;
+  const target = parseFloat(document.getElementById('rr-target').value)||0;
+  if(entry<=0||stop<=0||target<=0) return;
+  const risk = Math.abs(entry-stop);
+  const reward = Math.abs(target-entry);
+  if(risk===0) return;
+  const rr = (reward/risk).toFixed(2);
+  const isGood = rr >= 2;
+  const card = document.getElementById('rr-card');
+  card.style.background=isGood?'rgba(0,230,118,0.06)':'rgba(255,68,68,0.06)';
+  card.style.border=isGood?'1px solid rgba(0,230,118,0.25)':'1px solid rgba(255,68,68,0.25)';
+  document.getElementById('rr-ratio').textContent='1 : '+rr+'R';
+  document.getElementById('rr-ratio').style.color=isGood?'var(--green)':'var(--red)';
+  document.getElementById('rr-verdict').textContent=isGood?'✅ Good trade setup':'⚠️ Risk too high vs reward';
+  document.getElementById('rr-verdict').style.color=isGood?'var(--green)':'var(--red)';
+  document.getElementById('rr-breakdown').innerHTML='Risk: $'+risk.toFixed(2)+' per share &nbsp;|&nbsp; Reward: $'+reward.toFixed(2)+' per share';
+  document.getElementById('rr-result').style.display='block';
+}
+</script>
+
+</body>
+</html>
