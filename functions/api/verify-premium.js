@@ -19,8 +19,8 @@
 
 import {
   resolveSigningSecret, signSession, getSession, sessionDays,
-} from '../_lib/session.js';
-import { json, jsonWithSession, checkRateLimit } from '../_lib/http.js';
+} from './_lib/session.js';
+import { json, jsonWithSession, checkRateLimit } from './_lib/http.js';
 
 const GENERIC_BAD_CODE = 'We could not activate this code. Check it and try again, or DM St1101 on Discord.';
 

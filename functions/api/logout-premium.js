@@ -1,8 +1,8 @@
 // Cloudflare Pages Function: POST /api/logout-premium
 // Clears the premium session cookie. Idempotent.
 
-import { getSession } from '../_lib/session.js';
-import { jsonClearedSession } from '../_lib/http.js';
+import { getSession } from './_lib/session.js';
+import { jsonClearedSession } from './_lib/http.js';
 
 export async function onRequestPost(context) {
   try {

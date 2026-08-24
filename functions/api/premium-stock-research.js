@@ -9,7 +9,7 @@
 
 import {
   resolveSigningSecret, verifySessionToken, readSessionCookie,
-} from '../_lib/session.js';
+} from './_lib/session.js';
 import { json, cleanSymbol, fetchJsonWithTimeout, checkRateLimit } from './_lib/http.js';
 
 export async function onRequestGet(context) {
