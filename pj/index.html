@@ -5,10 +5,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, follow">
-<title>PJ Trades x St | Markets, Made Simple.</title>
-<meta name="description" content="PJ Trades x St — futures-first trading education: live streams, daily callouts, and complete futures, options, and stock courses. 30,000+ members and growing. Educational only — not financial advice.">
-<meta property="og:title" content="PJ Trades x St — Trade With Discipline.">
-<meta property="og:description" content="Futures, options, and stock education with live streams and daily callouts. Join 30,000+ members. Educational content only — not financial advice.">
+<title>PJ Trades x St | Live Futures Trading & Education — NQ, ES, Futures Courses</title>
+<meta name="description" content="Trade futures alongside a 10-year pro. Live futures trading 3–5x/week, daily callouts, the IFVG Starter Crash Course, group classes 2x/month, and prop firm giveaways up to $50,000. 5.0★ on Whop. Educational only — not financial advice.">
+<meta property="og:title" content="PJ Trades x St — Futures, Made Simple.">
+<meta property="og:description" content="Live futures trading & analysis, exclusive education, group classes 2x/month, the Starter Crash Course (IFVG model), and exclusive prop firm giveaways. Educational content only — not financial advice.">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Do you offer live trading?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes! I go live 3 to 5 times a week, depending on the economic calendar and market conditions." }
+    },
+    {
+      "@type": "Question",
+      "name": "Do you share entries and exits?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes, all entries and exits are shared via discord live trading." }
+    },
+    {
+      "@type": "Question",
+      "name": "What is your refund policy?",
+      "acceptedAnswer": { "@type": "Answer", "text": "There are no refunds. You can cancel your membership at anytime." }
+    }
+  ]
+}
+</script>
 <meta property="og:url" content="https://notfinancialadvicevjm.com">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2306090d'/%3E%3Ctext y='34' x='32' text-anchor='middle' dominant-baseline='central' font-size='34' font-family='Arial Black,sans-serif' font-weight='900' fill='%23dc2626'%3EPJ%3C/text%3E%3C/svg%3E">
@@ -452,6 +475,89 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .reveal-in{opacity:1;transform:translateY(0);transition:opacity .4s ease-out, transform .4s ease-out;}
 @media (prefers-reduced-motion: reduce){.reveal-init,.reveal-in{opacity:1;transform:none;transition:none;}}
 
+/* ─── FEATURE SHOWCASE (Whop carousel, recreated natively) ─── */
+.feature-card{position:relative;background:linear-gradient(145deg,#121a28,#0b111c);border:1px solid var(--border);border-radius:18px;padding:30px 28px;overflow:hidden;transition:all .25s;}
+.feature-card:hover{border-color:var(--gold);transform:translateY(-4px);box-shadow:0 14px 40px rgba(220,38,38,.12);}
+.feature-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 10%,rgba(220,38,38,.09),transparent 55%);pointer-events:none;}
+.feature-num{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:900;color:var(--gold);letter-spacing:3px;margin-bottom:14px;}
+.feature-card h3{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;text-transform:uppercase;line-height:1.1;margin-bottom:10px;color:var(--text);}
+.feature-card p{color:var(--muted);font-size:.9rem;line-height:1.65;}
+
+/* ─── VIDEO FACADE (lazy; nothing loads until clicked) ─── */
+.video-facade{position:relative;border-radius:20px;overflow:hidden;border:1px solid var(--border-strong);cursor:pointer;box-shadow:0 20px 60px rgba(0,0,0,.5);outline:none;}
+.video-facade:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
+.video-poster{position:relative;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:linear-gradient(135deg,#0a0d14 0%,#131018 45%,#1a140a 100%);}
+.video-poster-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 70% 20%,rgba(240,180,41,.10),transparent 55%),radial-gradient(ellipse at 20% 80%,rgba(220,38,38,.10),transparent 55%);}
+.video-play{position:relative;width:84px;height:84px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 10px rgba(220,38,38,.15),0 12px 40px rgba(220,38,38,.4);transition:transform .2s;}
+.video-facade:hover .video-play{transform:scale(1.08);}
+.video-play span{font-size:1.7rem;color:#fff;margin-left:5px;}
+.video-poster-title{position:relative;font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--text);}
+.video-facade iframe,.video-facade video{position:absolute;inset:0;width:100%;height:100%;border:0;}
+.video-note{display:none;text-align:center;padding:40px 20px;color:var(--muted);font-size:.9rem;}
+
+/* ─── BUNDLE TIERS ─── */
+.tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;max-width:960px;margin:0 auto;}
+.tier-card{position:relative;background:linear-gradient(145deg,#12100a,#0a0f16);border:2px solid var(--border);border-radius:20px;padding:34px 30px;display:flex;flex-direction:column;}
+.tier-card.hot{border-color:var(--gold);box-shadow:0 0 60px rgba(220,38,38,.12);}
+.tier-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--gold);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:.8rem;letter-spacing:2px;text-transform:uppercase;padding:5px 18px;border-radius:20px;white-space:nowrap;}
+.tier-badge.alt{background:#334155;}
+.tier-name{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:10px;}
+.tier-price{font-family:'Barlow Condensed',sans-serif;font-size:3.4rem;font-weight:900;color:var(--gold);line-height:1;}
+.tier-price span{font-size:1.1rem;color:var(--muted);font-family:'Inter',sans-serif;font-weight:600;}
+.tier-sub{font-size:.82rem;color:var(--muted);margin:8px 0 18px;}
+.tier-save{display:inline-block;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.35);color:var(--emerald);font-size:.72rem;font-weight:800;border-radius:20px;padding:3px 12px;margin-left:8px;vertical-align:middle;}
+.tier-card ul{list-style:none;padding:0;margin:0 0 22px;display:grid;gap:10px;flex:1;}
+.tier-card li{font-size:.88rem;color:var(--text);display:flex;gap:9px;line-height:1.45;}
+.tier-card li b{color:var(--gold);font-weight:900;}
+.tier-card li .tick{color:var(--green);font-weight:900;}
+.tier-plus{font-family:'Barlow Condensed',sans-serif;font-size:.8rem;font-weight:900;letter-spacing:2px;color:var(--emerald);text-transform:uppercase;margin:-8px 0 10px;}
+
+/* ─── REVIEW SUMMARY (from Whop listing) ─── */
+.review-summary{max-width:960px;margin:34px auto 0;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;display:flex;gap:30px;align-items:center;flex-wrap:wrap;}
+.review-score{text-align:center;min-width:130px;}
+.review-score .big{font-family:'Barlow Condensed',sans-serif;font-size:3.2rem;font-weight:900;color:var(--text);line-height:1;}
+.review-score .stars{color:#f5b301;font-size:1.1rem;letter-spacing:2px;}
+.review-score .count{font-size:.75rem;color:var(--muted);margin-top:4px;}
+.review-bars{flex:1;min-width:240px;display:grid;gap:7px;}
+.review-bar{display:grid;grid-template-columns:34px 1fr 92px;gap:10px;align-items:center;font-size:.78rem;color:var(--muted);}
+.review-bar .track{height:9px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden;}
+.review-bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#00c853,#00e676);}
+
+/* ─── FAQ (native details/summary — no JS, accessible) ─── */
+.faq-list{max-width:760px;margin:0 auto;display:grid;gap:12px;}
+.faq-list details{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:0;overflow:hidden;}
+.faq-list summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 22px;font-weight:700;font-size:.95rem;color:var(--text);}
+.faq-list summary::-webkit-details-marker{display:none;}
+.faq-list summary::after{content:'+';font-size:1.4rem;font-weight:400;color:var(--gold);line-height:1;transition:transform .2s;}
+.faq-list details[open] summary::after{transform:rotate(45deg);}
+.faq-list details p{padding:0 22px 20px;color:var(--muted);font-size:.9rem;line-height:1.7;}
+
+/* ─── SCHEDULE WEEK GRID ─── */
+.week-grid{display:grid;gap:18px;max-width:860px;margin:0 auto;}
+.day-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px;}
+.day-card h3{font-family:'Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:900;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold);margin-bottom:12px;}
+.session-row{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);flex-wrap:wrap;font-size:.88rem;}
+.session-row:last-child{border-bottom:none;}
+.session-row .sess-name{font-weight:800;color:var(--text);white-space:nowrap;}
+.session-row .sess-time{color:var(--muted);font-weight:600;white-space:nowrap;}
+.host{font-weight:800;}
+.host-pj{color:#f0b429;}.host-caleb{color:#5b9bd5;}.host-fin{color:#5b9bd5;}.host-gainz{color:#ff8c42;}.host-kwt{color:#ff6b6b;}
+
+/* ─── TEAM CARDS ─── */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:18px;max-width:960px;margin:0 auto;}
+.team-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 18px;text-align:center;transition:all .2s;}
+.team-card:hover{border-color:var(--gold);transform:translateY(-3px);}
+.team-avatar{width:76px;height:76px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:#fff;background:linear-gradient(135deg,#dc2626,#7f1d1d);box-shadow:0 8px 24px rgba(220,38,38,.3);}
+.team-card h3{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;}
+.team-card .role{font-size:.76rem;color:var(--emerald);font-weight:700;margin:6px 0 8px;text-transform:uppercase;letter-spacing:1px;}
+.team-card .bio{font-size:.8rem;color:var(--muted);line-height:1.55;}
+
+/* ─── SOCIAL LINKS ─── */
+.social-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.social-btn{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:999px;padding:8px 18px;color:var(--muted);text-decoration:none;font-size:.82rem;font-weight:700;transition:all .2s;}
+.social-btn:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px);}
+.social-btn svg{width:16px;height:16px;fill:currentColor;}
+
 /* ─── HERO EXTRAS ─── */
 .hero-badge{display:inline-flex;align-items:center;gap:9px;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.4);border-radius:999px;padding:7px 16px;font-size:.8rem;font-weight:800;color:#ffb3b3;margin-bottom:22px;}
 .pulse-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(0,230,118,.5);animation:pulseDot 2s infinite;}
@@ -487,19 +593,17 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
     <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
     {
       "symbols": [
-        {"proName":"CBOE:SPX","title":"SPX"},
-        {"proName":"NASDAQ:QQQ","title":"QQQ"},
-        {"proName":"BINANCE:BTCUSDT","title":"BTC"},
-        {"proName":"BINANCE:ETHUSDT","title":"ETH"},
-        {"proName":"BINANCE:XRPUSDT","title":"XRP"},
-        {"proName":"NASDAQ:AAPL","title":"AAPL"},
-        {"proName":"NASDAQ:MSFT","title":"MSFT"},
-        {"proName":"NASDAQ:NVDA","title":"NVDA"},
-        {"proName":"NASDAQ:META","title":"META"},
-        {"proName":"NASDAQ:GOOGL","title":"GOOGL"},
-        {"proName":"NASDAQ:AMZN","title":"AMZN"},
-        {"proName":"NASDAQ:TSLA","title":"TSLA"},
-        {"proName":"NYSE:SPY","title":"SPY"}
+        {"proName":"CME_MINI:NQ1!","title":"NQ"},
+        {"proName":"CME_MINI:ES1!","title":"ES"},
+        {"proName":"CME_MINI:MNQ1!","title":"MNQ"},
+        {"proName":"CME_MINI:MES1!","title":"MES"},
+        {"proName":"CME_MINI:YM1!","title":"YM"},
+        {"proName":"CME_MINI:RTY1!","title":"RTY"},
+        {"proName":"TVC:VIX","title":"VIX"},
+        {"proName":"TVC:DXY","title":"DXY"},
+        {"proName":"CME:GC1!","title":"GOLD"},
+        {"proName":"NYMEX:CL1!","title":"CRUDE"},
+        {"proName":"CME:BTC1!","title":"BTC"}
       ],
       "showSymbolLogo": true,
       "isTransparent": true,
@@ -522,23 +626,24 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 <nav>
   <div class="nav-brand">PJ TRADES <span style="font-size:0.55em;color:var(--muted);font-weight:700;letter-spacing:1px;">× St</span></div>
   <div class="nav-links">
-    <a href="#services">Services</a>
-    <a href="#tools">Tools</a>
-    <a href="options-lab.html">Options Lab</a>
-    <a href="stock-lab.html">Stock Lab</a>
+    <a href="#features">What You Get</a>
+    <a href="#bundles">Bundles</a>
     <a href="premarket.html">Pre-Market</a>
-    <a href="research-engine.html">Research Engine</a>
-    <a href="premium-guidance.html">Guidance</a>
-    <a href="prop-firms.html">Prop Firms</a>
-    <a href="forex-calendar.html">Forex Calendar</a>
     <a href="#schedule">Schedule</a>
+    <a href="#team">Team</a>
+    <a href="research-engine.html">Research Engine</a>
+    <a href="prop-firms.html">Prop Firms</a>
+    <a href="premium-guidance.html">Guidance</a>
+    <a href="forex-calendar.html">Forex Calendar</a>
+    <a href="stock-lab.html">Stock Lab</a>
+    <a href="options-lab.html">Options Lab</a>
     <a href="#about">About</a>
     <a href="#discord-cta">Discord</a>
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
     <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">🌙 <span id="theme-label">Dark</span></button>
     <div style="display:flex;gap:8px;align-items:center;">
-      <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" title="PJ Trades on Whop" style="color:var(--muted);font-size:1.1rem;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--muted)'">⭐</a>
+      <a href="https://whop.com/pjtradespremium" target="_blank" rel="noopener" title="PJ Trades on Whop" style="color:var(--muted);font-size:1.1rem;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--muted)'">⭐</a>
       <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" title="Discord" style="color:var(--muted);font-size:1.1rem;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--muted)'">💬</a>
     </div>
     <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">☰</button>
@@ -547,19 +652,20 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 
 <!-- MOBILE MENU -->
 <div class="mobile-menu" id="mobile-menu">
-  <a href="#services" onclick="closeMobileMenu()">🛠️ Services</a>
-  <a href="#tools" onclick="closeMobileMenu()">🧰 Tools</a>
-  <a href="options-lab.html" onclick="closeMobileMenu()">📊 Options Lab</a>
-  <a href="stock-lab.html" onclick="closeMobileMenu()">📈 Stock Lab</a>
+  <a href="#features" onclick="closeMobileMenu()">⭐ What You Get</a>
+  <a href="#bundles" onclick="closeMobileMenu()">💎 Bundles</a>
   <a href="premarket.html" onclick="closeMobileMenu()">☕ Pre-Market</a>
+  <a href="#schedule" onclick="closeMobileMenu()">🗓️ Schedule</a>
+  <a href="#team" onclick="closeMobileMenu()">👥 Team</a>
   <a href="research-engine.html" onclick="closeMobileMenu()">🔬 Research Engine</a>
-  <a href="premium-guidance.html" onclick="closeMobileMenu()">🎓 Guidance</a>
   <a href="prop-firms.html" onclick="closeMobileMenu()">🏷️ Prop Firms</a>
+  <a href="premium-guidance.html" onclick="closeMobileMenu()">🎓 Guidance</a>
   <a href="forex-calendar.html" onclick="closeMobileMenu()">📅 Forex Calendar</a>
-  <a href="#schedule" onclick="closeMobileMenu()">🗓️ Stream Schedule</a>
+  <a href="stock-lab.html" onclick="closeMobileMenu()">📈 Stock Lab</a>
+  <a href="options-lab.html" onclick="closeMobileMenu()">📊 Options Lab</a>
   <a href="#about" onclick="closeMobileMenu()">👋 About</a>
   <a href="#discord-cta" onclick="closeMobileMenu()">💬 Discord</a>
-  <a href="https://whop.com/pjtradespremium/" target="_blank" onclick="closeMobileMenu()">⭐ Join Premium</a>
+  <a href="https://whop.com/pjtradespremium" target="_blank" onclick="closeMobileMenu()">⭐ Join Premium</a>
 </div>
 <!-- HERO -->
 <section class="hero" id="home">
@@ -570,29 +676,92 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
     <div class="liquid-grid"></div>
   </div>
   <div class="hero-inner" style="position:relative;z-index:2;">
-    <div class="hero-badge"><span class="pulse-dot"></span> 30,000+ members · growing every week</div>
+    <div class="hero-badge"><span class="pulse-dot"></span> 5.0★ on Whop · 2,240 reviews · 49,136 joined</div>
     <h1>PJ TRADES <span style="display:inline-block;"><span style="font-size:0.42em;vertical-align:middle;color:var(--muted);font-weight:700;letter-spacing:2px;">× St</span></span><br>
-    <span class="gold">Markets, Made Simple.</span></h1>
-    <p class="hero-sub">With ten years of hands on experience navigating the fast paced world of financial markets, PJ Trades is a seasoned day trader specializing in futures. Known for a disciplined approach to trading, PJ Trades combines technical analysis, market research, and risk management to consistently identify high probability setups and deliver results.</p>
+    <span class="gold">Futures, Made Simple.</span></h1>
+    <p class="hero-sub">With ten years of hands-on experience navigating the fast-paced world of financial markets, PJ Trades is a seasoned day trader specializing in <strong style="color:var(--text);">NQ &amp; ES futures</strong>. Technical analysis, market research, and risk management — combined to identify high-probability setups and deliver results.</p>
     <div class="hero-ctas">
-      <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-gold" style="font-size:1rem;padding:15px 30px;">⭐ Join Premium — $129/mo</a>
+      <a href="https://whop.com/pjtradespremium" target="_blank" rel="noopener" class="btn btn-gold" style="font-size:1rem;padding:15px 30px;">⭐ Join Futures — $100/mo</a>
       <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;">💬 Join the Free Discord</a>
     </div>
     <div class="hero-trust">
-      <span>✅ Live streams every market day</span>
-      <span>✅ Daily callouts — futures, options, stocks</span>
-      <span>✅ Rated 5.0 on Whop</span>
+      <span>✅ Live futures trading 3–5x per week</span>
+      <span>✅ Entries &amp; exits shared in Discord</span>
+      <span>✅ Prop firm giveaways up to $50,000</span>
     </div>
   </div>
 </section>
 
 <!-- PROOF BAR -->
 <div class="proof-bar">
-  <div class="proof-item"><strong>30,000+</strong><span>members & growing</span></div>
-  <div class="proof-item"><strong>5.0 ★</strong><span>rated on Whop</span></div>
-  <div class="proof-item"><strong>Daily</strong><span>live streams + callouts</span></div>
-  <div class="proof-item"><strong>Futures · Options · Stocks</strong><span>one membership</span></div>
+  <!-- Source: owner's Whop listing screenshots, 2026-08-24 -->
+  <div class="proof-item"><strong>49,136</strong><span>joined on Whop</span></div>
+  <div class="proof-item"><strong>5.0 ★</strong><span>2,240 reviews</span></div>
+  <div class="proof-item"><strong>3–5x</strong><span>live futures trading per week</span></div>
+  <div class="proof-item"><strong>$50,000</strong><span>prop firm funding giveaways</span></div>
 </div>
+
+<!-- WHAT YOU GET — futures-first feature showcase (recreated from the owner's Whop carousel, 2026-08-24) -->
+<section id="features" style="background:var(--bg);">
+  <div class="section-inner">
+    <div style="text-align:center;margin-bottom:44px;" data-reveal>
+      <div class="section-tag">Inside PJ Trades Premium</div>
+      <h2 class="section-title">Learn To Become A <span class="gold">Profitable Futures Trader</span></h2>
+      <p class="section-sub" style="margin:0 auto 20px;">Join PJ Trades and trade alongside a 10-year pro! Get real-time trading guidance, exclusive insights, proven strategies, PJ's Starter Crash Course, and access to prop firm giveaways.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">
+      <div class="feature-card" data-reveal>
+        <div class="feature-num">01</div>
+        <h3>Live Futures Trading &amp; Analysis</h3>
+        <p>Watch PJ trade in real time, learn PJ Trades' exact model, and how he navigates the market.</p>
+      </div>
+      <div class="feature-card" data-reveal>
+        <div class="feature-num">02</div>
+        <h3>Exclusive Education &amp; Market Insights</h3>
+        <p>Daily trade reviews, exclusive education, market insight, and prop firm guidance.</p>
+      </div>
+      <div class="feature-card" data-reveal>
+        <div class="feature-num">03</div>
+        <h3>Live Group Classes 2x/Month</h3>
+        <p>Educational group classes twice a month — deep dives into key trading strategies and answers to your questions.</p>
+      </div>
+      <div class="feature-card" data-reveal>
+        <div class="feature-num">04</div>
+        <h3>1HR+ Starter Crash Course, IFVG Model &amp; More</h3>
+        <p>The PJ Trades Starter Crash Course. How to set up your chart and master the IFVG model.</p>
+      </div>
+      <div class="feature-card" data-reveal>
+        <div class="feature-num">05</div>
+        <h3>Exclusive Prop Firm Giveaways</h3>
+        <p>Get a chance to win up to $50,000 in funding with the top trading prop firms.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INTRO VIDEO — sits above the bundle options (owner request).
+     The file is 232MB, over Cloudflare Pages' 25MB per-file limit, so it is
+     NOT committed. Two zero-code ways to go live:
+     1) Compress the video to ≤25MB, save it as assets/pj-intro.mp4 — the
+        facade picks it up automatically.
+     2) Or upload to YouTube (unlisted) and paste the embed URL into
+        data-video-yt below. -->
+<section id="video" style="background:var(--bg2);padding:70px 24px;">
+  <div class="section-inner" style="max-width:900px;">
+    <div style="text-align:center;margin-bottom:30px;" data-reveal>
+      <div class="section-tag">Meet PJ Trades</div>
+      <h2 class="section-title">Watch PJ <span class="gold">Trade</span></h2>
+    </div>
+    <div class="video-facade" id="video-facade" data-video-mp4="assets/pj-intro.mp4" data-video-yt="" role="button" tabindex="0" aria-label="Play introduction video" data-reveal>
+      <div class="video-poster" aria-hidden="true">
+        <div class="video-poster-glow"></div>
+        <div class="video-play"><span>▶</span></div>
+        <p class="video-poster-title">PJ Trades — Live Futures Trading &amp; Analysis</p>
+      </div>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:0.78rem;margin-top:14px;">Educational content only — not financial advice.</p>
+  </div>
+</section>
 <!-- WEEKLY WIN STREAK + INTERACTIVE TOOLS -->
 <section id="tools" style="background:var(--bg2);">
   <div class="section-inner">
@@ -756,47 +925,87 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   </div>
 </section>
 
-<!-- PREMIUM HUB -->
+<!-- BUNDLES — futures-first pricing per owner direction + Whop listing (2026-08-24) -->
 <section id="premium" style="background:var(--bg2);">
   <div class="liquid-bg soft" aria-hidden="true">
     <div class="liquid-blob lb-4"></div>
     <div class="liquid-blob lb-5"></div>
   </div>
   <div class="section-inner">
-    <div style="text-align:center;margin-bottom:40px;" data-reveal>
-      <div class="section-tag">Everything Premium</div>
-      <h2 class="section-title">Premium <span class="gold">Hub</span></h2>
-      <p class="section-sub" style="margin:0 auto 20px;">Join, access your dashboard, check your status, and unlock all member content — all in one place.</p>
-      <p style="max-width:660px;margin:0 auto;font-size:0.95rem;color:var(--text);line-height:1.8;padding:20px 24px;background:rgba(220,38,38,0.04);border-left:3px solid var(--gold);border-radius:0 12px 12px 0;text-align:left;">I'm not going to beg anyone to join. If you don't want to invest in yourself, that's on you. But if you're serious and tired of being lost — the door is open.</p>
+    <div style="text-align:center;margin-bottom:46px;" data-reveal>
+      <div class="section-tag">Bundles</div>
+      <h2 class="section-title">Pick Your <span class="gold">Bundle</span></h2>
+      <p class="section-sub" style="margin:0 auto 20px;">Futures is the main event. Want options and stocks too? Go All-Markets. Checkout and billing are handled securely by Whop — cancel anytime from your Whop account.</p>
+    </div>
+
+    <div class="tier-grid" data-reveal>
+      <!-- FUTURES — the core $100 product (matches the Whop listing exactly) -->
+      <div class="tier-card hot">
+        <div class="tier-badge">Core — Futures Only</div>
+        <div class="tier-name">Futures</div>
+        <div class="tier-price">$100<span>/mo</span></div>
+        <div class="tier-sub">or <b style="color:var(--text);">$529</b>/6mo<span class="tier-save">12% off</span> · <b style="color:var(--text);">$1,000</b>/yr<span class="tier-save">18% off</span></div>
+        <ul>
+          <li><span class="tick">✓</span><span><b>Live futures trading</b> 3–5x per week — NYAM, NYPM &amp; ASIA sessions</span></li>
+          <li><span class="tick">✓</span><span><b>Entries &amp; exits shared</b> via Discord live trading</span></li>
+          <li><span class="tick">✓</span><span><b>1HR+ Starter Crash Course</b> — chart setup + the IFVG model</span></li>
+          <li><span class="tick">✓</span><span><b>Live group classes</b> 2x per month</span></li>
+          <li><span class="tick">✓</span><span><b>Exclusive education</b> &amp; daily market insights</span></li>
+          <li><span class="tick">✓</span><span><b>Prop firm giveaways</b> — win up to $50,000 in funding</span></li>
+          <li><span class="tick">✓</span><span><b>Daily futures callouts</b> in Discord</span></li>
+        </ul>
+        <a href="https://whop.com/pjtradespremium" target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;font-size:1.02rem;padding:15px;">Join Futures on Whop ⭐</a>
+      </div>
+
+      <!-- ALL-MARKETS — futures + options + stocks with live callouts and full educational materials -->
+      <!-- TODO: owner to confirm the Whop product URL for this tier if it is a separate listing -->
+      <div class="tier-card">
+        <div class="tier-badge alt">Futures + Options + Stocks</div>
+        <div class="tier-name">All-Markets</div>
+        <div class="tier-price">$129<span>/mo</span></div>
+        <div class="tier-sub">Everything in Futures, plus the complete multi-market library</div>
+        <ul>
+          <li><span class="tick">✓</span><span><b>Everything in the Futures bundle</b></span></li>
+          <li><span class="tick">✓</span><span><b>Full options course</b> + the Options Lab</span></li>
+          <li><span class="tick">✓</span><span><b>Full stocks course</b> + the Stock Lab</span></li>
+          <li><span class="tick">✓</span><span><b>Live callouts</b> across futures, options &amp; stocks</span></li>
+          <li><span class="tick">✓</span><span><b>Complete educational materials</b> — every market, one membership</span></li>
+        </ul>
+        <a href="https://whop.com/pjtradespremium" target="_blank" rel="noopener" class="btn btn-outline" style="width:100%;font-size:1.02rem;padding:15px;">Go All-Markets on Whop ⭐</a>
+      </div>
+    </div>
+
+    <p style="text-align:center;color:var(--muted);font-size:.78rem;margin:22px auto 0;max-width:640px;">There are no refunds. You can cancel your membership at anytime. Educational content only — profits are never guaranteed.</p>
+
+    <!-- Review summary — mirrors the owner's Whop listing (5.0 · 2,240 ratings) -->
+    <div class="review-summary" data-reveal>
+      <div class="review-score">
+        <div class="big">5.0</div>
+        <div class="stars">★★★★★</div>
+        <div class="count">2,240 ratings</div>
+      </div>
+      <div class="review-bars" aria-hidden="true">
+        <div class="review-bar"><span>5 ★</span><span class="track"><span class="fill" style="width:97%"></span></span><span>97% (2167)</span></div>
+        <div class="review-bar"><span>4 ★</span><span class="track"><span class="fill" style="width:3%"></span></span><span>3% (72)</span></div>
+        <div class="review-bar"><span>3 ★</span><span class="track"><span class="fill" style="width:0%"></span></span><span>0% (0)</span></div>
+        <div class="review-bar"><span>2 ★</span><span class="track"><span class="fill" style="width:0%"></span></span><span>0% (0)</span></div>
+        <div class="review-bar"><span>1 ★</span><span class="track"><span class="fill" style="width:0.05%"></span></span><span>0.0% (1)</span></div>
+      </div>
+      <div style="text-align:center;">
+        <span class="vjm-chip green" style="font-size:.8rem;">2.8K members</span>
+        <p style="font-size:.72rem;color:var(--muted);margin-top:8px;max-width:150px;">on the Whop listing right now</p>
+      </div>
+    </div>
+
+    <!-- MEMBER TOOLS -->
+    <div style="text-align:center;margin:52px 0 24px;" data-reveal>
+      <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;">Already a <span class="gold">Member?</span></h3>
     </div>
 
 <!-- Tab Nav -->
 <div class="prem-tabs" style="display:flex;gap:8px;justify-content:center;margin-bottom:28px;flex-wrap:wrap;">
-  <button onclick="premTab('join')" id="ptab-join" style="flex:1;max-width:150px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:var(--red);color:#fff;">Join</button>
-  <button onclick="premTab('dashboard')" id="ptab-dashboard" style="flex:1;max-width:150px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:transparent;color:var(--muted);">Dashboard</button>
-  <button onclick="premTab('status')" id="ptab-status" style="flex:1;max-width:150px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:transparent;color:var(--muted);">Am I Active?</button>
-</div>
-<!-- JOIN TAB -->
-<div id="pcontent-join" style="max-width:640px;margin:0 auto;">
-  <div class="premium-box" data-reveal>
-    <div style="text-align:center;margin-bottom:22px;">
-      <span class="vjm-chip red" style="font-size:0.7rem;">ALL-ACCESS MEMBERSHIP</span>
-      <div style="display:flex;align-items:baseline;justify-content:center;gap:12px;margin-top:14px;">
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:3.8rem;font-weight:900;color:var(--gold);text-shadow:0 0 24px rgba(220,38,38,0.35);">$129<span style="font-size:1.2rem;color:var(--muted);">/mo</span></div>
-      </div>
-      <p style="color:var(--muted);font-size:0.92rem;">One bundle. Everything included.</p>
-    </div>
-    <ul style="list-style:none;padding:0;margin:0 0 24px;display:grid;gap:11px;">
-      <li style="font-size:0.92rem;color:var(--text);display:flex;gap:10px;"><span style="color:var(--green);font-weight:900;">✓</span> Full <strong>futures</strong> course — the PJ Trades playbook</li>
-      <li style="font-size:0.92rem;color:var(--text);display:flex;gap:10px;"><span style="color:var(--green);font-weight:900;">✓</span> Full <strong>options</strong> course + the Options Lab</li>
-      <li style="font-size:0.92rem;color:var(--text);display:flex;gap:10px;"><span style="color:var(--green);font-weight:900;">✓</span> Full <strong>stock</strong> course + the Stock Lab</li>
-      <li style="font-size:0.92rem;color:var(--text);display:flex;gap:10px;"><span style="color:var(--green);font-weight:900;">✓</span> <strong>Live streams every market day</strong> — watch the process in real time</li>
-      <li style="font-size:0.92rem;color:var(--text);display:flex;gap:10px;"><span style="color:var(--green);font-weight:900;">✓</span> <strong>Daily callouts</strong> posted in Discord</li>
-      <li style="font-size:0.92rem;color:var(--text);display:flex;gap:10px;"><span style="color:var(--green);font-weight:900;">✓</span> Community of 30,000+ traders on the same path</li>
-    </ul>
-    <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;font-size:1.05rem;padding:16px;">Join on Whop — instant access ⭐</a>
-    <p style="text-align:center;color:var(--muted);font-size:0.75rem;margin-top:14px;">Checkout and billing are handled securely by Whop. Cancel anytime from your Whop account. Educational content only — profits are never guaranteed.</p>
-  </div>
+  <button onclick="premTab('dashboard')" id="ptab-dashboard" style="flex:1;max-width:170px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:var(--gold);color:#fff;">Dashboard</button>
+  <button onclick="premTab('status')" id="ptab-status" style="flex:1;max-width:170px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:transparent;color:var(--muted);">Am I Active?</button>
 </div>
     <!-- DASHBOARD TAB -->
     <div id="pcontent-dashboard" style="display:none;max-width:700px;margin:0 auto;">
@@ -814,8 +1023,8 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
           </div>
           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;">
             <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Plan</div>
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--gold);">$50/mo</div>
-            <div style="font-size:0.7rem;color:var(--muted);">Launch rate — locked in</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--gold);">Premium</div>
+            <div style="font-size:0.7rem;color:var(--muted);">Futures from $100/mo</div>
           </div>
           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;">
             <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Membership</div>
@@ -839,7 +1048,7 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
           <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px;">
             <li style="font-size:0.85rem;color:var(--text);display:flex;gap:8px;"><span style="color:var(--green);">✓</span> Live daily callouts in #premium-callouts</li>
             <li style="font-size:0.85rem;color:var(--text);display:flex;gap:8px;"><span style="color:var(--green);">✓</span> Access to Trade Reviews below (use password above)</li>
-            <li style="font-size:0.85rem;color:var(--text);display:flex;gap:8px;"><span style="color:var(--green);">✓</span> Premium streams 9:15AM–2PM ET daily</li>
+            <li style="font-size:0.85rem;color:var(--text);display:flex;gap:8px;"><span style="color:var(--green);">✓</span> Live sessions — NYAM 9:30, NYPM 2:30 &amp; ASIA 8:00 PM ET</li>
             <li style="font-size:0.85rem;color:var(--text);display:flex;gap:8px;"><span style="color:var(--green);">✓</span> Direct support - DM the team anytime</li>
           </ul>
         </div>
@@ -865,90 +1074,121 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 </div>
 </section>
 
-<!-- SERVICES & BOOKING -->
-<section id="services" style="background:var(--bg2);">
+<!-- FAQ — verbatim from the owner's Whop listing (2026-08-24); also in JSON-LD in <head> -->
+<section id="faq" style="background:var(--bg2);">
   <div class="section-inner">
-    <div class="section-tag" data-reveal>Work With the Team</div>
-    <h2 class="section-title" data-reveal>Pick Your <span class="gold">Level</span></h2>
-    <p class="section-sub" data-reveal>Learn it, apply it, or have us look over your shoulder. Every option is built to make complex markets simple enough that a fifth grader could follow along.</p>
-
-    <div class="services-grid">
-
-      <div class="service-card" data-reveal>
-        <div style="font-size:2rem;margin-bottom:12px;">⭐</div>
-        <h3>Premium Membership</h3>
-        <div class="premium-price">$129<span>/mo</span></div>
-        <ul style="text-align:left;font-size:0.88rem;color:var(--muted);list-style:none;padding:0;margin:14px 0 20px;display:grid;gap:8px;">
-          <li>✓ Futures + options + stock courses</li>
-          <li>✓ Live streams every market day</li>
-          <li>✓ Daily callouts in Discord</li>
-          <li>✓ 30,000+ member community</li>
-        </ul>
-        <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;">Join on Whop</a>
-      </div>
-
-      <div class="service-card" data-reveal>
-        <div style="font-size:2rem;margin-bottom:12px;">📋</div>
-        <h3>Portfolio Review</h3>
-        <div class="premium-price">$100<span>/session</span></div>
-        <ul style="text-align:left;font-size:0.88rem;color:var(--muted);list-style:none;padding:0;margin:14px 0 20px;display:grid;gap:8px;">
-          <li>✓ A second set of experienced eyes on your book</li>
-          <li>✓ Risk, sizing, and structure feedback</li>
-          <li>✓ Clear action items — no vague advice</li>
-          <li>✓ Session booked at your pace</li>
-        </ul>
-        <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-outline" style="width:100%;">Book Through Whop</a>
-      </div>
-
-      <div class="service-card" data-reveal>
-        <div style="font-size:2rem;margin-bottom:12px;">🎓</div>
-        <h3>1-on-1 Bootcamp</h3>
-        <div class="premium-price">$100<span>/hour</span></div>
-        <ul style="text-align:left;font-size:0.88rem;color:var(--muted);list-style:none;padding:0;margin:14px 0 20px;display:grid;gap:8px;">
-          <li>✓ Deep, simple explanations — fifth-grader clear</li>
-          <li>✓ Your charts, your questions, your pace</li>
-          <li>✓ Futures, options, or stocks — you choose</li>
-          <li>✓ Leave with a written plan</li>
-        </ul>
-        <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-outline" style="width:100%;">Book Through Whop</a>
-      </div>
-
+    <div style="text-align:center;margin-bottom:40px;" data-reveal>
+      <div class="section-tag">FAQ</div>
+      <h2 class="section-title">Frequently Asked <span class="gold">Questions</span></h2>
+    </div>
+    <div class="faq-list" data-reveal>
+      <details>
+        <summary>Do you offer live trading?</summary>
+        <p>Yes! I go live 3 to 5 times a week, depending on the economic calendar and market conditions.</p>
+      </details>
+      <details>
+        <summary>Do you share entries and exits?</summary>
+        <p>Yes, all entries and exits are shared via discord live trading.</p>
+      </details>
+      <details>
+        <summary>What is your refund policy?</summary>
+        <p>There are no refunds. You can cancel your membership at anytime.</p>
+      </details>
     </div>
   </div>
 </section>
 
-<!-- MEET THE TEAM -->
+<!-- MEET THE TEAM — roster per the owner's stream schedule graphic (2026-08-24).
+     Bios/photos are intentionally placeholders: TODO owner to supply bio text
+     and photo images for each member (drop into assets/team/ and update here,
+     or via the team CMS tab once Phase 3 ships). -->
 <section id="team" style="background:var(--bg);">
   <div class="section-inner">
-    <div class="section-tag" data-reveal>Meet the Team</div>
-    <h2 class="section-title" data-reveal>The People Behind <span class="gold">PJ Trades x St</span></h2>
-    <div style="max-width:640px;margin:0 auto;text-align:center;padding:48px 24px;border:1px dashed var(--border-strong);border-radius:22px;background:rgba(255,255,255,0.02);" data-reveal>
-      <div style="font-size:2.4rem;margin-bottom:12px;">🤝</div>
-      <h3 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.6rem;text-transform:uppercase;letter-spacing:1px;">Coming Soon</h3>
-      <p style="color:var(--muted);font-size:0.9rem;max-width:440px;margin:10px auto 0;">We're assembling the full team page — bios, roles, and favorite setups. Check back shortly, or ask in Discord who's who.</p>
+    <div style="text-align:center;margin-bottom:40px;" data-reveal>
+      <div class="section-tag">Meet the Team</div>
+      <h2 class="section-title">The People Behind <span class="gold">PJ Trades x St</span></h2>
+      <p class="section-sub" style="margin:0 auto;">The traders you'll see live, in the Discord, and in your classes every week.</p>
+    </div>
+    <div class="team-grid" data-reveal>
+      <div class="team-card">
+        <div class="team-avatar">PJ</div>
+        <h3>PJTrades</h3>
+        <div class="role">Founder · Futures — NYAM</div>
+        <p class="bio">10 years in the markets. NQ &amp; ES specialist. <!-- TODO: owner to supply full bio --></p>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar">C</div>
+        <h3>Caleb</h3>
+        <div class="role">Live Trading · Night Classes</div>
+        <p class="bio">Leads NYAM &amp; ASIA sessions and the 5:30 PM night classes. <!-- TODO: owner to supply bio --></p>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar">F</div>
+        <h3>Fin</h3>
+        <div class="role">Live Trading — NYAM &amp; ASIA</div>
+        <p class="bio">Co-hosts live futures sessions with Caleb. <!-- TODO: owner to supply bio --></p>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar">G</div>
+        <h3>Gainz</h3>
+        <div class="role">Order Flow Sessions</div>
+        <p class="bio">Runs the Tuesday 2:30 PM order flow deep dives. <!-- TODO: owner to supply bio --></p>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar">K</div>
+        <h3>KWT</h3>
+        <div class="role">Live Trading — NYPM</div>
+        <p class="bio">Heads afternoon live trading sessions. <!-- TODO: owner to supply bio --></p>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- WEEKLY STREAM SCHEDULE -->
+<!-- WEEKLY STREAM SCHEDULE — mirrored from the owner's "PJ's Stream Schedule"
+     graphic for the week of Aug 24–28, 2026. Sessions recur weekly; hosts can
+     shift week to week — TODO: move to the schedule CMS tab so the owner
+     updates this from the Google Sheet without code. -->
 <section id="schedule" style="background:var(--bg2);">
   <div class="section-inner">
-    <div class="section-tag" data-reveal>Weekly Stream Schedule</div>
-    <h2 class="section-title" data-reveal>Live, <span class="gold">Every Market Day</span></h2>
-    <p class="section-sub" data-reveal>Streams run inside the Discord. Times are ET and can shift around holidays and news days — the <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold);">#announcements channel</a> is always the source of truth.</p>
-    <div style="overflow-x:auto;" data-reveal>
-      <table class="vjm-table" style="max-width:720px;margin:0 auto;background:var(--card);border:1px solid var(--border);border-radius:16px;">
-        <thead><tr><th>Day</th><th>Time (ET)</th><th>What</th><th>Where</th></tr></thead>
-        <tbody>
-          <tr><td><strong>Mon–Fri</strong></td><td class="num">9:00 AM</td><td>Pre-Market Brief — levels, lean, plan</td><td><a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold);">Discord</a></td></tr>
-          <tr><td><strong>Mon–Fri</strong></td><td class="num">9:30 AM–12:00 PM</td><td>Live trading stream — futures first</td><td><a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold);">Discord</a></td></tr>
-          <tr><td><strong>Mon–Fri</strong></td><td class="num">Post-close</td><td>Daily callouts + recap posted</td><td><a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold);">Discord</a></td></tr>
-          <tr><td><strong>Weekends</strong></td><td class="num">Varies</td><td>Education sessions & Q&A</td><td><a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold);">Discord</a></td></tr>
-        </tbody>
-      </table>
+    <div style="text-align:center;margin-bottom:40px;" data-reveal>
+      <div class="section-tag">Stream Schedule</div>
+      <h2 class="section-title">Live Futures, <span class="gold">3–5x Per Week</span></h2>
+      <p class="section-sub" style="margin:0 auto 20px;">All times ET. Sessions run inside the Discord — the <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold);">#announcements channel</a> is always the source of truth for week-to-week changes.</p>
     </div>
-    <div style="text-align:center;margin-top:26px;">
-      <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-gold" style="padding:14px 28px;">💬 See This Week's Schedule in Discord</a>
+    <div class="week-grid" data-reveal>
+      <div class="day-card">
+        <h3>Monday</h3>
+        <div class="session-row"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
+        <div class="session-row"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
+      </div>
+      <div class="day-card">
+        <h3>Tuesday</h3>
+        <div class="session-row"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host host-pj">Live trading with PJTrades</span></div>
+        <div class="session-row"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host host-gainz">Order flow session with Gainz</span></div>
+        <div class="session-row"><span class="sess-name">Class</span><span class="sess-time">5:30 PM ET</span><span class="host host-caleb">Night class with Caleb</span></div>
+        <div class="session-row"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
+      </div>
+      <div class="day-card">
+        <h3>Wednesday</h3>
+        <div class="session-row"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host host-pj">Live trading with PJTrades</span></div>
+        <div class="session-row"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host host-kwt">Live trading with KWT</span></div>
+        <div class="session-row"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
+      </div>
+      <div class="day-card">
+        <h3>Thursday</h3>
+        <div class="session-row"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host host-pj">Live trading with PJTrades</span></div>
+        <div class="session-row"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host host-kwt">Live trading with KWT</span></div>
+        <div class="session-row"><span class="sess-name">Class</span><span class="sess-time">5:30 PM ET</span><span class="host host-caleb">Night class with Caleb</span></div>
+        <div class="session-row"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host host-caleb">Live trading with Caleb</span></div>
+      </div>
+      <div class="day-card">
+        <h3>Friday</h3>
+        <div class="session-row"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host host-pj">Live trading with PJTrades</span></div>
+        <div class="session-row"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host host-kwt">Live trading with KWT &amp; Gainz</span></div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:26px;" data-reveal>
+      <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-gold" style="padding:14px 28px;">💬 Watch Live in the Discord</a>
     </div>
   </div>
 </section>
@@ -969,7 +1209,7 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
         <p style="font-size:1.02rem;line-height:1.75;color:var(--text);margin-top:16px;">Known for a disciplined approach to trading, PJ combines technical analysis, market research, and risk management to consistently identify high-probability setups and deliver results.</p>
         <p style="font-size:1.02rem;line-height:1.75;color:var(--text);margin-top:16px;">The mission is simple: make markets understandable. Every concept — from order flow to options Greeks — gets explained so clearly that anyone willing to put in the work can follow.</p>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;">
-          <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-gold">⭐ Whop — 5.0 ★</a>
+          <a href="https://whop.com/pjtradespremium" target="_blank" rel="noopener" class="btn btn-gold">⭐ Whop — 5.0 ★</a>
           <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-outline">💬 Discord</a>
         </div>
       </div>
@@ -986,8 +1226,8 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
             <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Years in the markets</div>
           </div>
           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--gold);">30K+</div>
-            <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Community members</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--gold);">49K+</div>
+            <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Traders joined on Whop</div>
           </div>
         </div>
       </div>
@@ -1185,10 +1425,10 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   <div class="section-inner" style="text-align:center;" data-reveal>
     <div class="section-tag">Join the Community</div>
     <h2 class="section-title">30,000+ Traders. <span class="gold">One Discord.</span></h2>
-    <p class="section-sub" style="max-width:560px;margin:0 auto 30px;">Free members get daily education, market discussion, and a front-row seat to the community. Premium members unlock the courses, live streams, and daily callouts. Start free — upgrade when you're ready.</p>
+    <p class="section-sub" style="max-width:560px;margin:0 auto 30px;">Free members get daily education, market discussion, and a front-row seat to the community. Premium members unlock live futures trading, the Starter Crash Course, and daily callouts — or go All-Markets for options and stocks too. Start free — upgrade when you're ready.</p>
     <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
       <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-gold" style="font-size:1rem;padding:15px 30px;">💬 Join the Free Discord</a>
-      <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;">⭐ Go Premium — $129/mo</a>
+      <a href="https://whop.com/pjtradespremium" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;">⭐ Bundles from $100/mo</a>
     </div>
   </div>
 </section>
@@ -1203,20 +1443,39 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   <div class="footer-inner">
     <div class="footer-brand">PJ TRADES <span style="font-size:0.55em;color:var(--muted);">× St</span></div>
     <div class="footer-links">
-      <a href="#tools">Tools</a>
-      <a href="options-lab.html">Options Lab</a>
-      <a href="stock-lab.html">Stock Lab</a>
+      <a href="#bundles">Bundles</a>
+      <a href="#schedule">Schedule</a>
+      <a href="#team">Team</a>
       <a href="premarket.html">Pre-Market</a>
     <a href="research-engine.html">Research Engine</a>
       <a href="prop-firms.html">Prop Firms</a>
       <a href="premium-guidance.html">Guidance</a>
       <a href="forex-calendar.html">Forex Calendar</a>
-      <a href="#schedule">Schedule</a>
-      <a href="#services">Services</a>
-      <a href="#about">About</a>
-      <a href="https://whop.com/pjtradespremium/" target="_blank" rel="noopener">Whop</a>
+      <a href="stock-lab.html">Stock Lab</a>
+      <a href="options-lab.html">Options Lab</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://whop.com/pjtradespremium" target="_blank" rel="noopener">Whop</a>
       <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener">Discord</a>
       <a href="mailto:vjmtrading.contact@gmail.com">Email</a>
+    </div>
+    <div class="social-row" style="width:100%;margin-top:6px;">
+      <a class="social-btn" href="https://www.youtube.com/@PJTrades_NQ" target="_blank" rel="noopener" aria-label="PJ Trades on YouTube">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23 7.2s-.2-1.6-.9-2.3c-.9-.9-1.9-.9-2.3-1C16.6 3.6 12 3.6 12 3.6s-4.6 0-7.8.3c-.4.1-1.4.1-2.3 1-.7.7-.9 2.3-.9 2.3S.8 9.1.8 11v1.8c0 1.9.2 3.8.2 3.8s.2 1.6.9 2.3c.9.9 2 .9 2.5 1 1.8.2 7.6.3 7.6.3s4.6 0 7.8-.3c.4-.1 1.4-.1 2.3-1 .7-.7.9-2.3.9-2.3s.2-1.9.2-3.8V11c0-1.9-.2-3.8-.2-3.8zM9.8 14.8V8.4l6.2 3.2-6.2 3.2z"/></svg>
+        YouTube
+      </a>
+      <a class="social-btn" href="https://x.com/PJtrades_NQ" target="_blank" rel="noopener" aria-label="PJ Trades on X">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.8L22 21h-6.3l-4.9-6.4L5.2 21H2.1l7.3-8.3L2 3h6.4l4.4 5.9L17.8 3zm-1.1 16.1h1.7L7.6 4.8H5.8l10.9 14.3z"/></svg>
+        X / Twitter
+      </a>
+      <a class="social-btn" href="https://www.tiktok.com/@pjtrades" target="_blank" rel="noopener" aria-label="PJ Trades on TikTok">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.6 2h3c.1 1 .5 2.6 2.4 3.9v3c-1.5 0-3-.5-4-1.2v6.8c0 4.2-2.9 7.5-7 7.5-3.9 0-7-3.1-7-7s3.1-7 7-7c.3 0 .7 0 1 .1v3.2c-.3-.1-.6-.2-1-.2-2 0-3.7 1.7-3.7 3.9 0 2.1 1.7 3.9 3.7 3.9 2.2 0 3.6-1.6 3.6-3.9V2z"/></svg>
+        TikTok
+      </a>
+      <a class="social-btn" href="https://www.instagram.com/pjtradesnq" target="_blank" rel="noopener" aria-label="PJ Trades on Instagram">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2.1 1.9.2 2.3.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1.1.4 2.3.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.8c-.1 1.2-.2 1.9-.4 2.3-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1.1.4-2.3.4-1.3.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2-.1-1.9-.2-2.3-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1.1-.4-2.3-.1-1.3-.1-1.6-.1-4.8s0-3.6.1-4.8c.1-1.2.2-1.9.4-2.3.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1.1-.4 2.3-.4 1.2-.1 1.6-.1 4.8-.1zm0 2c-3.1 0-3.5 0-4.7.1-1.1.1-1.5.2-1.8.3-.4.2-.7.3-1 .6-.3.3-.5.6-.6 1-.1.3-.3.8-.3 1.8-.1 1.2-.1 1.6-.1 4.7s0 3.5.1 4.7c.1 1.1.2 1.5.3 1.8.2.4.3.7.6 1 .3.3.6.5 1 .6.3.1.8.3 1.8.3 1.2.1 1.6.1 4.7.1s3.5 0 4.7-.1c1.1-.1 1.5-.2 1.8-.3.4-.2.7-.3 1-.6.3-.3.5-.6.6-1 .1-.3.3-.8.3-1.8.1-1.2.1-1.6.1-4.7s0-3.5-.1-4.7c-.1-1.1-.2-1.5-.3-1.8-.2-.4-.3-.7-.6-1-.3-.3-.6-.5-1-.6-.3-.1-.8-.3-1.8-.3-1.2-.1-1.6-.1-4.7-.1zm0 3.4a5.1 5.1 0 110 10.2 5.1 5.1 0 010-10.2zm0 2a3.1 3.1 0 100 6.2 3.1 3.1 0 000-6.2zm5.3-3.5a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z"/></svg>
+        Instagram
+      </a>
+      <a class="social-btn" href="https://whop.com/pjtradespremium" target="_blank" rel="noopener" aria-label="PJ Trades on Whop">⭐ Whop</a>
     </div>
     <div class="footer-links" style="margin-top:8px;">
       <a href="privacy.html">Privacy</a>
@@ -1328,84 +1587,81 @@ function toggleTheme() {
 })();
 
 // ─── STREAM COUNTDOWN ───
-function getNextStreamTime() {
-  // Stream starts at 9:15 AM ET on weekdays (Mon–Fri)
-  // We work in ET by using America/New_York
-  const now = new Date();
-  const etStr = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
-  const etNow = new Date(etStr);
-  const day = etNow.getDay(); // 0=Sun,1=Mon...5=Fri,6=Sat
-  const h = etNow.getHours();
-  const m = etNow.getMinutes();
-  const s = etNow.getSeconds();
+// Session template mirrored from the weekly schedule section (owner's
+// schedule graphic, week of Aug 24 2026). Live-window lengths are estimates —
+// TODO: owner to confirm typical session durations.
+const PJ_SESSIONS = [
+  { name: 'NYAM',  days: [1, 2, 3, 4, 5], start: 9 * 60 + 30,  mins: 90 },
+  { name: 'NYPM',  days: [2, 3, 4, 5],    start: 14 * 60 + 30, mins: 90 },
+  { name: 'CLASS', days: [2, 4],          start: 17 * 60 + 30, mins: 60 },
+  { name: 'ASIA',  days: [1, 2, 3, 4],    start: 20 * 60,      mins: 90 },
+];
+const PJ_DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Is it currently a weekday?
-  const isWeekday = day >= 1 && day <= 5;
-  // Is stream live right now? (9:15 AM – 1:00 PM ET)
-  const minsSinceMidnight = h * 60 + m;
-  const streamStart = 9 * 60 + 15;  // 9:15 AM
-  const streamEnd   = 14 * 60;       // 2:00 PM
+function pjEtNow() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+}
 
-  if (isWeekday && minsSinceMidnight >= streamStart && minsSinceMidnight < streamEnd) {
-    return { live: true };
-  }
-
-  // Find next 9:15 AM ET weekday
-  let target = new Date(etNow);
-  target.setHours(9, 15, 0, 0);
-
-  // If today is a weekday but stream hasn't started yet
-  if (isWeekday && minsSinceMidnight < streamStart) {
-    // target is already today at 9:15 — good
-  } else {
-    // Move to next weekday
-    target.setDate(target.getDate() + 1);
-    while (target.getDay() === 0 || target.getDay() === 6) {
-      target.setDate(target.getDate() + 1);
+function pjNextSession() {
+  const now = pjEtNow();
+  for (let offset = 0; offset < 8; offset++) {
+    const probe = new Date(now);
+    probe.setDate(probe.getDate() + offset);
+    const dow = probe.getDay();
+    for (const s of PJ_SESSIONS) {
+      if (!s.days.includes(dow)) continue;
+      if (offset === 0) {
+        const minsNow = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
+        if (minsNow >= s.start && minsNow < s.start + s.mins) return { live: true, session: s, dayOffset: 0 };
+        if (minsNow >= s.start) continue;
+      }
+      return { live: false, session: s, dayOffset: offset };
     }
   }
+  return null;
+}
 
-  // Diff in ms (using real now, not etNow which is a fake Date)
-  const diffMs = target - etNow;
-  const totalSecs = Math.floor(diffMs / 1000);
-  const hh = Math.floor(totalSecs / 3600);
-  const mm = Math.floor((totalSecs % 3600) / 60);
-  const ss = totalSecs % 60;
-
-  const dayName = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][target.getDay()];
-  const isNextDay = target.getDate() !== etNow.getDate();
-
-  return {
-    live: false,
-    weekend: !isWeekday && (minsSinceMidnight >= streamEnd || !isWeekday),
-    time: `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`,
-    label: isNextDay ? `${dayName} 9:15 AM ET` : 'Today 9:15 AM ET'
-  };
+function pjFmtClock(mins) {
+  const h24 = Math.floor(mins / 60), m = mins % 60;
+  const h12 = ((h24 + 11) % 12) + 1;
+  const ampm = h24 >= 12 ? 'PM' : 'AM';
+  return h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
 }
 
 function tickCountdown() {
   const display = document.getElementById('cd-display');
   const status  = document.getElementById('cd-status');
   const bar     = document.getElementById('stream-countdown-bar');
-  const info = getNextStreamTime();
+  const next = pjNextSession();
+  if (!next) { display.textContent = ''; status.innerHTML = '<span class="cd-weekend">Schedule unavailable</span>'; return; }
 
-  if (info.live) {
+  if (next.live) {
     display.innerHTML = '';
-    status.innerHTML  = '<span class="cd-live"><span class="cd-live-dot"></span>🔴 LIVE NOW — 9:15 AM to 2:00 PM ET</span>';
+    status.innerHTML  = '<span class="cd-live"><span class="cd-live-dot"></span>🔴 LIVE NOW — ' + next.session.name + ' session</span>';
     bar.style.borderBottomColor = 'rgba(255,68,68,0.4)';
-  } else {
-    const etNow = new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
-    const dow = etNow.getDay();
-    if (dow === 0 || dow === 6) {
-      display.innerHTML = '';
-      status.innerHTML  = '<span class="cd-weekend">🗓️ Markets closed — back Monday 9:15 AM ET</span>';
-    } else {
-      display.className = 'cd-time';
-      display.textContent = info.time;
-      status.innerHTML  = `<span style="color:var(--muted);font-size:0.78rem;">${info.label}</span>`;
-      bar.style.borderBottomColor = 'rgba(220,38,38,0.25)';
-    }
+    return;
   }
+
+  const s = next.session;
+  const target = pjEtNow();
+  target.setDate(target.getDate() + next.dayOffset);
+  target.setHours(Math.floor(s.start / 60), s.start % 60, 0, 0);
+  const total = Math.max(0, Math.floor((target - pjEtNow()) / 1000));
+  const hh = String(Math.floor(total / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+  const ss = String(total % 60).padStart(2, '0');
+
+  const when = next.dayOffset === 0 ? 'Today' : next.dayOffset === 1 ? 'Tomorrow' : PJ_DAY_NAMES[target.getDay()];
+  const etDow = pjEtNow().getDay();
+  display.className = 'cd-time';
+  if (etDow === 0 || etDow === 6) {
+    display.textContent = '';
+    status.innerHTML = '<span class="cd-weekend">🗓️ Markets closed — next stream ' + when + ' ' + pjFmtClock(s.start) + ' ET (' + s.name + ')</span>';
+  } else {
+    display.textContent = hh + ':' + mm + ':' + ss;
+    status.innerHTML = '<span style="color:var(--muted);font-size:0.78rem;">Next: ' + s.name + ' — ' + when + ' ' + pjFmtClock(s.start) + ' ET</span>';
+  }
+  bar.style.borderBottomColor = 'rgba(220,38,38,0.25)';
 }
 
 tickCountdown();
@@ -1485,9 +1741,9 @@ document.addEventListener('click', function(e) {
   }
 });
 
-// ─── PREMIUM HUB TABS ───
+// ─── BUNDLE TABS (member tools) ───
 function premTab(tab) {
-  ['join','dashboard','status'].forEach(t => {
+  ['dashboard','status'].forEach(t => {
     document.getElementById('pcontent-'+t).style.display = 'none';
     const btn = document.getElementById('ptab-'+t);
     btn.style.background = 'transparent';
@@ -1688,6 +1944,58 @@ function calcRR() {
   document.getElementById('rr-breakdown').innerHTML='Risk: $'+risk.toFixed(2)+' per share &nbsp;|&nbsp; Reward: $'+reward.toFixed(2)+' per share';
   document.getElementById('rr-result').style.display='block';
 }
+
+// ─── INTRO VIDEO FACADE ───
+// Nothing loads until click (protects LCP). Priority: YouTube URL in
+// data-video-yt, else assets/pj-intro.mp4 if present, else a friendly note.
+(function () {
+  'use strict';
+  const facade = document.getElementById('video-facade');
+  if (!facade) return;
+  let activated = false;
+  function showNote(html) {
+    facade.innerHTML = '<div class="video-note">' + html + '</div>';
+    facade.removeAttribute('role');
+    facade.removeAttribute('tabindex');
+  }
+  function activate() {
+    if (activated) return;
+    activated = true;
+    const yt = facade.getAttribute('data-video-yt');
+    const mp4 = facade.getAttribute('data-video-mp4');
+    if (yt) {
+      const iframe = document.createElement('iframe');
+      iframe.src = yt;
+      iframe.title = 'PJ Trades introduction';
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      iframe.allowFullscreen = true;
+      facade.innerHTML = '';
+      facade.appendChild(iframe);
+      return;
+    }
+    if (mp4) {
+      fetch(mp4, { method: 'HEAD' }).then((r) => {
+        if (r.ok) {
+          const v = document.createElement('video');
+          v.src = mp4;
+          v.controls = true;
+          v.autoplay = true;
+          v.playsInline = true;
+          facade.innerHTML = '';
+          facade.appendChild(v);
+        } else {
+          showNote('🎥 PJ\'s intro video is dropping here soon. Meanwhile — <a href="https://whop.com/pjtradespremium" target="_blank" rel="noopener" style="color:var(--gold);">join the live sessions on Whop</a>.');
+        }
+      }).catch(() => showNote('🎥 Video coming soon.'));
+    } else {
+      showNote('🎥 Video coming soon.');
+    }
+  }
+  facade.addEventListener('click', activate);
+  facade.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+  });
+})();
 
 // ─── SCROLL REVEAL ─────────────────────────────────────────────────────────
 // Progressive enhancement: [data-reveal] content is fully visible with JS
