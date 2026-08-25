@@ -459,13 +459,38 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 /* Section-scoped liquid echo (premium + about): same system, lower opacity so
    it never competes with pricing cards or copy. Blobs stay inside their section
    (absolute in a relative, overflow-hidden parent). */
-#premium, #about { position:relative; overflow:hidden; }
-#premium .section-inner, #about .section-inner { position:relative; z-index:2; }
-.liquid-bg.soft .liquid-blob { opacity:.26; filter:blur(85px); }
+#premium, #about, #features, #faq { position:relative; overflow:hidden; }
+#premium .section-inner, #about .section-inner, #features .section-inner, #faq .section-inner { position:relative; z-index:2; }
+.liquid-bg.soft .liquid-blob { opacity:.26; filter:blur(75px); }
 .lb-4{width:460px;height:460px;right:-170px;top:-150px;background:radial-gradient(circle at 60% 40%,rgba(220,38,38,.30),transparent 65%);animation:drift2 34s ease-in-out infinite alternate;}
 .lb-5{width:540px;height:540px;left:-200px;bottom:-260px;background:radial-gradient(circle at 40% 55%,rgba(16,185,129,.16),transparent 62%);animation:drift3 40s ease-in-out infinite alternate;}
 .lb-6{width:500px;height:500px;left:-180px;top:-140px;background:radial-gradient(circle at 35% 35%,rgba(220,38,38,.22),transparent 65%);animation:drift1 36s ease-in-out infinite alternate;}
 .lb-7{width:430px;height:430px;right:-160px;bottom:-190px;background:radial-gradient(circle at 60% 45%,rgba(240,180,41,.13),transparent 62%);animation:drift2 42s ease-in-out infinite alternate;}
+.lb-8{width:420px;height:420px;right:-160px;bottom:-180px;background:radial-gradient(circle at 60% 40%,rgba(220,38,38,.24),transparent 65%);animation:drift1 38s ease-in-out infinite alternate;}
+.lb-9{width:480px;height:480px;left:-190px;top:-160px;background:radial-gradient(circle at 40% 50%,rgba(240,180,41,.12),transparent 62%);animation:drift2 44s ease-in-out infinite alternate;}
+.lb-10{width:460px;height:460px;right:-170px;top:-140px;background:radial-gradient(circle at 55% 45%,rgba(16,185,129,.13),transparent 62%);animation:drift3 40s ease-in-out infinite alternate;}
+.lb-11{width:500px;height:500px;left:-180px;bottom:-220px;background:radial-gradient(circle at 45% 55%,rgba(220,38,38,.20),transparent 65%);animation:drift1 42s ease-in-out infinite alternate;}
+
+/* ─── AMBIENT PREMIUM FX (all reduced-motion gated) ───
+   Perf budget note: the animated gold sweep is scoped to the hero headline
+   ONLY (background-position animation repaints text every frame — too costly
+   across all section titles). Section titles get the static gradient. */
+.section-title .gold{background:linear-gradient(90deg,#f66 0%,var(--gold) 45%,#ff9d9d 60%,var(--gold) 80%);background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--gold);}
+.hero h1 .gold{color:var(--gold);}
+@keyframes goldSweep{to{background-position:200% center;}}
+.tier-card.hot{animation:hotPulse 4.5s ease-in-out infinite;}
+@keyframes hotPulse{0%,100%{box-shadow:0 0 60px rgba(220,38,38,.12);}50%{box-shadow:0 0 100px rgba(220,38,38,.28);}}
+.feature-card::after{content:'';position:absolute;top:0;left:-85%;width:55%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.07),transparent);transform:skewX(-18deg);pointer-events:none;}
+.feature-card:hover::after{animation:cardSheen .9s ease;}
+@keyframes cardSheen{to{left:135%;}}
+.video-poster-glow{animation:glowDrift 12s ease-in-out infinite alternate;}
+@keyframes glowDrift{from{transform:translateX(-3%) scale(1);}to{transform:translateX(3%) scale(1.06);}}
+@media (prefers-reduced-motion: reduce){
+  .hero h1 .gold{animation:none;}
+  .tier-card.hot{animation:none;}
+  .feature-card:hover::after{animation:none;}
+  .video-poster-glow{animation:none;}
+}
 
 /* ─── SCROLL REVEAL (progressive enhancement) ───
    Content is fully visible by default and with JS disabled. The initial hidden
@@ -548,6 +573,13 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .team-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 18px;text-align:center;transition:all .2s;}
 .team-card:hover{border-color:var(--gold);transform:translateY(-3px);}
 .team-avatar{width:76px;height:76px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:#fff;background:linear-gradient(135deg,#dc2626,#7f1d1d);box-shadow:0 8px 24px rgba(220,38,38,.3);}
+.team-avatar-blank{background:linear-gradient(135deg,#1b2534,#2a3648);box-shadow:none;color:var(--muted);font-size:2rem;font-weight:400;}
+.results-empty{max-width:640px;margin:0 auto;text-align:center;padding:52px 24px;border:1px dashed var(--border-strong);border-radius:20px;background:rgba(255,255,255,0.02);}
+.results-empty h3{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.results-empty p{color:var(--muted);font-size:.88rem;max-width:420px;margin:0 auto;line-height:1.65;}
+.result-card{margin:0;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.result-card img{width:100%;display:block;aspect-ratio:4/3;object-fit:cover;}
+.result-card figcaption{padding:12px 14px;font-size:.8rem;color:var(--muted);}
 .team-card h3{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;}
 .team-card .role{font-size:.76rem;color:var(--emerald);font-weight:700;margin:6px 0 8px;text-transform:uppercase;letter-spacing:1px;}
 .team-card .bio{font-size:.8rem;color:var(--muted);line-height:1.55;}
@@ -703,6 +735,9 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 
 <!-- WHAT YOU GET — futures-first feature showcase (recreated from the owner's Whop carousel, 2026-08-24) -->
 <section id="features" style="background:var(--bg);">
+  <div class="liquid-bg soft" aria-hidden="true">
+    <div class="liquid-blob lb-8"></div>
+  </div>
   <div class="section-inner">
     <div style="text-align:center;margin-bottom:44px;" data-reveal>
       <div class="section-tag">Inside PJ Trades Premium</div>
@@ -1076,6 +1111,9 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 
 <!-- FAQ — verbatim from the owner's Whop listing (2026-08-24); also in JSON-LD in <head> -->
 <section id="faq" style="background:var(--bg2);">
+  <div class="liquid-bg soft" aria-hidden="true">
+    <div class="liquid-blob lb-10"></div>
+  </div>
   <div class="section-inner">
     <div style="text-align:center;margin-bottom:40px;" data-reveal>
       <div class="section-tag">FAQ</div>
@@ -1098,10 +1136,10 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   </div>
 </section>
 
-<!-- MEET THE TEAM — roster per the owner's stream schedule graphic (2026-08-24).
-     Bios/photos are intentionally placeholders: TODO owner to supply bio text
-     and photo images for each member (drop into assets/team/ and update here,
-     or via the team CMS tab once Phase 3 ships). -->
+<!-- MEET THE TEAM — per owner direction (2026-08-24): PJ is the only filled
+     card; the rest are BLANK slots the owner will personalize. To fill one,
+     replace the name/role/bio text and the avatar initials, and optionally
+     swap the avatar div for: <img class="team-avatar" src="assets/team/NAME.jpg" alt=""> -->
 <section id="team" style="background:var(--bg);">
   <div class="section-inner">
     <div style="text-align:center;margin-bottom:40px;" data-reveal>
@@ -1113,33 +1151,62 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
       <div class="team-card">
         <div class="team-avatar">PJ</div>
         <h3>PJTrades</h3>
-        <div class="role">Founder · Futures — NYAM</div>
-        <p class="bio">10 years in the markets. NQ &amp; ES specialist. <!-- TODO: owner to supply full bio --></p>
+        <div class="role">Founder · Futures — NQ &amp; ES</div>
+        <p class="bio">10 years in the markets. Disciplined futures day trading, technical analysis, and risk management. <!-- TODO: owner to supply full bio --></p>
       </div>
       <div class="team-card">
-        <div class="team-avatar">C</div>
-        <h3>Caleb</h3>
-        <div class="role">Live Trading · Night Classes</div>
-        <p class="bio">Leads NYAM &amp; ASIA sessions and the 5:30 PM night classes. <!-- TODO: owner to supply bio --></p>
+        <div class="team-avatar team-avatar-blank">+</div>
+        <h3>Team Member</h3>
+        <div class="role">Role coming soon</div>
+        <p class="bio">Bio coming soon.</p>
       </div>
       <div class="team-card">
-        <div class="team-avatar">F</div>
-        <h3>Fin</h3>
-        <div class="role">Live Trading — NYAM &amp; ASIA</div>
-        <p class="bio">Co-hosts live futures sessions with Caleb. <!-- TODO: owner to supply bio --></p>
+        <div class="team-avatar team-avatar-blank">+</div>
+        <h3>Team Member</h3>
+        <div class="role">Role coming soon</div>
+        <p class="bio">Bio coming soon.</p>
       </div>
       <div class="team-card">
-        <div class="team-avatar">G</div>
-        <h3>Gainz</h3>
-        <div class="role">Order Flow Sessions</div>
-        <p class="bio">Runs the Tuesday 2:30 PM order flow deep dives. <!-- TODO: owner to supply bio --></p>
+        <div class="team-avatar team-avatar-blank">+</div>
+        <h3>Team Member</h3>
+        <div class="role">Role coming soon</div>
+        <p class="bio">Bio coming soon.</p>
       </div>
       <div class="team-card">
-        <div class="team-avatar">K</div>
-        <h3>KWT</h3>
-        <div class="role">Live Trading — NYPM</div>
-        <p class="bio">Heads afternoon live trading sessions. <!-- TODO: owner to supply bio --></p>
+        <div class="team-avatar team-avatar-blank">+</div>
+        <h3>Team Member</h3>
+        <div class="role">Role coming soon</div>
+        <p class="bio">Bio coming soon.</p>
       </div>
+      <div class="team-card">
+        <div class="team-avatar team-avatar-blank">+</div>
+        <h3>Team Member</h3>
+        <div class="role">Role coming soon</div>
+        <p class="bio">Bio coming soon.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MEMBER RESULTS WALL — intentionally BLANK for the owner to fill (2026-08-24).
+     To add a card later, copy this template into .results-grid below and drop
+     the image into assets/results/ (create the folder):
+       <figure class="result-card">
+         <img src="assets/results/YOUR_IMAGE.jpg" alt="Member milestone" loading="lazy">
+         <figcaption>TODO: short factual caption (e.g., "Passed 50K — funded")</figcaption>
+       </figure>
+     Keep captions factual; results always vary — never guarantee outcomes. -->
+<section id="results" style="background:var(--bg2);">
+  <div class="section-inner">
+    <div style="text-align:center;margin-bottom:36px;" data-reveal>
+      <div class="section-tag">Member Results</div>
+      <h2 class="section-title">The <span class="gold">Results Wall</span></h2>
+      <p class="section-sub" style="margin:0 auto;">Real member milestones — payouts, passes, and funded accounts. Results vary and are never typical or guaranteed.</p>
+    </div>
+    <div class="results-empty" data-reveal>
+      <div style="font-size:2.2rem;margin-bottom:10px;">🏆</div>
+      <h3>Wall coming soon</h3>
+      <p>Member payout passes and funded-account milestones will be featured right here. Watch the Discord for the first drops.</p>
     </div>
   </div>
 </section>

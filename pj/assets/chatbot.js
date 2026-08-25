@@ -55,7 +55,7 @@
   }
 
   function greet() {
-    addMsg("Hi! Ask me what the market is doing — indexes, movers, news context. I answer from live data and keep it educational.", 'bot');
+    addMsg("Hi! I'm the PJ Trades AI assistant. Ask me what the market is doing, or say things like \"where do I start?\" or \"what's in the bundles?\" and I'll point you the right way.", 'bot');
   }
 
   function addMsg(text, who) {
