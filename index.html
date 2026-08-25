@@ -232,8 +232,8 @@ nav {
   display: flex; align-items: center; justify-content: center;
   text-align: center;
   padding: 80px 24px 60px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(220,38,38,0.06) 0%, transparent 65%),
-              linear-gradient(180deg, #06090d 0%, #080e18 100%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(220,38,38,0.045) 0%, transparent 65%),
+              linear-gradient(180deg, #030507 0%, #05080d 100%);
   position: relative; overflow: hidden;
 }
 .hero::before {
@@ -459,6 +459,26 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   54% { opacity: .5; }
   57% { opacity: 1; }
 }
+
+/* ─── MEGA BOLT — large detailed background lightning, right side of hero ───
+   Stays dimly visible at all times (base opacity below) so it never
+   disappears between flashes, then strikes brighter on a slow cycle.
+   Intensity dial: --mega-bolt-base (resting visibility) and
+   --mega-bolt-peak (flash brightness) below; animation:none for static. */
+.mega-bolt { position: absolute; top: 4%; right: -2%; width: min(42vw, 380px); height: 90%; z-index: 1; pointer-events: none; opacity: var(--mega-bolt-base, .38); }
+.mega-bolt path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.mega-bolt .bolt-trunk { stroke: #ffe3b8; stroke-width: 5; filter: drop-shadow(0 0 12px rgba(220,38,38,.55)) drop-shadow(0 0 26px rgba(255,90,60,.35)); }
+.mega-bolt .bolt-limb { stroke: #ffd39a; stroke-width: 3.2; opacity: .85; filter: drop-shadow(0 0 8px rgba(220,38,38,.5)); }
+.mega-bolt-anim { animation: megaFlash 6.5s ease-in-out infinite; }
+@keyframes megaFlash {
+  0%, 38%, 100% { opacity: var(--mega-bolt-base, .38); }
+  44% { opacity: .22; }
+  47% { opacity: var(--mega-bolt-peak, 1); }
+  50% { opacity: .45; }
+  53% { opacity: var(--mega-bolt-peak, 1); }
+  58% { opacity: var(--mega-bolt-base, .38); }
+}
+@media (max-width: 768px) { .mega-bolt { width: min(55vw, 220px); opacity: calc(var(--mega-bolt-base, .38) * .8); } }
 .win-card:hover { box-shadow: 0 12px 40px rgba(0,230,118,0.18); }
 .premium-box { box-shadow: 0 0 80px rgba(220,38,38,0.12), 0 0 30px rgba(220,38,38,0.06); transition: box-shadow 0.4s; }
 .premium-box:hover { box-shadow: 0 0 120px rgba(220,38,38,0.22), 0 0 50px rgba(220,38,38,0.12); }
@@ -530,6 +550,7 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   .video-poster-glow{animation:none;}
   .hero::after{animation:none;opacity:.85;}
   .bolt-underline{animation:none;opacity:.85;}
+  .mega-bolt-anim{animation:none;}
 }
 
 /* ─── SCROLL REVEAL (progressive enhancement) ───
@@ -803,6 +824,12 @@ html { font-size: 1.02rem; }
     <div class="liquid-blob lb-3"></div>
     <div class="liquid-grid"></div>
   </div>
+  <svg class="mega-bolt mega-bolt-anim" viewBox="0 0 300 500" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <path class="bolt-trunk" d="M150,10 L108,145 L168,155 L88,305 L142,315 L68,490"/>
+    <path class="bolt-limb" d="M168,155 L235,195 L202,208 L248,262"/>
+    <path class="bolt-limb" d="M88,305 L38,342 L64,352 L18,432"/>
+    <path class="bolt-limb" d="M108,145 L72,178 L94,188 L58,232"/>
+  </svg>
   <div class="hero-inner" style="position:relative;z-index:2;">
     <div class="hero-badge"><span class="pulse-dot"></span> <span id="hb-rating">5.0</span>★ on Whop · <span id="hb-reviews">2,240</span> reviews · <span id="hb-joined">49,136</span> joined</div>
     <h1><span class="bolt-wrap">PJ<svg class="bolt-underline" viewBox="0 0 60 12" preserveAspectRatio="none" aria-hidden="true"><path d="M2,6 L14,2 L22,9 L34,1 L44,9 L58,3"/></svg></span> TRADES <span style="display:inline-block;"><span style="font-size:0.42em;vertical-align:middle;color:var(--muted);font-weight:700;letter-spacing:2px;">× St</span></span><br>
