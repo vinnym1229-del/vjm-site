@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const index = readFileSync(join(ROOT, 'index.html'), 'utf8');
 const premarket = readFileSync(join(ROOT, 'premarket.html'), 'utf8');
+const guidance = readFileSync(join(ROOT, 'premium-guidance.html'), 'utf8');
 
 test('bundles: $100 futures core with 6mo/1yr options, $129 all-markets tier', () => {
   assert.match(index, /\$100<span>\/mo<\/span>/, '$100/mo futures tier missing');
@@ -58,11 +59,30 @@ test('video sits above bundles with lazy facade (232MB file must not be embedded
   assert.doesNotMatch(index, /<video[^>]*src=/, 'no eager video src (25MB deploy limit + LCP)');
 });
 
-test('team roster from the schedule graphic', () => {
-  for (const name of ['PJTrades', 'Caleb', 'Fin', 'Gainz', 'KWT']) {
-    assert.match(index, new RegExp('/>' + name + '<|>' + name + '<'), 'team member missing: ' + name);
-  }
-  assert.doesNotMatch(index, /Coming Soon/, 'team placeholder must be gone');
+test('team: PJ real card + blank owner-fillable slots (no invented bios)', () => {
+  assert.match(index, /<h3>PJTrades<\/h3>/, 'PJ card missing');
+  assert.match(index, /10 years in the markets/, 'PJ 10-year bio line missing');
+  const blanks = [...index.matchAll(/team-avatar-blank/g)].length;
+  assert.ok(blanks >= 5, 'expected at least 5 blank team slots, found ' + blanks);
+  assert.doesNotMatch(index, /<h3>Caleb<\/h3>|<h3>Gainz<\/h3>|<h3>KWT<\/h3>/, 'named cards must stay out until owner personalizes them');
+});
+
+test('member results wall is blank and owner-ready', () => {
+  assert.match(index, /id="results"/);
+  assert.match(index, /results-empty/, 'placeholder state missing');
+  assert.match(index, /To add a card later, copy this template/, 'owner template comment missing');
+  assert.match(index, /Results vary and are never typical or guaranteed/);
+});
+
+test('premium Alpaca AI trend analyst: gated endpoint + member UI', () => {
+  const analyst = readFileSync(join(ROOT, 'functions', 'api', 'premium-market-analyst.js'), 'utf8');
+  assert.match(analyst, /premium session is required/, 'must fail with premium-required message');
+  assert.match(analyst, /verifySessionToken/, 'must verify the premium session');
+  assert.match(analyst, /feed=iex|feed=\$\{FEED\}/, 'must label the IEX feed');
+  assert.match(analyst, /not financial advice/i, 'disclaimer required');
+  assert.match(guidance, /\/api\/premium-market-analyst/, 'member UI must call the analyst endpoint');
+  assert.match(guidance, /id="market-analyst"/);
+  assert.match(guidance, /hidden>/, 'analyst panel must be hidden until premium is verified');
 });
 
 test('schedule mirrors the weekly session structure', () => {

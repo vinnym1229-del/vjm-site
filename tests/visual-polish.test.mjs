@@ -12,18 +12,18 @@ const index = read('index.html');
 const guidance = read('premium-guidance.html');
 const propFirms = read('prop-firms.html');
 
-test('liquid system extends beyond hero into exactly two more sections', () => {
+test('liquid system extends across the page sections', () => {
   const instances = [...index.matchAll(/class="liquid-bg[^"]*"/g)].length;
-  assert.equal(instances, 3, `expected liquid-bg in hero + #premium + #about, found ${instances}`);
+  assert.equal(instances, 5, `expected liquid-bg in hero, features, premium, faq, about — found ${instances}`);
   assert.ok(/<section id="premium"[^>]*>\s*<div class="liquid-bg soft"/.test(index), '#premium must open with its own scoped liquid-bg');
   assert.ok(/<section id="about"[^>]*>\s*<div class="liquid-bg soft"/.test(index), '#about must open with its own scoped liquid-bg');
 });
 
 test('blob budget respected and sections scope their blobs', () => {
   const blobs = [...index.matchAll(/class="liquid-blob /g)].length;
-  assert.ok(blobs <= 7, `perf budget: max 3+2+2 blobs, found ${blobs}`);
+  assert.ok(blobs <= 9, `perf budget: max 3+2+2+1+1 blobs, found ${blobs}`);
   // New sections must clip their blobs so nothing bleeds into neighbors.
-  assert.match(index, /#premium, #about \{ position:relative; overflow:hidden; \}/);
+  assert.match(index, /#premium, #about, #features, #faq \{ position:relative; overflow:hidden; \}/);
 });
 
 test('reduced-motion guard covers every blob instance', () => {

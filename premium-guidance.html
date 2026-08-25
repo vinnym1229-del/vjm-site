@@ -89,6 +89,28 @@
       <p style="color:var(--muted);font-size:.72rem;margin-top:10px;">Answers are generated only from this lesson's text. Educational content — not financial advice.</p>
     </div>
   </section>
+
+  <!-- Alpaca AI Trend Analyst: verified members only. Server-side pulls
+       multi-year QQQ (Nasdaq-100 proxy) daily bars from Alpaca (IEX feed),
+       computes deterministic trend metrics, and grounds the AI narrative on
+       those metrics only. Educational — never advice. -->
+  <section class="preview" id="market-analyst" aria-labelledby="analyst-title" hidden>
+    <h2 id="analyst-title">Alpaca AI <span class="gold">Trend Analyst</span></h2>
+    <p>Multi-year Nasdaq history (QQQ as the Nasdaq-100 proxy, IEX feed) analyzed by AI. Deterministic trend metrics computed server-side; the narrative is grounded strictly on those numbers.</p>
+    <div style="background:rgba(17,24,39,.72);border:1px solid var(--bdr);border-radius:14px;padding:16px;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+        <span style="font-size:.78rem;color:var(--m2);font-weight:800;">History:</span>
+        <button class="btn btn-ghost analyst-year" type="button" data-years="1">1Y</button>
+        <button class="btn btn-gold analyst-year" type="button" data-years="3">3Y</button>
+        <button class="btn btn-ghost analyst-year" type="button" data-years="5">5Y</button>
+        <button class="btn btn-gold" type="button" id="analyst-run" style="margin-left:auto;">Analyze Trend</button>
+      </div>
+      <div id="analyst-status" role="status" aria-live="polite" style="color:var(--muted);font-size:.8rem;min-height:1.2em;margin-bottom:10px;"></div>
+      <div id="analyst-metrics" style="display:none;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px;"></div>
+      <div id="analyst-narrative" style="display:none;border:1px solid var(--bdr);border-radius:12px;padding:14px;color:var(--text);font-size:.86rem;line-height:1.6;white-space:pre-wrap;"></div>
+      <p style="color:var(--muted);font-size:.7rem;margin-top:10px;">Educational analysis of historical data — not financial advice. Past performance never guarantees future results. IEX free feed; consolidated tape may differ.</p>
+    </div>
+  </section>
 </main>
 <footer style="border-top:1px solid var(--bdr);padding:24px;text-align:center;background:#020508;">
   <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;">
@@ -170,7 +192,65 @@ document.getElementById('lesson-form').addEventListener('submit',askLesson);
 function showLessonCompanion(){
   const s=document.getElementById('lesson-companion');
   if(s) s.hidden=false;
+  const a=document.getElementById('market-analyst');
+  if(a) a.hidden=false;
 }
+// ─── Alpaca AI Trend Analyst (verified members only) ───
+let analystYears=3, analystBusy=false;
+function setAnalystYears(y){
+  analystYears=y;
+  document.querySelectorAll('.analyst-year').forEach(b=>{
+    const on=Number(b.dataset.years)===y;
+    b.className='btn '+(on?'btn-gold':'btn-ghost')+' analyst-year';
+  });
+}
+document.querySelectorAll('.analyst-year').forEach(b=>b.addEventListener('click',()=>setAnalystYears(Number(b.dataset.years))));
+function analystChip(label,value){
+  const d=document.createElement('div');
+  d.style.cssText='background:rgba(7,9,15,.6);border:1px solid var(--bdr);border-radius:10px;padding:10px 12px;';
+  const l=document.createElement('div');l.textContent=label;l.style.cssText='font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;';
+  const v=document.createElement('div');v.textContent=value;v.style.cssText='font-family:Barlow Condensed,sans-serif;font-size:1.05rem;font-weight:900;color:var(--text);';
+  d.append(l,v);return d;
+}
+async function runAnalyst(){
+  if(analystBusy) return;
+  const status=document.getElementById('analyst-status');
+  const metricsBox=document.getElementById('analyst-metrics');
+  const narrBox=document.getElementById('analyst-narrative');
+  analystBusy=true;
+  const runBtn=document.getElementById('analyst-run');
+  runBtn.disabled=true;
+  status.textContent='Pulling '+analystYears+'-year Nasdaq history and analyzing…';
+  metricsBox.style.display='none';metricsBox.innerHTML='';
+  narrBox.style.display='none';narrBox.textContent='';
+  try{
+    const res=await fetch('/api/premium-market-analyst?years='+analystYears,{credentials:'same-origin',cache:'no-store'});
+    const data=await res.json().catch(()=>({ok:false}));
+    if(!res.ok||!data.ok){
+      status.textContent=data.error||'Analyst unavailable right now — try again shortly.';
+      return;
+    }
+    status.textContent='';
+    const m=data.metrics||{};
+    [['Last close',m.lastClose],['Total return',m.totalReturnPct+'%'],['CAGR',m.cagrPct+'%'],
+     ['Max drawdown',m.maxDrawdownPct+'%'],['30D volatility',m.vol30AnnualizedPct+'%'],
+     ['12M momentum',m.momentum&&m.momentum.m12!=null?m.momentum.m12+'%':'—'],
+     ['vs 50D avg',m.aboveSma50?'Above':'Below'],['vs 200D avg',m.aboveSma200?'Above':'Below'],
+     ['From 52w high',m.from52wHighPct+'%'],['Up days',m.upDayRatioPct+'%']]
+    .forEach(([l,v])=>{ if(v!=null) metricsBox.appendChild(analystChip(l,String(v))); });
+    metricsBox.style.display='grid';
+    const cov=data.coverage||{};
+    narrBox.textContent=(data.narrative||'AI narrative is offline on this deployment — the raw metrics above are the live analysis.')+
+      (cov.from?('\n\nCoverage: '+String(cov.from).slice(0,10)+' to '+String(cov.to).slice(0,10)+' ('+cov.tradingDays+' trading days, IEX feed).'):'');
+    narrBox.style.display='block';
+  }catch(err){
+    status.textContent='Network hiccup — try again in a moment.';
+  }finally{
+    analystBusy=false;
+    runBtn.disabled=false;
+  }
+}
+document.getElementById('analyst-run').addEventListener('click',runAnalyst);
 async function signOutGuidance(){
   try{await fetch('/api/logout-premium',{method:'POST',credentials:'same-origin'});}catch(e){}
   location.reload();
