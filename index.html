@@ -894,24 +894,23 @@ html { font-size: 1.02rem; }
       <div style="text-align:center;margin-bottom:28px;" data-reveal>
         <div class="section-tag">🧠 Trader Psychology</div>
         <h2 class="section-title">What Kind of <span class="gold">Trader Are You?</span></h2>
-        <p style="color:var(--muted);font-size:0.9rem;">Answer 3 questions honestly. No sugarcoating.</p>
       </div>
       <div id="quiz-box" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:30px;" data-reveal>
         <div id="quiz-content">
           <div id="q1" class="quiz-q">
-            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">1 of 3 — NQ gaps down 3 points at open and your stop is 2 points. What do you do next?</p>
+            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">1 of 3 — You lose two trades in a row. Are you taking a third?</p>
             <div style="display:flex;flex-direction:column;gap:10px;">
-              <button class="quiz-btn" onclick="quizAnswer(1,'a')">🛑 Stop executes — loss taken, I move to the next setup</button>
-              <button class="quiz-btn" onclick="quizAnswer(1,'b')">📉 I move my stop further and average down, hoping it reverses</button>
-              <button class="quiz-btn" onclick="quizAnswer(1,'c')">❓ I freeze — I had no stop planned, I hope it comes back</button>
+              <button class="quiz-btn" onclick="quizAnswer(1,'a')">🛑 No — I hit my daily loss limit and step away</button>
+              <button class="quiz-btn" onclick="quizAnswer(1,'b')">🎰 Yes — I need to win it back right now</button>
+              <button class="quiz-btn" onclick="quizAnswer(1,'c')">🤔 Depends on the setup — I don't have a hard rule for this</button>
             </div>
           </div>
           <div id="q2" class="quiz-q" style="display:none;">
-            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">2 of 3 — How do you determine position size for each futures trade?</p>
+            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">2 of 3 — How do you calculate your risk per trade/day, and when do you do it?</p>
             <div style="display:flex;flex-direction:column;gap:10px;">
-              <button class="quiz-btn" onclick="quizAnswer(2,'a')">💱 I risk a fixed 1% of my account, calculated before entry</button>
-              <button class="quiz-btn" onclick="quizAnswer(2,'b')">🚀 I size up after a loss to get back to even quickly</button>
-              <button class="quiz-btn" onclick="quizAnswer(2,'c')">🤏 I use whatever lot size feels right at the moment</button>
+              <button class="quiz-btn" onclick="quizAnswer(2,'a')">💱 Fixed % of my account, set before the session starts</button>
+              <button class="quiz-btn" onclick="quizAnswer(2,'b')">🚀 I don't calculate it — I just watch the P&amp;L</button>
+              <button class="quiz-btn" onclick="quizAnswer(2,'c')">🤏 Rough number in my head, not written down beforehand</button>
             </div>
           </div>
           <div id="q3" class="quiz-q" style="display:none;">
@@ -1935,11 +1934,9 @@ function quizAnswer(q, ans) {
 function showQuizResult() {
   const a = quizAnswers;
   let type;
-  if(a[1]==='b' && a[2]==='a' && a[3]==='a') type='discipline';
-  else if(a[1]==='c' && a[2]==='c' && a[3]==='b') type='gambler';
-  else if((a[1]==='b'||a[1]==='a') && (a[3]==='a'||a[3]==='c')) type='learning';
-  else if(a[1]==='c'||a[2]==='c') type='gambler';
-  else type='learning';
+  if (a[1] === 'b' || a[2] === 'b' || a[3] === 'b') type = 'gambler';
+  else if (a[1] === 'c' || a[2] === 'c' || a[3] === 'c') type = 'learning';
+  else type = 'discipline';
   const r = quizResults[type];
   document.getElementById('quiz-result-icon').textContent=r.icon;
   document.getElementById('quiz-result-title').textContent=r.title;
