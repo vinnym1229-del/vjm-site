@@ -13,20 +13,14 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | # | Scope | Notes |
 |---|-------|-------|
-| 0 | docs/PJ-REDESIGN-BRAINSTORM.md | MASTER PLAN: futures-first redesign per owner Whop screenshots. Execute in the doc's phase order; §15 questions gate exact copy only |
-| 1 | index.html premium dashboard tab | Fix "$50/mo launch rate" copy vs actual price (subsumed by Phase 1 truth sweep) |
-| 2 | index.html ticker block | Swap to NQ/ES/MNQ/MES futures tape (subsumed by Phase 1) |
-| 3 | prop-firms.html + tokens.css | Client-side stale-while-revalidate cache for /api/content |
-| 4 | team section (index.html) | Power "Meet the Team" from Sheets CMS (Phase 3, needs backend PR) |
-| 5 | functions/api/_lib/ai.js ⚠ backend | Owner approval needed: expose model string config for smarter Workers AI models |
-| 6 | Phase 1 truth sweep (index.html, premarket.html, meta) | $129→$100 + 3 bundles, FAQ verbatim, stats, socials, futures-first nav/copy — brainstorm §11 checklist |
-| 7 | Phase 2 sections | Video slot (hosting TBD §2), Meet the Team, CMS-shaped schedule grid + countdown rewrite |
-| 8 | Phase 3 backend PR ⚠ owner-gated | content-sync + integrations-core: new tabs schedule/team/bundles/faqs/media/testimonials/stats |
+| 0 | docs/PJ-REDESIGN-BRAINSTORM.md | MASTER PLAN: futures-first redesign per owner Whop screenshots. Phase 1+2 DONE; remaining: Phase 3 CMS backend PR (owner-gated), Phase 4 starter-course funnel + analytics |
+| 1 | owner assets | Video (≤25MB at assets/pj-intro.mp4 or YouTube URL), team bios/photos for the 5 blank slots, results-wall screenshots, $129 tier's Whop product URL if separate |
 
 ## Done
 
 | Instance | Scope | Result | Date |
 |----------|-------|--------|------|
+| ox-alpha | pj: index FX + team blanks + results wall + premium-market-analyst.js + ai.js guardrails + guidance panel | Ambient FX within perf budget (Perf 67/CLS 0 after trimming hero text-shimmer), PJ + 5 blank team slots, blank owner-ready results wall, premium Alpaca AI analyst (1/3/5Y QQQ, gated, data-grounded), chatbot now directs visitors; 46/46 tests, browser checks clean; commit c2f07f8; /pj synced (main 0e5dbd9) | 2026-08-24 |
 | ox-alpha | pj branch: index/premarket + tests (Phase 1+2 in one pass) | Futures-first redesign: $100 Futures + $129 All-Markets bundles, Whop showcase (features/reviews/49,136), video facade above bundles, team of 5, week schedule grid + session countdown, FAQ + JSON-LD, socials, futures ticker; 44/44 tests, 14/14 browser checks, Perf 69 CLS 0; commit 6afa0c5; /pj preview synced on main ccf1516 | 2026-08-24 |
 | ox-alpha | pj branch: index/premium-guidance/prop-firms + assets | Visual polish pass, scroll-reveal, chatbot wiring, lesson companion, prop-firms accuracy comments; tests 34/34; commit 6fb2dfc | 2026-08-24 |
 | ox-alpha | main branch: /pj folder | Refreshed static preview from pj HEAD, noindex hygiene; commit 528cf58 | 2026-08-24 |
