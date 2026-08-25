@@ -438,8 +438,26 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   position:absolute;
   inset:0;
   background:radial-gradient(ellipse at 20% 80%,rgba(16,185,129,0.04) 0%,transparent 55%),
-             radial-gradient(ellipse at 80% 20%,rgba(220,38,38,0.04) 0%,transparent 55%);
+             radial-gradient(ellipse at 80% 20%,rgba(220,38,38,0.04) 0%,transparent 55%),
+             radial-gradient(ellipse 60% 45% at 50% 15%,rgba(220,38,38,var(--hero-pulse-peak,0.10)) 0%,transparent 70%);
   pointer-events:none;
+  animation: heroPulse 7s ease-in-out infinite;
+}
+@keyframes heroPulse { 0%,100% { opacity:.7; } 50% { opacity:1; } }
+
+/* ─── HERO BOLT (underline the "PJ" wordmark) ───
+   Intensity dial: raise --bolt-glow / shorten the animation duration below for
+   more energy; set both animations to `none` for a fully static bolt. */
+.bolt-wrap { position: relative; display: inline-block; }
+.bolt-underline { position: absolute; left: 2px; right: 2px; bottom: -6px; height: 11px; filter: drop-shadow(0 0 5px rgba(220,38,38,var(--bolt-glow,.65))); animation: boltFlicker 3.4s ease-in-out infinite; }
+.bolt-underline path { fill: none; stroke: var(--gold); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes boltFlicker {
+  0%, 100% { opacity: .8; filter: drop-shadow(0 0 4px rgba(220,38,38,.5)); }
+  45% { opacity: .8; }
+  48% { opacity: .3; }
+  51% { opacity: 1; filter: drop-shadow(0 0 11px rgba(220,38,38,.9)); }
+  54% { opacity: .5; }
+  57% { opacity: 1; }
 }
 .win-card:hover { box-shadow: 0 12px 40px rgba(0,230,118,0.18); }
 .premium-box { box-shadow: 0 0 80px rgba(220,38,38,0.12), 0 0 30px rgba(220,38,38,0.06); transition: box-shadow 0.4s; }
@@ -510,6 +528,8 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   .tier-card.hot{animation:none;}
   .feature-card:hover::after{animation:none;}
   .video-poster-glow{animation:none;}
+  .hero::after{animation:none;opacity:.85;}
+  .bolt-underline{animation:none;opacity:.85;}
 }
 
 /* ─── SCROLL REVEAL (progressive enhancement) ───
@@ -541,7 +561,11 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .video-note{display:none;text-align:center;padding:40px 20px;color:var(--muted);font-size:.9rem;}
 
 /* ─── BUNDLE TIERS ─── */
-.tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;max-width:960px;margin:0 auto;}
+.period-tabs{display:flex;justify-content:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:5px;max-width:420px;margin:0 auto 36px;}
+.period-tab{flex:1;padding:9px 6px;border:none;border-radius:999px;background:transparent;color:var(--muted);font-weight:700;font-size:.8rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;}
+.period-tab.active{background:var(--gold);color:#fff;}
+.tier-note{font-size:.7rem;color:var(--muted);margin-top:4px;font-style:italic;}
+.tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px;max-width:1040px;margin:0 auto;}
 .tier-card{position:relative;background:linear-gradient(145deg,#12100a,#0a0f16);border:2px solid var(--border);border-radius:20px;padding:34px 30px;display:flex;flex-direction:column;}
 .tier-card.hot{border-color:var(--gold);box-shadow:0 0 60px rgba(220,38,38,.12);}
 .tier-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--gold);color:#fff;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:.8rem;letter-spacing:2px;text-transform:uppercase;padding:5px 18px;border-radius:20px;white-space:nowrap;}
@@ -781,7 +805,7 @@ html { font-size: 1.02rem; }
   </div>
   <div class="hero-inner" style="position:relative;z-index:2;">
     <div class="hero-badge"><span class="pulse-dot"></span> <span id="hb-rating">5.0</span>★ on Whop · <span id="hb-reviews">2,240</span> reviews · <span id="hb-joined">49,136</span> joined</div>
-    <h1><span class="bolt">PJ</span> TRADES <span style="display:inline-block;"><span style="font-size:0.42em;vertical-align:middle;color:var(--muted);font-weight:700;letter-spacing:2px;">× St</span></span><br>
+    <h1><span class="bolt-wrap">PJ<svg class="bolt-underline" viewBox="0 0 60 12" preserveAspectRatio="none" aria-hidden="true"><path d="M2,6 L14,2 L22,9 L34,1 L44,9 L58,3"/></svg></span> TRADES <span style="display:inline-block;"><span style="font-size:0.42em;vertical-align:middle;color:var(--muted);font-weight:700;letter-spacing:2px;">× St</span></span><br>
     <span class="gold">Futures, Made Simple.</span></h1>
     <p class="hero-sub">With ten years of hands-on experience navigating the fast-paced world of financial markets, PJ Trades is a seasoned day trader specializing in <strong style="color:var(--text);">NQ &amp; ES futures</strong>. Technical analysis, market research, and risk management — combined to identify high-probability setups and deliver results.</p>
     <div class="hero-ctas">
@@ -820,7 +844,7 @@ html { font-size: 1.02rem; }
       <div class="feature-card" data-reveal>
         <div class="feature-num">01</div>
         <h3>Live Futures Trading &amp; Analysis</h3>
-        <p>Watch PJ trade in real time, learn PJ Trades' exact model, and how he navigates the market.</p>
+        <p>Watch PJ trade in real time and learn his exact model.</p>
       </div>
       <div class="feature-card" data-reveal>
         <div class="feature-num">02</div>
@@ -835,7 +859,7 @@ html { font-size: 1.02rem; }
       <div class="feature-card" data-reveal>
         <div class="feature-num">04</div>
         <h3>1HR+ Starter Crash Course, IFVG Model &amp; More</h3>
-        <p>The PJ Trades Starter Crash Course. How to set up your chart and master the IFVG model.</p>
+        <p>Chart setup and the full IFVG model, start to finish.</p>
       </div>
       <div class="feature-card" data-reveal>
         <div class="feature-num">05</div>
@@ -1137,13 +1161,20 @@ html { font-size: 1.02rem; }
       <p class="section-sub" style="margin:0 auto 20px;">Futures is the main event. Want options and stocks too? Go All-Markets. Checkout and billing are handled securely by Whop — cancel anytime from your Whop account.</p>
     </div>
 
+    <div class="period-tabs" data-reveal role="tablist" aria-label="Billing period">
+      <button class="period-tab active" data-period="monthly" onclick="setBundlePeriod('monthly')">Monthly</button>
+      <button class="period-tab" data-period="sixmo" onclick="setBundlePeriod('sixmo')">6-Month</button>
+      <button class="period-tab" data-period="yearly" onclick="setBundlePeriod('yearly')">Yearly</button>
+      <button class="period-tab" data-period="lifetime" onclick="setBundlePeriod('lifetime')">Lifetime</button>
+    </div>
+
     <div class="tier-grid" id="tier-grid" data-reveal>
       <!-- FUTURES — the core $100 product (matches the Whop listing exactly) -->
       <div class="tier-card">
         <div class="tier-badge">Core — Futures Only</div>
         <div class="tier-name">Futures</div>
-        <div class="tier-price">$100<span>/mo</span></div>
-        <div class="tier-sub">or <b style="color:var(--text);">$529</b>/6mo<span class="tier-save">12% off</span> · <b style="color:var(--text);">$1,000</b>/yr<span class="tier-save">18% off</span></div>
+        <div class="tier-price" id="price-futures">$100<span>/mo</span></div>
+        <div class="tier-sub" id="sub-futures"></div>
         <ul>
           <li><span class="tick">✓</span><span><b>Live futures trading</b> 3–5x per week — NYAM, NYPM &amp; ASIA sessions</span></li>
           <li><span class="tick">✓</span><span><b>Entries &amp; exits shared</b> via Discord live trading</span></li>
@@ -1161,8 +1192,8 @@ html { font-size: 1.02rem; }
       <div class="tier-card hot">
         <div class="tier-badge alt">Futures + Options + Stocks</div>
         <div class="tier-name">All-Markets</div>
-        <div class="tier-price">$129<span>/mo</span></div>
-        <div class="tier-sub">Everything in Futures, plus the complete multi-market library<br>or <b style="color:var(--text);">$681</b>/6mo<span class="tier-save">12% off</span> · <b style="color:var(--text);">$1,269</b>/yr<span class="tier-save">18% off</span></div>
+        <div class="tier-price" id="price-allmarkets">$129<span>/mo</span></div>
+        <div class="tier-sub" id="sub-allmarkets">Everything in Futures, plus the complete multi-market library</div>
         <ul>
           <li><span class="tick">✓</span><span><b>Everything in the Futures bundle</b></span></li>
           <li><span class="tick">✓</span><span><b>Full options course</b> + the Options Lab</span></li>
@@ -1171,6 +1202,24 @@ html { font-size: 1.02rem; }
           <li><span class="tick">✓</span><span><b>Complete educational materials</b> — every market, one membership</span></li>
         </ul>
         <a href="https://whop.com/pjtradespremium" target="_blank" rel="noopener" class="btn btn-outline" style="width:100%;font-size:1.02rem;padding:15px;">Go All-Markets on Whop ⭐</a>
+      </div>
+
+      <!-- IFVG INDICATOR — TradingView indicator, sold separately via fluxcharts -->
+      <div class="tier-card">
+        <div class="tier-badge alt">TradingView Indicator</div>
+        <div class="tier-name">IFVG Indicator</div>
+        <div class="tier-price" id="price-ifvg">$55.95<span>/mo</span></div>
+        <div class="tier-sub" id="sub-ifvg"></div>
+        <ul>
+          <li><span class="tick">✓</span><span><b>IFVG Signals</b> — A/A+/A++ rated setups</span></li>
+          <li><span class="tick">✓</span><span><b>Automatic Trade Checklist</b></span></li>
+          <li><span class="tick">✓</span><span><b>Automatic Bias Tracker</b></span></li>
+          <li><span class="tick">✓</span><span><b>HTF Fair Value Gaps</b></span></li>
+          <li><span class="tick">✓</span><span><b>NWOG/NDOG</b> auto-plotted</span></li>
+          <li><span class="tick">✓</span><span><b>Real-Time Alerts</b></span></li>
+          <li><span class="tick">✓</span><span><b>24/7 Support</b></span></li>
+        </ul>
+        <a href="https://www.fluxcharts.com/creator/pj-trades" target="_blank" rel="noopener" class="btn btn-outline" style="width:100%;font-size:1.02rem;padding:15px;">Get the IFVG Indicator ⭐</a>
       </div>
     </div>
 
@@ -1440,8 +1489,7 @@ html { font-size: 1.02rem; }
 
       <div data-reveal>
         <p style="font-size:1.02rem;line-height:1.75;color:var(--text);">With ten years of hands-on experience navigating the fast-paced world of financial markets, <strong>PJ Trades</strong> is a seasoned day trader specializing in <strong style="color:var(--gold);">futures</strong>.</p>
-        <p style="font-size:1.02rem;line-height:1.75;color:var(--text);margin-top:16px;">Known for a disciplined approach to trading, PJ combines technical analysis, market research, and risk management to consistently identify high-probability setups and deliver results.</p>
-        <p style="font-size:1.02rem;line-height:1.75;color:var(--text);margin-top:16px;">The mission is simple: make markets understandable. Every concept — from order flow to options Greeks — gets explained so clearly that anyone willing to put in the work can follow.</p>
+        <p style="font-size:1.02rem;line-height:1.75;color:var(--text);margin-top:16px;">Disciplined technical analysis and risk management, built to consistently identify high-probability setups.</p>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;">
           <a href="https://whop.com/pjtradespremium" target="_blank" rel="noopener" class="btn btn-gold">⭐ Whop — 5.0 ★</a>
           <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-outline">💬 Discord</a>
@@ -2180,6 +2228,49 @@ function calcSizingSim() {
   document.getElementById('size-interpret').textContent = interpret;
   document.getElementById('size-result').style.display = 'block';
 }
+
+// ─── BUNDLE PERIOD SELECTOR ───
+// Real, owner-confirmed prices only. A tier that doesn't offer the selected
+// period falls back to its default and says so rather than inventing a number.
+const BUNDLE_PERIODS = {
+  futures: {
+    monthly: { amt: '$100', per: '/mo', sub: '' },
+    sixmo: { amt: '$529', per: ' /6mo', sub: '<span class="tier-save">12% off</span>' },
+    yearly: { amt: '$1,000', per: ' /yr', sub: '<span class="tier-save">18% off</span>' },
+  },
+  allmarkets: {
+    monthly: { amt: '$129', per: '/mo', sub: 'Everything in Futures, plus the complete multi-market library' },
+    sixmo: { amt: '$681', per: ' /6mo', sub: 'Everything in Futures, plus the complete multi-market library · <span class="tier-save">12% off</span>' },
+    yearly: { amt: '$1,269', per: ' /yr', sub: 'Everything in Futures, plus the complete multi-market library · <span class="tier-save">18% off</span>' },
+  },
+  ifvg: {
+    yearly: { amt: '$55.95', per: '/mo', sub: '$671.40 billed yearly · <span class="tier-save">40% off</span>' },
+    lifetime: { amt: '$999', per: ' once', sub: '<span class="tier-save">50% off</span> — pay once, own it forever' },
+  },
+};
+const BUNDLE_FALLBACK = { futures: 'monthly', allmarkets: 'monthly', ifvg: 'yearly' };
+const PERIOD_LABELS = { monthly: 'Monthly', sixmo: '6-Month', yearly: 'Yearly', lifetime: 'Lifetime' };
+
+function setBundlePeriod(period) {
+  document.querySelectorAll('.period-tab').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.period === period);
+  });
+  Object.keys(BUNDLE_PERIODS).forEach((tier) => {
+    const priceEl = document.getElementById('price-' + tier);
+    const subEl = document.getElementById('sub-' + tier);
+    if (!priceEl || !subEl) return;
+    let p = BUNDLE_PERIODS[tier][period];
+    let note = '';
+    if (!p) {
+      const fb = BUNDLE_FALLBACK[tier];
+      p = BUNDLE_PERIODS[tier][fb];
+      note = '<div class="tier-note">' + PERIOD_LABELS[period] + ' not offered for this plan — showing ' + PERIOD_LABELS[fb] + '</div>';
+    }
+    priceEl.innerHTML = p.amt + '<span>' + p.per + '</span>';
+    subEl.innerHTML = (p.sub || '') + note;
+  });
+}
+setBundlePeriod('monthly');
 
 // ─── INTRO VIDEO FACADE ───
 // Nothing loads until click (protects LCP). Priority: YouTube URL in
