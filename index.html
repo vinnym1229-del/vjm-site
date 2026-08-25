@@ -1235,7 +1235,7 @@ html { font-size: 1.02rem; }
       <div class="tier-card">
         <div class="tier-badge alt">TradingView Indicator</div>
         <div class="tier-name">IFVG Indicator</div>
-        <div class="tier-price" id="price-ifvg">$55.95<span>/mo</span></div>
+        <div class="tier-price" id="price-ifvg">$95.20<span>/mo</span></div>
         <div class="tier-sub" id="sub-ifvg"></div>
         <ul>
           <li><span class="tick">✓</span><span><b>IFVG Signals</b> — A/A+/A++ rated setups</span></li>
@@ -2271,11 +2271,12 @@ const BUNDLE_PERIODS = {
     yearly: { amt: '$1,269', per: ' /yr', sub: 'Everything in Futures, plus the complete multi-market library · <span class="tier-save">18% off</span>' },
   },
   ifvg: {
+    monthly: { amt: '$95.20', per: '/mo', sub: '<span class="tier-save">20% off</span>' },
     yearly: { amt: '$55.95', per: '/mo', sub: '$671.40 billed yearly · <span class="tier-save">40% off</span>' },
     lifetime: { amt: '$999', per: ' once', sub: '<span class="tier-save">50% off</span> — pay once, own it forever' },
   },
 };
-const BUNDLE_FALLBACK = { futures: 'monthly', allmarkets: 'monthly', ifvg: 'yearly' };
+const BUNDLE_FALLBACK = { futures: 'monthly', allmarkets: 'monthly', ifvg: 'monthly' };
 const PERIOD_LABELS = { monthly: 'Monthly', sixmo: '6-Month', yearly: 'Yearly', lifetime: 'Lifetime' };
 
 function setBundlePeriod(period) {
