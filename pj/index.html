@@ -12,6 +12,23 @@
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "PJ Trades x St",
+  "url": "https://notfinancialadvicevjm.com/",
+  "description": "Futures-first trading education: live futures trading 3-5x per week, the IFVG Starter Crash Course, group classes, and prop firm giveaways. Educational only — not financial advice.",
+  "founder": { "@type": "Person", "name": "PJ Trades", "jobTitle": "Futures Day Trader" },
+  "sameAs": [
+    "https://www.youtube.com/@PJTrades_NQ",
+    "https://x.com/PJtrades_NQ",
+    "https://www.tiktok.com/@pjtrades",
+    "https://www.instagram.com/pjtradesnq",
+    "https://whop.com/pjtradespremium"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
     {
@@ -35,9 +52,14 @@
 <meta property="og:url" content="https://notfinancialadvicevjm.com">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2306090d'/%3E%3Ctext y='34' x='32' text-anchor='middle' dominant-baseline='central' font-size='34' font-family='Arial Black,sans-serif' font-weight='900' fill='%23dc2626'%3EPJ%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#06090d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" as="style" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="assets/tokens.css">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
   --gold: #dc2626;
@@ -590,6 +612,41 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .social-btn:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px);}
 .social-btn svg{width:16px;height:16px;fill:currentColor;}
 
+/* ─── LATEST FROM THE DESK ─── */
+.lean-chip{display:inline-flex;align-items:center;gap:8px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.35);color:var(--emerald);border-radius:999px;padding:8px 20px;font-size:.84rem;font-weight:800;}
+.ann-card{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:12px;padding:16px 20px;text-align:left;}
+.ann-card h3{font-size:.95rem;font-weight:800;margin-bottom:4px;}
+.ann-card p{color:var(--muted);font-size:.85rem;line-height:1.6;}
+.ann-card .ann-date{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.review-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:left;}
+.review-card .rv-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;}
+.review-card .rv-ticker{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:900;}
+.rv-dir{font-size:.66rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;border-radius:20px;padding:3px 10px;}
+.rv-long{background:rgba(0,230,118,.12);color:var(--green);}
+.rv-short{background:rgba(255,68,68,.12);color:var(--red);}
+.rv-r{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.15rem;}
+.rv-win{color:var(--green);}.rv-loss{color:var(--red);}.rv-scratch,.rv-be,.rv-unclassified{color:var(--muted);}
+.review-card p{color:var(--muted);font-size:.82rem;line-height:1.55;}
+.review-card .rv-date{font-size:.7rem;color:var(--muted);margin-top:8px;text-transform:uppercase;letter-spacing:1px;}
+
+/* ─── SESSION CLOCK ─── */
+#session-clock .sc-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulseDot 2s infinite;}
+
+/* ─── MOBILE STICKY CTA ─── */
+#mobile-cta{display:none;position:fixed;left:0;right:0;bottom:0;z-index:9985;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(6,9,13,.97);backdrop-filter:blur(14px);border-top:1px solid rgba(220,38,38,.35);}
+#mobile-cta .mc-info{display:flex;flex-direction:column;line-height:1.2;}
+#mobile-cta .mc-price{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:900;color:var(--gold);}
+#mobile-cta .mc-label{font-size:.66rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+#mobile-cta .mc-btn{background:var(--gold);color:#fff;text-decoration:none;font-weight:800;font-size:.9rem;padding:11px 22px;border-radius:10px;}
+@media (max-width:768px){
+  body.show-ctabar #mobile-cta{display:flex;}
+}
+body.show-ctabar .vjm-chat-fab{bottom:86px;}
+body.show-ctabar .vjm-chat-panel{bottom:152px;}
+@media (prefers-reduced-motion: reduce){
+  #mobile-cta{transition:none;}
+}
+
 /* ─── HERO EXTRAS ─── */
 .hero-badge{display:inline-flex;align-items:center;gap:9px;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.4);border-radius:999px;padding:7px 16px;font-size:.8rem;font-weight:800;color:#ffb3b3;margin-bottom:22px;}
 .pulse-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(0,230,118,.5);animation:pulseDot 2s infinite;}
@@ -774,6 +831,22 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   </div>
 </section>
 
+<!-- LATEST FROM THE DESK — live data, owner-driven. Announcements + trade
+     reviews come from the Google Sheet CMS (/api/content); the lean chip comes
+     from the AI pre-market brief (/api/market-brief). The whole section stays
+     hidden until real data exists — never rendered empty to visitors. -->
+<section id="latest" style="background:var(--bg2);padding:70px 24px;display:none;">
+  <div class="section-inner">
+    <div style="text-align:center;margin-bottom:34px;" data-reveal>
+      <div class="section-tag">Latest from the Desk</div>
+      <h2 class="section-title">Live From <span class="gold">PJ's Desk</span></h2>
+      <a id="lean-chip" href="premarket.html" style="display:none;text-decoration:none;" rel="noopener"></a>
+    </div>
+    <div id="latest-ann" style="display:grid;gap:12px;max-width:820px;margin:0 auto 30px;"></div>
+    <div id="latest-reviews" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;max-width:960px;margin:0 auto;"></div>
+  </div>
+</section>
+
 <!-- INTRO VIDEO — sits above the bundle options (owner request).
      The file is 232MB, over Cloudflare Pages' 25MB per-file limit, so it is
      NOT committed. Two zero-code ways to go live:
@@ -943,6 +1016,53 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
             <div id="rr-ratio" style="font-family:'Barlow Condensed',sans-serif;font-size:2.5rem;font-weight:900;"></div>
             <div id="rr-verdict" style="font-size:0.9rem;font-weight:700;margin-top:4px;"></div>
             <div id="rr-breakdown" style="font-size:0.78rem;color:var(--muted);margin-top:6px;line-height:1.6;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Futures Tick & P&L Calculator -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">🎯 Futures Tick Calc</h3>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;">NQ · ES · MNQ · MES · YM · RTY — real contract math.</p>
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
+        <select id="fc-contract" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+          <option value="2">MNQ — Micro Nasdaq ($2/pt)</option>
+          <option value="20">NQ — E-mini Nasdaq ($20/pt)</option>
+          <option value="5">MES — Micro S&amp;P ($5/pt)</option>
+          <option value="50">ES — E-mini S&amp;P ($50/pt)</option>
+          <option value="1">YM — E-mini Dow ($1/pt)</option>
+          <option value="50">RTY — E-mini Russell ($50/pt)</option>
+        </select>
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Entry Price</label>
+        <input id="fc-entry" type="number" value="21500" step="0.25" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Exit Price</label>
+        <input id="fc-exit" type="number" value="21568" step="0.25" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contracts</label>
+        <input id="fc-contracts" type="number" value="2" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <button onclick="calcFutures()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
+        <div id="fc-result" style="margin-top:16px;display:none;">
+          <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.2);border-radius:10px;padding:14px;text-align:center;">
+            <div id="fc-pnl" style="font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;"></div>
+            <div id="fc-details" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prop Firm Risk Guard -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">🛡️ Prop Risk Guard</h3>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;">Know exactly how many trades stand between you and a breach.</p>
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Account Size ($)</label>
+        <input id="pr-account" type="number" value="50000" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Trailing Drawdown / Loss Limit ($)</label>
+        <input id="pr-drawdown" type="number" value="2000" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Risk Per Trade (% of account)</label>
+        <input id="pr-risk" type="number" value="0.5" step="0.1" min="0.1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <button onclick="calcPropRisk()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
+        <div id="pr-result" style="margin-top:16px;display:none;">
+          <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.2);border-radius:10px;padding:14px;text-align:center;">
+            <div id="pr-trades" style="font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;color:var(--green);"></div>
+            <div id="pr-details" style="font-size:0.78rem;color:var(--muted);margin-top:6px;line-height:1.6;"></div>
           </div>
         </div>
       </div>
@@ -1221,6 +1341,7 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
       <div class="section-tag">Stream Schedule</div>
       <h2 class="section-title">Live Futures, <span class="gold">3–5x Per Week</span></h2>
       <p class="section-sub" style="margin:0 auto 20px;">All times ET. Sessions run inside the Discord — the <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold);">#announcements channel</a> is always the source of truth for week-to-week changes.</p>
+      <div id="session-clock" style="display:inline-flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:9px 22px;font-size:.88rem;font-weight:700;color:var(--text);"></div>
     </div>
     <div class="week-grid" data-reveal>
       <div class="day-card">
@@ -2064,6 +2185,160 @@ function calcRR() {
   });
 })();
 
+// ─── FUTURES TICK CALCULATOR ───
+// Point values: MNQ $2, NQ $20, MES $5, ES $50, YM $1, RTY $50. Tick = 0.25pt.
+function calcFutures() {
+  const perPt = parseFloat(document.getElementById('fc-contract').value) || 0;
+  const entry = parseFloat(document.getElementById('fc-entry').value);
+  const exit = parseFloat(document.getElementById('fc-exit').value);
+  const contracts = parseInt(document.getElementById('fc-contracts').value) || 1;
+  if (!perPt || !Number.isFinite(entry) || !Number.isFinite(exit) || contracts < 1) return;
+  const pts = exit - entry;
+  const pnl = pts * perPt * contracts;
+  const ticks = Math.abs(pts / 0.25);
+  const isWin = pnl >= 0;
+  const pnlEl = document.getElementById('fc-pnl');
+  pnlEl.textContent = (isWin ? '+' : '') + '$' + Math.abs(Math.round(pnl)).toLocaleString();
+  pnlEl.style.color = isWin ? 'var(--green)' : 'var(--red)';
+  document.getElementById('fc-details').textContent =
+    Math.abs(pts).toFixed(2) + ' points (' + ticks.toFixed(0) + ' ticks) × ' + contracts +
+    ' contract' + (contracts > 1 ? 's' : '') + ' × $' + perPt + '/pt';
+  document.getElementById('fc-result').style.display = 'block';
+}
+
+// ─── PROP FIRM RISK GUARD ───
+function calcPropRisk() {
+  const account = parseFloat(document.getElementById('pr-account').value);
+  const drawdown = parseFloat(document.getElementById('pr-drawdown').value);
+  const riskPct = parseFloat(document.getElementById('pr-risk').value);
+  if (!(account > 0) || !(drawdown > 0) || !(riskPct > 0)) return;
+  const riskDollars = account * (riskPct / 100);
+  const trades = Math.floor(drawdown / riskDollars);
+  const tradesEl = document.getElementById('pr-trades');
+  tradesEl.textContent = trades.toLocaleString() + ' trades';
+  tradesEl.style.color = trades >= 10 ? 'var(--green)' : trades >= 5 ? '#f0b429' : 'var(--red)';
+  document.getElementById('pr-details').innerHTML =
+    'Risking $' + riskDollars.toFixed(0) + ' per trade (' + riskPct + '% of $' + account.toLocaleString() + ')' +
+    ' against a $' + drawdown.toLocaleString() + ' drawdown.' +
+    (trades < 10 ? ' Thin cushion — consider cutting size.' : ' Healthy cushion. Respect the daily stop.');
+  document.getElementById('pr-result').style.display = 'block';
+}
+
+// ─── SESSION CLOCK (schedule section) ───
+function tickSessionClock() {
+  const el = document.getElementById('session-clock');
+  if (!el) return;
+  const next = pjNextSession();
+  if (!next) { el.innerHTML = 'Schedule unavailable'; return; }
+  if (next.live) {
+    el.innerHTML = '<span class="sc-dot"></span> ' + next.session.name + ' session is LIVE now — join in the Discord';
+  } else {
+    const s = next.session;
+    const when = next.dayOffset === 0 ? 'today' : next.dayOffset === 1 ? 'tomorrow' : PJ_DAY_NAMES[pjEtNow().getDay() + next.dayOffset];
+    el.innerHTML = '<span class="sc-dot"></span> Next up: ' + s.name + ' — ' + when + ' ' + pjFmtClock(s.start) + ' ET';
+  }
+}
+tickSessionClock();
+setInterval(tickSessionClock, 30000);
+
+// ─── LATEST FROM THE DESK (CMS + AI brief) ───
+// Section stays display:none until real data arrives — never rendered empty.
+(function loadLatest() {
+  'use strict';
+  const section = document.getElementById('latest');
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
+  let hasContent = false;
+
+  // 1) Today's AI futures lean (public GET; 404 until today's brief exists).
+  fetch('/api/market-brief', { cache: 'no-store' })
+    .then((r) => r.json().catch(() => ({})))
+    .then((d) => {
+      if (!d.ok || !d.lean || !d.lean.lean) return;
+      hasContent = true;
+      section.style.display = 'block';
+      const chip = document.getElementById('lean-chip');
+      chip.className = 'lean-chip';
+      chip.style.display = 'inline-flex';
+      chip.textContent = 'Today\u2019s futures lean: ' + String(d.lean.lean).toUpperCase() + ' (low-confidence ETF proxy) — read the brief \u2192';
+    })
+    .catch(() => {});
+
+  // 2) Owner announcements (Google Sheet CMS).
+  fetch('/api/content?type=announcements', { cache: 'no-store' })
+    .then((r) => r.json().catch(() => ({})))
+    .then((d) => {
+      if (!d.ok || !Array.isArray(d.items) || !d.items.length) return;
+      hasContent = true;
+      section.style.display = 'block';
+      const box = document.getElementById('latest-ann');
+      d.items.slice(0, 3).forEach((a) => {
+        const card = document.createElement('article');
+        card.className = 'ann-card';
+        let html = '';
+        if (a.title) html += '<h3>' + esc(a.title) + '</h3>';
+        if (a.body) html += '<p>' + esc(String(a.body).slice(0, 220)) + (String(a.body).length > 220 ? '…' : '') + '</p>';
+        html += '<span class="ann-date">' + esc(a.createdAt || '') + (a.pinned ? ' · 📌 pinned' : '') + '</span>';
+        if (a.link) html += ' <a href="' + esc(a.link) + '" target="_blank" rel="noopener" style="color:var(--gold);font-size:.8rem;font-weight:700;">Open \u2197</a>';
+        card.innerHTML = html;
+        box.appendChild(card);
+      });
+    })
+    .catch(() => {});
+
+  // 3) Recent trade reviews (owner-curated examples, not signals).
+  fetch('/api/content?type=trade_reviews', { cache: 'no-store' })
+    .then((r) => r.json().catch(() => ({})))
+    .then((d) => {
+      if (!d.ok || !Array.isArray(d.items) || !d.items.length) return;
+      hasContent = true;
+      section.style.display = 'block';
+      const box = document.getElementById('latest-reviews');
+      d.items.slice(0, 3).forEach((t) => {
+        const card = document.createElement('article');
+        card.className = 'review-card';
+        const rCls = t.rMultiple != null && t.rMultiple >= 0 ? 'rv-win' : 'rv-loss';
+        const rTxt = t.rMultiple != null ? ((t.rMultiple >= 0 ? '+' : '') + t.rMultiple + 'R') : (t.result || '—');
+        let html = '<div class="rv-head"><span class="rv-ticker">' + esc(t.ticker) +
+          '</span><span class="rv-dir ' + (t.direction === 'short' ? 'rv-short' : 'rv-long') + '">' + esc(t.direction || 'long') + '</span></div>' +
+          '<div class="rv-r ' + rCls + '">' + esc(rTxt) + ' <span style="color:var(--muted);font-size:.72rem;font-weight:600;">' + esc(t.result || '') + '</span></div>';
+        if (t.notes) html += '<p>' + esc(String(t.notes).slice(0, 140)) + (String(t.notes).length > 140 ? '…' : '') + '</p>';
+        html += '<div class="rv-date">' + esc(t.tradedAt || '') + '</div>';
+        card.innerHTML = html;
+        box.appendChild(card);
+      });
+      const note = document.createElement('p');
+      note.style.cssText = 'grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;';
+      note.textContent = 'Owner-curated examples for education — not trade signals. Results vary and are never typical.';
+      box.appendChild(note);
+    })
+    .catch(() => {});
+})();
+
+// ─── MOBILE STICKY CTA ───
+// Shows after the hero leaves the viewport; mobile-only via CSS. The markup
+// sits after this script block, so init waits for the DOM when needed.
+(function stickyCta() {
+  'use strict';
+  function init() {
+    const hero = document.querySelector('.hero');
+    const bar = document.getElementById('mobile-cta');
+    if (!hero || !bar || !('IntersectionObserver' in window)) return;
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const show = !entry.isIntersecting;
+        document.body.classList.toggle('show-ctabar', show);
+        bar.setAttribute('aria-hidden', show ? 'false' : 'true');
+      });
+    }, { threshold: 0.15 });
+    io.observe(hero);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+
 // ─── SCROLL REVEAL ─────────────────────────────────────────────────────────
 // Progressive enhancement: [data-reveal] content is fully visible with JS
 // disabled, and stays visible when prefers-reduced-motion is set. Only when a
@@ -2102,6 +2377,16 @@ function calcRR() {
   window.addEventListener('scroll', sweep, { passive: true });
 })();
 </script>
+
+<!-- MOBILE STICKY CTA — slides up after the hero scrolls away (mobile only).
+     Shifts the chat FAB up so they never overlap. -->
+<div id="mobile-cta" aria-hidden="true">
+  <div class="mc-info">
+    <span class="mc-price">$100/mo</span>
+    <span class="mc-label">Futures Premium · 5.0★ (2,240)</span>
+  </div>
+  <a class="mc-btn" href="https://whop.com/pjtradespremium" target="_blank" rel="noopener">Join on Whop</a>
+</div>
 
 <script src="assets/chatbot.js" defer></script>
 </body>
