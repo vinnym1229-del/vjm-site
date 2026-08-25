@@ -1,7 +1,7 @@
 // PJ futures-first redesign contract tests (owner requirements, 2026-08-24).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -111,4 +111,59 @@ test('premarket page carries PJ futures branding', () => {
   assert.match(premarket, /<title>Pre-Market Brief \| PJ Trades x St/);
   assert.match(premarket, /NQ\/ES/);
   assert.doesNotMatch(premarket, /VJM \/ St Trades/);
+});
+
+test('fonts load via link+preconnect, not render-blocking @import', () => {
+  assert.match(index, /<link rel="preconnect" href="https:\/\/fonts\.gstatic\.com" crossorigin>/);
+  assert.match(index, /<link href="https:\/\/fonts\.googleapis\.com\/css2\?family=Barlow\+Condensed/);
+  assert.doesNotMatch(index, /@import url\('https:\/\/fonts\.googleapis/);
+});
+
+test('sticky mobile CTA appears after hero and never covers the chat FAB', () => {
+  assert.match(index, /id="mobile-cta"/);
+  assert.match(index, /show-ctabar/, 'body toggle class missing');
+  assert.match(index, /body\.show-ctabar \.vjm-chat-fab\{bottom:\d+px;\}/, 'chat FAB offset missing');
+  assert.match(index, /IntersectionObserver/, 'reveal or cta observer missing');
+  const m = index.match(/id="mobile-cta"[\s\S]*?href="(https:\/\/whop\.com[^"]*)"/);
+  assert.ok(m && m[1] === 'https://whop.com/pjtradespremium', 'CTA must link to Whop');
+});
+
+test('latest-from-the-desk: CMS feeds + AI lean chip, hidden until data exists', () => {
+  assert.match(index, /id="latest"[^>]*display:none;/, 'section must start hidden');
+  assert.match(index, /\/api\/content\?type=announcements/);
+  assert.match(index, /\/api\/content\?type=trade_reviews/);
+  assert.match(index, /\/api\/market-brief/, 'lean chip fetch missing');
+  assert.match(index, /low-confidence ETF proxy/);
+  assert.match(index, /not trade signals/i, 'trade-review disclaimer missing');
+});
+
+test('futures calculators: real contract math + prop risk guard', () => {
+  assert.match(index, /calcFutures/);
+  assert.match(index, /value="2">MNQ — Micro Nasdaq \(\$2\/pt\)</);
+  assert.match(index, /value="50">ES — E-mini S&amp;P \(\$50\/pt\)</);
+  assert.match(index, /calcPropRisk/);
+  assert.match(index, /Trailing Drawdown/);
+});
+
+test('session clock lives in the schedule section', () => {
+  assert.match(index, /id="session-clock"/);
+  assert.match(index, /tickSessionClock/);
+});
+
+test('PWA manifest + theme color + PJ 404', () => {
+  const manifest = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
+  assert.equal(manifest.theme_color, '#06090d');
+  assert.ok(existsSync(join(ROOT, 'assets', 'icon.svg')), 'manifest icon missing');
+  assert.match(index, /<link rel="manifest" href="manifest\.json">/);
+  assert.match(index, /<meta name="theme-color" content="#06090d">/);
+  const notFound = readFileSync(join(ROOT, '404.html'), 'utf8');
+  assert.match(notFound, /PJ Trades x St/);
+  assert.match(notFound, /discord\.gg\/pjtrades/);
+  assert.match(notFound, /noindex/);
+});
+
+test('Organization JSON-LD with founder + socials', () => {
+  assert.match(index, /"@type": "Organization"/);
+  assert.match(index, /"founder": \{ "@type": "Person", "name": "PJ Trades"/);
+  assert.match(index, /"@type": "FAQPage"/);
 });
