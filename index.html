@@ -566,7 +566,7 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .review-bars{flex:1;min-width:240px;display:grid;gap:7px;}
 .review-bar{display:grid;grid-template-columns:34px 1fr 92px;gap:10px;align-items:center;font-size:.78rem;color:var(--muted);}
 .review-bar .track{height:9px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden;}
-.review-bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#00c853,#00e676);}
+.review-bar .fill{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#00c853,#00e676);}
 
 /* ─── FAQ (native details/summary — no JS, accessible) ─── */
 .faq-list{max-width:760px;margin:0 auto;display:grid;gap:12px;}
@@ -670,6 +670,9 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
   .nav-links { gap:2px; }
   .nav-links a { font-size:0.65rem; padding:4px 7px; }
 }
+ .nav-links a.active { color: var(--red); }
+html { font-size: 1.02rem; }
+
 </style>
 </head>
 <body>
@@ -737,6 +740,19 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
     <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">☰</button>
   </div>
 </nav>
+
+<!-- MOBILE MENU -->
+<div id="premium-bar" style="display:flex;align-items:center;gap:8px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.3);border-radius:999px;padding:6px 12px;font-size:0.78rem;color:var(--muted);margin-top:8px;">
+  <span>🔒 Premium ▼</span>
+</div>
+<div id="premium-dropdown" style="display:none;position:absolute;top:34px;right:0;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;min-width:180px;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
+  <h4 style="font-size:0.82rem;font-weight:700;margin-bottom:12px;">Free Sections</h4>
+  <a href="#features" style="display:block;margin-bottom:8px;color:var(--text);text-decoration:none;font-size:0.82rem;">What You Get</a>
+  <a href="#bundles" style="display:block;margin-bottom:8px;color:var(--text);text-decoration:none;font-size:0.82rem;">Bundles</a>
+  <a href="premarket.html" style="display:block;margin-bottom:8px;color:var(--text);text-decoration:none;font-size:0.82rem;">Pre-Market</a>
+  <a href="#schedule" style="display:block;margin-bottom:8px;color:var(--text);text-decoration:none;font-size:0.82rem;">Stream Schedule</a>
+  <a href="#team" style="display:block;margin-bottom:8px;color:var(--text);text-decoration:none;font-size:0.82rem;">Meet the Team</a>
+</div>
 
 <!-- MOBILE MENU -->
 <div class="mobile-menu" id="mobile-menu">
@@ -883,27 +899,27 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
       <div id="quiz-box" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:30px;" data-reveal>
         <div id="quiz-content">
           <div id="q1" class="quiz-q">
-            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">1 of 3 — You're in a trade and it's down 20%. What do you do?</p>
+            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">1 of 3 — NQ gaps down 3 points at open and your stop is 2 points. What do you do next?</p>
             <div style="display:flex;flex-direction:column;gap:10px;">
-              <button class="quiz-btn" onclick="quizAnswer(1,'a')">🚀 Average down — I believe in it</button>
-              <button class="quiz-btn" onclick="quizAnswer(1,'b')">✂️ Cut the loss — respect my stop</button>
-              <button class="quiz-btn" onclick="quizAnswer(1,'c')">😰 Panic and watch it bleed out</button>
+              <button class="quiz-btn" onclick="quizAnswer(1,'a')">🛑 Stop executes — loss taken, I move to the next setup</button>
+              <button class="quiz-btn" onclick="quizAnswer(1,'b')">📉 I move my stop further and average down, hoping it reverses</button>
+              <button class="quiz-btn" onclick="quizAnswer(1,'c')">❓ I freeze — I had no stop planned, I hope it comes back</button>
             </div>
           </div>
           <div id="q2" class="quiz-q" style="display:none;">
-            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">2 of 3 — How often do you follow your trading plan?</p>
+            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">2 of 3 — How do you determine position size for each futures trade?</p>
             <div style="display:flex;flex-direction:column;gap:10px;">
-              <button class="quiz-btn" onclick="quizAnswer(2,'a')">📋 I have a strict plan and stick to it</button>
-              <button class="quiz-btn" onclick="quizAnswer(2,'b')">🎲 I have a plan but FOMO gets me</button>
-              <button class="quiz-btn" onclick="quizAnswer(2,'c')">❓ What plan? I wing it</button>
+              <button class="quiz-btn" onclick="quizAnswer(2,'a')">💱 I risk a fixed 1% of my account, calculated before entry</button>
+              <button class="quiz-btn" onclick="quizAnswer(2,'b')">🚀 I size up after a loss to get back to even quickly</button>
+              <button class="quiz-btn" onclick="quizAnswer(2,'c')">🤏 I use whatever lot size feels right at the moment</button>
             </div>
           </div>
           <div id="q3" class="quiz-q" style="display:none;">
-            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">3 of 3 — Why are you trading?</p>
+            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">3 of 3 — What is your primary goal when trading futures?</p>
             <div style="display:flex;flex-direction:column;gap:10px;">
-              <button class="quiz-btn" onclick="quizAnswer(3,'a')">🏗️ Building long-term wealth with discipline</button>
-              <button class="quiz-btn" onclick="quizAnswer(3,'b')">⚡ Quick profits — I want to get rich fast</button>
-              <button class="quiz-btn" onclick="quizAnswer(3,'c')">🤔 Honestly not sure yet — still learning</button>
+              <button class="quiz-btn" onclick="quizAnswer(3,'a')">📈 Consistent execution of my edge over many trades — payouts follow</button>
+              <button class="quiz-btn" onclick="quizAnswer(3,'b')">⚡ Make as much money as possible this month, regardless of risk</button>
+              <button class="quiz-btn" onclick="quizAnswer(3,'c')">🧠 Still figuring out my edge, learning each session</button>
             </div>
           </div>
           <div id="quiz-result" style="display:none;text-align:center;">
@@ -916,18 +932,18 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
       </div>
     </div>
 
-    <!-- Account Growth Simulator + Options Calculator + R:R Calculator -->
+    <!-- Growth Simulator (futures‑connected) + Tick Sim + Sizing Sim -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:28px;">
 
-      <!-- Account Growth Simulator -->
+      <!-- Growth Simulator (futures‑connected) -->
       <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
         <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">📈 Growth Simulator</h3>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">Trading daily gains or long-term investing — your choice.</p>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">Futures‑connected: tell me your starting balance and daily $ target, I'll show you the path to a prop firm payout.</p>
 
         <!-- Mode toggle -->
         <div style="display:flex;background:var(--accent);border-radius:10px;padding:3px;margin-bottom:18px;gap:3px;">
           <button id="sim-mode-trading" onclick="setSimMode('trading')" style="flex:1;padding:8px;border:none;border-radius:8px;background:var(--gold);color:#fff;font-weight:800;font-size:0.8rem;cursor:pointer;transition:all .2s;">📈 Trading</button>
-          <button id="sim-mode-investing" onclick="setSimMode('investing')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-weight:700;font-size:0.8rem;cursor:pointer;transition:all .2s;">💰 Investing</button>
+          <button id="sim-mode-prop" onclick="setSimMode('prop')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-weight:700;font-size:0.8rem;cursor:pointer;transition:all .2s;">🏢 Prop</button>
         </div>
 
         <!-- Trading mode inputs -->
@@ -937,84 +953,114 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
 
           <!-- % or $ toggle -->
           <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
-            <span style="font-size:0.82rem;color:var(--muted);">Gain type:</span>
+            <span style="font-size:0.82rem;color:var(--muted);">Target $/day:</span>
             <button id="gain-dollar-btn" onclick="setGainMode('dollar')" style="padding:4px 12px;border:1.5px solid var(--gold);border-radius:20px;background:var(--gold);color:#fff;font-weight:700;font-size:0.75rem;cursor:pointer;">$ Per Day</button>
             <button id="gain-pct-btn" onclick="setGainMode('pct')" style="padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);font-weight:700;font-size:0.75rem;cursor:pointer;">% Per Day</button>
           </div>
 
           <div id="sim-dollar-input">
             <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Daily Gain ($)</label>
-            <input id="sim-daily-dollar" type="number" value="500" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+            <input id="sim-daily-dollar" type="number" value="200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
           </div>
           <div id="sim-pct-input" style="display:none;">
             <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Daily Gain (%)</label>
-            <input id="sim-daily-pct" type="number" value="5" min="0.1" step="0.1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+            <input id="sim-daily-pct" type="number" value="1" min="0.1" step="0.1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
           </div>
 
           <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Trading Days: <span id="sim-days-val">20</span></label>
           <input id="sim-days" type="range" min="1" max="252" value="20" oninput="document.getElementById('sim-days-val').textContent=this.value" style="width:100%;margin-bottom:16px;">
+          <button onclick="runGrowthSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">PROJECT PAYOUT</button>
         </div>
 
-        <!-- Investing mode inputs -->
-        <div id="sim-investing-inputs" style="display:none;">
+        <!-- Prop mode inputs -->
+        <div id="sim-prop-inputs" style="display:none;margin-top:12px;">
           <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Starting Balance ($)</label>
-          <input id="inv-start" type="number" value="1000" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
-          <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Annual Return (%)</label>
-          <input id="inv-rate" type="number" value="20" min="1" max="200" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
-          <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Years: <span id="inv-years-val">5</span></label>
-          <input id="inv-years" type="range" min="1" max="30" value="5" oninput="document.getElementById('inv-years-val').textContent=this.value" style="width:100%;margin-bottom:16px;">
-          <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Monthly Contribution ($)</label>
-          <input id="inv-contrib" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+          <input id="sim-prop-start" type="number" value="1200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+          <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
+            <span style="font-size:0.82rem;color:var(--muted);">Target $/day:</span>
+            <input id="sim-prop-daily" type="number" value="200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+          </div>
+          <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Holding Period (days)</label>
+          <input id="sim-prop-days" type="number" value="30" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+          <button onclick="runPropPayout()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE PAYOUT</button>
+          <div id="sim-prop-result" style="margin-top:16px;display:none;">
+            <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.2);border-radius:10px;padding:14px;text-align:center;">
+              <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Payout Schedule</div>
+              <div id="sim-prop-end-val" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
+              <div id="sim-prop-weekly" style="font-size:0.9rem;color:var(--emerald);margin-top:4px;">~$X per week / ~$Y per month</div>
+            </div>
+          </div>
         </div>
 
-        <button onclick="runSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">SIMULATE</button>
         <div id="sim-result" style="margin-top:16px;display:none;">
           <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.2);border-radius:10px;padding:14px;text-align:center;">
-            <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;" id="sim-result-label">Projected Balance</div>
+            <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Projected Payout</div>
             <div id="sim-end-val" style="font-family:'Barlow Condensed',sans-serif;font-size:2.5rem;font-weight:900;color:var(--green);text-shadow:0 0 16px rgba(0,230,118,0.4);"></div>
             <div id="sim-gain-val" style="font-size:0.82rem;color:var(--emerald);margin-top:4px;"></div>
             <div id="sim-extra-val" style="font-size:0.78rem;color:var(--muted);margin-top:4px;"></div>
           </div>
-          <p style="font-size:0.7rem;color:var(--muted);margin-top:10px;text-align:center;">Projections only. Not financial advice. Past performance ≠ future results.</p>
+          <p style="font-size:0.7rem;color:var(--muted);margin-top:10px;text-align:center;">Projections only. Not financial advice.</p>
         </div>
       </div>
 
-      <!-- Options Profit Calculator -->
+      <!-- Tick Simulator -->
       <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">⚡ Options Calculator</h3>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;">Calculate P&L on a options trade instantly.</p>
-        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Entry Price (per contract)</label>
-        <input id="opt-entry" type="number" value="0.50" step="0.01" min="0.01" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
-        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Exit Price (per contract)</label>
-        <input id="opt-exit" type="number" value="2.05" step="0.01" min="0.01" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
-        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Number of Contracts</label>
-        <input id="opt-contracts" type="number" value="7" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
-        <button onclick="calcOptions()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
-        <div id="opt-result" style="margin-top:16px;display:none;">
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">🎯 Tick Simulator</h3>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">Select a contract and input stop loss or $ risk to see total point/$ value.</p>
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
+        <select id="tick-contract" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+          <option value="NQ">NQ — E-mini Nasdaq</option>
+          <option value="MNQ">MNQ — Micro Nasdaq</option>
+          <option value="ES">ES — E-mini S&P 500</option>
+          <option value="MES">MES — Micro S&P 500</option>
+        </select>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <div>
+            <label style="font-size:0.82rem;color:var(--muted);">Stop Loss (pts)</label>
+            <input id="tick-pts" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;">
+          </div>
+          <div>
+            <label style="font-size:0.82rem;color:var(--muted);">Risk $</label>
+            <input id="tick-dollars" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;">
+          </div>
+        </div>
+        <button onclick="calcTickSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
+        <div id="tick-result" style="margin-top:16px;display:none;">
           <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.2);border-radius:10px;padding:14px;text-align:center;">
-            <div id="opt-pnl" style="font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;"></div>
-            <div id="opt-pct" style="font-size:0.9rem;margin-top:4px;"></div>
-            <div id="opt-details" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></div>
+            <div id="tick-output" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
+            <div id="tick-interpret" style="font-size:0.82rem;color:var(--muted);margin-top:4px;"></div>
           </div>
         </div>
       </div>
 
-      <!-- Risk/Reward Calculator -->
+      <!-- Sizing Simulator -->
       <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">🎯 Risk/Reward Calc</h3>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;">Know your R:R before you enter — discipline starts here.</p>
-        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Entry Price ($)</label>
-        <input id="rr-entry" type="number" value="100" step="0.01" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
-        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Stop Loss ($)</label>
-        <input id="rr-stop" type="number" value="95" step="0.01" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
-        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Target Price ($)</label>
-        <input id="rr-target" type="number" value="115" step="0.01" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
-        <button onclick="calcRR()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
-        <div id="rr-result" style="margin-top:16px;display:none;">
-          <div style="border-radius:10px;padding:14px;text-align:center;" id="rr-card">
-            <div id="rr-ratio" style="font-family:'Barlow Condensed',sans-serif;font-size:2.5rem;font-weight:900;"></div>
-            <div id="rr-verdict" style="font-size:0.9rem;font-weight:700;margin-top:4px;"></div>
-            <div id="rr-breakdown" style="font-size:0.78rem;color:var(--muted);margin-top:6px;line-height:1.6;"></div>
+        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">📏 Sizing Simulator</h3>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">Enter contracts and stop loss to see total $ at risk — or a $ amount to see how many contracts it buys.</p>
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
+        <select id="size-contract" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+          <option value="NQ">NQ — E-mini Nasdaq</option>
+          <option value="MNQ">MNQ — Micro Nasdaq</option>
+          <option value="ES">ES — E-mini S&amp;P 500</option>
+          <option value="MES">MES — Micro S&amp;P 500</option>
+        </select>
+        <div style="display:flex;gap:12px;margin-bottom:12px;">
+          <div>
+            <label style="font-size:0.82rem;color:var(--muted);">Contracts</label>
+            <input id="size-contracts" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;">
+          </div>
+          <div>
+            <label style="font-size:0.82rem;color:var(--muted);">Stop Loss (pts)</label>
+            <input id="size-pts" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;">
+          </div>
+        </div>
+        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">$ Amount (leave blank to compute from contracts)</label>
+        <input id="size-target" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <button onclick="calcSizingSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
+        <div id="size-result" style="margin-top:16px;display:none;">
+          <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.2);border-radius:10px;padding:14px;text-align:center;">
+            <div id="size-output" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
+            <div id="size-interpret" style="font-size:0.82rem;color:var(--muted);margin-top:4px;"></div>
           </div>
         </div>
       </div>
@@ -1094,7 +1140,7 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
 
     <div class="tier-grid" id="tier-grid" data-reveal>
       <!-- FUTURES — the core $100 product (matches the Whop listing exactly) -->
-      <div class="tier-card hot">
+      <div class="tier-card">
         <div class="tier-badge">Core — Futures Only</div>
         <div class="tier-name">Futures</div>
         <div class="tier-price">$100<span>/mo</span></div>
@@ -1113,11 +1159,11 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
 
       <!-- ALL-MARKETS — futures + options + stocks with live callouts and full educational materials -->
       <!-- TODO: owner to confirm the Whop product URL for this tier if it is a separate listing -->
-      <div class="tier-card">
+      <div class="tier-card hot">
         <div class="tier-badge alt">Futures + Options + Stocks</div>
         <div class="tier-name">All-Markets</div>
         <div class="tier-price">$129<span>/mo</span></div>
-        <div class="tier-sub">Everything in Futures, plus the complete multi-market library</div>
+        <div class="tier-sub">Everything in Futures, plus the complete multi-market library<br>or <b style="color:var(--text);">$681</b>/6mo<span class="tier-save">12% off</span> · <b style="color:var(--text);">$1,269</b>/yr<span class="tier-save">18% off</span></div>
         <ul>
           <li><span class="tick">✓</span><span><b>Everything in the Futures bundle</b></span></li>
           <li><span class="tick">✓</span><span><b>Full options course</b> + the Options Lab</span></li>
@@ -1640,8 +1686,8 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
       <a href="prop-firms.html">Prop Firms</a>
       <a href="premium-guidance.html">Guidance</a>
       <a href="forex-calendar.html">Forex Calendar</a>
-      <a href="stock-lab.html">Stock Lab</a>
-      <a href="options-lab.html">Options Lab</a>
+<a href="stock-lab.html">Stock Lab ⚡</a>
+<a href="options-lab.html">Options Lab ⚡</a>
       <a href="#faq">FAQ</a>
       <a href="https://whop.com/pjtradespremium" target="_blank" rel="noopener">Whop</a>
       <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener">Discord</a>
@@ -2033,12 +2079,13 @@ let gainMode = 'dollar';
 function setSimMode(mode) {
   simMode = mode;
   document.getElementById('sim-trading-inputs').style.display = mode === 'trading' ? 'block' : 'none';
-  document.getElementById('sim-investing-inputs').style.display = mode === 'investing' ? 'block' : 'none';
+  document.getElementById('sim-prop-inputs').style.display = mode === 'prop' ? 'block' : 'none';
   document.getElementById('sim-mode-trading').style.background = mode === 'trading' ? 'var(--gold)' : 'transparent';
   document.getElementById('sim-mode-trading').style.color = mode === 'trading' ? '#fff' : 'var(--muted)';
-  document.getElementById('sim-mode-investing').style.background = mode === 'investing' ? 'var(--gold)' : 'transparent';
-  document.getElementById('sim-mode-investing').style.color = mode === 'investing' ? '#fff' : 'var(--muted)';
+  document.getElementById('sim-mode-prop').style.background = mode === 'prop' ? 'var(--gold)' : 'transparent';
+  document.getElementById('sim-mode-prop').style.color = mode === 'prop' ? '#fff' : 'var(--muted)';
   document.getElementById('sim-result').style.display = 'none';
+  document.getElementById('sim-prop-result').style.display = 'none';
 }
 
 function setGainMode(mode) {
@@ -2053,85 +2100,88 @@ function setGainMode(mode) {
   document.getElementById('gain-pct-btn').style.borderColor = mode === 'pct' ? 'var(--gold)' : 'var(--border)';
 }
 
-function runSim() {
-  let endVal, gain, extraText, label;
-  if (simMode === 'trading') {
-    const start = parseFloat(document.getElementById('sim-start').value) || 1200;
-    const days = parseInt(document.getElementById('sim-days').value) || 20;
-    let balance = start;
-    if (gainMode === 'dollar') {
-      const daily = parseFloat(document.getElementById('sim-daily-dollar').value) || 500;
-      balance = start + (daily * days);
-    } else {
-      const pct = parseFloat(document.getElementById('sim-daily-pct').value) || 5;
-      for (let i = 0; i < days; i++) { balance *= (1 + pct / 100); }
-    }
-    endVal = balance;
-    gain = balance - start;
-    label = `After ${days} Trading Days`;
-    extraText = `Starting $${start.toLocaleString()} · ${days} days`;
+function runGrowthSim() {
+  const start = parseFloat(document.getElementById('sim-start').value) || 1200;
+  const days = parseInt(document.getElementById('sim-days').value) || 20;
+  let balance = start;
+  if (gainMode === 'dollar') {
+    const daily = parseFloat(document.getElementById('sim-daily-dollar').value) || 200;
+    balance = start + (daily * days);
   } else {
-    const start = parseFloat(document.getElementById('inv-start').value) || 1000;
-    const rate = parseFloat(document.getElementById('inv-rate').value) || 20;
-    const years = parseInt(document.getElementById('inv-years').value) || 5;
-    const monthly = parseFloat(document.getElementById('inv-contrib').value) || 0;
-    let balance = start;
-    const monthlyRate = rate / 100 / 12;
-    for (let m = 0; m < years * 12; m++) {
-      balance = balance * (1 + monthlyRate) + monthly;
-    }
-    endVal = balance;
-    gain = balance - start - (monthly * years * 12);
-    label = `After ${years} Years (Compounded)`;
-    const totalContrib = start + (monthly * years * 12);
-    extraText = `$${totalContrib.toLocaleString()} contributed · $${Math.round(gain).toLocaleString()} interest earned`;
+    const pct = parseFloat(document.getElementById('sim-daily-pct').value) || 1;
+    for (let i = 0; i < days; i++) { balance *= (1 + pct / 100); }
   }
-  const pct = (((endVal - (parseFloat(document.getElementById(simMode==='trading'?'sim-start':'inv-start').value)||1200)) / (parseFloat(document.getElementById(simMode==='trading'?'sim-start':'inv-start').value)||1200)) * 100).toFixed(0);
-  document.getElementById('sim-result-label').textContent = label;
-  document.getElementById('sim-end-val').textContent = '$' + Math.round(endVal).toLocaleString();
+  const gain = balance - start;
+  const pct = ((gain / start) * 100).toFixed(0);
+  document.getElementById('sim-end-val').textContent = '$' + Math.round(balance).toLocaleString();
   document.getElementById('sim-gain-val').textContent = '+$' + Math.round(gain).toLocaleString() + ' (+' + pct + '%)';
-  document.getElementById('sim-extra-val').textContent = extraText;
+  document.getElementById('sim-extra-val').textContent = `Starting $${start.toLocaleString()} · ${days} trading days`;
   document.getElementById('sim-result').style.display = 'block';
 }
 
-// ─── OPTIONS PROFIT CALCULATOR ───
-function calcOptions() {
-  const entry = parseFloat(document.getElementById('opt-entry').value)||0;
-  const exit = parseFloat(document.getElementById('opt-exit').value)||0;
-  const contracts = parseInt(document.getElementById('opt-contracts').value)||1;
-  if(entry<=0||exit<=0) return;
-  const pnl = (exit-entry)*contracts*100;
-  const pct = ((exit-entry)/entry*100).toFixed(1);
-  const invested = entry*contracts*100;
-  const isWin = pnl >= 0;
-  document.getElementById('opt-pnl').textContent=(isWin?'+':'')+'$'+Math.abs(Math.round(pnl)).toLocaleString();
-  document.getElementById('opt-pnl').style.color=isWin?'var(--green)':'var(--red)';
-  document.getElementById('opt-pct').style.color=isWin?'var(--green)':'var(--red)';
-  document.getElementById('opt-pct').textContent=(isWin?'+':'')+pct+'%';
-  document.getElementById('opt-details').textContent=contracts+' contracts · $'+invested.toLocaleString()+' invested';
-  document.getElementById('opt-result').style.display='block';
+// ─── PROP FIRM PAYOUT PROJECTOR ───
+function runPropPayout() {
+  const daily = parseFloat(document.getElementById('sim-prop-daily').value) || 0;
+  const days = parseInt(document.getElementById('sim-prop-days').value) || 0;
+  if (daily <= 0 || days <= 0) return;
+  const total = daily * days;
+  const weekly = daily * 5;
+  const monthly = daily * 21;
+  document.getElementById('sim-prop-end-val').textContent = '$' + Math.round(total).toLocaleString();
+  document.getElementById('sim-prop-weekly').textContent =
+    '~$' + Math.round(weekly).toLocaleString() + ' per week / ~$' + Math.round(monthly).toLocaleString() + ' per month';
+  document.getElementById('sim-prop-result').style.display = 'block';
 }
 
-// ─── R:R CALCULATOR ───
-function calcRR() {
-  const entry = parseFloat(document.getElementById('rr-entry').value)||0;
-  const stop = parseFloat(document.getElementById('rr-stop').value)||0;
-  const target = parseFloat(document.getElementById('rr-target').value)||0;
-  if(entry<=0||stop<=0||target<=0) return;
-  const risk = Math.abs(entry-stop);
-  const reward = Math.abs(target-entry);
-  if(risk===0) return;
-  const rr = (reward/risk).toFixed(2);
-  const isGood = rr >= 2;
-  const card = document.getElementById('rr-card');
-  card.style.background=isGood?'rgba(0,230,118,0.06)':'rgba(255,68,68,0.06)';
-  card.style.border=isGood?'1px solid rgba(0,230,118,0.25)':'1px solid rgba(255,68,68,0.25)';
-  document.getElementById('rr-ratio').textContent='1 : '+rr+'R';
-  document.getElementById('rr-ratio').style.color=isGood?'var(--green)':'var(--red)';
-  document.getElementById('rr-verdict').textContent=isGood?'✅ Good trade setup':'⚠️ Risk too high vs reward';
-  document.getElementById('rr-verdict').style.color=isGood?'var(--green)':'var(--red)';
-  document.getElementById('rr-breakdown').innerHTML='Risk: $'+risk.toFixed(2)+' per share &nbsp;|&nbsp; Reward: $'+reward.toFixed(2)+' per share';
-  document.getElementById('rr-result').style.display='block';
+// ─── TICK SIMULATOR ───
+// Point values: MNQ $2, NQ $20, MES $5, ES $50.
+const TICK_SIM_SPECS = { NQ: 20, MNQ: 2, ES: 50, MES: 5 };
+function calcTickSim() {
+  const contract = document.getElementById('tick-contract').value;
+  const perPt = TICK_SIM_SPECS[contract] || 0;
+  const pts = parseFloat(document.getElementById('tick-pts').value) || 0;
+  const dollars = parseFloat(document.getElementById('tick-dollars').value) || 0;
+  if (!perPt) return;
+  let output, interpret;
+  if (pts > 0) {
+    const total = pts * perPt;
+    output = '$' + Math.round(total).toLocaleString();
+    interpret = pts + ' pt stop on ' + contract + ' = $' + Math.round(total).toLocaleString() + ' at risk';
+  } else if (dollars > 0) {
+    const impliedPts = dollars / perPt;
+    output = impliedPts.toFixed(2) + ' pts';
+    interpret = '$' + Math.round(dollars).toLocaleString() + ' risk on ' + contract + ' = ' + impliedPts.toFixed(2) + ' pt stop';
+  } else {
+    return;
+  }
+  document.getElementById('tick-output').textContent = output;
+  document.getElementById('tick-interpret').textContent = interpret;
+  document.getElementById('tick-result').style.display = 'block';
+}
+
+// ─── SIZING SIMULATOR ───
+function calcSizingSim() {
+  const contract = document.getElementById('size-contract').value;
+  const perPt = TICK_SIM_SPECS[contract] || 0;
+  const pts = parseFloat(document.getElementById('size-pts').value) || 0;
+  const target = parseFloat(document.getElementById('size-target').value) || 0;
+  const contracts = parseInt(document.getElementById('size-contracts').value) || 0;
+  if (!perPt || pts <= 0) return;
+  let output, interpret;
+  if (target > 0) {
+    const needed = Math.max(1, Math.ceil(target / (pts * perPt)));
+    output = needed + ' contract' + (needed === 1 ? '' : 's');
+    interpret = 'Needed for ~$' + Math.round(target).toLocaleString() + ' at risk on a ' + pts + ' pt ' + contract + ' stop';
+  } else if (contracts > 0) {
+    const total = contracts * pts * perPt;
+    output = '$' + Math.round(total).toLocaleString();
+    interpret = contracts + ' contract' + (contracts === 1 ? '' : 's') + ' × ' + pts + ' pt ' + contract + ' stop = total risk';
+  } else {
+    return;
+  }
+  document.getElementById('size-output').textContent = output;
+  document.getElementById('size-interpret').textContent = interpret;
+  document.getElementById('size-result').style.display = 'block';
 }
 
 // ─── INTRO VIDEO FACADE ───
@@ -2542,5 +2592,34 @@ setInterval(tickSessionClock, 30000);
 </div>
 
 <script src="assets/chatbot.js" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+  const observerOptions = { root: null, threshold: 0.3 };
+  sections.forEach(section => {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          navLinks.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === '#' + entry.target.id);
+          });
+        }
+      });
+    }, observerOptions);
+    observer.observe(section);
+  });
+});
+</script>
+<script>
+document.getElementById('premium-bar').addEventListener('click', () => {
+  const dp = document.getElementById('premium-dropdown');
+  if (dp.style.display === 'none' || dp.style.display === '') {
+    dp.style.display = 'block';
+  } else {
+    dp.style.display = 'none';
+  }
+});
+</script>
 </body>
 </html>
