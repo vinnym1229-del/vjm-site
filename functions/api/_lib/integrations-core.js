@@ -155,10 +155,91 @@ export function sanitizeContentRow(type, row) {
       active: !/^(false|no|0)$/i.test(String(row.active ?? 'true')) ? 1 : 0,
     };
   }
+  if (type === 'schedule') {
+    const day = cleanStr(row.day, 3);
+    const session = cleanStr(row.session, 10).toUpperCase();
+    if (!['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(day)) return null;
+    if (!['NYAM', 'NYPM', 'CLASS', 'ASIA'].includes(session)) return null;
+    return {
+      id,
+      day,
+      session,
+      timeET: cleanStr(row.time_et, 20),
+      host: cleanStr(row.host, 80),
+      note: cleanStr(row.note, 160),
+      active: !/^(false|no|0)$/i.test(String(row.active ?? 'true')) ? 1 : 0,
+    };
+  }
+  if (type === 'team') {
+    const name = cleanStr(row.name, 80);
+    if (!name) return null;
+    const ord = Number(row.order);
+    return {
+      id,
+      name,
+      role: cleanStr(row.role, 100),
+      bio: cleanStr(row.bio, 600),
+      photoUrl: cleanUrl(row.photo_url),
+      socials: cleanStr(row.socials, 300),
+      order: Number.isFinite(ord) ? ord : 0,
+    };
+  }
+  if (type === 'faqs') {
+    const question = cleanStr(row.question, 200);
+    if (!question) return null;
+    const ord = Number(row.order);
+    return {
+      id,
+      question,
+      answer: cleanStr(row.answer, 1000),
+      order: Number.isFinite(ord) ? ord : 0,
+    };
+  }
+  if (type === 'bundles') {
+    const name = cleanStr(row.name, 60);
+    if (!name) return null;
+    return {
+      id,
+      name,
+      price: cleanStr(row.price, 20),
+      period: cleanStr(row.period, 20),
+      saveBadge: cleanStr(row.save_badge, 20),
+      features: cleanStr(row.features, 1200)
+        .split('|')
+        .map((f) => f.trim().slice(0, 120))
+        .filter(Boolean),
+      whopUrl: cleanUrl(row.whop_url),
+      highlight: /^(true|yes|1)$/i.test(String(row.highlight)),
+    };
+  }
+  if (type === 'stats') {
+    const key = cleanStr(row.key, 30);
+    if (!key) return null;
+    return {
+      id,
+      key,
+      value: cleanStr(row.value, 20),
+      label: cleanStr(row.label, 60),
+    };
+  }
+  if (type === 'results') {
+    const imageUrl = cleanUrl(row.image_url);
+    if (!imageUrl) return null;
+    const ord = Number(row.order);
+    return {
+      id,
+      imageUrl,
+      caption: cleanStr(row.caption, 120),
+      order: Number.isFinite(ord) ? ord : 0,
+    };
+  }
   return null;
 }
 
-export const CONTENT_TYPES = ['announcements', 'trade_reviews', 'prop_firms'];
+export const CONTENT_TYPES = [
+  'announcements', 'trade_reviews', 'prop_firms',
+  'schedule', 'team', 'faqs', 'bundles', 'stats', 'results',
+];
 
 // Small helper reused by the brief: attach Wilson CI to any rate we publish.
 export { wilsonInterval };

@@ -597,6 +597,7 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .results-empty{max-width:640px;margin:0 auto;text-align:center;padding:52px 24px;border:1px dashed var(--border-strong);border-radius:20px;background:rgba(255,255,255,0.02);}
 .results-empty h3{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
 .results-empty p{color:var(--muted);font-size:.88rem;max-width:420px;margin:0 auto;line-height:1.65;}
+.results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;}
 .result-card{margin:0;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
 .result-card img{width:100%;display:block;aspect-ratio:4/3;object-fit:cover;}
 .result-card figcaption{padding:12px 14px;font-size:.8rem;color:var(--muted);}
@@ -763,7 +764,7 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
     <div class="liquid-grid"></div>
   </div>
   <div class="hero-inner" style="position:relative;z-index:2;">
-    <div class="hero-badge"><span class="pulse-dot"></span> 5.0★ on Whop · 2,240 reviews · 49,136 joined</div>
+    <div class="hero-badge"><span class="pulse-dot"></span> <span id="hb-rating">5.0</span>★ on Whop · <span id="hb-reviews">2,240</span> reviews · <span id="hb-joined">49,136</span> joined</div>
     <h1>PJ TRADES <span style="display:inline-block;"><span style="font-size:0.42em;vertical-align:middle;color:var(--muted);font-weight:700;letter-spacing:2px;">× St</span></span><br>
     <span class="gold">Futures, Made Simple.</span></h1>
     <p class="hero-sub">With ten years of hands-on experience navigating the fast-paced world of financial markets, PJ Trades is a seasoned day trader specializing in <strong style="color:var(--text);">NQ &amp; ES futures</strong>. Technical analysis, market research, and risk management — combined to identify high-probability setups and deliver results.</p>
@@ -782,8 +783,8 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
 <!-- PROOF BAR -->
 <div class="proof-bar">
   <!-- Source: owner's Whop listing screenshots, 2026-08-24 -->
-  <div class="proof-item"><strong>49,136</strong><span>joined on Whop</span></div>
-  <div class="proof-item"><strong>5.0 ★</strong><span>2,240 reviews</span></div>
+  <div class="proof-item"><strong id="pb-joined">49,136</strong><span>joined on Whop</span></div>
+  <div class="proof-item"><strong id="pb-rating">5.0 ★</strong><span id="pb-reviews-label">2,240 reviews</span></div>
   <div class="proof-item"><strong>3–5x</strong><span>live futures trading per week</span></div>
   <div class="proof-item"><strong>$50,000</strong><span>prop firm funding giveaways</span></div>
 </div>
@@ -1091,7 +1092,7 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
       <p class="section-sub" style="margin:0 auto 20px;">Futures is the main event. Want options and stocks too? Go All-Markets. Checkout and billing are handled securely by Whop — cancel anytime from your Whop account.</p>
     </div>
 
-    <div class="tier-grid" data-reveal>
+    <div class="tier-grid" id="tier-grid" data-reveal>
       <!-- FUTURES — the core $100 product (matches the Whop listing exactly) -->
       <div class="tier-card hot">
         <div class="tier-badge">Core — Futures Only</div>
@@ -1237,7 +1238,7 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
       <div class="section-tag">FAQ</div>
       <h2 class="section-title">Frequently Asked <span class="gold">Questions</span></h2>
     </div>
-    <div class="faq-list" data-reveal>
+    <div class="faq-list" id="faq-list" data-reveal>
       <details>
         <summary>Do you offer live trading?</summary>
         <p>Yes! I go live 3 to 5 times a week, depending on the economic calendar and market conditions.</p>
@@ -1265,38 +1266,38 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
       <h2 class="section-title">The People Behind <span class="gold">PJ Trades x St</span></h2>
       <p class="section-sub" style="margin:0 auto;">The traders you'll see live, in the Discord, and in your classes every week.</p>
     </div>
-    <div class="team-grid" data-reveal>
-      <div class="team-card">
+    <div class="team-grid" id="team-grid" data-reveal>
+      <div class="team-card" id="team-card-pj">
         <div class="team-avatar">PJ</div>
         <h3>PJTrades</h3>
         <div class="role">Founder · Futures — NQ &amp; ES</div>
         <p class="bio">10 years in the markets. Disciplined futures day trading, technical analysis, and risk management. <!-- TODO: owner to supply full bio --></p>
       </div>
-      <div class="team-card">
+      <div class="team-card" data-blank>
         <div class="team-avatar team-avatar-blank">+</div>
         <h3>Team Member</h3>
         <div class="role">Role coming soon</div>
         <p class="bio">Bio coming soon.</p>
       </div>
-      <div class="team-card">
+      <div class="team-card" data-blank>
         <div class="team-avatar team-avatar-blank">+</div>
         <h3>Team Member</h3>
         <div class="role">Role coming soon</div>
         <p class="bio">Bio coming soon.</p>
       </div>
-      <div class="team-card">
+      <div class="team-card" data-blank>
         <div class="team-avatar team-avatar-blank">+</div>
         <h3>Team Member</h3>
         <div class="role">Role coming soon</div>
         <p class="bio">Bio coming soon.</p>
       </div>
-      <div class="team-card">
+      <div class="team-card" data-blank>
         <div class="team-avatar team-avatar-blank">+</div>
         <h3>Team Member</h3>
         <div class="role">Role coming soon</div>
         <p class="bio">Bio coming soon.</p>
       </div>
-      <div class="team-card">
+      <div class="team-card" data-blank>
         <div class="team-avatar team-avatar-blank">+</div>
         <h3>Team Member</h3>
         <div class="role">Role coming soon</div>
@@ -1321,11 +1322,13 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
       <h2 class="section-title">The <span class="gold">Results Wall</span></h2>
       <p class="section-sub" style="margin:0 auto;">Real member milestones — payouts, passes, and funded accounts. Results vary and are never typical or guaranteed.</p>
     </div>
-    <div class="results-empty" data-reveal>
+    <div class="results-empty" id="results-empty" data-reveal>
       <div style="font-size:2.2rem;margin-bottom:10px;">🏆</div>
       <h3>Wall coming soon</h3>
       <p>Member payout passes and funded-account milestones will be featured right here. Watch the Discord for the first drops.</p>
     </div>
+    <div class="results-grid" id="results-grid" style="display:none;" data-reveal></div>
+    <p style="text-align:center;color:var(--muted);font-size:.78rem;margin-top:22px;">Results vary and are never typical or guaranteed. Individual outcomes depend on skill, risk management, and market conditions.</p>
   </div>
 </section>
 
@@ -1341,7 +1344,7 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
       <p class="section-sub" style="margin:0 auto 20px;">All times ET. Sessions run inside the Discord — the <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold);">#announcements channel</a> is always the source of truth for week-to-week changes.</p>
       <div id="session-clock" style="display:inline-flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:9px 22px;font-size:.88rem;font-weight:700;color:var(--text);"></div>
     </div>
-    <div class="week-grid" data-reveal>
+    <div class="week-grid" id="week-grid" data-reveal>
       <div class="day-card">
         <h3>Monday</h3>
         <div class="session-row"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
@@ -2308,6 +2311,158 @@ setInterval(tickSessionClock, 30000);
       note.style.cssText = 'grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;';
       note.textContent = 'Owner-curated examples for education — not trade signals. Results vary and are never typical.';
       box.appendChild(note);
+    })
+    .catch(() => {});
+})();
+
+// ─── OWNER CMS SECTIONS (schedule/team/faq/bundles/stats/results) ───
+// Each section keeps its static fallback markup until the CMS fetch returns
+// items; if a type has no rows (or the fetch fails), the fallback stays put.
+(function loadCmsSections() {
+  'use strict';
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
+
+  function parseTimeET(s) {
+    const m = /(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(String(s || ''));
+    if (!m) return null;
+    let h = parseInt(m[1], 10) % 12;
+    if (/PM/i.test(m[3])) h += 12;
+    return h * 60 + parseInt(m[2], 10);
+  }
+
+  // 1) Weekly schedule — replaces .week-grid; also updates PJ_SESSIONS start
+  //    times/days for the live countdown (durations stay as coded estimates).
+  fetch('/api/content?type=schedule', { cache: 'no-store' })
+    .then((r) => r.json().catch(() => ({})))
+    .then((d) => {
+      if (!d.ok || !Array.isArray(d.items) || !d.items.length) return;
+      const active = d.items.filter((s) => s.active !== 0 && s.day && s.session);
+      if (!active.length) return;
+      const DAY_NUM = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5 };
+      const DAY_FULL = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday' };
+      const SESS_ORDER = { NYAM: 0, NYPM: 1, CLASS: 2, ASIA: 3 };
+      const byDay = {};
+      active.forEach((s) => { (byDay[s.day] = byDay[s.day] || []).push(s); });
+      const html = Object.keys(DAY_NUM)
+        .filter((day) => byDay[day])
+        .map((day) => {
+          const rows = byDay[day]
+            .slice()
+            .sort((a, b) => (SESS_ORDER[a.session] ?? 9) - (SESS_ORDER[b.session] ?? 9))
+            .map((s) => {
+              const slugMatch = String(s.host || '').toLowerCase().match(/[a-z]+/);
+              const hostClass = slugMatch ? 'host host-' + slugMatch[0] : 'host';
+              return '<div class="session-row"><span class="sess-name">' + esc(s.session) + '</span><span class="sess-time">' +
+                esc(s.timeET) + '</span><span class="' + hostClass + '">' + esc(s.host || '') +
+                (s.note ? ' — ' + esc(s.note) : '') + '</span></div>';
+            }).join('');
+          return '<div class="day-card"><h3>' + esc(DAY_FULL[day]) + '</h3>' + rows + '</div>';
+        }).join('');
+      if (!html) return;
+      document.getElementById('week-grid').innerHTML = html;
+
+      const byName = {};
+      active.forEach((s) => {
+        const mins = parseTimeET(s.timeET);
+        if (mins == null) return;
+        const dow = DAY_NUM[s.day];
+        if (!byName[s.session]) byName[s.session] = { start: mins, days: [] };
+        if (!byName[s.session].days.includes(dow)) byName[s.session].days.push(dow);
+      });
+      PJ_SESSIONS.forEach((sess) => {
+        const upd = byName[sess.name];
+        if (upd) { sess.start = upd.start; sess.days = upd.days.sort(); }
+      });
+    })
+    .catch(() => {});
+
+  // 2) Team — fills the blank slots; PJ's card is never touched.
+  fetch('/api/content?type=team', { cache: 'no-store' })
+    .then((r) => r.json().catch(() => ({})))
+    .then((d) => {
+      if (!d.ok || !Array.isArray(d.items) || !d.items.length) return;
+      const blanks = document.querySelectorAll('#team-grid .team-card[data-blank]');
+      d.items.slice(0, blanks.length).forEach((m, i) => {
+        const card = blanks[i];
+        const avatar = card.querySelector('.team-avatar');
+        if (m.photoUrl) {
+          avatar.outerHTML = '<img class="team-avatar" src="' + esc(m.photoUrl) + '" alt="">';
+        } else {
+          avatar.classList.remove('team-avatar-blank');
+          avatar.textContent = String(m.name || '?').trim().slice(0, 2).toUpperCase();
+        }
+        card.querySelector('h3').textContent = m.name || 'Team Member';
+        card.querySelector('.role').textContent = m.role || '';
+        card.querySelector('.bio').textContent = m.bio || '';
+      });
+    })
+    .catch(() => {});
+
+  // 3) FAQ — replaces the static 3 when the owner has published their own.
+  fetch('/api/content?type=faqs', { cache: 'no-store' })
+    .then((r) => r.json().catch(() => ({})))
+    .then((d) => {
+      if (!d.ok || !Array.isArray(d.items) || !d.items.length) return;
+      document.getElementById('faq-list').innerHTML = d.items.map((f) =>
+        '<details><summary>' + esc(f.question) + '</summary><p>' + esc(f.answer || '') + '</p></details>'
+      ).join('');
+    })
+    .catch(() => {});
+
+  // 4) Bundles — replaces the hardcoded tier cards when the owner curates them.
+  fetch('/api/content?type=bundles', { cache: 'no-store' })
+    .then((r) => r.json().catch(() => ({})))
+    .then((d) => {
+      if (!d.ok || !Array.isArray(d.items) || !d.items.length) return;
+      document.getElementById('tier-grid').innerHTML = d.items.map((b) => {
+        const feats = (Array.isArray(b.features) ? b.features : [])
+          .map((f) => '<li><span class="tick">✓</span><span>' + esc(f) + '</span></li>').join('');
+        const sub = b.saveBadge ? '<div class="tier-sub"><span class="tier-save">' + esc(b.saveBadge) + '</span></div>' : '';
+        const url = b.whopUrl || 'https://whop.com/pjtradespremium';
+        return '<div class="tier-card' + (b.highlight ? ' hot' : '') + '">' +
+          '<div class="tier-name">' + esc(b.name) + '</div>' +
+          '<div class="tier-price">' + esc(b.price || '') + (b.period ? '<span>/' + esc(b.period) + '</span>' : '') + '</div>' +
+          sub + '<ul>' + feats + '</ul>' +
+          '<a href="' + esc(url) + '" target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;font-size:1.02rem;padding:15px;">Join on Whop ⭐</a>' +
+          '</div>';
+      }).join('');
+    })
+    .catch(() => {});
+
+  // 5) Stats — hero badge + proof-bar numbers (keys: joined, reviews, rating).
+  fetch('/api/content?type=stats', { cache: 'no-store' })
+    .then((r) => r.json().catch(() => ({})))
+    .then((d) => {
+      if (!d.ok || !Array.isArray(d.items) || !d.items.length) return;
+      const byKey = {};
+      d.items.forEach((s) => { if (s.key) byKey[s.key] = s.value; });
+      if (byKey.joined) {
+        ['hb-joined', 'pb-joined'].forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = byKey.joined; });
+      }
+      if (byKey.reviews) {
+        const hb = document.getElementById('hb-reviews'); if (hb) hb.textContent = byKey.reviews;
+        const pb = document.getElementById('pb-reviews-label'); if (pb) pb.textContent = byKey.reviews + ' reviews';
+      }
+      if (byKey.rating) {
+        const hb = document.getElementById('hb-rating'); if (hb) hb.textContent = byKey.rating;
+        const pb = document.getElementById('pb-rating'); if (pb) pb.textContent = byKey.rating + ' ★';
+      }
+    })
+    .catch(() => {});
+
+  // 6) Results wall — swaps the empty state for real member milestone cards.
+  fetch('/api/content?type=results', { cache: 'no-store' })
+    .then((r) => r.json().catch(() => ({})))
+    .then((d) => {
+      if (!d.ok || !Array.isArray(d.items) || !d.items.length) return;
+      const empty = document.getElementById('results-empty');
+      const grid = document.getElementById('results-grid');
+      grid.innerHTML = d.items.map((item) =>
+        '<figure class="result-card"><img src="' + esc(item.imageUrl) + '" alt="Member milestone" loading="lazy"><figcaption>' +
+        esc(item.caption || '') + '</figcaption></figure>'
+      ).join('');
+      empty.style.display = 'none';
+      grid.style.display = 'grid';
     })
     .catch(() => {});
 })();

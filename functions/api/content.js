@@ -1,11 +1,16 @@
-// Cloudflare Pages Function: GET /api/content?type=announcements|trade_reviews|prop_firms
+// Cloudflare Pages Function: GET /api/content?type=announcements|trade_reviews|prop_firms|
+//   schedule|team|faqs|bundles|stats|results
 //
 // Public read view over owner-managed content synced from their Google Sheet.
 // Non-personal → short shared cache is appropriate.
 
 import { json, cleanSymbol } from './_lib/http.js';
 
-const TYPES = new Set(['announcements', 'trade_reviews', 'prop_firms']);
+const TYPES = new Set([
+  'announcements', 'trade_reviews', 'prop_firms',
+  'schedule', 'team', 'faqs', 'bundles', 'stats', 'results',
+]);
+const ORDERED_TYPES = new Set(['team', 'faqs', 'results']);
 
 export async function onRequestGet(context) {
   const { request, env } = context;
@@ -42,6 +47,9 @@ export async function onRequestGet(context) {
     // Pinned announcements first.
     if (type === 'announcements') {
       items.sort((a, b) => (b.pinned || 0) - (a.pinned || 0));
+    }
+    if (ORDERED_TYPES.has(type)) {
+      items.sort((a, b) => (a.order || 0) - (b.order || 0));
     }
 
     return json({

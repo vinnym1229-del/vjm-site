@@ -167,3 +167,36 @@ test('Organization JSON-LD with founder + socials', () => {
   assert.match(index, /"founder": \{ "@type": "Person", "name": "PJ Trades"/);
   assert.match(index, /"@type": "FAQPage"/);
 });
+
+test('CMS Phase 3: schedule/team/faqs/bundles/stats/results wired with fallbacks intact', () => {
+  const contentJs = readFileSync(join(ROOT, 'functions', 'api', 'content.js'), 'utf8');
+  const core = readFileSync(join(ROOT, 'functions', 'api', '_lib', 'integrations-core.js'), 'utf8');
+  for (const t of ['schedule', 'team', 'faqs', 'bundles', 'stats', 'results']) {
+    assert.match(contentJs, new RegExp("'" + t + "'"), 'content.js TYPES missing ' + t);
+    assert.match(core, new RegExp("'" + t + "'"), 'CONTENT_TYPES missing ' + t);
+    assert.match(index, new RegExp('/api/content\\?type=' + t), 'index.html missing fetch for ' + t);
+  }
+  // Fallbacks must remain in the static markup — only replaced client-side once the CMS has rows.
+  assert.match(index, /class="week-grid" id="week-grid"/, 'schedule fallback grid missing');
+  assert.match(index, /Monday/, 'static schedule fallback content missing');
+  assert.match(index, /class="tier-grid" id="tier-grid"/, 'bundles fallback tiers missing');
+  assert.match(index, /\$100<span>\/mo<\/span>/, 'static bundle price fallback missing');
+  assert.match(index, /id="faq-list"/);
+  assert.match(index, /Do you offer live trading\?/, 'static FAQ fallback missing');
+  assert.match(index, /id="results-empty"/);
+  assert.match(index, /id="results-grid"/);
+  const blanks = [...index.matchAll(/data-blank/g)].length;
+  assert.ok(blanks >= 5, 'expected at least 5 data-blank team slots for CMS fill-in, found ' + blanks);
+});
+
+test('apps-script content bridge reads the new CMS tabs', () => {
+  const gs = readFileSync(join(ROOT, 'apps-script', 'content-sync', 'Code.gs'), 'utf8');
+  for (const tab of ['Schedule', 'Team', 'Faqs', 'Bundles', 'Stats', 'Results']) {
+    assert.match(gs, new RegExp("readRows_\\(ss, '" + tab + "'\\)"), 'Code.gs missing tab reader for ' + tab);
+  }
+});
+
+test('package.json check:syntax covers content.js', () => {
+  const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
+  assert.match(pkg.scripts['check:syntax'], /functions\/api\/content\.js/);
+});

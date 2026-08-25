@@ -14,6 +14,13 @@
  *                  image_url | traded_at
  *   PropFirms:     id | name | url | code | discount | image_url | notes |
  *                  active
+ *   Schedule:      id | day | session | time_et | host | note | active
+ *   Team:          id | name | role | bio | photo_url | socials | order
+ *   Faqs:          id | question | answer | order
+ *   Bundles:       id | name | price | period | save_badge | features |
+ *                  whop_url | highlight
+ *   Stats:         id | key | value | label
+ *   Results:       id | image_url | caption | order
  *
  * Setup:
  *   1. Script Properties: CONTENT_BRIDGE_SECRET (= Cloudflare's
@@ -48,6 +55,12 @@ function doPost(e) {
         announcements: readRows_(ss, 'Announcements'),
         trade_reviews: readRows_(ss, 'TradeReviews'),
         prop_firms: readRows_(ss, 'PropFirms'),
+        schedule: readRows_(ss, 'Schedule'),
+        team: readRows_(ss, 'Team'),
+        faqs: readRows_(ss, 'Faqs'),
+        bundles: readRows_(ss, 'Bundles'),
+        stats: readRows_(ss, 'Stats'),
+        results: readRows_(ss, 'Results'),
       },
     });
   } catch (err) {
