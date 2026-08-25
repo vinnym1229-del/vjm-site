@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude-code | pj | functions/api/_lib/integrations-core.js, functions/api/content.js, apps-script/content-sync/Code.gs, _headers, package.json, tests/pj-futures.test.mjs | Phase 3 CMS expansion (schedule/team/faqs/bundles/stats/results content types) + _headers additions. NOT doing Cloudflare/GitHub secrets, wrangler login, or Lighthouse - those need owner credentials I won't handle. | 2026-08-25 |
 
 ## Queued (unclaimed, safe to take)
 
