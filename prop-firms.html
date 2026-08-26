@@ -30,6 +30,21 @@
   .copy-btn{min-width:64px}
   .empty{padding:60px 20px;text-align:center;color:var(--vjm-muted)}
   footer{border-top:1px solid var(--vjm-border);padding:26px;text-align:center;color:var(--vjm-muted);font-size:.78rem;margin-top:50px}
+
+/* Page-wide ambient red pulse (mirrors index.html), so the lightning/black-
+   red theme is consistent site-wide rather than home-page-only. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(220,38,38,.05) 0%, transparent 55%),
+              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(220,38,38,.04) 0%, transparent 55%);
+  animation: pagePulse 9s ease-in-out infinite;
+}
+@keyframes pagePulse { 0%,100% { opacity:.55; } 50% { opacity: var(--page-pulse-peak, 1); } }
+@media (prefers-reduced-motion: reduce) { body::before { animation: none; opacity: .75; } }
 </style>
 </head>
 <body class="vjm-page">

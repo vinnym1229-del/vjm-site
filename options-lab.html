@@ -103,6 +103,21 @@ footer a { color: var(--muted); text-decoration: none; }
 footer a:hover { color: var(--gold); }
 
 .disclosure { background: var(--bg2); padding: 16px 24px; text-align:center; font-size: 0.72rem; color: var(--muted); }
+
+/* Page-wide ambient red pulse (mirrors index.html), so the lightning/black-
+   red theme is consistent site-wide rather than home-page-only. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(220,38,38,.05) 0%, transparent 55%),
+              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(220,38,38,.04) 0%, transparent 55%);
+  animation: pagePulse 9s ease-in-out infinite;
+}
+@keyframes pagePulse { 0%,100% { opacity:.55; } 50% { opacity: var(--page-pulse-peak, 1); } }
+@media (prefers-reduced-motion: reduce) { body::before { animation: none; opacity: .75; } }
 </style>
 </head>
 <body>

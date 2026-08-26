@@ -2527,6 +2527,7 @@ setBundlePeriod('monthly');
           const v = document.createElement('video');
           v.src = mp4;
           v.controls = true;
+          v.muted = true;
           v.autoplay = true;
           v.playsInline = true;
           facade.innerHTML = '';

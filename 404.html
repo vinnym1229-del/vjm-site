@@ -13,6 +13,21 @@ p { color:#7c8fa3; margin:0; max-width:420px; line-height:1.6; }
 .links { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
 a { color:#dc2626; font-weight:700; text-decoration:none; border:1px solid #dc2626; padding:10px 24px; border-radius:8px; display:inline-block; transition:all .2s; }
 a:hover { background:#dc2626; color:#fff; }
+
+/* Page-wide ambient red pulse (mirrors index.html), so the lightning/black-
+   red theme is consistent site-wide rather than home-page-only. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(220,38,38,.05) 0%, transparent 55%),
+              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(220,38,38,.04) 0%, transparent 55%);
+  animation: pagePulse 9s ease-in-out infinite;
+}
+@keyframes pagePulse { 0%,100% { opacity:.55; } 50% { opacity: var(--page-pulse-peak, 1); } }
+@media (prefers-reduced-motion: reduce) { body::before { animation: none; opacity: .75; } }
 </style>
 </head>
 <body>

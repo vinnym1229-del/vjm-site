@@ -40,3 +40,18 @@ a{color:inherit}
 @media(max-width:1120px){.nav-links{display:none}.hero-grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(3,1fr)}.grid-3{grid-template-columns:1fr 1fr}.lab-inputs{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:760px){.wrap{width:min(100% - 22px,1440px)}.nav{padding:10px 12px}.nav-action{font-size:.64rem}.hero{padding-top:34px}.hero-copy,.system-card{padding:22px}.hero h1{font-size:clamp(3.2rem,18vw,5rem)}.gate-grid,.grid-2,.grid-3{grid-template-columns:1fr}.gate-form{grid-template-columns:1fr}.toolbar{top:66px;align-items:flex-start}.toolbar-right{justify-content:flex-end}.module-nav{top:139px;grid-template-columns:repeat(2,1fr)}.module-head{align-items:flex-start;flex-direction:column}.module-controls{width:100%}.control{flex:1;min-width:130px}.kpis{grid-template-columns:1fr 1fr}.lab-inputs{grid-template-columns:1fr 1fr}.profile-grid{grid-template-columns:1fr 1fr}.heatmap{grid-template-columns:110px repeat(4,minmax(60px,1fr));overflow:auto}.chart,.chart svg,.chart-empty{min-height:280px}}
 @media(max-width:460px){.kpis{grid-template-columns:1fr}.lab-inputs,.profile-grid{grid-template-columns:1fr}.module-nav{top:151px}.hero-chips{gap:6px}.top-strip{font-size:.68rem}}
+
+/* Page-wide ambient red pulse (mirrors index.html), so the lightning/black-
+   red theme is consistent site-wide rather than home-page-only. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(220,38,38,.05) 0%, transparent 55%),
+              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(220,38,38,.04) 0%, transparent 55%);
+  animation: pagePulse 9s ease-in-out infinite;
+}
+@keyframes pagePulse { 0%,100% { opacity:.55; } 50% { opacity: var(--page-pulse-peak, 1); } }
+@media (prefers-reduced-motion: reduce) { body::before { animation: none; opacity: .75; } }
