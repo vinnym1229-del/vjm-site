@@ -123,6 +123,21 @@ body {
   line-height: 1.6;
   overflow-x: hidden;
 }
+/* Page-wide ambient red pulse, so the lightning theme isn't hero-only.
+   Very low opacity, fixed behind everything, never intercepts clicks.
+   Intensity dial: --page-pulse-peak below. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(220,38,38,.05) 0%, transparent 55%),
+              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(220,38,38,.04) 0%, transparent 55%);
+  animation: pagePulse 9s ease-in-out infinite;
+}
+@keyframes pagePulse { 0%,100% { opacity:.55; } 50% { opacity: var(--page-pulse-peak, 1); } }
+@media (prefers-reduced-motion: reduce) { body::before { animation: none; opacity: .75; } }
 
 /* ─── STREAM COUNTDOWN BAR ─── */
 #stream-countdown-bar {
@@ -166,6 +181,7 @@ body {
   height: 46px;
   overflow: hidden;
 }
+#ticker-wrap iframe { background: #020508 !important; color-scheme: dark; }
 
 /* ─── NAV ─── */
 nav {
@@ -445,19 +461,24 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 }
 @keyframes heroPulse { 0%,100% { opacity:.7; } 50% { opacity:1; } }
 
-/* ─── HERO BOLT (underline the "PJ" wordmark) ───
-   Intensity dial: raise --bolt-glow / shorten the animation duration below for
-   more energy; set both animations to `none` for a fully static bolt. */
+/* ─── HERO BOLT (horizontal lightning highlighting the "PJ" wordmark) ───
+   Same dual-layer glow+core build as .mega-bolt, just laid on its side and
+   sized to sweep across "PJ". Intensity dial: --bolt-glow (rest) /
+   --bolt-peak (flash) below; animation:none for a fully static bolt. */
 .bolt-wrap { position: relative; display: inline-block; }
-.bolt-underline { position: absolute; left: 2px; right: 2px; bottom: -6px; height: 11px; filter: drop-shadow(0 0 5px rgba(220,38,38,var(--bolt-glow,.65))); animation: boltFlicker 3.4s ease-in-out infinite; }
-.bolt-underline path { fill: none; stroke: var(--gold); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.bolt-underline { position: absolute; left: -14%; right: -14%; bottom: -20px; height: 34px; overflow: visible; opacity: var(--bolt-glow, .75); animation: boltFlicker 3.4s ease-in-out infinite; }
+.bolt-underline path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.bolt-underline .bg-trunk { stroke: #ff1a1a; stroke-width: 7; opacity: .6; filter: url(#megaBoltBlur); }
+.bolt-underline .bg-twig { stroke: #ff1a1a; stroke-width: 4; opacity: .45; filter: url(#megaBoltBlur); }
+.bolt-underline .bc-trunk { stroke: #ffb3a0; stroke-width: 2.2; filter: drop-shadow(0 0 5px #ff2b2b); }
+.bolt-underline .bc-twig { stroke: #ff5f4d; stroke-width: 1.2; opacity: .9; }
 @keyframes boltFlicker {
-  0%, 100% { opacity: .8; filter: drop-shadow(0 0 4px rgba(220,38,38,.5)); }
-  45% { opacity: .8; }
-  48% { opacity: .3; }
-  51% { opacity: 1; filter: drop-shadow(0 0 11px rgba(220,38,38,.9)); }
-  54% { opacity: .5; }
-  57% { opacity: 1; }
+  0%, 100% { opacity: var(--bolt-glow, .75); }
+  45% { opacity: .5; }
+  48% { opacity: .25; }
+  51% { opacity: var(--bolt-peak, 1); }
+  54% { opacity: .55; }
+  57% { opacity: var(--bolt-peak, 1); }
 }
 
 /* ─── MEGA BOLT — large detailed background lightning, right side of hero ───
@@ -862,7 +883,20 @@ html { font-size: 1.02rem; }
   </svg>
   <div class="hero-inner" style="position:relative;z-index:2;">
     <div class="hero-badge"><span class="pulse-dot"></span> <span id="hb-rating">5.0</span>★ on Whop · <span id="hb-reviews">2,240</span> reviews · <span id="hb-joined">49,136</span> joined</div>
-    <h1><span class="bolt-wrap">PJ<svg class="bolt-underline" viewBox="0 0 60 12" preserveAspectRatio="none" aria-hidden="true"><path d="M2,6 L14,2 L22,9 L34,1 L44,9 L58,3"/></svg></span> TRADES <span style="display:inline-block;"><span style="font-size:0.42em;vertical-align:middle;color:var(--muted);font-weight:700;letter-spacing:2px;">× St</span></span><br>
+    <h1><span class="bolt-wrap">PJ<svg class="bolt-underline" viewBox="0 -6 140 36" preserveAspectRatio="none" aria-hidden="true">
+      <path class="bg-trunk" d="M2,15 L22,4 L36,20 L56,3 L72,21 L92,5 L108,17 L138,9"/>
+      <path class="bg-twig" d="M22,4 L16,-4"/>
+      <path class="bg-twig" d="M56,3 L62,-5"/>
+      <path class="bg-twig" d="M92,5 L98,-3"/>
+      <path class="bg-twig" d="M36,20 L30,28"/>
+      <path class="bg-twig" d="M72,21 L78,27"/>
+      <path class="bc-trunk" d="M2,15 L22,4 L36,20 L56,3 L72,21 L92,5 L108,17 L138,9"/>
+      <path class="bc-twig" d="M22,4 L16,-4"/>
+      <path class="bc-twig" d="M56,3 L62,-5"/>
+      <path class="bc-twig" d="M92,5 L98,-3"/>
+      <path class="bc-twig" d="M36,20 L30,28"/>
+      <path class="bc-twig" d="M72,21 L78,27"/>
+    </svg></span> TRADES <span style="display:inline-block;"><span style="font-size:0.42em;vertical-align:middle;color:var(--muted);font-weight:700;letter-spacing:2px;">× St</span></span><br>
     <span class="gold">Futures, Made Simple.</span></h1>
     <p class="hero-sub">With ten years of hands-on experience navigating the fast-paced world of financial markets, PJ Trades is a seasoned day trader specializing in <strong style="color:var(--text);">NQ &amp; ES futures</strong>. Technical analysis, market research, and risk management — combined to identify high-probability setups and deliver results.</p>
     <div class="hero-ctas">
