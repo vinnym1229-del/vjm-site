@@ -467,33 +467,46 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
    sized to sweep across "PJ". Intensity dial: --bolt-glow (rest) /
    --bolt-peak (flash) below; animation:none for a fully static bolt. */
 .bolt-wrap { position: relative; display: inline-block; }
-.bolt-underline { position: absolute; left: -14%; right: -14%; bottom: -20px; height: 34px; overflow: visible; opacity: var(--bolt-glow, .75); animation: boltFlicker 3.4s ease-in-out infinite; }
+.bolt-underline { position: absolute; left: -20%; right: -20%; bottom: -26px; height: 44px; overflow: visible; opacity: var(--bolt-glow, .8); }
 .bolt-underline path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.bolt-underline .bg-trunk { stroke: #ff1a1a; stroke-width: 7; opacity: .6; filter: url(#megaBoltBlur); }
-.bolt-underline .bg-twig { stroke: #ff1a1a; stroke-width: 4; opacity: .45; filter: url(#megaBoltBlur); }
-.bolt-underline .bc-trunk { stroke: #ffb3a0; stroke-width: 2.2; filter: drop-shadow(0 0 5px #ff2b2b); }
-.bolt-underline .bc-twig { stroke: #ff5f4d; stroke-width: 1.2; opacity: .9; }
-@keyframes boltFlicker {
-  0%, 100% { opacity: var(--bolt-glow, .75); }
-  45% { opacity: .5; }
-  48% { opacity: .25; }
-  51% { opacity: var(--bolt-peak, 1); }
-  54% { opacity: .55; }
-  57% { opacity: var(--bolt-peak, 1); }
+.bolt-underline .bolt-glow { filter: url(#boltJitterGlowSmall); }
+.bolt-underline .bg-trunk { stroke: #ff1a1a; stroke-width: 7; opacity: .55; }
+.bolt-underline .bg-twig { stroke: #ff1a1a; stroke-width: 4; opacity: .4; }
+.bolt-underline .bolt-core { filter: url(#boltJitterCoreSmall); }
+.bolt-underline .bolt-core path { stroke-linecap: butt; stroke-linejoin: miter; }
+.bolt-underline .bc-trunk { stroke: #fff2ea; stroke-width: 1.6; }
+.bolt-underline .bc-twig { stroke: #ffcbb8; stroke-width: .9; opacity: .88; }
+.bolt-underline .bolt-highlight {
+  filter: url(#boltJitterCoreSmall);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 40%, white 50%, transparent 60%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, transparent 40%, white 50%, transparent 60%, transparent 100%);
+  -webkit-mask-size: 300% 100%; mask-size: 300% 100%;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  animation: boltSweepH 3.4s ease-in-out infinite;
 }
+@keyframes boltSweepH {
+  0% { -webkit-mask-position: -100% 0; mask-position: -100% 0; }
+  50% { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
+  100% { -webkit-mask-position: -100% 0; mask-position: -100% 0; }
+}
+.bolt-underline .bolt-highlight path { stroke: #fff; stroke-linecap: butt; stroke-linejoin: miter; }
+.bolt-underline .bh-trunk { stroke-width: 2.4; filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 9px #ff2b2b); }
+.bolt-underline .bh-twig { stroke-width: 1.3; filter: drop-shadow(0 0 3px #fff); }
 
 /* ─── MEGA BOLT — large detailed background lightning, right side of hero ───
    Stays dimly visible at all times (base opacity below) so it never
    disappears between flashes, then strikes brighter on a slow cycle.
    Intensity dial: --mega-bolt-base (resting visibility) and
    --mega-bolt-peak (flash brightness) below; animation:none for static. */
-.mega-bolt { position: absolute; top: 2%; right: -4%; width: min(46vw, 420px); height: 94%; z-index: 1; pointer-events: none; opacity: var(--mega-bolt-base, .42); }
+.mega-bolt { position: absolute; top: 0; right: -8%; width: min(58vw, 540px); height: 100%; z-index: 1; pointer-events: none; opacity: var(--mega-bolt-base, .5); }
 .mega-bolt path { fill: none; }
 .mega-bolt .bolt-core-flash { animation: none; }
 /* Glow layer: procedurally jittered (feTurbulence + feDisplacementMap, see
    defs) then heavily blurred - a soft atmospheric haze behind the strike.
    Hand-placed polylines can only ever look "drawn"; noise-based distortion
-   is what actually reads as electric instead of a clip-art bolt. */
+   is what actually reads as electric instead of a clip-art bolt. This
+   layer + the core below stay at constant opacity - they're the "always
+   dimly visible" strike, never the part that flashes. */
 .mega-bolt .bolt-glow path { stroke-linecap: round; stroke-linejoin: round; }
 .mega-bolt .bolt-glow { filter: url(#boltJitterGlow); }
 .mega-bolt .bolt-glow .g-trunk { stroke: #ff1a1a; stroke-width: 9; opacity: .5; }
@@ -504,22 +517,29 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .mega-bolt .bolt-core path { stroke-linecap: butt; stroke-linejoin: miter; }
 .mega-bolt .bolt-core .c-trunk { stroke: #fff2ea; stroke-width: 1.6; }
 .mega-bolt .bolt-core .c-twig { stroke: #ffcbb8; stroke-width: .9; opacity: .85; }
-.mega-bolt-anim { animation: megaFlash 6.5s ease-in-out infinite; }
-/* Real lightning flickers 2-3 times before the main strike, not one smooth
-   pulse - this mimics that instead of a simple fade up/down. */
-@keyframes megaFlash {
-  0%, 34%, 100% { opacity: var(--mega-bolt-base, .38); }
-  35% { opacity: .15; }
-  36% { opacity: .5; }
-  37% { opacity: .18; }
-  38% { opacity: var(--mega-bolt-peak, 1); }
-  41% { opacity: .3; }
-  43% { opacity: var(--mega-bolt-peak, 1); }
-  46% { opacity: .5; }
-  48% { opacity: var(--mega-bolt-peak, 1); }
-  53% { opacity: var(--mega-bolt-base, .38); }
+/* Highlight layer: a bright white copy of the same paths, masked by a
+   traveling gradient band (see #boltSweepMask in defs) so only a portion
+   of the strike is ever lit at once - it sweeps top-to-bottom then back,
+   instead of the whole bolt flashing together. */
+.mega-bolt .bolt-highlight {
+  filter: url(#boltJitterCore);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 40%, white 50%, transparent 60%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, transparent 40%, white 50%, transparent 60%, transparent 100%);
+  -webkit-mask-size: 100% 300%; mask-size: 100% 300%;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  animation: boltSweep 6.5s ease-in-out infinite;
 }
-@media (max-width: 768px) { .mega-bolt { width: min(55vw, 220px); opacity: calc(var(--mega-bolt-base, .38) * .8); } }
+/* Sweeps the bright highlight top-to-bottom then back, instead of the
+   whole strike flashing together. */
+@keyframes boltSweep {
+  0% { -webkit-mask-position: 0 -100%; mask-position: 0 -100%; }
+  50% { -webkit-mask-position: 0 100%; mask-position: 0 100%; }
+  100% { -webkit-mask-position: 0 -100%; mask-position: 0 -100%; }
+}
+.mega-bolt .bolt-highlight path { stroke: #fff; stroke-linecap: butt; stroke-linejoin: miter; }
+.mega-bolt .bh-trunk { stroke-width: 2.4; filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px #ff2b2b); }
+.mega-bolt .bh-twig { stroke-width: 1.3; filter: drop-shadow(0 0 4px #fff); }
+@media (max-width: 768px) { .mega-bolt { width: min(66vw, 280px); opacity: calc(var(--mega-bolt-base, .5) * .85); } }
 .win-card:hover { box-shadow: 0 12px 40px rgba(0,230,118,0.18); }
 .premium-box { box-shadow: 0 0 80px rgba(220,38,38,0.12), 0 0 30px rgba(220,38,38,0.06); transition: box-shadow 0.4s; }
 .premium-box:hover { box-shadow: 0 0 120px rgba(220,38,38,0.22), 0 0 50px rgba(220,38,38,0.12); }
@@ -590,8 +610,8 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   .feature-card:hover::after{animation:none;}
   .video-poster-glow{animation:none;}
   .hero::after{animation:none;opacity:.85;}
-  .bolt-underline{animation:none;opacity:.85;}
-  .mega-bolt-anim{animation:none;}
+  .bolt-underline .bolt-highlight{animation:none;display:none;}
+  .mega-bolt .bolt-highlight{animation:none;display:none;}
 }
 
 /* ─── SCROLL REVEAL (progressive enhancement) ───
@@ -865,7 +885,7 @@ html { font-size: 1.02rem; }
     <div class="liquid-blob lb-3"></div>
     <div class="liquid-grid"></div>
   </div>
-  <svg class="mega-bolt mega-bolt-anim" viewBox="0 0 300 500" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+  <svg class="mega-bolt" viewBox="0 0 300 500" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
     <defs>
       <filter id="megaBoltBlur" x="-100%" y="-100%" width="300%" height="300%">
         <feGaussianBlur stdDeviation="6.5"/>
@@ -886,6 +906,17 @@ html { font-size: 1.02rem; }
         <feTurbulence type="fractalNoise" baseFrequency="0.012 0.08" numOctaves="2" seed="11" result="n"/>
         <feDisplacementMap in="SourceGraphic" in2="n" scale="17" xChannelSelector="R" yChannelSelector="G" result="disp"/>
         <feGaussianBlur in="disp" stdDeviation="10"/>
+      </filter>
+      <!-- Same jitter, smaller scale/higher frequency for the much smaller
+           underline bolt (140x36 viewBox vs 300x500). -->
+      <filter id="boltJitterCoreSmall" x="-30%" y="-60%" width="160%" height="220%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.06 0.3" numOctaves="2" seed="11" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="4" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <filter id="boltJitterGlowSmall" x="-60%" y="-120%" width="220%" height="340%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.05 0.25" numOctaves="2" seed="11" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="5" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+        <feGaussianBlur in="disp" stdDeviation="3"/>
       </filter>
       <radialGradient id="boltCoreGlow" cx="50%" cy="50%" r="50%">
         <stop offset="0%" stop-color="#fff0e6" stop-opacity=".95"/>
@@ -942,22 +973,58 @@ html { font-size: 1.02rem; }
       <path class="c-twig" d="M198,229 L214,213"/>
       <path class="c-twig" d="M182,241 L167,255"/>
     </g>
+    <!-- Bright highlight, masked to a traveling band so the flash sweeps
+         top-to-bottom then back instead of the whole bolt flashing. -->
+    <g class="bolt-highlight">
+      <path class="bh-trunk" d="M150,220 L158,182 L136,172 L149,132 L121,119 L142,68 L112,52 L149,10"/>
+      <path class="bh-trunk" d="M150,220 L131,251 L151,262 L112,308 L138,318 L96,368 L120,378 L84,428 L107,435 L66,488"/>
+      <path class="bh-trunk" d="M150,220 L184,201 L169,190 L212,163 L192,151 L232,116 L214,101 L248,66"/>
+      <path class="bh-trunk" d="M150,220 L119,235 L133,246 L96,276 L114,288 L74,321 L92,330 L48,368"/>
+      <path class="bh-trunk" d="M150,220 L198,229 L182,241 L226,251 L206,264 L254,278"/>
+      <path class="bh-twig" d="M136,172 L112,161"/>
+      <path class="bh-twig" d="M121,119 L98,127"/>
+      <path class="bh-twig" d="M142,68 L163,52"/>
+      <path class="bh-twig" d="M151,262 L173,270"/>
+      <path class="bh-twig" d="M112,308 L91,297"/>
+      <path class="bh-twig" d="M138,318 L156,335"/>
+      <path class="bh-twig" d="M96,368 L74,375"/>
+      <path class="bh-twig" d="M169,190 L188,177"/>
+      <path class="bh-twig" d="M212,163 L233,175"/>
+      <path class="bh-twig" d="M192,151 L172,140"/>
+      <path class="bh-twig" d="M133,246 L112,232"/>
+      <path class="bh-twig" d="M96,276 L74,264"/>
+      <path class="bh-twig" d="M74,321 L52,313"/>
+      <path class="bh-twig" d="M198,229 L214,213"/>
+      <path class="bh-twig" d="M182,241 L167,255"/>
+    </g>
   </svg>
   <div class="hero-inner" style="position:relative;z-index:2;">
     <div class="hero-badge"><span class="pulse-dot"></span> <span id="hb-rating">5.0</span>★ on Whop · <span id="hb-reviews">2,240</span> reviews · <span id="hb-joined">49,136</span> joined</div>
-    <h1><span class="bolt-wrap">PJ<svg class="bolt-underline" viewBox="0 -6 140 36" preserveAspectRatio="none" aria-hidden="true">
-      <path class="bg-trunk" d="M2,15 L22,4 L36,20 L56,3 L72,21 L92,5 L108,17 L138,9"/>
-      <path class="bg-twig" d="M22,4 L16,-4"/>
-      <path class="bg-twig" d="M56,3 L62,-5"/>
-      <path class="bg-twig" d="M92,5 L98,-3"/>
-      <path class="bg-twig" d="M36,20 L30,28"/>
-      <path class="bg-twig" d="M72,21 L78,27"/>
-      <path class="bc-trunk" d="M2,15 L22,4 L36,20 L56,3 L72,21 L92,5 L108,17 L138,9"/>
-      <path class="bc-twig" d="M22,4 L16,-4"/>
-      <path class="bc-twig" d="M56,3 L62,-5"/>
-      <path class="bc-twig" d="M92,5 L98,-3"/>
-      <path class="bc-twig" d="M36,20 L30,28"/>
-      <path class="bc-twig" d="M72,21 L78,27"/>
+    <h1><span class="bolt-wrap">PJ<svg class="bolt-underline" viewBox="0 -10 140 44" preserveAspectRatio="none" aria-hidden="true">
+      <g class="bolt-glow">
+        <path class="bg-trunk" d="M2,15 L22,4 L36,20 L56,3 L72,21 L92,5 L108,17 L138,9"/>
+        <path class="bg-twig" d="M22,4 L16,-4"/>
+        <path class="bg-twig" d="M56,3 L62,-5"/>
+        <path class="bg-twig" d="M92,5 L98,-3"/>
+        <path class="bg-twig" d="M36,20 L30,28"/>
+        <path class="bg-twig" d="M72,21 L78,27"/>
+      </g>
+      <g class="bolt-core">
+        <path class="bc-trunk" d="M2,15 L22,4 L36,20 L56,3 L72,21 L92,5 L108,17 L138,9"/>
+        <path class="bc-twig" d="M22,4 L16,-4"/>
+        <path class="bc-twig" d="M56,3 L62,-5"/>
+        <path class="bc-twig" d="M92,5 L98,-3"/>
+        <path class="bc-twig" d="M36,20 L30,28"/>
+        <path class="bc-twig" d="M72,21 L78,27"/>
+      </g>
+      <g class="bolt-highlight">
+        <path class="bh-trunk" d="M2,15 L22,4 L36,20 L56,3 L72,21 L92,5 L108,17 L138,9"/>
+        <path class="bh-twig" d="M22,4 L16,-4"/>
+        <path class="bh-twig" d="M56,3 L62,-5"/>
+        <path class="bh-twig" d="M92,5 L98,-3"/>
+        <path class="bh-twig" d="M36,20 L30,28"/>
+        <path class="bh-twig" d="M72,21 L78,27"/>
+      </g>
     </svg></span> TRADES <span style="display:inline-block;"><span style="font-size:0.42em;vertical-align:middle;color:var(--muted);font-weight:700;letter-spacing:2px;">× St</span></span><br>
     <span class="gold">Futures, Made Simple.</span></h1>
     <p class="hero-sub">With ten years of hands-on experience navigating the fast-paced world of financial markets, PJ Trades is a seasoned day trader specializing in <strong style="color:var(--text);">NQ &amp; ES futures</strong>. Technical analysis, market research, and risk management — combined to identify high-probability setups and deliver results.</p>
