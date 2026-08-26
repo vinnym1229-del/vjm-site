@@ -465,10 +465,17 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
    disappears between flashes, then strikes brighter on a slow cycle.
    Intensity dial: --mega-bolt-base (resting visibility) and
    --mega-bolt-peak (flash brightness) below; animation:none for static. */
-.mega-bolt { position: absolute; top: 4%; right: -2%; width: min(42vw, 380px); height: 90%; z-index: 1; pointer-events: none; opacity: var(--mega-bolt-base, .38); }
+.mega-bolt { position: absolute; top: 2%; right: -4%; width: min(46vw, 420px); height: 94%; z-index: 1; pointer-events: none; opacity: var(--mega-bolt-base, .42); }
 .mega-bolt path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.mega-bolt .bolt-trunk { stroke: #ffe3b8; stroke-width: 5; filter: drop-shadow(0 0 12px rgba(220,38,38,.55)) drop-shadow(0 0 26px rgba(255,90,60,.35)); }
-.mega-bolt .bolt-limb { stroke: #ffd39a; stroke-width: 3.2; opacity: .85; filter: drop-shadow(0 0 8px rgba(220,38,38,.5)); }
+/* Glow layer: wide, blurred, deep red - gives the bolt a burning halo. */
+.mega-bolt .bolt-glow { filter: url(#megaBoltBlur); }
+.mega-bolt .bolt-glow .g-trunk { stroke: #ff1a1a; stroke-width: 11; opacity: .65; }
+.mega-bolt .bolt-glow .g-limb { stroke: #ff1a1a; stroke-width: 7; opacity: .55; }
+.mega-bolt .bolt-glow .g-twig { stroke: #ff1a1a; stroke-width: 4; opacity: .4; }
+/* Core layer: thin, bright, hot red-white edge on top of the glow. */
+.mega-bolt .bolt-core .c-trunk { stroke: #ffb3a0; stroke-width: 3; filter: drop-shadow(0 0 6px #ff2b2b); }
+.mega-bolt .bolt-core .c-limb { stroke: #ff5f4d; stroke-width: 2; filter: drop-shadow(0 0 5px #ff2b2b); }
+.mega-bolt .bolt-core .c-twig { stroke: #ff5f4d; stroke-width: 1.3; opacity: .9; }
 .mega-bolt-anim { animation: megaFlash 6.5s ease-in-out infinite; }
 @keyframes megaFlash {
   0%, 38%, 100% { opacity: var(--mega-bolt-base, .38); }
@@ -825,10 +832,33 @@ html { font-size: 1.02rem; }
     <div class="liquid-grid"></div>
   </div>
   <svg class="mega-bolt mega-bolt-anim" viewBox="0 0 300 500" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-    <path class="bolt-trunk" d="M150,10 L108,145 L168,155 L88,305 L142,315 L68,490"/>
-    <path class="bolt-limb" d="M168,155 L235,195 L202,208 L248,262"/>
-    <path class="bolt-limb" d="M88,305 L38,342 L64,352 L18,432"/>
-    <path class="bolt-limb" d="M108,145 L72,178 L94,188 L58,232"/>
+    <defs>
+      <filter id="megaBoltBlur" x="-100%" y="-100%" width="300%" height="300%">
+        <feGaussianBlur stdDeviation="6.5"/>
+      </filter>
+    </defs>
+    <g class="bolt-glow">
+      <path class="g-trunk" d="M172,4 L146,58 L184,52 L118,146 L158,140 L92,242 L134,236 L64,338 L108,332 L58,398 L96,394 L46,494"/>
+      <path class="g-limb" d="M184,52 L232,34 L214,66 L250,58"/>
+      <path class="g-limb" d="M158,140 L226,116 L200,152 L248,142 L212,178"/>
+      <path class="g-limb" d="M134,236 L84,206 L104,238 L60,222"/>
+      <path class="g-limb" d="M108,332 L166,318 L146,352 L188,344"/>
+      <path class="g-twig" d="M146,58 L120,40"/>
+      <path class="g-twig" d="M200,152 L218,190"/>
+      <path class="g-twig" d="M92,242 L58,258"/>
+      <path class="g-twig" d="M146,352 L156,388"/>
+    </g>
+    <g class="bolt-core">
+      <path class="c-trunk" d="M172,4 L146,58 L184,52 L118,146 L158,140 L92,242 L134,236 L64,338 L108,332 L58,398 L96,394 L46,494"/>
+      <path class="c-limb" d="M184,52 L232,34 L214,66 L250,58"/>
+      <path class="c-limb" d="M158,140 L226,116 L200,152 L248,142 L212,178"/>
+      <path class="c-limb" d="M134,236 L84,206 L104,238 L60,222"/>
+      <path class="c-limb" d="M108,332 L166,318 L146,352 L188,344"/>
+      <path class="c-twig" d="M146,58 L120,40"/>
+      <path class="c-twig" d="M200,152 L218,190"/>
+      <path class="c-twig" d="M92,242 L58,258"/>
+      <path class="c-twig" d="M146,352 L156,388"/>
+    </g>
   </svg>
   <div class="hero-inner" style="position:relative;z-index:2;">
     <div class="hero-badge"><span class="pulse-dot"></span> <span id="hb-rating">5.0</span>★ on Whop · <span id="hb-reviews">2,240</span> reviews · <span id="hb-joined">49,136</span> joined</div>
