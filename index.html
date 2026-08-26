@@ -487,15 +487,22 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
    Intensity dial: --mega-bolt-base (resting visibility) and
    --mega-bolt-peak (flash brightness) below; animation:none for static. */
 .mega-bolt { position: absolute; top: 2%; right: -4%; width: min(46vw, 420px); height: 94%; z-index: 1; pointer-events: none; opacity: var(--mega-bolt-base, .42); }
-.mega-bolt path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.mega-bolt path { fill: none; }
 .mega-bolt .bolt-core-flash { animation: none; }
-/* Glow layer: wide, blurred, deep red - gives every arm a burning halo. */
-.mega-bolt .bolt-glow { filter: url(#megaBoltBlur); }
-.mega-bolt .bolt-glow .g-trunk { stroke: #ff1a1a; stroke-width: 8; opacity: .6; }
-.mega-bolt .bolt-glow .g-twig { stroke: #ff1a1a; stroke-width: 4; opacity: .42; }
-/* Core layer: thin, bright, hot red-white edge on top of the glow. */
-.mega-bolt .bolt-core .c-trunk { stroke: #ffcbb8; stroke-width: 2.6; filter: drop-shadow(0 0 6px #ff2b2b); }
-.mega-bolt .bolt-core .c-twig { stroke: #ff5f4d; stroke-width: 1.2; opacity: .88; }
+/* Glow layer: wide, heavily blurred, deep red - a soft atmospheric haze
+   behind the strike, not a hard-edged halo. Rounded joins are fine here
+   since it's already a blur, not a visible outline. */
+.mega-bolt .bolt-glow path { stroke-linecap: round; stroke-linejoin: round; }
+.mega-bolt .bolt-glow { filter: url(#megaBoltBlurWide); }
+.mega-bolt .bolt-glow .g-trunk { stroke: #ff1a1a; stroke-width: 9; opacity: .48; }
+.mega-bolt .bolt-glow .g-twig { stroke: #ff1a1a; stroke-width: 5; opacity: .3; }
+/* Core layer: hairline, sharp miter joins (not rounded) so it reads as a
+   jagged electrical arc instead of a smooth vector "logo bolt". No
+   per-segment drop-shadow - the glow layer underneath supplies all the
+   halo, so the core itself can stay crisp and thin like a real strike. */
+.mega-bolt .bolt-core path { stroke-linecap: butt; stroke-linejoin: miter; }
+.mega-bolt .bolt-core .c-trunk { stroke: #fff2ea; stroke-width: 1.5; }
+.mega-bolt .bolt-core .c-twig { stroke: #ffcbb8; stroke-width: .8; opacity: .85; }
 .mega-bolt-anim { animation: megaFlash 6.5s ease-in-out infinite; }
 /* Real lightning flickers 2-3 times before the main strike, not one smooth
    pulse - this mimics that instead of a simple fade up/down. */
@@ -862,6 +869,9 @@ html { font-size: 1.02rem; }
       <filter id="megaBoltBlur" x="-100%" y="-100%" width="300%" height="300%">
         <feGaussianBlur stdDeviation="6.5"/>
       </filter>
+      <filter id="megaBoltBlurWide" x="-140%" y="-140%" width="380%" height="380%">
+        <feGaussianBlur stdDeviation="11"/>
+      </filter>
       <radialGradient id="boltCoreGlow" cx="50%" cy="50%" r="50%">
         <stop offset="0%" stop-color="#fff0e6" stop-opacity=".95"/>
         <stop offset="35%" stop-color="#ff4d3d" stop-opacity=".55"/>
@@ -869,40 +879,53 @@ html { font-size: 1.02rem; }
       </radialGradient>
     </defs>
     <!-- Glowing strike origin, matching the reference photo's bright core. -->
-    <ellipse class="bolt-core-flash" cx="150" cy="220" rx="72" ry="72" fill="url(#boltCoreGlow)"/>
-    <!-- Five arms radiate from the strike point (150,220) instead of one
-         top-to-bottom trunk, for the fractal starburst the owner asked for. -->
+    <ellipse class="bolt-core-flash" cx="150" cy="220" rx="80" ry="80" fill="url(#boltCoreGlow)"/>
+    <!-- Five arms radiate from the strike point (150,220), irregular segment
+         lengths and sharp angles rather than an even repeating zigzag, plus
+         scattered hair-thin twigs for the fractal chaos real strikes have. -->
     <g class="bolt-glow">
-      <path class="g-trunk" d="M150,220 L165,160 L135,150 L155,90 L130,80 L170,20"/>
-      <path class="g-trunk" d="M150,220 L120,270 L145,285 L100,350 L125,362 L80,430 L100,440 L60,490"/>
-      <path class="g-trunk" d="M150,220 L195,190 L180,175 L230,140 L215,128 L265,90"/>
-      <path class="g-trunk" d="M150,220 L110,240 L125,255 L75,300 L90,315 L35,370"/>
-      <path class="g-trunk" d="M150,220 L200,235 L185,250 L250,270"/>
-      <path class="g-twig" d="M135,150 L110,135"/>
-      <path class="g-twig" d="M155,90 L180,75"/>
-      <path class="g-twig" d="M145,285 L170,300"/>
-      <path class="g-twig" d="M100,350 L75,340"/>
-      <path class="g-twig" d="M180,175 L200,160"/>
-      <path class="g-twig" d="M215,128 L235,140"/>
-      <path class="g-twig" d="M125,255 L100,270"/>
-      <path class="g-twig" d="M75,300 L55,290"/>
-      <path class="g-twig" d="M185,250 L200,275"/>
+      <path class="g-trunk" d="M150,220 L158,182 L136,172 L149,132 L121,119 L142,68 L112,52 L149,10"/>
+      <path class="g-trunk" d="M150,220 L131,251 L151,262 L112,308 L138,318 L96,368 L120,378 L84,428 L107,435 L66,488"/>
+      <path class="g-trunk" d="M150,220 L184,201 L169,190 L212,163 L192,151 L232,116 L214,101 L248,66"/>
+      <path class="g-trunk" d="M150,220 L119,235 L133,246 L96,276 L114,288 L74,321 L92,330 L48,368"/>
+      <path class="g-trunk" d="M150,220 L198,229 L182,241 L226,251 L206,264 L254,278"/>
+      <path class="g-twig" d="M136,172 L112,161"/>
+      <path class="g-twig" d="M121,119 L98,127"/>
+      <path class="g-twig" d="M142,68 L163,52"/>
+      <path class="g-twig" d="M151,262 L173,270"/>
+      <path class="g-twig" d="M112,308 L91,297"/>
+      <path class="g-twig" d="M138,318 L156,335"/>
+      <path class="g-twig" d="M96,368 L74,375"/>
+      <path class="g-twig" d="M169,190 L188,177"/>
+      <path class="g-twig" d="M212,163 L233,175"/>
+      <path class="g-twig" d="M192,151 L172,140"/>
+      <path class="g-twig" d="M133,246 L112,232"/>
+      <path class="g-twig" d="M96,276 L74,264"/>
+      <path class="g-twig" d="M74,321 L52,313"/>
+      <path class="g-twig" d="M198,229 L214,213"/>
+      <path class="g-twig" d="M182,241 L167,255"/>
     </g>
     <g class="bolt-core">
-      <path class="c-trunk" d="M150,220 L165,160 L135,150 L155,90 L130,80 L170,20"/>
-      <path class="c-trunk" d="M150,220 L120,270 L145,285 L100,350 L125,362 L80,430 L100,440 L60,490"/>
-      <path class="c-trunk" d="M150,220 L195,190 L180,175 L230,140 L215,128 L265,90"/>
-      <path class="c-trunk" d="M150,220 L110,240 L125,255 L75,300 L90,315 L35,370"/>
-      <path class="c-trunk" d="M150,220 L200,235 L185,250 L250,270"/>
-      <path class="c-twig" d="M135,150 L110,135"/>
-      <path class="c-twig" d="M155,90 L180,75"/>
-      <path class="c-twig" d="M145,285 L170,300"/>
-      <path class="c-twig" d="M100,350 L75,340"/>
-      <path class="c-twig" d="M180,175 L200,160"/>
-      <path class="c-twig" d="M215,128 L235,140"/>
-      <path class="c-twig" d="M125,255 L100,270"/>
-      <path class="c-twig" d="M75,300 L55,290"/>
-      <path class="c-twig" d="M185,250 L200,275"/>
+      <path class="c-trunk" d="M150,220 L158,182 L136,172 L149,132 L121,119 L142,68 L112,52 L149,10"/>
+      <path class="c-trunk" d="M150,220 L131,251 L151,262 L112,308 L138,318 L96,368 L120,378 L84,428 L107,435 L66,488"/>
+      <path class="c-trunk" d="M150,220 L184,201 L169,190 L212,163 L192,151 L232,116 L214,101 L248,66"/>
+      <path class="c-trunk" d="M150,220 L119,235 L133,246 L96,276 L114,288 L74,321 L92,330 L48,368"/>
+      <path class="c-trunk" d="M150,220 L198,229 L182,241 L226,251 L206,264 L254,278"/>
+      <path class="c-twig" d="M136,172 L112,161"/>
+      <path class="c-twig" d="M121,119 L98,127"/>
+      <path class="c-twig" d="M142,68 L163,52"/>
+      <path class="c-twig" d="M151,262 L173,270"/>
+      <path class="c-twig" d="M112,308 L91,297"/>
+      <path class="c-twig" d="M138,318 L156,335"/>
+      <path class="c-twig" d="M96,368 L74,375"/>
+      <path class="c-twig" d="M169,190 L188,177"/>
+      <path class="c-twig" d="M212,163 L233,175"/>
+      <path class="c-twig" d="M192,151 L172,140"/>
+      <path class="c-twig" d="M133,246 L112,232"/>
+      <path class="c-twig" d="M96,276 L74,264"/>
+      <path class="c-twig" d="M74,321 L52,313"/>
+      <path class="c-twig" d="M198,229 L214,213"/>
+      <path class="c-twig" d="M182,241 L167,255"/>
     </g>
   </svg>
   <div class="hero-inner" style="position:relative;z-index:2;">
