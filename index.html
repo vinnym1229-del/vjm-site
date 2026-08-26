@@ -490,20 +490,20 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .mega-bolt { position: absolute; top: 2%; right: -4%; width: min(46vw, 420px); height: 94%; z-index: 1; pointer-events: none; opacity: var(--mega-bolt-base, .42); }
 .mega-bolt path { fill: none; }
 .mega-bolt .bolt-core-flash { animation: none; }
-/* Glow layer: wide, heavily blurred, deep red - a soft atmospheric haze
-   behind the strike, not a hard-edged halo. Rounded joins are fine here
-   since it's already a blur, not a visible outline. */
+/* Glow layer: procedurally jittered (feTurbulence + feDisplacementMap, see
+   defs) then heavily blurred - a soft atmospheric haze behind the strike.
+   Hand-placed polylines can only ever look "drawn"; noise-based distortion
+   is what actually reads as electric instead of a clip-art bolt. */
 .mega-bolt .bolt-glow path { stroke-linecap: round; stroke-linejoin: round; }
-.mega-bolt .bolt-glow { filter: url(#megaBoltBlurWide); }
-.mega-bolt .bolt-glow .g-trunk { stroke: #ff1a1a; stroke-width: 9; opacity: .48; }
-.mega-bolt .bolt-glow .g-twig { stroke: #ff1a1a; stroke-width: 5; opacity: .3; }
-/* Core layer: hairline, sharp miter joins (not rounded) so it reads as a
-   jagged electrical arc instead of a smooth vector "logo bolt". No
-   per-segment drop-shadow - the glow layer underneath supplies all the
-   halo, so the core itself can stay crisp and thin like a real strike. */
+.mega-bolt .bolt-glow { filter: url(#boltJitterGlow); }
+.mega-bolt .bolt-glow .g-trunk { stroke: #ff1a1a; stroke-width: 9; opacity: .5; }
+.mega-bolt .bolt-glow .g-twig { stroke: #ff1a1a; stroke-width: 5; opacity: .32; }
+/* Core layer: same noise displacement (smaller scale, so it stays a
+   recognizable bolt shape), no blur, sharp miter joins. */
+.mega-bolt .bolt-core { filter: url(#boltJitterCore); }
 .mega-bolt .bolt-core path { stroke-linecap: butt; stroke-linejoin: miter; }
-.mega-bolt .bolt-core .c-trunk { stroke: #fff2ea; stroke-width: 1.5; }
-.mega-bolt .bolt-core .c-twig { stroke: #ffcbb8; stroke-width: .8; opacity: .85; }
+.mega-bolt .bolt-core .c-trunk { stroke: #fff2ea; stroke-width: 1.6; }
+.mega-bolt .bolt-core .c-twig { stroke: #ffcbb8; stroke-width: .9; opacity: .85; }
 .mega-bolt-anim { animation: megaFlash 6.5s ease-in-out infinite; }
 /* Real lightning flickers 2-3 times before the main strike, not one smooth
    pulse - this mimics that instead of a simple fade up/down. */
@@ -872,6 +872,20 @@ html { font-size: 1.02rem; }
       </filter>
       <filter id="megaBoltBlurWide" x="-140%" y="-140%" width="380%" height="380%">
         <feGaussianBlur stdDeviation="11"/>
+      </filter>
+      <!-- Procedural jitter: fractal noise displaces the hand-drawn paths so
+           every segment gets organic micro-crackle instead of dead-straight
+           lines. Same seed on both so glow/core distort in sync; core uses a
+           smaller scale so the bolt stays recognizable, glow uses a larger
+           scale plus blur for the atmospheric haze. -->
+      <filter id="boltJitterCore" x="-30%" y="-30%" width="160%" height="160%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.015 0.09" numOctaves="2" seed="11" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="13" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <filter id="boltJitterGlow" x="-140%" y="-140%" width="380%" height="380%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012 0.08" numOctaves="2" seed="11" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="17" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+        <feGaussianBlur in="disp" stdDeviation="10"/>
       </filter>
       <radialGradient id="boltCoreGlow" cx="50%" cy="50%" r="50%">
         <stop offset="0%" stop-color="#fff0e6" stop-opacity=".95"/>
