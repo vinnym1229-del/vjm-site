@@ -3,7 +3,7 @@
 :root{
   --red:#dc2626;--red2:#991b1b;--green:#ff4d4d;--amber:#f59e0b;--blue:#ff6b6b;
   --bg:#05070b;--bg2:#08101b;--panel:#0d1725;--panel2:#111e30;--line:#213247;
-  --line2:#30445e;--text:#edf3fb;--soft:#c6d2e2;--muted:#8ea1b8;--white:#fff;
+  --line2:#30445e;--text:#edf3fb;--soft:#c6d2e2;--muted:#9b9296;--white:#fff;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;scroll-padding-top:132px}

@@ -3,14 +3,14 @@
 
 :root {
   accent-color: #dc2626;
-  --vjm-bg: #06090d;
-  --vjm-bg2: #0b0f18;
-  --vjm-card: #101623;
-  --vjm-card2: #141c2c;
-  --vjm-border: #1e2d40;
-  --vjm-border-strong: #2b3f5c;
-  --vjm-text: #e8eef7;
-  --vjm-muted: #8ea1b8;
+  --vjm-bg: #080708;
+  --vjm-bg2: #0f0d0e;
+  --vjm-card: #171416;
+  --vjm-card2: #1d1a1c;
+  --vjm-border: #2c2528;
+  --vjm-border-strong: #3a3438;
+  --vjm-text: #eceaea;
+  --vjm-muted: #9b9296;
   --vjm-red: #dc2626;
   --vjm-red-soft: rgba(220, 38, 38, 0.12);
   --vjm-gold: #f0b429;
