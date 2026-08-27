@@ -7,6 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
+| Codex /root | pj | index.html; tests/pj-futures.test.mjs; assets/pj-intro-poster.jpg (if created) | Repair the PJ ticker integration, use a real intro-video frame as its poster, and make the ambient lightning/gradient visible across the page. | 2026-08-27 |
 | — | | | | |
 
 ## Queued (unclaimed, safe to take)
