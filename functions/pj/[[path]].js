@@ -4,9 +4,15 @@
 // to pj and nobody remembered to re-copy the files. Nothing to sync anymore —
 // this always reflects whatever is currently live on pj.vjm.pages.dev.
 //
-// Note: pj's pages call absolute API paths like /api/content — those still
-// hit THIS project's own /api/* Functions (main's), not pj's. That was already
-// true of the old static copy; this proxy doesn't change that behavior.
+// pj's pages write asset/link/fetch paths as if they own the domain root
+// (e.g. src="assets/lightning-bg.js", fetch('/api/verify-premium')). Served
+// raw under /pj, those resolve against THIS origin's root instead — assets
+// 404 silently (confirmed: /assets/lightning-bg.js 404s here, so the
+// sitewide lightning effect never loads at all under this proxy) and /api/
+// calls hit main's own Functions instead of pj's (different bindings/code).
+// HTML responses are rewritten (buffered -- these pages are well under a
+// megabyte, streaming isn't worth the complexity) so every asset/link/fetch
+// path stays scoped under /pj.
 
 const UPSTREAM_ORIGIN = 'https://pj.vjm.pages.dev';
 
@@ -46,9 +52,52 @@ export async function onRequest(context) {
     }
   }
 
-  return new Response(upstreamResponse.body, {
+  const contentType = headers.get('content-type') || '';
+  if (!contentType.includes('text/html')) {
+    return new Response(upstreamResponse.body, {
+      status: upstreamResponse.status,
+      statusText: upstreamResponse.statusText,
+      headers,
+    });
+  }
+
+  const html = rewriteHtml(await upstreamResponse.text());
+  headers.delete('content-length');
+
+  return new Response(html, {
     status: upstreamResponse.status,
     statusText: upstreamResponse.statusText,
     headers,
   });
+}
+
+// Rewrites src=/href=/action= attribute values and fetch('/api/...' | '/video/...')
+// call sites so they stay scoped under /pj. Skips absolute URLs (protocol or
+// protocol-relative), data:/blob: URIs, in-page anchors, and anything already
+// prefixed.
+function rewriteHtml(html) {
+  const attrPattern = /((?:src|href|action|srcset)\s*=\s*)(["'])([^"']+)\2/gi;
+  html = html.replace(attrPattern, (full, prefix, quote, value) => {
+    if (!shouldRewrite(value)) return full;
+    return `${prefix}${quote}${prefixPath(value)}${quote}`;
+  });
+
+  // Inline style="background-image:url(...)" and any <style> block url(...).
+  html = html.replace(/url\((['"]?)assets\//g, 'url($1/pj/assets/');
+
+  // fetch('/api/...'), fetch("/video/..."), template-literal variants.
+  html = html.replace(/(['"`])\/(api|video)\//g, '$1/pj/$2/');
+
+  return html;
+}
+
+function shouldRewrite(value) {
+  if (!value) return false;
+  if (/^([a-z][a-z0-9+.-]*:|\/\/|#)/i.test(value)) return false;
+  if (value.startsWith('/pj/')) return false;
+  return true;
+}
+
+function prefixPath(value) {
+  return value.startsWith('/') ? '/pj' + value : '/pj/' + value;
 }
