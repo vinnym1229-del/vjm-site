@@ -50,12 +50,14 @@ test('FAQ matches Whop verbatim + JSON-LD schema present', () => {
   assert.match(index, /FAQPage/);
 });
 
-test('video sits above bundles with lazy facade (232MB file must not be embedded directly)', () => {
+test('video sits above bundles with a PJ video-frame poster and lazy facade', () => {
   const videoIdx = index.indexOf('id="video"');
   const bundleIdx = index.indexOf('Bundles</div>');
   assert.ok(videoIdx > -1 && bundleIdx > -1 && videoIdx < bundleIdx, 'video must appear before bundles');
   assert.match(index, /id="video-facade"/);
-  assert.match(index, /data-video-mp4="assets\/pj-intro\.mp4"/);
+  assert.match(index, /data-video-mp4="\/video\/pj-intro\.mp4"/);
+  assert.match(index, /assets\/pj-intro-poster\.jpg/, 'video poster must come from PJ\'s own video');
+  assert.ok(existsSync(join(ROOT, 'assets', 'pj-intro-poster.jpg')), 'video-frame poster asset missing');
   assert.doesNotMatch(index, /<video[^>]*src=/, 'no eager video src (25MB deploy limit + LCP)');
 });
 
