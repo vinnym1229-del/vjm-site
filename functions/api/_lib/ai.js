@@ -2,7 +2,7 @@
 // no per-token billing on the free allocation. Fails soft: callers must
 // degrade to data-only output when this returns null.
 
-const DEFAULT_MODEL = '@cf/meta/llama-3.1-8b-instruct';
+const DEFAULT_MODEL = '@cf/meta/llama-3.1-8b-instruct-fp8';
 
 export function aiConfigured(env) {
   return Boolean(env.AI && typeof env.AI.run === 'function');
