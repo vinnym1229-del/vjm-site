@@ -47,7 +47,7 @@
   document.body.insertBefore(wrap, document.body.firstChild);
 
   const css = `
-#site-bolt-layer{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;}
+#site-bolt-layer{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;}
 .site-bolt{position:absolute;top:0;height:100%;width:min(30vw,320px);opacity:.22;}
 .site-bolt-r{right:-6%;}
 .site-bolt-l{left:-6%;transform:scaleX(-1);opacity:.14;animation-delay:-3.5s;}
