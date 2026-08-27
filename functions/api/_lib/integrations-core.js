@@ -37,8 +37,22 @@ export function normalizeWhopEvent(body) {
   const productId = String(membership.product_id || data.product_id || '') || null;
   const planId = String(membership.plan_id || data.plan_id || '') || null;
 
+  // Best-effort enrichment (never required — grant/revoke work without it).
+  // Whop's Membership/Payment objects nest these under user/product/plan.
+  const user = membership.user || data.user || null;
+  const product = membership.product || data.product || null;
+  const email = (user && user.email) ? String(user.email).trim().toLowerCase() : null;
+  const planName = (product && product.title) ? String(product.title) : null;
+  const renewalEnd = membership.renewal_period_end || data.renewal_period_end;
+  const expiresAt = Number.isFinite(Number(renewalEnd)) && Number(renewalEnd) > 0
+    ? new Date(Number(renewalEnd) * 1000).toISOString()
+    : null;
+  const amountRaw = data.usd_total ?? data.total ?? data.settlement_amount;
+  const amountPaidCents = Number.isFinite(Number(amountRaw)) ? Math.round(Number(amountRaw) * 100) : null;
+  const currency = data.currency ? String(data.currency).toUpperCase() : null;
+
   if (WHOP_GRANT_EVENTS.has(type)) {
-    return { action: 'grant', eventId, memberId, productId, planId, type };
+    return { action: 'grant', eventId, memberId, productId, planId, type, email, planName, expiresAt, amountPaidCents, currency };
   }
   if (WHOP_REVOKE_EVENTS.has(type)) {
     return { action: 'revoke', eventId, memberId, productId, planId, type };

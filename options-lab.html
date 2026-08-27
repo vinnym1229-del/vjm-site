@@ -11,7 +11,7 @@
 
 :root {
   --gold: #dc2626; --gold2: #b91c1c;
-  --green: #00e676; --emerald: #10b981;
+  --green: #ff4d4d; --emerald: #dc2626;
   --red: #ff4444;
   --bg: #06090d; --bg2: #0a0f16; --bg3: #0f1621;
   --card: #111827; --border: #1e2d3d; --text: #e8edf3; --muted: #7c8fa3; --accent: #162032;
@@ -69,7 +69,7 @@ h2.panel-title { font-size: clamp(1.5rem,3.5vw,2.1rem); margin-bottom: 14px; }
 .diagram-caption { font-size: 0.78rem; color: var(--muted); margin-top: 10px; text-align: center; }
 
 .callout { border-left: 3px solid var(--gold); background: rgba(220,38,38,0.06); border-radius: 0 10px 10px 0; padding: 14px 18px; font-size: 0.88rem; margin: 20px 0; }
-.callout.green { border-color: var(--green); background: rgba(0,230,118,0.06); }
+.callout.green { border-color: var(--green); background: rgba(220,38,38,0.06); }
 .callout.warn { border-color: #f59e0b; background: rgba(245,158,11,0.06); }
 
 table.datatab { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 16px 0; }
@@ -77,17 +77,17 @@ table.datatab th { text-align: left; color: var(--muted); font-weight: 700; text
 table.datatab td { padding: 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
 table.datatab tr:last-child td { border-bottom: none; }
 .pill { display:inline-block; font-size:0.68rem; font-weight:800; padding:2px 9px; border-radius:12px; text-transform:uppercase; letter-spacing:0.5px; }
-.pill.free { background:rgba(0,230,118,0.12); color:var(--green); }
+.pill.free { background:rgba(220,38,38,0.12); color:var(--green); }
 .pill.cheap { background:rgba(220,38,38,0.12); color:var(--gold); }
 .pill.paid { background:rgba(124,143,163,0.15); color:var(--muted); }
-.pill.bull { background:rgba(0,230,118,0.12); color:var(--green); }
+.pill.bull { background:rgba(220,38,38,0.12); color:var(--green); }
 .pill.bear { background:rgba(255,68,68,0.12); color:var(--red); }
 .pill.neutral { background:rgba(124,143,163,0.15); color:var(--muted); }
 
 .scenario { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 20px; }
 .scenario h3 { font-size: 1.25rem; margin-bottom: 6px; }
 .scenario .verdict { display:inline-block; font-size:0.72rem; font-weight:800; padding:3px 10px; border-radius:12px; margin-bottom: 12px; }
-.scenario .verdict.long { background:rgba(0,230,118,0.12); color:var(--green); }
+.scenario .verdict.long { background:rgba(220,38,38,0.12); color:var(--green); }
 .scenario .verdict.short { background:rgba(255,68,68,0.12); color:var(--red); }
 .scenario .verdict.range { background:rgba(220,38,38,0.12); color:var(--gold); }
 .scenario p { font-size: 0.88rem; margin-top: 8px; }
@@ -472,5 +472,6 @@ function toggleTheme() {
 })();
 </script>
 <script src="assets/chatbot.js" defer></script>
+<script src="assets/lightning-bg.js" defer></script>
 </body>
 </html>

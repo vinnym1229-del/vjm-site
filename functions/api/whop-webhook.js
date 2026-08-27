@@ -67,12 +67,16 @@ export async function onRequestPost(context) {
       code = generateAccessCodeShape(bytes);
     }
     const hash = await sha256Hex(code);
+    const emailHash = evt.email ? await sha256Hex(evt.email) : null;
 
     await env.RESEARCH_DB.prepare(
-      `INSERT INTO whop_codes (code_hash, code_last4, whop_event_id, whop_member_id, whop_product, status)
-       VALUES (?1, ?2, ?3, ?4, ?5, 'pending')
+      `INSERT INTO whop_codes (code_hash, code_last4, whop_event_id, whop_member_id, whop_product, status, email_hash, plan_name, expires_at, amount_paid_cents, currency)
+       VALUES (?1, ?2, ?3, ?4, ?5, 'pending', ?6, ?7, ?8, ?9, ?10)
        ON CONFLICT(code_hash) DO NOTHING`
-    ).bind(hash, code.slice(-4), evt.eventId, evt.memberId, evt.productId).run();
+    ).bind(
+      hash, code.slice(-4), evt.eventId, evt.memberId, evt.productId,
+      emailHash, evt.planName, evt.expiresAt, evt.amountPaidCents, evt.currency
+    ).run();
 
     await env.RESEARCH_DB.prepare(
       "INSERT OR IGNORE INTO webhook_events (provider, event_id, note) VALUES ('whop', ?1, ?2)"

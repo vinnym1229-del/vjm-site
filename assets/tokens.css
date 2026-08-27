@@ -2,6 +2,7 @@
    Import alongside page-specific styles; dark-first with light-mode hooks. */
 
 :root {
+  accent-color: #dc2626;
   --vjm-bg: #06090d;
   --vjm-bg2: #0b0f18;
   --vjm-card: #101623;
@@ -13,9 +14,9 @@
   --vjm-red: #dc2626;
   --vjm-red-soft: rgba(220, 38, 38, 0.12);
   --vjm-gold: #f0b429;
-  --vjm-green: #00e676;
+  --vjm-green: #ff4d4d;
   --vjm-amber: #f59e0b;
-  --vjm-blue: #60a5fa;
+  --vjm-blue: #ff6b6b;
 
   --vjm-radius-s: 10px;
   --vjm-radius-m: 16px;
@@ -73,9 +74,9 @@
   background: rgba(255,255,255,0.03);
 }
 .vjm-chip.red   { border-color: rgba(220,38,38,.5); color: #ff9a9a; background: var(--vjm-red-soft); }
-.vjm-chip.green { border-color: rgba(0,230,118,.35); color: var(--vjm-green); background: rgba(0,230,118,.08); }
+.vjm-chip.green { border-color: rgba(220,38,38,.35); color: var(--vjm-green); background: rgba(220,38,38,.08); }
 .vjm-chip.amber { border-color: rgba(245,158,11,.4); color: var(--vjm-amber); background: rgba(245,158,11,.08); }
-.vjm-chip.blue  { border-color: rgba(96,165,250,.4); color: var(--vjm-blue); background: rgba(96,165,250,.08); }
+.vjm-chip.blue  { border-color: rgba(220,38,38,.4); color: var(--vjm-blue); background: rgba(220,38,38,.08); }
 
 .vjm-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
