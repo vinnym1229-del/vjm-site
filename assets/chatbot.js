@@ -55,7 +55,54 @@
   }
 
   function greet() {
-    addMsg("Hi! I'm the PJ Trades AI assistant. Ask me what the market is doing, or say things like \"where do I start?\" or \"what's in the bundles?\" and I'll point you the right way.", 'bot');
+    addMsg("Hi! I'm the PJ Trades assistant. What can I help with?", 'bot');
+    addTopicPicker();
+  }
+
+  // Two clear lanes: live market/trading questions go to the AI (grounded on
+  // real data); support/account questions get instant, reliable links to the
+  // right page instead of waiting on a model that might guess wrong.
+  function addTopicPicker() {
+    const row = el('div', 'vjm-topic-row');
+    const marketBtn = el('button', 'vjm-topic-btn', '📈 Market / Trading Question');
+    const supportBtn = el('button', 'vjm-topic-btn', '🛟 Support / Account');
+    marketBtn.type = 'button';
+    supportBtn.type = 'button';
+    marketBtn.addEventListener('click', () => {
+      row.remove();
+      addMsg('Ask away — prices, movers, what\'s happening in the market right now.', 'bot');
+      input.placeholder = 'Ask about the market…';
+      input.focus();
+    });
+    supportBtn.addEventListener('click', () => {
+      row.remove();
+      addSupportLinks();
+    });
+    row.append(marketBtn, supportBtn);
+    log.append(row);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function addSupportLinks() {
+    addMsg('Here\'s where to go for the common stuff — or just type your question and I\'ll do my best to point you the right way.', 'bot');
+    const links = [
+      ['Sign in to your account', 'premium-guidance.html#signin'],
+      ['Buy / see pricing', 'index.html#premium'],
+      ['Check if my membership is active', 'index.html#premium'],
+      ['Join the free Discord', 'https://discord.gg/pjtrades'],
+      ['DM support directly', 'https://discord.com/users/St1101'],
+    ];
+    const wrap = el('div', 'vjm-msg vjm-msg-bot vjm-support-links');
+    for (const [label, href] of links) {
+      const a = document.createElement('a');
+      a.href = href;
+      a.textContent = label;
+      if (/^https?:\/\//.test(href)) { a.target = '_blank'; a.rel = 'noopener'; }
+      wrap.append(a);
+    }
+    log.append(wrap);
+    log.scrollTop = log.scrollHeight;
+    input.placeholder = 'Or type your question…';
   }
 
   function addMsg(text, who) {
@@ -148,6 +195,13 @@
 .vjm-msg-bot{align-self:flex-start;background:#16203233;border:1px solid #22314a;color:#dbe6f3;border-bottom-left-radius:4px;}
 .vjm-msg-bot.thinking{opacity:.65;}
 .vjm-msg-bot.data{font-family:monospace;font-size:.78rem;color:#9fb3cc;}
+.vjm-topic-row{display:flex;flex-direction:column;gap:8px;align-self:stretch;}
+.vjm-topic-btn{background:#16203233;border:1px solid #22314a;color:#e8eef7;border-radius:12px;padding:10px 13px;
+ font-size:.85rem;font-family:'DM Sans',sans-serif;text-align:left;cursor:pointer;transition:border-color .15s ease;}
+.vjm-topic-btn:hover,.vjm-topic-btn:focus-visible{border-color:#dc2626;outline:none;}
+.vjm-support-links{display:flex;flex-direction:column;gap:6px;padding:8px 13px;}
+.vjm-support-links a{color:#ff9a9a;text-decoration:none;font-size:.84rem;font-weight:700;}
+.vjm-support-links a:hover,.vjm-support-links a:focus-visible{text-decoration:underline;}
 .vjm-chat-form{display:flex;gap:8px;padding:10px;border-top:1px solid #22314a;background:rgba(255,255,255,.02);}
 .vjm-chat-input{flex:1;background:#0a0f1a;border:1px solid #22314a;border-radius:10px;padding:10px 12px;
  color:#e8eef7;font-size:.9rem;min-height:44px;}
