@@ -133,12 +133,23 @@ body::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(220,38,38,.05) 0%, transparent 55%),
-              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(220,38,38,.04) 0%, transparent 55%);
+  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(220,38,38,.10) 0%, transparent 55%),
+              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(220,38,38,.08) 0%, transparent 55%);
   animation: pagePulse 9s ease-in-out infinite;
 }
 @keyframes pagePulse { 0%,100% { opacity:.55; } 50% { opacity: var(--page-pulse-peak, 1); } }
 @media (prefers-reduced-motion: reduce) { body::before { animation: none; opacity: .75; } }
+/* Keep the red/black atmosphere present between the hero and footer too.
+   Section backgrounds were fully opaque, so they hid the page treatment. */
+body:not(.light-mode) > section:not(.hero), body:not(.light-mode) > footer {
+  background-color: rgba(5, 8, 13, .90) !important;
+  background-image: radial-gradient(ellipse 65% 55% at 92% 15%, rgba(220,38,38,.10), transparent 68%),
+                    radial-gradient(ellipse 55% 45% at 8% 85%, rgba(220,38,38,.07), transparent 70%) !important;
+}
+body.light-mode > section:not(.hero), body.light-mode > footer {
+  background-color: rgba(244,246,249,.94) !important;
+  background-image: radial-gradient(ellipse 65% 55% at 92% 15%, rgba(220,38,38,.08), transparent 68%) !important;
+}
 
 /* ─── STREAM COUNTDOWN BAR ─── */
 #stream-countdown-bar {
@@ -815,7 +826,7 @@ html { font-size: 1.02rem; }
         {"proName":"NYMEX:CL1!","title":"CRUDE"},
         {"proName":"CME:BTC1!","title":"BTC"}
       ],
-      "showSymbolLogo": true,
+      "showSymbolLogo": false,
       "isTransparent": false,
       "displayMode": "compact",
       "colorTheme": "dark",
@@ -1133,7 +1144,7 @@ html { font-size: 1.02rem; }
       <h2 class="section-title">Watch PJ <span class="gold">Trade</span></h2>
     </div>
     <div class="video-facade" id="video-facade" data-video-mp4="/video/pj-intro.mp4" data-video-yt="" role="button" tabindex="0" aria-label="Play introduction video" data-reveal>
-      <div class="video-poster" aria-hidden="true" style="background-image:linear-gradient(180deg,rgba(6,9,13,.15) 0%,rgba(6,9,13,.35) 60%,rgba(6,9,13,.85) 100%),url('https://img.youtube.com/vi/sL_7MoeEZqQ/maxresdefault.jpg');background-size:cover;background-position:center;">
+      <div class="video-poster" aria-hidden="true" style="background-image:linear-gradient(180deg,rgba(6,9,13,.10) 0%,rgba(6,9,13,.24) 55%,rgba(6,9,13,.86) 100%),url('assets/pj-intro-poster.jpg');background-size:cover;background-position:center;">
         <div class="video-poster-glow"></div>
         <div class="video-play"><span>▶</span></div>
         <p class="video-poster-title">PJ Trades — Live Futures Trading &amp; Analysis</p>
