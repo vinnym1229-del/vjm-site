@@ -675,7 +675,7 @@ body.light-mode .tier-card .btn-outline{color:#ffb0b0;border-color:rgba(220,38,3
 .tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px;max-width:1040px;margin:0 auto;}
 .tier-card{position:relative;background:linear-gradient(145deg,#141112,#0f0d0e);border:2px solid var(--border);border-radius:20px;padding:34px 30px;display:flex;flex-direction:column;}
 .tier-card.hot{border-color:var(--gold);box-shadow:0 0 60px rgba(220,38,38,.12),inset 0 0 50px rgba(220,38,38,.07);}
-.tier-card.hot::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2080%20300%22%20preserveAspectRatio%3D%22none%22%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M40%2C0%20L35.8%2C21.4%20L40.9%2C42.9%20L38.4%2C64.3%20L34.3%2C85.7%20L38.5%2C107.1%20L37.1%2C128.6%20L36.3%2C150.0%20L40.6%2C171.4%20L35.6%2C192.9%20L42.4%2C214.3%20L52.3%2C235.7%20L58.1%2C257.1%20L55.0%2C278.6%20L47.2%2C300.0%22%20stroke%3D%22%23ff2b2b%22%20stroke-width%3D%225%22%20opacity%3D%22.22%22%2F%3E%3Cpath%20d%3D%22M38.4%2C64.3%20L52.8%2C69.0%20M37.1%2C128.6%20L47.8%2C121.4%20M35.6%2C192.9%20L24.3%2C195.9%20M58.1%2C257.1%20L66.6%2C260.7%22%20stroke%3D%22%23ff2b2b%22%20stroke-width%3D%222.5%22%20opacity%3D%22.16%22%2F%3E%3Cpath%20d%3D%22M40%2C0%20L35.8%2C21.4%20L40.9%2C42.9%20L38.4%2C64.3%20L34.3%2C85.7%20L38.5%2C107.1%20L37.1%2C128.6%20L36.3%2C150.0%20L40.6%2C171.4%20L35.6%2C192.9%20L42.4%2C214.3%20L52.3%2C235.7%20L58.1%2C257.1%20L55.0%2C278.6%20L47.2%2C300.0%22%20stroke%3D%22%23ff5c5c%22%20stroke-width%3D%221.5%22%20opacity%3D%22.7%22%2F%3E%3Cpath%20d%3D%22M38.4%2C64.3%20L52.8%2C69.0%20M37.1%2C128.6%20L47.8%2C121.4%20M35.6%2C192.9%20L24.3%2C195.9%20M58.1%2C257.1%20L66.6%2C260.7%22%20stroke%3D%22%23ff7a7a%22%20stroke-width%3D%221%22%20opacity%3D%22.5%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2080%20300%22%20preserveAspectRatio%3D%22none%22%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M40%2C0%20L39.7%2C21.4%20L40.6%2C42.9%20L41.3%2C64.3%20L43.4%2C85.7%20L52.3%2C107.1%20L56.4%2C128.6%20L46.0%2C150.0%20L47.9%2C171.4%20L56.5%2C192.9%20L55.4%2C214.3%20L48.1%2C235.7%20L54.6%2C257.1%20L62.8%2C278.6%20L61.3%2C300.0%22%20stroke%3D%22%23ff2b2b%22%20stroke-width%3D%225%22%20opacity%3D%22.22%22%2F%3E%3Cpath%20d%3D%22M41.3%2C64.3%20L53.7%2C58.1%20M56.4%2C128.6%20L68.9%2C135.3%20M56.5%2C192.9%20L69.3%2C190.8%20M54.6%2C257.1%20L62.3%2C251.5%22%20stroke%3D%22%23ff2b2b%22%20stroke-width%3D%222.5%22%20opacity%3D%22.16%22%2F%3E%3Cpath%20d%3D%22M40%2C0%20L39.7%2C21.4%20L40.6%2C42.9%20L41.3%2C64.3%20L43.4%2C85.7%20L52.3%2C107.1%20L56.4%2C128.6%20L46.0%2C150.0%20L47.9%2C171.4%20L56.5%2C192.9%20L55.4%2C214.3%20L48.1%2C235.7%20L54.6%2C257.1%20L62.8%2C278.6%20L61.3%2C300.0%22%20stroke%3D%22%23ff5c5c%22%20stroke-width%3D%221.5%22%20opacity%3D%22.7%22%2F%3E%3Cpath%20d%3D%22M41.3%2C64.3%20L53.7%2C58.1%20M56.4%2C128.6%20L68.9%2C135.3%20M56.5%2C192.9%20L69.3%2C190.8%20M54.6%2C257.1%20L62.3%2C251.5%22%20stroke%3D%22%23ff7a7a%22%20stroke-width%3D%221%22%20opacity%3D%22.5%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");background-repeat:repeat-y,repeat-y;background-position:right -8px top 0,left -8px top 140px;background-size:54px 300px,54px 300px;}
+.tier-card.hot::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2080%20300%22%20preserveAspectRatio%3D%22none%22%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M40.0%2C0%20L53.0%2C16.7%20L49.3%2C33.3%20L49.8%2C50.0%20L59.5%2C66.7%20L56.2%2C83.3%20L53.8%2C100.0%20L43.3%2C116.7%20L48.1%2C133.3%20L37.4%2C150.0%20L46.0%2C166.7%20L43.1%2C183.3%20L34.6%2C200.0%20L39.2%2C216.7%20L42.2%2C233.3%20L44.3%2C250.0%20L49.5%2C266.7%20L62.3%2C283.3%20L69.7%2C300.0%20M53.0%2C16.7%20L75.4%2C29.3%20M49.8%2C50.0%20L35.3%2C58.2%20M59.5%2C66.7%20L71.1%2C61.6%20M53.8%2C100.0%20L38.0%2C96.0%20M34.6%2C200.0%20L19.7%2C207.2%20M42.2%2C233.3%20L32.3%2C235.9%20M49.5%2C266.7%20L28.5%2C255.4%22%20stroke%3D%22%23ff2b2b%22%20stroke-width%3D%224.5%22%20opacity%3D%220.2%22%2F%3E%3Cpath%20d%3D%22M40.0%2C0%20L53.0%2C16.7%20L49.3%2C33.3%20L49.8%2C50.0%20L59.5%2C66.7%20L56.2%2C83.3%20L53.8%2C100.0%20L43.3%2C116.7%20L48.1%2C133.3%20L37.4%2C150.0%20L46.0%2C166.7%20L43.1%2C183.3%20L34.6%2C200.0%20L39.2%2C216.7%20L42.2%2C233.3%20L44.3%2C250.0%20L49.5%2C266.7%20L62.3%2C283.3%20L69.7%2C300.0%22%20stroke%3D%22%23ff5252%22%20stroke-width%3D%221.4%22%20opacity%3D%220.55%22%2F%3E%3Cpath%20d%3D%22M53.0%2C16.7%20L75.4%2C29.3%20M49.8%2C50.0%20L35.3%2C58.2%20M59.5%2C66.7%20L71.1%2C61.6%20M53.8%2C100.0%20L38.0%2C96.0%20M34.6%2C200.0%20L19.7%2C207.2%20M42.2%2C233.3%20L32.3%2C235.9%20M49.5%2C266.7%20L28.5%2C255.4%22%20stroke%3D%22%23ff6b6b%22%20stroke-width%3D%221.008%22%20opacity%3D%220.4%22%2F%3E%3Cpath%20d%3D%22M75.4%2C29.3%20L76.7%2C33.9%20M32.3%2C235.9%20L30.1%2C239.9%22%20stroke%3D%22%23ff8a8a%22%20stroke-width%3D%220.7%22%20opacity%3D%220.28%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2080%20300%22%20preserveAspectRatio%3D%22none%22%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M40.0%2C0%20L50.0%2C16.7%20L45.6%2C33.3%20L35.1%2C50.0%20L42.7%2C66.7%20L53.5%2C83.3%20L41.6%2C100.0%20L39.2%2C116.7%20L38.8%2C133.3%20L38.1%2C150.0%20L45.2%2C166.7%20L51.0%2C183.3%20L56.9%2C200.0%20L57.9%2C216.7%20L56.7%2C233.3%20L61.6%2C250.0%20L50.2%2C266.7%20L38.3%2C283.3%20L43.1%2C300.0%20M45.6%2C33.3%20L29.4%2C27.2%20M42.7%2C66.7%20L58.3%2C70.8%20M53.5%2C83.3%20L41.5%2C78.9%20M41.6%2C100.0%20L27.6%2C107.9%20M38.1%2C150.0%20L59.3%2C162.2%20M51.0%2C183.3%20L30.6%2C193.1%20M57.9%2C216.7%20L42.5%2C222.5%20M56.7%2C233.3%20L41.2%2C237.7%20M38.3%2C283.3%20L22.1%2C278.8%22%20stroke%3D%22%23ff2b2b%22%20stroke-width%3D%224.5%22%20opacity%3D%220.2%22%2F%3E%3Cpath%20d%3D%22M40.0%2C0%20L50.0%2C16.7%20L45.6%2C33.3%20L35.1%2C50.0%20L42.7%2C66.7%20L53.5%2C83.3%20L41.6%2C100.0%20L39.2%2C116.7%20L38.8%2C133.3%20L38.1%2C150.0%20L45.2%2C166.7%20L51.0%2C183.3%20L56.9%2C200.0%20L57.9%2C216.7%20L56.7%2C233.3%20L61.6%2C250.0%20L50.2%2C266.7%20L38.3%2C283.3%20L43.1%2C300.0%22%20stroke%3D%22%23ff5252%22%20stroke-width%3D%221.4%22%20opacity%3D%220.55%22%2F%3E%3Cpath%20d%3D%22M45.6%2C33.3%20L29.4%2C27.2%20M42.7%2C66.7%20L58.3%2C70.8%20M53.5%2C83.3%20L41.5%2C78.9%20M41.6%2C100.0%20L27.6%2C107.9%20M38.1%2C150.0%20L59.3%2C162.2%20M51.0%2C183.3%20L30.6%2C193.1%20M57.9%2C216.7%20L42.5%2C222.5%20M56.7%2C233.3%20L41.2%2C237.7%20M38.3%2C283.3%20L22.1%2C278.8%22%20stroke%3D%22%23ff6b6b%22%20stroke-width%3D%221.008%22%20opacity%3D%220.4%22%2F%3E%3Cpath%20d%3D%22M41.5%2C78.9%20L44.3%2C87.7%20M27.6%2C107.9%20L27.1%2C111.8%20M59.3%2C162.2%20L57.9%2C166.2%20M41.2%2C237.7%20L41.6%2C241.6%22%20stroke%3D%22%23ff8a8a%22%20stroke-width%3D%220.7%22%20opacity%3D%220.28%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");background-repeat:repeat-y,repeat-y;background-position:right -8px top 0,left -8px top 150px;background-size:58px 300px,58px 300px;animation:cardBoltFlash 6.5s ease-in-out infinite;}@keyframes cardBoltFlash{0%,100%{opacity:.75;}45%{opacity:.75;}55%{opacity:1;}70%{opacity:.9;}100%{opacity:.75;}}@media (prefers-reduced-motion: reduce){.tier-card.hot::before{animation:none;}}
 .tier-card.hot>*{position:relative;z-index:1;}
 .tier-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#4a4247,#332d31);color:#e9e4e6;border:1px solid #5a5157;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:.8rem;letter-spacing:2px;text-transform:uppercase;padding:5px 18px;border-radius:20px;white-space:nowrap;}
 .tier-badge.alt{background:linear-gradient(180deg,#4a4247,#332d31);}
@@ -811,11 +811,6 @@ html { font-size: 1.02rem; }
 </head>
 <body>
 
-<!-- BRAND BANNER — sits above the ticker/nav like a channel cover photo -->
-<div class="brand-banner" role="presentation" aria-hidden="true">
-  <img src="assets/pj-banner.jpg" alt="" loading="eager" fetchpriority="high">
-</div>
-
 <!-- TICKER -->
 <div id="ticker-wrap">
   <div class="tradingview-widget-container" style="height:46px">
@@ -843,6 +838,11 @@ html { font-size: 1.02rem; }
     }
     </script>
   </div>
+</div>
+
+<!-- BRAND BANNER — sits above the nav like a channel cover photo -->
+<div class="brand-banner" role="presentation" aria-hidden="true">
+  <img src="assets/pj-banner.jpg" alt="" loading="eager" fetchpriority="high">
 </div>
 
 <!-- STREAM COUNTDOWN BAR -->
@@ -1392,7 +1392,7 @@ html { font-size: 1.02rem; }
       <div style="grid-column:1/-1;background:linear-gradient(135deg,rgba(220,38,38,0.1),rgba(185,28,28,0.04));border:1px solid rgba(220,38,38,0.3);border-radius:16px;padding:28px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;" data-reveal>
         <div>
           <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;margin-bottom:4px;">📊 Options Lab</h3>
-          <p style="font-size:0.85rem;color:var(--muted);max-width:520px;">Gamma exposure explained, worked scenarios, where to get real-time GEX data, and how to translate it into QQQ/NQ and SPY/ES intraday.</p>
+          <p style="font-size:0.85rem;color:var(--muted);max-width:520px;">From options basics — calls, puts, strikes, expiration — up through advanced gamma exposure (GEX): worked scenarios, where to get real-time GEX data, and how to translate it into QQQ/NQ and SPY/ES intraday.</p>
         </div>
         <a href="options-lab.html" class="btn btn-gold" style="white-space:nowrap;">Open Options Lab →</a>
       </div>
@@ -1461,7 +1461,7 @@ html { font-size: 1.02rem; }
       <div class="tier-card">
         <div class="tier-badge alt">TradingView Indicator</div>
         <div class="tier-name">IFVG Indicator</div>
-        <div class="tier-price" id="price-ifvg">$95.20<span>/mo</span></div>
+        <div class="tier-price" id="price-ifvg"><s class="tier-was">$119</s>$95.20<span>/mo</span><span class="tier-off">20% off</span></div>
         <div class="tier-sub" id="sub-ifvg"></div>
         <ul>
           <li><span class="tick">✓</span><span><b>IFVG Signals</b> — A/A+/A++ rated setups</span></li>
@@ -2518,7 +2518,7 @@ const BUNDLE_PERIODS = {
     yearly: { amt: '$1,269', per: ' /yr', sub: 'Everything in Futures, plus the complete multi-market library · <span class="tier-save">18% off</span>' },
   },
   ifvg: {
-    monthly: { amt: '$95.20', per: '/mo', sub: '<span class="tier-save">20% off</span>' },
+    monthly: { amt: '$95.20', per: '/mo', was: '$119', off: '20% off', sub: '' },
     yearly: { amt: '$55.95', per: '/mo', sub: '$671.40 billed yearly · <span class="tier-save">40% off</span>' },
     lifetime: { amt: '$999', per: ' once', sub: '<span class="tier-save">50% off</span> — pay once, own it forever' },
   },
