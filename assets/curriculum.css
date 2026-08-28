@@ -1,0 +1,135 @@
+/* Shared styling for the curriculum pages: Stock Breakdown, Options Lab
+   (curriculum section), Futures Dissection, Psychology Enhancer.
+   Reuses the site's red/black design tokens (see index.html :root) so these
+   pages feel like the same product, not a bolted-on course platform. */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root{
+  --gold:#dc2626; --gold2:#b91c1c; --green:#ff4d4d; --emerald:#ef4444;
+  --bg:#080708; --bg2:#0f0d0e; --bg3:#151213; --card:#171416; --border:#2c2528;
+  --text:#eceaea; --muted:#9b9296; --accent:#1d1a1c;
+}
+body.light-mode{
+  --bg:#f6f4f4; --bg2:#edeaea; --bg3:#e2dedf; --card:#ffffff; --border:#d5cfd1;
+  --text:#151213; --muted:#6b6165; --accent:#e3dee0;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;scroll-padding-top:80px;}
+body.curr{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;position:relative;}
+.curr a{color:inherit;}
+.curr .skip{position:absolute;left:14px;top:-60px;background:var(--gold);color:#fff;padding:10px 14px;border-radius:10px;font-weight:900;text-decoration:none;z-index:10000;}
+.curr .skip:focus{top:14px;}
+
+/* ─── NAV (matches index.html) ─── */
+.curr nav{position:sticky;top:0;z-index:999;background:rgba(8,7,8,.94);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 26px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+body.light-mode .curr nav{background:rgba(246,244,244,.96);}
+.curr .brand{font-family:'Barlow Condensed',sans-serif;color:var(--gold);font-weight:900;letter-spacing:2px;font-size:1.5rem;text-decoration:none;white-space:nowrap;}
+.curr .nav-links{display:flex;flex-wrap:wrap;gap:4px;flex:1;justify-content:center;}
+.curr .nav-links a{color:var(--muted);text-decoration:none;text-transform:uppercase;letter-spacing:.9px;font-size:.72rem;font-weight:800;padding:8px 10px;border-radius:999px;white-space:nowrap;}
+.curr .nav-links a:hover,.curr .nav-links a.on{color:var(--gold);background:rgba(220,38,38,.09);}
+.curr .nav-cta{display:flex;align-items:center;gap:10px;}
+.curr .nav-cta a.join{background:var(--gold);color:#fff;text-decoration:none;font-weight:900;font-size:.76rem;text-transform:uppercase;letter-spacing:.8px;padding:9px 16px;border-radius:999px;white-space:nowrap;}
+.curr .hamb{display:none;border:1px solid var(--border);background:rgba(255,255,255,.04);border-radius:999px;width:42px;height:38px;align-items:center;justify-content:center;flex-direction:column;gap:5px;cursor:pointer;}
+.curr .hamb span{display:block;width:19px;height:2px;background:var(--gold);}
+.curr .mmenu{display:none;position:fixed;z-index:998;top:64px;left:0;right:0;background:rgba(8,7,8,.98);border-bottom:1px solid var(--border);padding:12px;grid-template-columns:1fr 1fr;gap:6px;}
+.curr .mmenu.open{display:grid;}
+.curr .mmenu a{color:var(--text);text-decoration:none;font-size:.82rem;padding:12px;border:1px solid rgba(255,255,255,.06);border-radius:10px;background:rgba(255,255,255,.02);}
+@media(max-width:980px){.curr .nav-links{display:none;}.curr .hamb{display:flex;}}
+
+/* ─── HERO ─── */
+.curr .hero{max-width:1080px;margin:0 auto;padding:54px 22px 20px;position:relative;z-index:2;}
+.curr .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--gold);background:rgba(220,38,38,.09);border:1px solid rgba(220,38,38,.3);border-radius:999px;padding:6px 14px;text-transform:uppercase;letter-spacing:1.4px;font-size:.72rem;font-weight:900;margin-bottom:16px;}
+.curr .hero h1{font-family:'Barlow Condensed',sans-serif;font-size:clamp(2.4rem,6vw,4.6rem);line-height:.94;letter-spacing:-.5px;text-transform:uppercase;margin:0 0 14px;}
+.curr .hero h1 span{color:var(--gold);}
+.curr .hero p{color:var(--muted);max-width:760px;font-size:1.02rem;}
+.curr .hero-stats{display:flex;gap:22px;flex-wrap:wrap;margin-top:20px;}
+.curr .hero-stats div{font-family:'Barlow Condensed',sans-serif;color:var(--gold);font-size:1.6rem;font-weight:900;line-height:1;}
+.curr .hero-stats span{display:block;color:var(--muted);font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-top:4px;}
+
+/* ─── MAIN / SECTION SWITCHER (Psychology Enhancer uses A/B/C/D groups) ─── */
+.curr main{max-width:1080px;margin:0 auto;padding:10px 22px 70px;position:relative;z-index:2;}
+.curr .group-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 28px;}
+.curr .group-tab{border:1px solid var(--border);background:var(--card);color:var(--muted);border-radius:999px;padding:10px 18px;font-weight:800;font-size:.82rem;cursor:pointer;font-family:'Inter',sans-serif;}
+.curr .group-tab.active{color:#fff;background:linear-gradient(135deg,#ef4444,#b91c1c);border-color:transparent;}
+.curr .group-panel{display:none;}
+.curr .group-panel.active{display:block;}
+.curr .group-desc{color:var(--muted);font-size:.92rem;max-width:760px;margin-bottom:18px;}
+
+/* ─── LEVEL TABS ─── */
+.curr .level-tabs{display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:22px;}
+.curr .level-tab{border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:10px;padding:10px 16px;font-weight:800;font-size:.82rem;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;}
+.curr .level-tab.active{color:var(--gold);border-color:rgba(220,38,38,.5);background:rgba(220,38,38,.08);}
+.curr .level-tab .lock{font-size:.78rem;opacity:.75;}
+.curr .level-panel{display:none;}
+.curr .level-panel.active{display:block;}
+.curr .level-intro{color:var(--muted);font-style:italic;font-size:.92rem;margin-bottom:18px;padding-left:14px;border-left:3px solid rgba(220,38,38,.4);}
+
+/* ─── LESSON CARDS (native <details>, no JS needed to expand) ─── */
+.curr .lesson-card{background:var(--card);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;}
+.curr .lesson-card summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;align-items:baseline;gap:10px;font-weight:800;font-size:.96rem;}
+.curr .lesson-card summary::-webkit-details-marker{display:none;}
+.curr .lesson-card summary::before{content:'+';color:var(--gold);font-weight:900;font-size:1.1rem;flex:0 0 auto;}
+.curr .lesson-card[open] summary::before{content:'−';}
+.curr .lesson-card summary .lnum{color:var(--gold);font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;flex:0 0 auto;}
+.curr .lesson-body{padding:0 18px 18px 42px;color:var(--text);font-size:.9rem;}
+.curr .lesson-body p{margin:0 0 10px;}
+.curr .lesson-body .why{color:var(--text);}
+.curr .lesson-body .label{color:var(--gold);font-weight:900;text-transform:uppercase;font-size:.68rem;letter-spacing:1px;display:block;margin-bottom:4px;}
+.curr .lesson-body .correct{background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.22);border-radius:10px;padding:12px 14px;margin-top:8px;}
+.curr .lesson-body .correct .label{color:#ff8b8b;}
+.curr .lesson-body .extra{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:8px;}
+.curr .formula{font-family:'JetBrains Mono',ui-monospace,monospace;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:8px;padding:8px 11px;margin:6px 0;font-size:.82rem;color:#ffb0b0;overflow-x:auto;}
+body.light-mode .curr .formula{background:rgba(0,0,0,.05);}
+.curr .lesson-table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.82rem;}
+.curr .lesson-table th,.curr .lesson-table td{border:1px solid var(--border);padding:7px 9px;text-align:left;}
+.curr .lesson-table th{background:rgba(220,38,38,.08);color:var(--gold);font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;}
+.curr .table-wrap{overflow-x:auto;}
+
+/* ─── REVIEW CADENCE (Journal section) ─── */
+.curr .cadence-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:20px 0;}
+.curr .cadence-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.curr .cadence-card b{display:block;color:var(--gold);font-family:'Barlow Condensed',sans-serif;font-size:1rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.curr .cadence-card span{color:var(--muted);font-size:.84rem;}
+
+/* ─── GATING ─── */
+.curr .lock-gate{background:linear-gradient(145deg,rgba(220,38,38,.1),var(--card));border:1px solid rgba(220,38,38,.3);border-radius:18px;padding:28px 24px;text-align:center;}
+.curr .lock-gate .lock-icon{font-size:2.2rem;margin-bottom:10px;}
+.curr .lock-gate h3{font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;text-transform:uppercase;margin-bottom:8px;}
+.curr .lock-gate p{color:var(--muted);max-width:520px;margin:0 auto 18px;font-size:.9rem;}
+.curr .lock-form{display:flex;gap:8px;max-width:380px;margin:0 auto;flex-wrap:wrap;justify-content:center;}
+.curr .lock-form input{flex:1;min-width:180px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-weight:700;outline:0;}
+.curr .lock-form input:focus{border-color:var(--gold);}
+.curr .btn{border:0;background:var(--gold);color:#fff;border-radius:999px;padding:12px 20px;font-weight:900;text-transform:uppercase;letter-spacing:.8px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;font-size:.82rem;}
+.curr .btn:hover{filter:brightness(1.08);}
+.curr .btn.ghost{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text);}
+.curr .lock-msg{margin-top:10px;font-size:.8rem;min-height:1.2em;}
+.curr .lock-msg.ok{color:var(--green);}
+.curr .lock-msg.err{color:#ff8b8b;}
+.curr .unlocked-badge{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(220,38,38,.3);background:rgba(220,38,38,.08);color:var(--green);border-radius:999px;padding:7px 14px;font-size:.78rem;font-weight:900;margin-bottom:16px;}
+
+/* ─── ESSAY (Psychology Enhancer) ─── */
+.curr .essay{background:linear-gradient(145deg,rgba(220,38,38,.06),var(--card));border:1px solid var(--border);border-radius:20px;padding:30px 28px;margin:24px 0 34px;}
+.curr .essay h2{font-family:'Barlow Condensed',sans-serif;font-size:2rem;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+.curr .essay .body{font-size:1rem;line-height:1.75;color:var(--text);}
+.curr .essay .body p{margin-bottom:14px;}
+.curr .essay .signoff{color:var(--muted);font-style:italic;margin-top:16px;}
+.curr .essay .refs{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
+.curr .essay .refs h4{font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
+.curr .essay .refs ol{padding-left:18px;color:var(--muted);font-size:.82rem;}
+.curr .essay .refs li{margin-bottom:5px;}
+
+/* ─── REFERENCES ─── */
+.curr .refs-block{margin-top:44px;padding-top:24px;border-top:1px solid var(--border);}
+.curr .refs-block h3{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
+.curr .refs-block ul{list-style:none;padding:0;display:grid;gap:6px;}
+.curr .refs-block a{color:#ff9a9a;text-decoration:none;font-size:.82rem;}
+.curr .refs-block a:hover{text-decoration:underline;}
+
+.curr footer{border-top:1px solid var(--border);margin-top:40px;padding:26px 18px;text-align:center;color:var(--muted);font-size:.82rem;position:relative;z-index:2;}
+.curr footer a{color:var(--gold);text-decoration:none;}
+
+@media(max-width:640px){
+  .curr .hero{padding:38px 16px 14px;}
+  .curr main{padding:8px 16px 50px;}
+  .curr .lesson-body{padding-left:18px;}
+}
