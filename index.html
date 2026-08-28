@@ -324,6 +324,32 @@ body.light-mode .nav-drop a:hover { color: #151213; }
   border-bottom: none !important;
 }
 
+/* ─── MOBILE TOUCH TARGETS ───
+   WCAG 2.5.8 wants ~44px of hit area. The nav brand, Join pill, hamburger
+   and footer links were 26-39px tall — legible, but easy to mis-tap with a
+   thumb, which is most of what makes a phone layout feel unfinished. */
+@media (max-width: 900px){
+  .nav-brand{min-height:44px;}
+  .nav-join{min-height:44px;display:inline-flex;align-items:center;}
+  .hamburger{width:46px;height:46px;align-items:center;justify-content:center;}
+  #theme-toggle{min-height:44px;}
+  .mobile-menu a{min-height:44px;display:flex;align-items:center;}
+  .btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;}
+  .period-tab{min-height:44px;}
+  footer a{display:inline-flex;align-items:center;min-height:44px;padding:0 6px;}
+  .tier-card{padding:26px 20px;}
+}
+  /* form controls and quiz buttons were 24-42px — a few px short each, which
+     is exactly the range that reads as "hard to tap" rather than "broken" */
+  #quiz-box button,
+  .tool button,
+  [id^="sim-mode-"],
+  [id^="gain-"],
+  [id^="ptab-"],
+  input:not([type="radio"]):not([type="checkbox"]),
+  select{min-height:44px;}
+  footer a{min-height:44px;}
+
 @media (max-width: 1000px) {
   .nav-links { display: none; }
   .hamburger { display: flex; }

@@ -119,6 +119,24 @@ body::before {
 }
 @keyframes pagePulse { 0%,100% { opacity:.55; } 50% { opacity: var(--page-pulse-peak, 1); } }
 @media (prefers-reduced-motion: reduce) { body::before { animation: none; opacity: .75; } }
+
+/* ─── MOBILE ───
+   The nav was a single non-wrapping flex row (five links + the theme
+   toggle) measuring 435px, which forced the whole page to scroll
+   sideways on a 390px screen. */
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;}
+.table-scroll table{min-width:520px;}
+@media (max-width: 760px){
+  nav{flex-wrap:wrap;row-gap:10px;padding:12px 16px;}
+  nav > div{flex-wrap:wrap;justify-content:center;gap:6px !important;width:100%;}
+  .nav-brand{width:100%;justify-content:center;min-height:44px;}
+  /* WCAG 2.5.8: interactive targets need ~44px of hit area. These were
+     21-30px tall, which is a miss on a phone even when the text is legible. */
+  .nav-back{min-height:44px;display:inline-flex;align-items:center;padding:0 10px;font-size:.8rem;}
+  #theme-toggle{min-height:44px;}
+  .tab-btn,.subtab-btn{min-height:44px;}
+  .wrap{padding:0 18px;}
+}
 </style>
 <link rel="stylesheet" href="assets/curriculum.css">
 </head>
@@ -156,7 +174,7 @@ body::before {
     <p class="lead">Everything below is the concise version on purpose. You don't need a textbook to trade options well — you need to know what you're actually buying, what's working against you, and which structure fits the setup in front of you.</p>
 
     <h3 style="font-size:1.15rem;margin-bottom:12px;">The core components</h3>
-    <table class="datatab">
+    <div class="table-scroll"><table class="datatab">
       <tr><th>Component</th><th>What it is</th></tr>
       <tr><td><b>Underlying</b></td><td>The stock, ETF, or index the contract is based on (e.g. AAPL, SPY, SPX).</td></tr>
       <tr><td><b>Call / Put</b></td><td>A call is the right to <b>buy</b> the underlying at the strike; a put is the right to <b>sell</b> it. Buying either is a defined-risk bet — you can only lose what you paid.</td></tr>
@@ -164,7 +182,7 @@ body::before {
       <tr><td><b>Expiration / DTE</b></td><td>The date the contract stops existing. "DTE" = days to expiration. Shorter DTE = cheaper premium, faster decay, more sensitivity to price.</td></tr>
       <tr><td><b>Premium</b></td><td>What you pay to buy the contract (or receive if you sell it) — quoted per share, but one contract = 100 shares, so a $2.00 premium costs $200.</td></tr>
       <tr><td><b>Open interest / volume</b></td><td>OI = total contracts outstanding at that strike. Volume = contracts traded today. High OI at a strike is exactly what gamma exposure models are built on (see the GEX tab).</td></tr>
-    </table>
+    </table></div>
 
     <h3 style="font-size:1.15rem;margin:32px 0 12px;">Moneyness, and intrinsic vs. extrinsic value</h3>
     <div class="grid-3">
@@ -184,17 +202,17 @@ body::before {
     <p style="font-size:0.85rem;color:var(--muted);margin-top:14px;"><b style="color:var(--text);">Intrinsic value</b> = how far ITM a contract is (real, locked-in value). <b style="color:var(--text);">Extrinsic (time) value</b> = everything else you're paying for — time remaining and implied volatility. Extrinsic value decays to zero by expiration no matter what — that decay is theta, and it works against every option buyer, every day, faster as expiration approaches.</p>
 
     <h3 style="font-size:1.15rem;margin:32px 0 12px;">The Greeks — what you actually need to know</h3>
-    <table class="datatab">
+    <div class="table-scroll"><table class="datatab">
       <tr><th>Greek</th><th>Measures</th><th>Practical read</th></tr>
       <tr><td><b style="color:var(--gold);">Delta</b></td><td>$ change in option price per $1 move in underlying</td><td>Also a rough proxy for "probability ITM at expiration." A 0.30 delta call ≈ ~30% odds of finishing ITM.</td></tr>
       <tr><td><b style="color:var(--gold);">Gamma</b></td><td>Rate of change of delta</td><td>High near ATM strikes close to expiration — this is what makes 0DTE options move so violently, and what dealer GEX models are built from.</td></tr>
       <tr><td><b style="color:var(--gold);">Theta</b></td><td>$ lost per day from time decay</td><td>Always working against option buyers, always working for option sellers. Accelerates hard in the final week before expiration.</td></tr>
       <tr><td><b style="color:var(--gold);">Vega</b></td><td>$ change in option price per 1% change in implied volatility</td><td>Why options get crushed right after earnings even when you were "right" on direction — IV collapses (vega hits you) even as price moves your way.</td></tr>
       <tr><td><b style="color:var(--gold);">Rho</b></td><td>Sensitivity to interest rates</td><td>Smallest practical impact for short-dated retail trading — mostly matters on long-dated (LEAPS) positions.</td></tr>
-    </table>
+    </table></div>
 
     <h3 style="font-size:1.15rem;margin:32px 0 12px;">How to actually trade them — pick the structure to fit the setup</h3>
-    <table class="datatab">
+    <div class="table-scroll"><table class="datatab">
       <tr><th>Structure</th><th>Bias</th><th>Risk</th><th>Use it when</th></tr>
       <tr><td><b>Long Call</b></td><td><span class="pill bull">Bullish</span></td><td>Defined — premium paid</td><td>High conviction directional move, and you're OK with theta/IV working against you.</td></tr>
       <tr><td><b>Long Put</b></td><td><span class="pill bear">Bearish</span></td><td>Defined — premium paid</td><td>High conviction downside move, or hedging a long stock position.</td></tr>
@@ -204,7 +222,7 @@ body::before {
       <tr><td><b>Covered Call</b></td><td><span class="pill neutral">Neutral / Bullish</span></td><td>Defined (you own the shares)</td><td>You already own the stock and want income while capping near-term upside.</td></tr>
       <tr><td><b>Credit Spread (put or call)</b></td><td><span class="pill neutral">Neutral / Directional</span></td><td>Defined — max loss = width minus credit</td><td>You want to sell elevated IV without naked/undefined risk — a core "sell premium" structure.</td></tr>
       <tr><td><b>Iron Condor</b></td><td><span class="pill neutral">Neutral</span></td><td>Defined both sides</td><td>You expect a range-bound, low-realized-vol day/week — pairs naturally with a deep positive-gamma regime (see GEX tab).</td></tr>
-    </table>
+    </table></div>
 
     <div class="callout">
       <b style="color:var(--gold);">Decision order that actually works:</b> (1) direction — bullish, bearish, or range-bound, (2) conviction and timeframe — how sure, how soon, (3) implied volatility environment — is IV rich (favor selling premium) or cheap (favor buying), (4) then pick the structure from the table above. Direction alone is not a trade plan — the same bullish read is a long call in one IV environment and a credit put spread in another.
@@ -359,7 +377,7 @@ body::before {
       <h2 class="panel-title">Where to actually get this data</h2>
       <p class="lead">You don't need a $500/mo institutional feed. Here's the cheapest real path from free to real-time, cheapest first.</p>
 
-      <table class="datatab">
+      <div class="table-scroll"><table class="datatab">
         <tr><th>Source</th><th>Cost</th><th>What you get</th></tr>
         <tr>
           <td><b>Unusual Whales</b> — free Greek Exposure pages<br><span style="color:var(--muted);font-size:0.8rem;">unusualwhales.com/stock/SPY/greek-exposure (swap ticker for SPX, QQQ, etc.)</span></td>
@@ -386,7 +404,7 @@ body::before {
           <td><span class="pill free">Free (your time)</span></td>
           <td>Pull SPX/SPY or NDX/QQQ option chains (strike, OI, IV) from your broker's free API (e.g. IBKR, ThinkOrSwim), run the gamma formula from the GEX 101 tab. Delayed unless your broker feed is real-time, but zero subscription cost.</td>
         </tr>
-      </table>
+      </table></div>
 
       <div class="callout">
         <b style="color:var(--gold);">Start here:</b> the free Unusual Whales Greek Exposure page covers 90% of what you need for SPY/QQQ/SPX day-to-day. Only pay for a faster refresh or API once you're actually trading around these levels live and the free 15-minute-ish delay starts costing you real entries.

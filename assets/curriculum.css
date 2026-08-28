@@ -235,3 +235,29 @@ body.light-mode .curr .tool canvas{background:rgba(0,0,0,.03);}
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: 'tnum' 1, 'lnum' 1;
 }
+
+
+/* ─── MOBILE TOUCH TARGETS ───
+   WCAG 2.5.8 asks for a ~44px minimum hit area. The tabs, menu rows and
+   number fields were 28-40px: readable, but fiddly to hit accurately with
+   a thumb, which is where the "nothing works properly" feeling comes from. */
+@media (max-width: 900px){
+  .curr .level-tab,
+  .curr .group-tab,
+  .curr .nav-top,
+  .curr .btn,
+  .curr .check-status-btn{min-height:44px;}
+  .curr .nav-drop a,
+  .curr .mmenu a{min-height:44px;display:flex;align-items:center;}
+  .curr .brand{min-height:44px;display:inline-flex;align-items:center;}
+  .curr .nav-cta a.join{min-height:44px;display:inline-flex;align-items:center;}
+  .curr .hamb{width:46px;height:46px;}
+  .curr .tool-field input,
+  .curr .tool-field select{min-height:44px;}
+  .curr .quiz-choice{min-height:44px;align-items:center;}
+  /* the quiz radio itself is 13px; enlarge the control, not just its row */
+  .curr .quiz-choice input[type="radio"]{width:20px;height:20px;margin-top:0;}
+  .curr main{padding-left:18px;padding-right:18px;}
+  .curr .hero{padding-left:18px;padding-right:18px;}
+  .curr footer a{min-height:44px;display:inline-flex;align-items:center;padding:0 6px;}
+}
