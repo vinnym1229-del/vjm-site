@@ -202,26 +202,83 @@ body.light-mode > section:not(.hero), body.light-mode > footer {
 body.light-mode .brand-banner::after{background:linear-gradient(180deg,rgba(246,244,244,0) 62%,rgba(246,244,244,.55) 88%,var(--bg) 100%);}
 
 nav {
-  position: sticky; top: 0; z-index: 999;
+  position: relative;
   background: rgba(6,9,13,0.97);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
-  padding: 10px 20px;
+  padding: 11px 26px;
   display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap;
-  row-gap: 8px;
-  min-height: 58px;
+  flex-wrap: nowrap;
+  gap: 18px;
+  min-height: 70px;
 }
-.nav-brand { font-family: 'Barlow Condensed', sans-serif; font-size: 1.15rem; font-weight: 900; color: var(--gold); letter-spacing: 1.5px; display: flex; align-items: center; gap: 8px; white-space: nowrap; flex: 0 0 auto; }
-.nav-brand img { width: 30px; height: 30px; border-radius: 8px; object-fit: cover; background: #080708; flex-shrink: 0; }
-.nav-links { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; flex: 1 1 auto; }
-.nav-links a {
-  color: var(--muted); text-decoration: none; font-size: 0.68rem;
-  font-weight: 600; padding: 5px 8px; border-radius: 5px;
-  transition: all .2s; text-transform: uppercase; letter-spacing: .6px;
-  white-space: nowrap;
+.nav-brand {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 1.72rem; font-weight: 900;
+  color: var(--gold); letter-spacing: 2px; text-decoration: none;
+  display: flex; align-items: center; gap: 12px; white-space: nowrap; flex: 0 0 auto;
+  line-height: 1;
 }
-.nav-links a:hover { color: var(--emerald); background: rgba(220,38,38,0.08); }
+.nav-brand img { width: 44px; height: 44px; border-radius: 11px; object-fit: cover; background: #080708; flex-shrink: 0; }
+
+/* Sixteen flat links became four grouped menus. Desktop opens on hover;
+   the same .open class is toggled on click/keyboard for accessibility. */
+.nav-links { display: flex; gap: 4px; flex-wrap: nowrap; justify-content: center; flex: 1 1 auto; }
+.nav-item { position: relative; }
+.nav-top {
+  display: flex; align-items: center; gap: 7px;
+  background: none; border: 1px solid transparent; cursor: pointer;
+  color: var(--muted); font-family: 'Inter', sans-serif;
+  font-size: 0.76rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+  padding: 10px 15px; border-radius: 10px; white-space: nowrap;
+  transition: color .18s, background .18s, border-color .18s;
+}
+.nav-top .caret {
+  font-size: 0; line-height: 0; width: 7px; height: 7px; margin-top: -3px;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  border-radius: 1px; opacity: .55; transform: rotate(45deg);
+  transition: transform .18s, opacity .18s;
+}
+.nav-item:hover > .nav-top, .nav-item.open > .nav-top {
+  color: var(--text); background: rgba(220,38,38,0.09); border-color: rgba(220,38,38,0.28);
+}
+.nav-item:hover > .nav-top .caret, .nav-item.open > .nav-top .caret { transform: rotate(225deg); margin-top: 2px; opacity: .9; }
+.nav-drop {
+  position: absolute; top: calc(100% + 12px); left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  min-width: 216px; padding: 8px; z-index: 1001;
+  background: linear-gradient(180deg, rgba(26,22,24,0.99), rgba(13,11,12,0.99));
+  border: 1px solid var(--border-strong); border-radius: 14px;
+  box-shadow: 0 20px 54px rgba(0,0,0,0.62), 0 0 0 1px rgba(220,38,38,0.10) inset;
+  display: flex; flex-direction: column; gap: 2px;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease, visibility .18s;
+}
+/* invisible bridge so the cursor can cross the gap without the menu closing */
+.nav-drop::before { content: ''; position: absolute; left: 0; right: 0; top: -14px; height: 14px; }
+.nav-item:hover > .nav-drop, .nav-item.open > .nav-drop {
+  opacity: 1; visibility: visible; pointer-events: auto; transform: translateX(-50%) translateY(0);
+}
+.nav-drop a {
+  display: block; padding: 10px 13px; border-radius: 9px;
+  color: var(--muted); text-decoration: none; white-space: nowrap;
+  font-size: 0.83rem; font-weight: 600; letter-spacing: .2px;
+  transition: color .15s, background .15s;
+}
+.nav-drop a:hover { color: var(--text); background: rgba(220,38,38,0.14); }
+.nav-actions { display: flex; align-items: center; gap: 11px; flex: 0 0 auto; }
+.nav-join {
+  background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; text-decoration: none;
+  font-size: 0.74rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;
+  padding: 10px 20px; border-radius: 999px; white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(220,38,38,0.34);
+  transition: filter .18s, transform .18s;
+}
+.nav-join:hover { filter: brightness(1.1); transform: translateY(-1px); }
+body.light-mode .nav-drop { background: linear-gradient(180deg,#ffffff,#f4f1f1); }
+body.light-mode .nav-drop a { color: #4a4246; }
+body.light-mode .nav-drop a:hover { color: #151213; }
+
+.nav-shell { position: sticky; top: 0; z-index: 999; }
 
 /* ─── HAMBURGER ─── */
 .hamburger {
@@ -238,10 +295,11 @@ nav {
 .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px,-5px); }
 
 .mobile-menu {
-  display: none; position: fixed; top: 58px; left: 0; right: 0;
+  display: none; position: absolute; top: 100%; left: 0; right: 0;
   background: rgba(6,9,13,0.98); backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border); z-index: 998;
+  border-bottom: 1px solid var(--border);
   padding: 16px 20px; flex-direction: column; gap: 2px;
+  max-height: calc(100vh - 100%); overflow-y: auto;
 }
 .mobile-menu.open { display: flex; }
 .mobile-menu a {
@@ -252,10 +310,27 @@ nav {
 }
 .mobile-menu a:hover { color: var(--gold); background: rgba(220,38,38,0.06); }
 .mobile-menu a:last-child { border-bottom: none; }
+.mm-group {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 0.74rem; font-weight: 900;
+  letter-spacing: 2.4px; text-transform: uppercase; color: var(--gold);
+  padding: 14px 14px 6px; opacity: .85;
+}
+.mobile-menu a { text-transform: none; letter-spacing: .2px; font-size: 0.9rem; padding: 10px 14px; }
+.mm-join {
+  background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff !important;
+  text-align: center; font-weight: 900 !important; text-transform: uppercase !important;
+  letter-spacing: 1px !important; border-radius: 999px !important; margin-top: 14px;
+  border-bottom: none !important;
+}
 
-@media (max-width: 768px) {
+@media (max-width: 1000px) {
   .nav-links { display: none; }
   .hamburger { display: flex; }
+}
+@media (max-width: 620px) {
+  nav { padding: 9px 16px; min-height: 62px; }
+  .nav-brand { font-size: 1.35rem; gap: 9px; }
+  .nav-brand img { width: 36px; height: 36px; border-radius: 9px; }
   #theme-toggle span { display: none; }
 }
 
@@ -315,15 +390,23 @@ nav {
 .hero-stat-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
 .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
 .btn {
-  display: inline-block; padding: 14px 32px; border-radius: 8px;
+  display: inline-block; padding: 14px 32px; border-radius: 11px;
   font-weight: 700; text-decoration: none; font-size: 0.95rem;
-  transition: all .25s; cursor: pointer; border: none;
+  transition: filter .22s, transform .22s, box-shadow .22s, background .22s;
+  cursor: pointer; border: none;
   font-family: 'Inter', sans-serif;
 }
-.btn-gold { background: var(--gold); color: #fff; }
-.btn-gold:hover { background: #ef4444; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(220,38,38,0.3); }
-.btn-outline { background: transparent; color: var(--gold); border: 2px solid var(--gold); }
-.btn-outline:hover { background: rgba(220,38,38,0.08); transform: translateY(-2px); }
+.btn-gold {
+  background: linear-gradient(135deg, #f05252 0%, #dc2626 48%, #a81a1a 100%);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(220,38,38,0.28), inset 0 1px 0 rgba(255,255,255,0.16);
+}
+.btn-gold:hover { filter: brightness(1.09); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(220,38,38,0.4), inset 0 1px 0 rgba(255,255,255,0.2); }
+.btn-outline {
+  background: linear-gradient(180deg, rgba(220,38,38,0.06), rgba(220,38,38,0.015));
+  color: #ff6b6b; border: 1.5px solid rgba(220,38,38,0.55);
+}
+.btn-outline:hover { background: linear-gradient(180deg, rgba(220,38,38,0.16), rgba(220,38,38,0.06)); border-color: rgba(239,68,68,0.85); color: #ff8888; transform: translateY(-2px); }
 .scroll-hint { margin-top: 48px; color: var(--muted); font-size: 0.75rem; animation: bounce 2s infinite; }
 @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
 
@@ -346,6 +429,18 @@ section { padding: 90px 24px; }
   color: var(--emerald); font-size: 0.68rem; font-weight: 700;
   padding: 4px 14px; border-radius: 20px; margin-bottom: 14px;
   text-transform: uppercase; letter-spacing: 2px;
+}
+/* Banner-scale variant: stands in for a section heading rather than sitting
+   above one, so it carries the weight the <h2> used to. */
+.section-tag.xl {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(1.5rem, 3.6vw, 2.35rem);
+  font-weight: 900; letter-spacing: 4px;
+  padding: 13px 40px; border-radius: 999px; margin-bottom: 0;
+  color: #fff;
+  background: linear-gradient(135deg, rgba(239,68,68,.22), rgba(185,28,28,.12));
+  border: 1px solid rgba(220,38,38,.45);
+  box-shadow: 0 0 44px rgba(220,38,38,.24), inset 0 1px 0 rgba(255,255,255,.08);
 }
 .section-title {
   font-family: 'Barlow Condensed', sans-serif;
@@ -613,8 +708,6 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .section-title .gold{background:linear-gradient(90deg,#f66 0%,var(--gold) 45%,#ff9d9d 60%,var(--gold) 80%);background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--gold);}
 .hero h1 .gold{color:var(--gold);}
 @keyframes goldSweep{to{background-position:200% center;}}
-.tier-card.hot{animation:hotPulse 4.5s ease-in-out infinite;}
-@keyframes hotPulse{0%,100%{box-shadow:0 0 60px rgba(220,38,38,.12);}50%{box-shadow:0 0 100px rgba(220,38,38,.28);}}
 .feature-card::after{content:'';position:absolute;top:0;left:-85%;width:55%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.07),transparent);transform:skewX(-18deg);pointer-events:none;}
 .feature-card:hover::after{animation:cardSheen .9s ease;}
 @keyframes cardSheen{to{left:135%;}}
@@ -622,7 +715,6 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 @keyframes glowDrift{from{transform:translateX(-3%) scale(1);}to{transform:translateX(3%) scale(1.06);}}
 @media (prefers-reduced-motion: reduce){
   .hero h1 .gold{animation:none;}
-  .tier-card.hot{animation:none;}
   .feature-card:hover::after{animation:none;}
   .video-poster-glow{animation:none;}
   .hero::after{animation:none;opacity:.85;}
@@ -647,10 +739,13 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .feature-card p{color:var(--muted);font-size:.9rem;line-height:1.65;}
 
 /* ─── VIDEO FACADE (lazy; nothing loads until clicked) ─── */
-.video-facade{position:relative;aspect-ratio:16/9;border-radius:20px;overflow:hidden;border:1px solid var(--border-strong);cursor:pointer;box-shadow:0 20px 60px rgba(0,0,0,.5);outline:none;}
+.video-facade{position:relative;z-index:3;aspect-ratio:16/9;border-radius:20px;overflow:hidden;border:1px solid var(--border-strong);cursor:pointer;box-shadow:0 20px 60px rgba(0,0,0,.5);outline:none;background:#04060a;isolation:isolate;}
 .video-facade:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
-.video-poster{position:relative;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:linear-gradient(135deg,#0a0d14 0%,#131018 45%,#1a140a 100%);}
-.video-poster-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 70% 20%,rgba(240,180,41,.10),transparent 55%),radial-gradient(ellipse at 20% 80%,rgba(220,38,38,.10),transparent 55%);}
+.video-poster{position:relative;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#05070b;}
+/* Neutral vignette only -- the red/gold wash used to tint the poster and
+   made the thumbnail look muddy. The red ambience stays on every other
+   section, just not across the player. */
+.video-poster-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 45%,rgba(3,5,8,.5) 100%);}
 .video-play{position:relative;width:84px;height:84px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 10px rgba(220,38,38,.15),0 12px 40px rgba(220,38,38,.4);transition:transform .2s;}
 .video-facade:hover .video-play{transform:scale(1.08);}
 .video-play span{font-size:1.7rem;color:#fff;margin-left:5px;}
@@ -661,7 +756,7 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 /* ─── BUNDLE TIERS ─── */
 .period-tabs{display:flex;justify-content:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:5px;max-width:420px;margin:0 auto 36px;}
 .period-tab{flex:1;padding:9px 6px;border:none;border-radius:999px;background:transparent;color:var(--muted);font-weight:700;font-size:.8rem;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;}
-.period-tab.active{background:var(--gold);color:#fff;}
+.period-tab.active{background:linear-gradient(135deg,#f05252,#c01f1f);color:#fff;box-shadow:0 4px 14px rgba(220,38,38,.32),inset 0 1px 0 rgba(255,255,255,.16);}
 .tier-was{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;color:#8b8286;text-decoration:line-through;text-decoration-color:rgba(220,38,38,.85);text-decoration-thickness:2px;margin-right:8px;vertical-align:middle;}
 .tier-off{display:inline-block;background:rgba(220,38,38,.16);border:1px solid rgba(220,38,38,.5);color:#ff8b8b;font-size:.62rem;font-weight:900;letter-spacing:.5px;border-radius:20px;padding:2px 9px;margin-left:8px;vertical-align:middle;text-transform:uppercase;}
 .tier-note{font-size:.7rem;color:var(--muted);margin-top:4px;font-style:italic;}
@@ -673,14 +768,14 @@ body.light-mode .tier-name{color:#b9b1b4;}
 body.light-mode .tier-sub,body.light-mode .tier-price span,body.light-mode .tier-note{color:#a49a9e;}
 body.light-mode .tier-card .btn-outline{color:#ffb0b0;border-color:rgba(220,38,38,.55);}
 .tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px;max-width:1020px;margin:20px auto 0;align-items:start;}
-.tier-card{position:relative;background:linear-gradient(145deg,#141112,#0f0d0e);border:2px solid var(--border);border-radius:18px;padding:26px 24px;display:flex;flex-direction:column;}
-.tier-card.hot{border-color:var(--gold);box-shadow:0 0 60px rgba(220,38,38,.12),inset 0 0 50px rgba(220,38,38,.07);transform:translateY(-16px);z-index:2;}
+.tier-card{position:relative;background:linear-gradient(168deg,#1b1719 0%,#141113 42%,#0e0c0d 100%);border:1.5px solid var(--border);border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;box-shadow:0 18px 46px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.045);}
+.tier-card.hot{border-color:transparent;box-shadow:0 0 78px rgba(220,38,38,.20),inset 0 0 60px rgba(220,38,38,.09);transform:translateY(-16px);z-index:2;}
 @media (max-width:900px){.tier-card.hot{transform:none;}}
-.tier-card.hot::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2080%20300%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22jc17%22%20x%3D%22-30%25%22%20y%3D%22-30%25%22%20width%3D%22160%25%22%20height%3D%22160%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.03%200.11%22%20numOctaves%3D%222%22%20seed%3D%2217%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%224%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22jg17%22%20x%3D%22-140%25%22%20y%3D%22-140%25%22%20width%3D%22380%25%22%20height%3D%22380%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.025%200.09%22%20numOctaves%3D%222%22%20seed%3D%2217%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%226%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22disp%22%2F%3E%3CfeGaussianBlur%20in%3D%22disp%22%20stdDeviation%3D%223%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23jg17)%22%3E%3Cpath%20d%3D%22M40.0%2C0%20L53.0%2C16.7%20L49.3%2C33.3%20L49.8%2C50.0%20L59.5%2C66.7%20L56.2%2C83.3%20L53.8%2C100.0%20L43.3%2C116.7%20L48.1%2C133.3%20L37.4%2C150.0%20L46.0%2C166.7%20L43.1%2C183.3%20L34.6%2C200.0%20L39.2%2C216.7%20L42.2%2C233.3%20L44.3%2C250.0%20L49.5%2C266.7%20L62.3%2C283.3%20L69.7%2C300.0%20M53.0%2C16.7%20L75.4%2C29.3%20M49.8%2C50.0%20L35.3%2C58.2%20M59.5%2C66.7%20L71.1%2C61.6%20M53.8%2C100.0%20L38.0%2C96.0%20M34.6%2C200.0%20L19.7%2C207.2%20M42.2%2C233.3%20L32.3%2C235.9%20M49.5%2C266.7%20L28.5%2C255.4%22%20stroke%3D%22%23ff2b2b%22%20stroke-width%3D%225.5%22%20opacity%3D%220.26%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23jc17)%22%3E%3Cpath%20d%3D%22M40.0%2C0%20L53.0%2C16.7%20L49.3%2C33.3%20L49.8%2C50.0%20L59.5%2C66.7%20L56.2%2C83.3%20L53.8%2C100.0%20L43.3%2C116.7%20L48.1%2C133.3%20L37.4%2C150.0%20L46.0%2C166.7%20L43.1%2C183.3%20L34.6%2C200.0%20L39.2%2C216.7%20L42.2%2C233.3%20L44.3%2C250.0%20L49.5%2C266.7%20L62.3%2C283.3%20L69.7%2C300.0%22%20stroke%3D%22%23ff5252%22%20stroke-width%3D%221.4%22%20opacity%3D%220.6%22%2F%3E%3Cpath%20d%3D%22M53.0%2C16.7%20L75.4%2C29.3%20M49.8%2C50.0%20L35.3%2C58.2%20M59.5%2C66.7%20L71.1%2C61.6%20M53.8%2C100.0%20L38.0%2C96.0%20M34.6%2C200.0%20L19.7%2C207.2%20M42.2%2C233.3%20L32.3%2C235.9%20M49.5%2C266.7%20L28.5%2C255.4%22%20stroke%3D%22%23ff6b6b%22%20stroke-width%3D%221.008%22%20opacity%3D%220.44%22%2F%3E%3Cpath%20d%3D%22M75.4%2C29.3%20L76.7%2C33.9%20M32.3%2C235.9%20L30.1%2C239.9%22%20stroke%3D%22%23ff8a8a%22%20stroke-width%3D%220.7%22%20opacity%3D%220.3%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2080%20300%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22jc19%22%20x%3D%22-30%25%22%20y%3D%22-30%25%22%20width%3D%22160%25%22%20height%3D%22160%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.03%200.11%22%20numOctaves%3D%222%22%20seed%3D%2219%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%224%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22jg19%22%20x%3D%22-140%25%22%20y%3D%22-140%25%22%20width%3D%22380%25%22%20height%3D%22380%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.025%200.09%22%20numOctaves%3D%222%22%20seed%3D%2219%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%226%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22disp%22%2F%3E%3CfeGaussianBlur%20in%3D%22disp%22%20stdDeviation%3D%223%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23jg19)%22%3E%3Cpath%20d%3D%22M40.0%2C0%20L50.0%2C16.7%20L45.6%2C33.3%20L35.1%2C50.0%20L42.7%2C66.7%20L53.5%2C83.3%20L41.6%2C100.0%20L39.2%2C116.7%20L38.8%2C133.3%20L38.1%2C150.0%20L45.2%2C166.7%20L51.0%2C183.3%20L56.9%2C200.0%20L57.9%2C216.7%20L56.7%2C233.3%20L61.6%2C250.0%20L50.2%2C266.7%20L38.3%2C283.3%20L43.1%2C300.0%20M45.6%2C33.3%20L29.4%2C27.2%20M42.7%2C66.7%20L58.3%2C70.8%20M53.5%2C83.3%20L41.5%2C78.9%20M41.6%2C100.0%20L27.6%2C107.9%20M38.1%2C150.0%20L59.3%2C162.2%20M51.0%2C183.3%20L30.6%2C193.1%20M57.9%2C216.7%20L42.5%2C222.5%20M56.7%2C233.3%20L41.2%2C237.7%20M38.3%2C283.3%20L22.1%2C278.8%22%20stroke%3D%22%23ff2b2b%22%20stroke-width%3D%225.5%22%20opacity%3D%220.26%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23jc19)%22%3E%3Cpath%20d%3D%22M40.0%2C0%20L50.0%2C16.7%20L45.6%2C33.3%20L35.1%2C50.0%20L42.7%2C66.7%20L53.5%2C83.3%20L41.6%2C100.0%20L39.2%2C116.7%20L38.8%2C133.3%20L38.1%2C150.0%20L45.2%2C166.7%20L51.0%2C183.3%20L56.9%2C200.0%20L57.9%2C216.7%20L56.7%2C233.3%20L61.6%2C250.0%20L50.2%2C266.7%20L38.3%2C283.3%20L43.1%2C300.0%22%20stroke%3D%22%23ff5252%22%20stroke-width%3D%221.4%22%20opacity%3D%220.6%22%2F%3E%3Cpath%20d%3D%22M45.6%2C33.3%20L29.4%2C27.2%20M42.7%2C66.7%20L58.3%2C70.8%20M53.5%2C83.3%20L41.5%2C78.9%20M41.6%2C100.0%20L27.6%2C107.9%20M38.1%2C150.0%20L59.3%2C162.2%20M51.0%2C183.3%20L30.6%2C193.1%20M57.9%2C216.7%20L42.5%2C222.5%20M56.7%2C233.3%20L41.2%2C237.7%20M38.3%2C283.3%20L22.1%2C278.8%22%20stroke%3D%22%23ff6b6b%22%20stroke-width%3D%221.008%22%20opacity%3D%220.44%22%2F%3E%3Cpath%20d%3D%22M41.5%2C78.9%20L44.3%2C87.7%20M27.6%2C107.9%20L27.1%2C111.8%20M59.3%2C162.2%20L57.9%2C166.2%20M41.2%2C237.7%20L41.6%2C241.6%22%20stroke%3D%22%23ff8a8a%22%20stroke-width%3D%220.7%22%20opacity%3D%220.3%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");background-repeat:repeat-y,repeat-y;background-position:right -8px top 0,left -8px top 150px;background-size:58px 300px,58px 300px;animation:cardBoltFlash 6.5s ease-in-out infinite;}@keyframes cardBoltFlash{0%,100%{opacity:.78;}45%{opacity:.78;}55%{opacity:1;}70%{opacity:.92;}100%{opacity:.78;}}@media (prefers-reduced-motion: reduce){.tier-card.hot::before{animation:none;}}
+.tier-card.hot::before{content:'';position:absolute;inset:-2px;border-radius:inherit;pointer-events:none;z-index:0;will-change:opacity;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%20300%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lg17%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff3f3%22%2F%3E%3Cstop%20offset%3D%220.2%22%20stop-color%3D%22%23ffbcbc%22%2F%3E%3Cstop%20offset%3D%220.5%22%20stop-color%3D%22%23ff5555%22%2F%3E%3Cstop%20offset%3D%220.8%22%20stop-color%3D%22%23e02626%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%238f1818%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22c17%22%20x%3D%22-16%25%22%20y%3D%22-4%25%22%20width%3D%22132%25%22%20height%3D%22108%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.05%200.11%22%20numOctaves%3D%223%22%20seed%3D%2217%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%223.4%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22g17%22%20x%3D%22-26%25%22%20y%3D%22-6%25%22%20width%3D%22152%25%22%20height%3D%22112%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.04%200.09%22%20numOctaves%3D%222%22%20seed%3D%2217%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%225%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22d%22%2F%3E%3CfeGaussianBlur%20in%3D%22d%22%20stdDeviation%3D%223.2%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23g17)%22%3E%3Cpath%20d%3D%22M32%2C0%20L30.5%2C8.8%20L32.6%2C17.6%20L32.3%2C26.5%20L31.1%2C35.3%20L32.4%2C44.1%20L31.4%2C52.9%20L32.5%2C61.8%20L30.8%2C70.6%20L29%2C79.4%20L29.8%2C88.2%20L30.2%2C97.1%20L29.8%2C105.9%20L28.6%2C114.7%20L26.6%2C123.5%20L29.7%2C132.4%20L29.7%2C141.2%20L29%2C150%20L29.9%2C158.8%20L30%2C167.6%20L31.6%2C176.5%20L30.4%2C185.3%20L28.4%2C194.1%20L30.6%2C202.9%20L30.7%2C211.8%20L28.1%2C220.6%20L30.3%2C229.4%20L28.7%2C238.2%20L30.1%2C247.1%20L28.8%2C255.9%20L30%2C264.7%20L29.4%2C273.5%20L30.7%2C282.4%20L32.3%2C291.2%20L33.3%2C300%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%226%22%20opacity%3D%220.44%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23c17)%22%3E%3Cpath%20d%3D%22M32%2C0%20L30.5%2C8.8%20L32.6%2C17.6%20L32.3%2C26.5%20L31.1%2C35.3%20L32.4%2C44.1%20L31.4%2C52.9%20L32.5%2C61.8%20L30.8%2C70.6%20L29%2C79.4%20L29.8%2C88.2%20L30.2%2C97.1%20L29.8%2C105.9%20L28.6%2C114.7%20L26.6%2C123.5%20L29.7%2C132.4%20L29.7%2C141.2%20L29%2C150%20L29.9%2C158.8%20L30%2C167.6%20L31.6%2C176.5%20L30.4%2C185.3%20L28.4%2C194.1%20L30.6%2C202.9%20L30.7%2C211.8%20L28.1%2C220.6%20L30.3%2C229.4%20L28.7%2C238.2%20L30.1%2C247.1%20L28.8%2C255.9%20L30%2C264.7%20L29.4%2C273.5%20L30.7%2C282.4%20L32.3%2C291.2%20L33.3%2C300%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%221.6%22%20opacity%3D%220.92%22%2F%3E%3Cpath%20d%3D%22M30.7%2C211.8%20L27.3%2C216.6%20L24.4%2C223.7%20M32.5%2C61.8%20L28%2C66.1%20L20.7%2C69.9%20M29.8%2C105.9%20L36.7%2C113.4%20L43.4%2C119.7%20L49.3%2C127.5%20M32.3%2C26.5%20L28.8%2C31.8%20L25.4%2C35.9%20L17.3%2C41.9%20M30.4%2C185.3%20L35.9%2C190.2%20L42%2C195.4%20L48%2C204%20M29.9%2C158.8%20L32.7%2C167.6%20L39.8%2C175.5%20L45.5%2C179.7%20L51.7%2C186.5%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%221.05%22%20opacity%3D%220.6%22%2F%3E%3Cpath%20d%3D%22M27.3%2C216.6%20L25.4%2C219.1%20L22%2C223.2%20L20%2C226.2%20M28%2C66.1%20L32.3%2C68.5%20L36.4%2C72.5%20M43.4%2C119.7%20L39.2%2C123.3%20L37.2%2C128.1%20L33%2C130.8%20M17.3%2C41.9%20L19.9%2C44.6%20L22%2C48.3%20L25.7%2C50.8%20L29.4%2C55.4%20M48%2C204%20L44.3%2C208.6%20L41%2C211.9%20L38.9%2C215.3%20M32.7%2C167.6%20L30.9%2C172.8%20L26.8%2C176.1%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%220.7%22%20opacity%3D%220.4%22%2F%3E%3Cpath%20d%3D%22M32%2C0%20L30.5%2C8.8%20L32.6%2C17.6%20L32.3%2C26.5%20L31.1%2C35.3%20L32.4%2C44.1%20L31.4%2C52.9%20L32.5%2C61.8%20L30.8%2C70.6%20L29%2C79.4%20L29.8%2C88.2%20L30.2%2C97.1%20L29.8%2C105.9%20L28.6%2C114.7%20L26.6%2C123.5%20L29.7%2C132.4%20L29.7%2C141.2%20L29%2C150%20L29.9%2C158.8%20L30%2C167.6%20L31.6%2C176.5%20L30.4%2C185.3%20L28.4%2C194.1%20L30.6%2C202.9%20L30.7%2C211.8%20L28.1%2C220.6%20L30.3%2C229.4%20L28.7%2C238.2%20L30.1%2C247.1%20L28.8%2C255.9%20L30%2C264.7%20L29.4%2C273.5%20L30.7%2C282.4%20L32.3%2C291.2%20L33.3%2C300%22%20stroke%3D%22%23fff6f6%22%20stroke-width%3D%220.55%22%20opacity%3D%220.6%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%20300%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lg19%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff3f3%22%2F%3E%3Cstop%20offset%3D%220.2%22%20stop-color%3D%22%23ffbcbc%22%2F%3E%3Cstop%20offset%3D%220.5%22%20stop-color%3D%22%23ff5555%22%2F%3E%3Cstop%20offset%3D%220.8%22%20stop-color%3D%22%23e02626%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%238f1818%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22c19%22%20x%3D%22-16%25%22%20y%3D%22-4%25%22%20width%3D%22132%25%22%20height%3D%22108%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.05%200.11%22%20numOctaves%3D%223%22%20seed%3D%2219%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%223.4%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22g19%22%20x%3D%22-26%25%22%20y%3D%22-6%25%22%20width%3D%22152%25%22%20height%3D%22112%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.04%200.09%22%20numOctaves%3D%222%22%20seed%3D%2219%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%225%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22d%22%2F%3E%3CfeGaussianBlur%20in%3D%22d%22%20stdDeviation%3D%223.2%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23g19)%22%3E%3Cpath%20d%3D%22M32%2C0%20L30.5%2C8.8%20L27.9%2C17.6%20L30.5%2C26.5%20L30%2C35.3%20L27.7%2C44.1%20L30.3%2C52.9%20L30.7%2C61.8%20L28.3%2C70.6%20L27.1%2C79.4%20L28.8%2C88.2%20L28.9%2C97.1%20L30.8%2C105.9%20L29.1%2C114.7%20L32.3%2C123.5%20L31.3%2C132.4%20L30.7%2C141.2%20L31.6%2C150%20L32.2%2C158.8%20L29.7%2C167.6%20L30%2C176.5%20L31.2%2C185.3%20L29.8%2C194.1%20L28.1%2C202.9%20L29.3%2C211.8%20L28.3%2C220.6%20L29.8%2C229.4%20L29.4%2C238.2%20L28%2C247.1%20L30.6%2C255.9%20L32.9%2C264.7%20L32.8%2C273.5%20L35.4%2C282.4%20L35.8%2C291.2%20L37.5%2C300%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%226%22%20opacity%3D%220.44%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23c19)%22%3E%3Cpath%20d%3D%22M32%2C0%20L30.5%2C8.8%20L27.9%2C17.6%20L30.5%2C26.5%20L30%2C35.3%20L27.7%2C44.1%20L30.3%2C52.9%20L30.7%2C61.8%20L28.3%2C70.6%20L27.1%2C79.4%20L28.8%2C88.2%20L28.9%2C97.1%20L30.8%2C105.9%20L29.1%2C114.7%20L32.3%2C123.5%20L31.3%2C132.4%20L30.7%2C141.2%20L31.6%2C150%20L32.2%2C158.8%20L29.7%2C167.6%20L30%2C176.5%20L31.2%2C185.3%20L29.8%2C194.1%20L28.1%2C202.9%20L29.3%2C211.8%20L28.3%2C220.6%20L29.8%2C229.4%20L29.4%2C238.2%20L28%2C247.1%20L30.6%2C255.9%20L32.9%2C264.7%20L32.8%2C273.5%20L35.4%2C282.4%20L35.8%2C291.2%20L37.5%2C300%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%221.6%22%20opacity%3D%220.92%22%2F%3E%3Cpath%20d%3D%22M32.2%2C158.8%20L25.3%2C162.6%20L20.7%2C167%20L12.7%2C171.7%20L7.9%2C178.2%20M27.7%2C44.1%20L35.6%2C49%20L42.6%2C55.1%20L49.9%2C60.3%20M30%2C35.3%20L26.2%2C43.3%20L19.5%2C49.2%20L14.3%2C53.5%20L9.5%2C60.4%20M29.8%2C229.4%20L22.1%2C237.6%20L16.2%2C244.6%20M30.5%2C8.8%20L36.9%2C16.5%20L42.5%2C20.3%20L48.7%2C25.7%20M30.5%2C8.8%20L35.5%2C15%20L41.7%2C21.7%20L48.1%2C27.6%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%221.05%22%20opacity%3D%220.6%22%2F%3E%3Cpath%20d%3D%22M25.3%2C162.6%20L29%2C165.9%20L30.7%2C171.3%20L33.2%2C175.7%20L34.8%2C179.9%20M42.6%2C55.1%20L40.2%2C57.8%20L38.3%2C62%20L36%2C66.4%20M26.2%2C43.3%20L23%2C46.1%20L19.6%2C49.4%20L16.4%2C53.1%20M16.2%2C244.6%20L19.4%2C247.8%20L23.3%2C252.2%20M42.5%2C20.3%20L46.2%2C25.3%20L49.6%2C30.4%20L52.1%2C33.3%20L53.9%2C35.7%20M41.7%2C21.7%20L44.2%2C25.5%20L48.3%2C30.3%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%220.7%22%20opacity%3D%220.4%22%2F%3E%3Cpath%20d%3D%22M32%2C0%20L30.5%2C8.8%20L27.9%2C17.6%20L30.5%2C26.5%20L30%2C35.3%20L27.7%2C44.1%20L30.3%2C52.9%20L30.7%2C61.8%20L28.3%2C70.6%20L27.1%2C79.4%20L28.8%2C88.2%20L28.9%2C97.1%20L30.8%2C105.9%20L29.1%2C114.7%20L32.3%2C123.5%20L31.3%2C132.4%20L30.7%2C141.2%20L31.6%2C150%20L32.2%2C158.8%20L29.7%2C167.6%20L30%2C176.5%20L31.2%2C185.3%20L29.8%2C194.1%20L28.1%2C202.9%20L29.3%2C211.8%20L28.3%2C220.6%20L29.8%2C229.4%20L29.4%2C238.2%20L28%2C247.1%20L30.6%2C255.9%20L32.9%2C264.7%20L32.8%2C273.5%20L35.4%2C282.4%20L35.8%2C291.2%20L37.5%2C300%22%20stroke%3D%22%23fff6f6%22%20stroke-width%3D%220.55%22%20opacity%3D%220.6%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%2064%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lg23%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff3f3%22%2F%3E%3Cstop%20offset%3D%220.2%22%20stop-color%3D%22%23ffbcbc%22%2F%3E%3Cstop%20offset%3D%220.5%22%20stop-color%3D%22%23ff5555%22%2F%3E%3Cstop%20offset%3D%220.8%22%20stop-color%3D%22%23e02626%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%238f1818%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22c23%22%20x%3D%22-16%25%22%20y%3D%22-4%25%22%20width%3D%22132%25%22%20height%3D%22108%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.11%200.05%22%20numOctaves%3D%223%22%20seed%3D%2223%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%223.4%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22g23%22%20x%3D%22-26%25%22%20y%3D%22-6%25%22%20width%3D%22152%25%22%20height%3D%22112%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.04%22%20numOctaves%3D%222%22%20seed%3D%2223%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%225%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22d%22%2F%3E%3CfeGaussianBlur%20in%3D%22d%22%20stdDeviation%3D%223.2%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23g23)%22%3E%3Cpath%20d%3D%22M0%2C32%20L8.8%2C30.5%20L17.6%2C30%20L26.5%2C30.7%20L35.3%2C31%20L44.1%2C32.4%20L52.9%2C34.2%20L61.8%2C32.4%20L70.6%2C33.6%20L79.4%2C31.7%20L88.2%2C34%20L97.1%2C32.2%20L105.9%2C32.1%20L114.7%2C29.7%20L123.5%2C31.6%20L132.4%2C30.3%20L141.2%2C29.1%20L150%2C28%20L158.8%2C29.6%20L167.6%2C28.5%20L176.5%2C26.5%20L185.3%2C26.9%20L194.1%2C27.6%20L202.9%2C30.1%20L211.8%2C32.7%20L220.6%2C33.8%20L229.4%2C33.1%20L238.2%2C34.4%20L247.1%2C32.7%20L255.9%2C30.2%20L264.7%2C29.5%20L273.5%2C31.9%20L282.4%2C32.5%20L291.2%2C32.5%20L300%2C31.4%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%226%22%20opacity%3D%220.44%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23c23)%22%3E%3Cpath%20d%3D%22M0%2C32%20L8.8%2C30.5%20L17.6%2C30%20L26.5%2C30.7%20L35.3%2C31%20L44.1%2C32.4%20L52.9%2C34.2%20L61.8%2C32.4%20L70.6%2C33.6%20L79.4%2C31.7%20L88.2%2C34%20L97.1%2C32.2%20L105.9%2C32.1%20L114.7%2C29.7%20L123.5%2C31.6%20L132.4%2C30.3%20L141.2%2C29.1%20L150%2C28%20L158.8%2C29.6%20L167.6%2C28.5%20L176.5%2C26.5%20L185.3%2C26.9%20L194.1%2C27.6%20L202.9%2C30.1%20L211.8%2C32.7%20L220.6%2C33.8%20L229.4%2C33.1%20L238.2%2C34.4%20L247.1%2C32.7%20L255.9%2C30.2%20L264.7%2C29.5%20L273.5%2C31.9%20L282.4%2C32.5%20L291.2%2C32.5%20L300%2C31.4%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%221.6%22%20opacity%3D%220.92%22%2F%3E%3Cpath%20d%3D%22M44.1%2C32.4%20L51%2C35.4%20L55%2C43.2%20M158.8%2C29.6%20L163.1%2C21.6%20L169.3%2C17.7%20L176.3%2C14.3%20M158.8%2C29.6%20L163.8%2C34.5%20L170.6%2C37.5%20M132.4%2C30.3%20L139.6%2C27.5%20L143.3%2C24.1%20M264.7%2C29.5%20L268.4%2C26.5%20L273.5%2C20.8%20L279.3%2C14.2%20L285.8%2C8.2%20M273.5%2C31.9%20L282.1%2C35%20L287.3%2C39.8%20L295.5%2C44.1%20L300.5%2C52.2%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%221.05%22%20opacity%3D%220.6%22%2F%3E%3Cpath%20d%3D%22M55%2C43.2%20L58.9%2C45.2%20L61.2%2C49.4%20M176.3%2C14.3%20L180.6%2C17.4%20L185.7%2C19.2%20L190%2C21.1%20L193.8%2C22.8%20M170.6%2C37.5%20L173.3%2C40.8%20L176.7%2C43%20L180.6%2C44.7%20M143.3%2C24.1%20L147.8%2C27.5%20L152.7%2C29.1%20L156.4%2C31.9%20M285.8%2C8.2%20L288.2%2C5%20L292.9%2C1.1%20L297.8%2C-3.2%20M295.5%2C44.1%20L299%2C47%20L302.9%2C49.8%20L307.6%2C53.9%20L311.5%2C57.6%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%220.7%22%20opacity%3D%220.4%22%2F%3E%3Cpath%20d%3D%22M0%2C32%20L8.8%2C30.5%20L17.6%2C30%20L26.5%2C30.7%20L35.3%2C31%20L44.1%2C32.4%20L52.9%2C34.2%20L61.8%2C32.4%20L70.6%2C33.6%20L79.4%2C31.7%20L88.2%2C34%20L97.1%2C32.2%20L105.9%2C32.1%20L114.7%2C29.7%20L123.5%2C31.6%20L132.4%2C30.3%20L141.2%2C29.1%20L150%2C28%20L158.8%2C29.6%20L167.6%2C28.5%20L176.5%2C26.5%20L185.3%2C26.9%20L194.1%2C27.6%20L202.9%2C30.1%20L211.8%2C32.7%20L220.6%2C33.8%20L229.4%2C33.1%20L238.2%2C34.4%20L247.1%2C32.7%20L255.9%2C30.2%20L264.7%2C29.5%20L273.5%2C31.9%20L282.4%2C32.5%20L291.2%2C32.5%20L300%2C31.4%22%20stroke%3D%22%23fff6f6%22%20stroke-width%3D%220.55%22%20opacity%3D%220.6%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%2064%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lg29%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fff3f3%22%2F%3E%3Cstop%20offset%3D%220.2%22%20stop-color%3D%22%23ffbcbc%22%2F%3E%3Cstop%20offset%3D%220.5%22%20stop-color%3D%22%23ff5555%22%2F%3E%3Cstop%20offset%3D%220.8%22%20stop-color%3D%22%23e02626%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%238f1818%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22c29%22%20x%3D%22-16%25%22%20y%3D%22-4%25%22%20width%3D%22132%25%22%20height%3D%22108%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.11%200.05%22%20numOctaves%3D%223%22%20seed%3D%2229%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%223.4%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22g29%22%20x%3D%22-26%25%22%20y%3D%22-6%25%22%20width%3D%22152%25%22%20height%3D%22112%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.04%22%20numOctaves%3D%222%22%20seed%3D%2229%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%225%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22d%22%2F%3E%3CfeGaussianBlur%20in%3D%22d%22%20stdDeviation%3D%223.2%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23g29)%22%3E%3Cpath%20d%3D%22M0%2C32%20L8.8%2C30.6%20L17.6%2C33.1%20L26.5%2C33.9%20L35.3%2C35%20L44.1%2C35.7%20L52.9%2C34%20L61.8%2C35.7%20L70.6%2C33.4%20L79.4%2C31.8%20L88.2%2C30.4%20L97.1%2C33.3%20L105.9%2C33.6%20L114.7%2C35.9%20L123.5%2C35.2%20L132.4%2C35.4%20L141.2%2C32.2%20L150%2C30.2%20L158.8%2C31.9%20L167.6%2C29.3%20L176.5%2C28.9%20L185.3%2C29.8%20L194.1%2C32.2%20L202.9%2C34.1%20L211.8%2C32.8%20L220.6%2C32.2%20L229.4%2C29.8%20L238.2%2C29.3%20L247.1%2C31.8%20L255.9%2C34.3%20L264.7%2C31.3%20L273.5%2C30.8%20L282.4%2C31.1%20L291.2%2C30.1%20L300%2C33.1%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%226%22%20opacity%3D%220.44%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23c29)%22%3E%3Cpath%20d%3D%22M0%2C32%20L8.8%2C30.6%20L17.6%2C33.1%20L26.5%2C33.9%20L35.3%2C35%20L44.1%2C35.7%20L52.9%2C34%20L61.8%2C35.7%20L70.6%2C33.4%20L79.4%2C31.8%20L88.2%2C30.4%20L97.1%2C33.3%20L105.9%2C33.6%20L114.7%2C35.9%20L123.5%2C35.2%20L132.4%2C35.4%20L141.2%2C32.2%20L150%2C30.2%20L158.8%2C31.9%20L167.6%2C29.3%20L176.5%2C28.9%20L185.3%2C29.8%20L194.1%2C32.2%20L202.9%2C34.1%20L211.8%2C32.8%20L220.6%2C32.2%20L229.4%2C29.8%20L238.2%2C29.3%20L247.1%2C31.8%20L255.9%2C34.3%20L264.7%2C31.3%20L273.5%2C30.8%20L282.4%2C31.1%20L291.2%2C30.1%20L300%2C33.1%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%221.6%22%20opacity%3D%220.92%22%2F%3E%3Cpath%20d%3D%22M150%2C30.2%20L153.7%2C27.5%20L159.7%2C20.4%20L167.6%2C12.9%20M273.5%2C30.8%20L282%2C36.7%20L289.7%2C44.5%20M202.9%2C34.1%20L206.7%2C30.9%20L212.4%2C25.3%20L220.6%2C18%20M61.8%2C35.7%20L70.3%2C39%20L75.8%2C46.5%20M105.9%2C33.6%20L111.3%2C27.8%20L117.6%2C20.7%20L122%2C14.8%20M97.1%2C33.3%20L105.5%2C30%20L113.2%2C22%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%221.05%22%20opacity%3D%220.6%22%2F%3E%3Cpath%20d%3D%22M153.7%2C27.5%20L156.7%2C31.7%20L161.4%2C36%20L166.7%2C38.1%20M282%2C36.7%20L285.9%2C32.7%20L288.7%2C30.3%20L293.2%2C28.2%20L297.9%2C25.5%20M212.4%2C25.3%20L215.6%2C27.8%20L219.4%2C29.6%20L223.6%2C32.7%20L227.5%2C35%20M75.8%2C46.5%20L78%2C48.3%20L82.1%2C50.7%20M111.3%2C27.8%20L114.8%2C24.6%20L118.2%2C21.8%20L121%2C20%20L124.2%2C16.4%20M113.2%2C22%20L118%2C17.8%20L122.6%2C13.6%20L127.7%2C10.1%20L131.9%2C6.1%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%220.7%22%20opacity%3D%220.4%22%2F%3E%3Cpath%20d%3D%22M0%2C32%20L8.8%2C30.6%20L17.6%2C33.1%20L26.5%2C33.9%20L35.3%2C35%20L44.1%2C35.7%20L52.9%2C34%20L61.8%2C35.7%20L70.6%2C33.4%20L79.4%2C31.8%20L88.2%2C30.4%20L97.1%2C33.3%20L105.9%2C33.6%20L114.7%2C35.9%20L123.5%2C35.2%20L132.4%2C35.4%20L141.2%2C32.2%20L150%2C30.2%20L158.8%2C31.9%20L167.6%2C29.3%20L176.5%2C28.9%20L185.3%2C29.8%20L194.1%2C32.2%20L202.9%2C34.1%20L211.8%2C32.8%20L220.6%2C32.2%20L229.4%2C29.8%20L238.2%2C29.3%20L247.1%2C31.8%20L255.9%2C34.3%20L264.7%2C31.3%20L273.5%2C30.8%20L282.4%2C31.1%20L291.2%2C30.1%20L300%2C33.1%22%20stroke%3D%22%23fff6f6%22%20stroke-width%3D%220.55%22%20opacity%3D%220.6%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");background-repeat:repeat-y,repeat-y,repeat-x,repeat-x;background-position:right -29px top 0,left -29px top 150px,left 0 top -29px,left 160px bottom -29px;background-size:58px 300px,58px 300px,300px 58px,300px 58px;animation:cardBoltFlash 8s ease-in-out infinite;}@keyframes cardBoltFlash{0%,40%{opacity:.62;}42%{opacity:1;}44%{opacity:.72;}46%{opacity:.97;}48%{opacity:.76;}51%{opacity:1;}55%{opacity:.74;}58%{opacity:.92;}63%{opacity:.64;}100%{opacity:.62;}}@media (prefers-reduced-motion: reduce){.tier-card.hot::before{animation:none;}}
 .tier-card.hot>*{position:relative;z-index:1;}
-.tier-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#4a4247,#332d31);color:#e9e4e6;border:1px solid #5a5157;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:.68rem;letter-spacing:1.5px;text-transform:uppercase;padding:4px 14px;border-radius:20px;white-space:nowrap;}
+.tier-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#544b50 0%,#3a3338 55%,#2b2528 100%);color:#efeaec;border:1px solid #605660;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:.7rem;letter-spacing:1.8px;text-transform:uppercase;padding:5px 17px;border-radius:999px;white-space:nowrap;box-shadow:0 5px 16px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.11);}
 .tier-badge.alt{background:linear-gradient(180deg,#4a4247,#332d31);}
-.tier-badge.red{background:linear-gradient(180deg,#ef4444,#b91c1c);color:#fff;border-color:#ff6b6b;box-shadow:0 0 18px rgba(220,38,38,.55);}
+.tier-badge.red{background:linear-gradient(180deg,#ff6363 0%,#e02626 52%,#9d1616 100%);color:#fff;border-color:rgba(255,140,140,.75);box-shadow:0 0 26px rgba(220,38,38,.6),0 5px 16px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.22);}
 .tier-name{font-family:'Barlow Condensed',sans-serif;font-size:1.08rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
 .tier-price{font-family:'Barlow Condensed',sans-serif;font-size:2.6rem;font-weight:900;color:var(--gold);line-height:1;}
 .tier-price span{font-size:1.1rem;color:var(--muted);font-family:'Inter',sans-serif;font-weight:600;}
@@ -850,69 +945,123 @@ html { font-size: 1.02rem; }
 </div>
 
 <!-- NAV -->
+<div class="nav-shell">
 <nav>
-  <div class="nav-brand"><img src="assets/pj-logo.jpg" alt="" loading="eager">PJ TRADES</div>
+  <a class="nav-brand" href="index.html"><img src="assets/pj-logo.jpg" alt="" loading="eager"><span>PJ TRADES</span></a>
   <div class="nav-links">
-    <a href="#features">What You Get</a>
-    <a href="#bundles">Bundles</a>
-    <a href="premarket.html">Pre-Market</a>
-    <a href="#schedule">Schedule</a>
-    <a href="#team">Team</a>
-    <a href="research-engine.html">Research Engine</a>
-    <a href="prop-firms.html">Prop Firms</a>
-    <a href="premium-guidance.html">Guidance</a>
-    <a href="forex-calendar.html">Forex Calendar</a>
-    <a href="stock-lab.html">Stock Lab</a>
-    <a href="options-lab.html">Options Lab</a>
-    <a href="stock-breakdown.html">Stock Breakdown</a>
-    <a href="futures-dissection.html">Futures Dissection</a>
-    <a href="psychology-enhancer.html">Psychology</a>
-    <a href="#about">About</a>
-    <a href="#discord-cta">Discord</a>
-  </div>
-  <div style="display:flex;align-items:center;gap:10px;">
-    <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">🌙 <span id="theme-label">Dark</span></button>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <a href="https://whop.com/pjtradespremium" target="_blank" rel="noopener" title="PJ Trades on Whop" style="color:var(--muted);font-size:1.1rem;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--muted)'">⭐</a>
-      <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" title="Discord" style="color:var(--muted);font-size:1.1rem;text-decoration:none;transition:color .2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--muted)'">💬</a>
+    <div class="nav-item">
+      <button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Membership<span class="caret" aria-hidden="true">&#9662;</span></button>
+      <div class="nav-drop">
+        <a href="#features">What You Get</a>
+        <a href="#bundles">Bundles &amp; Pricing</a>
+        <a href="#schedule">Stream Schedule</a>
+        <a href="premium-guidance.html">Premium Guidance</a>
+      </div>
     </div>
-    <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Menu">☰</button>
+    <div class="nav-item">
+      <button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Curriculum<span class="caret" aria-hidden="true">&#9662;</span></button>
+      <div class="nav-drop">
+        <a href="stock-breakdown.html">Stock Breakdown</a>
+        <a href="options-lab.html">Options Lab</a>
+        <a href="futures-dissection.html">Futures Dissection</a>
+        <a href="psychology-enhancer.html">Psychology Enhancer</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Tools<span class="caret" aria-hidden="true">&#9662;</span></button>
+      <div class="nav-drop">
+        <a href="stock-lab.html">Stock Lab</a>
+        <a href="research-engine.html">Research Engine</a>
+        <a href="premarket.html">Pre-Market</a>
+        <a href="forex-calendar.html">Forex Calendar</a>
+        <a href="prop-firms.html">Prop Firms</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Community<span class="caret" aria-hidden="true">&#9662;</span></button>
+      <div class="nav-drop">
+        <a href="#about">About PJ</a>
+        <a href="#team">Meet the Team</a>
+        <a href="#wins">Member Results</a>
+        <a href="#discord-cta">Discord</a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-actions">
+    <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">&#127769; <span id="theme-label">Dark</span></button>
+    <a class="nav-join" href="#bundles">Join</a>
+    <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
   </div>
 </nav>
 
-<!-- MOBILE MENU -->
-<div id="premium-bar" style="display:flex;align-items:center;gap:8px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.3);border-radius:999px;padding:6px 12px;font-size:0.78rem;color:var(--muted);margin-top:8px;">
-  <span>🔒 Premium ▼</span>
-</div>
-<div id="premium-dropdown" style="display:none;position:absolute;top:34px;right:0;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;min-width:180px;box-shadow:0 4px 12px rgba(0,0,0,0.3);">
-  <h4 style="font-size:0.82rem;font-weight:700;margin-bottom:12px;">Free Sections</h4>
-  <a href="#features" style="display:block;margin-bottom:8px;color:var(--text);text-decoration:none;font-size:0.82rem;">What You Get</a>
-  <a href="#bundles" style="display:block;margin-bottom:8px;color:var(--text);text-decoration:none;font-size:0.82rem;">Bundles</a>
-  <a href="premarket.html" style="display:block;margin-bottom:8px;color:var(--text);text-decoration:none;font-size:0.82rem;">Pre-Market</a>
-  <a href="#schedule" style="display:block;margin-bottom:8px;color:var(--text);text-decoration:none;font-size:0.82rem;">Stream Schedule</a>
-  <a href="#team" style="display:block;margin-bottom:8px;color:var(--text);text-decoration:none;font-size:0.82rem;">Meet the Team</a>
-</div>
+
 
 <!-- MOBILE MENU -->
 <div class="mobile-menu" id="mobile-menu">
-  <a href="#features" onclick="closeMobileMenu()">⭐ What You Get</a>
-  <a href="#bundles" onclick="closeMobileMenu()">💎 Bundles</a>
-  <a href="premarket.html" onclick="closeMobileMenu()">☕ Pre-Market</a>
-  <a href="#schedule" onclick="closeMobileMenu()">🗓️ Schedule</a>
-  <a href="#team" onclick="closeMobileMenu()">👥 Team</a>
-  <a href="research-engine.html" onclick="closeMobileMenu()">🔬 Research Engine</a>
-  <a href="prop-firms.html" onclick="closeMobileMenu()">🏷️ Prop Firms</a>
-  <a href="premium-guidance.html" onclick="closeMobileMenu()">🎓 Guidance</a>
-  <a href="forex-calendar.html" onclick="closeMobileMenu()">📅 Forex Calendar</a>
-  <a href="stock-lab.html" onclick="closeMobileMenu()">📈 Stock Lab</a>
-  <a href="options-lab.html" onclick="closeMobileMenu()">📊 Options Lab</a>
-  <a href="stock-breakdown.html" onclick="closeMobileMenu()">📘 Stock Breakdown</a>
-  <a href="futures-dissection.html" onclick="closeMobileMenu()">⚡ Futures Dissection</a>
-  <a href="psychology-enhancer.html" onclick="closeMobileMenu()">🧠 Psychology</a>
-  <a href="#about" onclick="closeMobileMenu()">👋 About</a>
-  <a href="#discord-cta" onclick="closeMobileMenu()">💬 Discord</a>
-  <a href="https://whop.com/pjtradespremium" target="_blank" onclick="closeMobileMenu()">⭐ Join Premium</a>
+  <div class="mm-group">Membership</div>
+  <a href="#features" onclick="closeMobileMenu()">What You Get</a>
+  <a href="#bundles" onclick="closeMobileMenu()">Bundles &amp; Pricing</a>
+  <a href="#schedule" onclick="closeMobileMenu()">Stream Schedule</a>
+  <a href="premium-guidance.html" onclick="closeMobileMenu()">Premium Guidance</a>
+  <div class="mm-group">Curriculum</div>
+  <a href="stock-breakdown.html" onclick="closeMobileMenu()">Stock Breakdown</a>
+  <a href="options-lab.html" onclick="closeMobileMenu()">Options Lab</a>
+  <a href="futures-dissection.html" onclick="closeMobileMenu()">Futures Dissection</a>
+  <a href="psychology-enhancer.html" onclick="closeMobileMenu()">Psychology Enhancer</a>
+  <div class="mm-group">Tools</div>
+  <a href="stock-lab.html" onclick="closeMobileMenu()">Stock Lab</a>
+  <a href="research-engine.html" onclick="closeMobileMenu()">Research Engine</a>
+  <a href="premarket.html" onclick="closeMobileMenu()">Pre-Market</a>
+  <a href="forex-calendar.html" onclick="closeMobileMenu()">Forex Calendar</a>
+  <a href="prop-firms.html" onclick="closeMobileMenu()">Prop Firms</a>
+  <div class="mm-group">Community</div>
+  <a href="#about" onclick="closeMobileMenu()">About PJ</a>
+  <a href="#team" onclick="closeMobileMenu()">Meet the Team</a>
+  <a href="#wins" onclick="closeMobileMenu()">Member Results</a>
+  <a href="#discord-cta" onclick="closeMobileMenu()">Discord</a>
+  <a class="mm-join" href="#bundles" onclick="closeMobileMenu()">Join Premium</a>
 </div>
+</div><!-- /nav-shell -->
+<script>
+/* Dropdowns open on hover via CSS. This adds click + keyboard control so the
+   menus are operable without a pointer, and closes them on Escape / outside
+   click. Touch devices below 1000px use the hamburger menu instead. */
+(function(){
+  var items = document.querySelectorAll('.nav-item');
+  items.forEach(function(item){
+    var btn = item.querySelector('.nav-top');
+    if(!btn) return;
+    btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var wasOpen = item.classList.contains('open');
+      items.forEach(function(o){ o.classList.remove('open'); o.querySelector('.nav-top').setAttribute('aria-expanded','false'); });
+      if(!wasOpen){ item.classList.add('open'); btn.setAttribute('aria-expanded','true'); }
+    });
+  });
+  document.addEventListener('click', function(){
+    items.forEach(function(o){ o.classList.remove('open'); o.querySelector('.nav-top').setAttribute('aria-expanded','false'); });
+  });
+  // Widening past the breakpoint brings the desktop menus back; a panel left
+  // open would then overlay the page, so close it on the way through.
+  window.addEventListener('resize', function(){
+    if(window.innerWidth > 1000){
+      var mm = document.getElementById('mobile-menu');
+      var hb = document.getElementById('hamburger');
+      if(mm) mm.classList.remove('open');
+      if(hb){ hb.classList.remove('open'); hb.setAttribute('aria-expanded','false'); }
+    }
+  });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      var mm = document.getElementById('mobile-menu');
+      var hb = document.getElementById('hamburger');
+      if(mm) mm.classList.remove('open');
+      if(hb){ hb.classList.remove('open'); hb.setAttribute('aria-expanded','false'); }
+      items.forEach(function(o){ o.classList.remove('open'); o.querySelector('.nav-top').setAttribute('aria-expanded','false'); });
+    }
+  });
+})();
+</script>
 <!-- HERO -->
 <section class="hero" id="home">
   <div class="liquid-bg" aria-hidden="true">
@@ -1151,9 +1300,8 @@ html { font-size: 1.02rem; }
         data-video-yt below. -->
 <section id="video" style="background:var(--bg2);padding:70px 24px;">
   <div class="section-inner" style="max-width:900px;">
-    <div style="text-align:center;margin-bottom:30px;" data-reveal>
-      <div class="section-tag">Meet PJ Trades</div>
-      <h2 class="section-title">Watch PJ <span class="gold">Trade</span></h2>
+    <div style="text-align:center;margin-bottom:34px;" data-reveal>
+      <div class="section-tag xl">Meet PJ Trades</div>
     </div>
     <div class="video-facade" id="video-facade" data-video-mp4="/video/pj-intro.mp4" data-video-yt="" role="button" tabindex="0" aria-label="Play introduction video" data-reveal>
       <div class="video-poster" aria-hidden="true" style="background-image:linear-gradient(180deg,rgba(6,9,13,.10) 0%,rgba(6,9,13,.24) 55%,rgba(6,9,13,.86) 100%),url('assets/pj-intro-poster.jpg');background-size:cover;background-position:center;">
@@ -1427,8 +1575,8 @@ html { font-size: 1.02rem; }
     <div class="tier-grid" id="tier-grid" data-reveal>
       <!-- FUTURES — the core $100 product (matches the Whop listing exactly) -->
       <div class="tier-card">
-        <div class="tier-badge">Core — Futures Only</div>
-        <div class="tier-name">Futures</div>
+        <div class="tier-badge">Core</div>
+        <div class="tier-name">Futures Only</div>
         <div class="tier-price" id="price-futures">$100<span>/mo</span></div>
         <div class="tier-sub" id="sub-futures"></div>
         <ul>
@@ -1446,8 +1594,8 @@ html { font-size: 1.02rem; }
       <!-- COMPLETE — futures + options + stocks with live callouts and full educational materials -->
       <!-- TODO: owner to confirm the Whop product URL for this tier if it is a separate listing -->
       <div class="tier-card hot">
-        <div class="tier-badge red">Futures + Options + Stocks</div>
-        <div class="tier-name">Complete</div>
+        <div class="tier-badge red">Complete Bundle</div>
+        <div class="tier-name">Futures + Options + Stocks</div>
         <div class="tier-price" id="price-allmarkets"><s class="tier-was">$150</s>$129<span>/mo</span><span class="tier-off">$21 off</span></div>
         <div class="tier-sub" id="sub-allmarkets">Everything in Futures, plus the complete multi-market library</div>
         <ul>
@@ -1462,8 +1610,8 @@ html { font-size: 1.02rem; }
 
       <!-- IFVG INDICATOR — TradingView indicator, sold separately via fluxcharts -->
       <div class="tier-card">
-        <div class="tier-badge alt">TradingView Indicator</div>
-        <div class="tier-name">IFVG Indicator</div>
+        <div class="tier-badge alt">The Printicator</div>
+        <div class="tier-name">PJ's IFVG Indicator</div>
         <div class="tier-price" id="price-ifvg"><s class="tier-was">$119</s>$95.20<span>/mo</span><span class="tier-off">20% off</span></div>
         <div class="tier-sub" id="sub-ifvg"></div>
         <ul>
@@ -2979,16 +3127,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, observerOptions);
     observer.observe(section);
   });
-});
-</script>
-<script>
-document.getElementById('premium-bar').addEventListener('click', () => {
-  const dp = document.getElementById('premium-dropdown');
-  if (dp.style.display === 'none' || dp.style.display === '') {
-    dp.style.display = 'block';
-  } else {
-    dp.style.display = 'none';
-  }
 });
 </script>
 <script src="assets/lightning-bg.js" defer></script>
