@@ -8,12 +8,18 @@
 // { ok, source, fetchedAt, asOf, cached, events: [{title,currency,date,
 //   impact,forecast,previous,actual}], notice? }
 
+import { checkRateLimit } from './_lib/http.js';
+
 const FEED_URL = 'https://nfs.faireconomy.media/ff_calendar_thisweek.json';
 const ALLOWED_CURRENCIES = new Set(['USD', 'ALL']);
 const MAX_EVENTS = 120;
 
+
 export async function onRequestGet(context) {
   const { request, env } = context;
+  // Abuse guard: unauthenticated route that proxies a third-party feed.
+  const rl = await checkRateLimit(env, request, 'forex-cal', 30);
+  if (!rl.allowed) return json({ ok: false, error: 'Too many requests. Wait a minute.' }, 429);
   const url = new URL(request.url);
   let currency = (url.searchParams.get('currency') || 'USD').toUpperCase();
   const impact = (url.searchParams.get('impact') || 'major').toLowerCase();

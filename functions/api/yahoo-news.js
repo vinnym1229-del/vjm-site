@@ -5,12 +5,15 @@
 // - titles/links sanitized and length-capped; deduped by link
 // - cached ~5 min; explicit unavailable state on failure (no fake items)
 
-import { json, cleanSymbol } from './_lib/http.js';
+import { json, cleanSymbol, checkRateLimit } from './_lib/http.js';
 
 const FEED_HOST = 'feeds.finance.yahoo.com';
 const MAX_ITEMS = 12;
 
 export async function onRequestGet(context) {
+  // Abuse guard: this route costs money or calls a third party.
+  const _rl = await checkRateLimit(context.env, context.request, 'yahoo-news', 30);
+  if (!_rl.allowed) return json({ ok: false, error: 'Too many requests. Wait a minute.' }, 429);
   const { request } = context;
   const url = new URL(request.url);
   const symbol = cleanSymbol(url.searchParams.get('symbol'));

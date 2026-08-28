@@ -12,7 +12,7 @@
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "PJ Trades x St",
-  "url": "https://not-financial-advice.com/",
+  "url": "https://not-financial-advice-vjm.com/",
   "description": "Futures-first trading education: live futures trading 3-5x per week, the IFVG Starter Crash Course, group classes, and prop firm giveaways. Educational only — not financial advice.",
   "founder": { "@type": "Person", "name": "PJ Trades", "jobTitle": "Futures Day Trader" },
   "sameAs": [
@@ -47,7 +47,7 @@
   ]
 }
 </script>
-<meta property="og:url" content="https://not-financial-advice.com">
+<meta property="og:url" content="https://not-financial-advice-vjm.com">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/jpeg" href="assets/pj-logo.jpg">
 <link rel="apple-touch-icon" href="assets/pj-logo.jpg">
@@ -1376,7 +1376,7 @@ html { font-size: 1.02rem; }
         <!-- Trading mode inputs -->
         <div id="sim-trading-inputs">
           <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Starting Balance ($)</label>
-          <input id="sim-start" type="number" value="1200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+          <input id="sim-start" type="number" value="1200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;" aria-label="sim start">
 
           <!-- % or $ toggle -->
           <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
@@ -1387,28 +1387,28 @@ html { font-size: 1.02rem; }
 
           <div id="sim-dollar-input">
             <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Daily Gain ($)</label>
-            <input id="sim-daily-dollar" type="number" value="200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+            <input id="sim-daily-dollar" type="number" value="200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;" aria-label="sim daily dollar">
           </div>
           <div id="sim-pct-input" style="display:none;">
             <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Daily Gain (%)</label>
-            <input id="sim-daily-pct" type="number" value="1" min="0.1" step="0.1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+            <input id="sim-daily-pct" type="number" value="1" min="0.1" step="0.1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;" aria-label="sim daily pct">
           </div>
 
           <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Trading Days: <span id="sim-days-val">20</span></label>
-          <input id="sim-days" type="range" min="1" max="252" value="20" oninput="document.getElementById('sim-days-val').textContent=this.value" style="width:100%;margin-bottom:16px;">
+          <input id="sim-days" type="range" min="1" max="252" value="20" oninput="document.getElementById('sim-days-val').textContent=this.value" style="width:100%;margin-bottom:16px;" aria-label="sim days">
           <button onclick="runGrowthSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">PROJECT PAYOUT</button>
         </div>
 
         <!-- Prop mode inputs -->
         <div id="sim-prop-inputs" style="display:none;margin-top:12px;">
           <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Starting Balance ($)</label>
-          <input id="sim-prop-start" type="number" value="1200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+          <input id="sim-prop-start" type="number" value="1200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;" aria-label="sim prop start">
           <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
             <span style="font-size:0.82rem;color:var(--muted);">Target $/day:</span>
-            <input id="sim-prop-daily" type="number" value="200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+            <input id="sim-prop-daily" type="number" value="200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;" aria-label="sim prop daily">
           </div>
           <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Holding Period (days)</label>
-          <input id="sim-prop-days" type="number" value="30" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;">
+          <input id="sim-prop-days" type="number" value="30" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;" aria-label="sim prop days">
           <button onclick="runPropPayout()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE PAYOUT</button>
           <div id="sim-prop-result" style="margin-top:16px;display:none;">
             <div style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:14px;text-align:center;">
@@ -1444,11 +1444,11 @@ html { font-size: 1.02rem; }
         <div style="display:flex;gap:8px;margin-bottom:10px;">
           <div>
             <label style="font-size:0.82rem;color:var(--muted);">Stop Loss (pts)</label>
-            <input id="tick-pts" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;">
+            <input id="tick-pts" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;" aria-label="tick pts">
           </div>
           <div>
             <label style="font-size:0.82rem;color:var(--muted);">Risk $</label>
-            <input id="tick-dollars" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;">
+            <input id="tick-dollars" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;" aria-label="tick dollars">
           </div>
         </div>
         <button onclick="calcTickSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
@@ -1474,15 +1474,15 @@ html { font-size: 1.02rem; }
         <div style="display:flex;gap:12px;margin-bottom:12px;">
           <div>
             <label style="font-size:0.82rem;color:var(--muted);">Contracts</label>
-            <input id="size-contracts" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;">
+            <input id="size-contracts" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;" aria-label="size contracts">
           </div>
           <div>
             <label style="font-size:0.82rem;color:var(--muted);">Stop Loss (pts)</label>
-            <input id="size-pts" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;">
+            <input id="size-pts" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;" aria-label="size pts">
           </div>
         </div>
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">$ Amount (leave blank to compute from contracts)</label>
-        <input id="size-target" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <input id="size-target" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="size target">
         <button onclick="calcSizingSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
         <div id="size-result" style="margin-top:16px;display:none;">
           <div style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:14px;text-align:center;">
@@ -1506,11 +1506,11 @@ html { font-size: 1.02rem; }
           <option value="50">RTY — E-mini Russell ($50/pt)</option>
         </select>
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Entry Price</label>
-        <input id="fc-entry" type="number" value="21500" step="0.25" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <input id="fc-entry" type="number" value="21500" step="0.25" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="fc entry">
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Exit Price</label>
-        <input id="fc-exit" type="number" value="21568" step="0.25" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <input id="fc-exit" type="number" value="21568" step="0.25" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="fc exit">
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contracts</label>
-        <input id="fc-contracts" type="number" value="2" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <input id="fc-contracts" type="number" value="2" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="fc contracts">
         <button onclick="calcFutures()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
         <div id="fc-result" style="margin-top:16px;display:none;">
           <div style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:14px;text-align:center;">
@@ -1525,11 +1525,11 @@ html { font-size: 1.02rem; }
         <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">🛡️ Prop Risk Guard</h3>
         <p style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;">Know exactly how many trades stand between you and a breach.</p>
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Account Size ($)</label>
-        <input id="pr-account" type="number" value="50000" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <input id="pr-account" type="number" value="50000" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="pr account">
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Trailing Drawdown / Loss Limit ($)</label>
-        <input id="pr-drawdown" type="number" value="2000" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <input id="pr-drawdown" type="number" value="2000" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="pr drawdown">
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Risk Per Trade (% of account)</label>
-        <input id="pr-risk" type="number" value="0.5" step="0.1" min="0.1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
+        <input id="pr-risk" type="number" value="0.5" step="0.1" min="0.1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="pr risk">
         <button onclick="calcPropRisk()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
         <div id="pr-result" style="margin-top:16px;display:none;">
           <div style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:14px;text-align:center;">
@@ -1718,7 +1718,7 @@ html { font-size: 1.02rem; }
         <div style="font-size:2rem;margin-bottom:12px;">🔍</div>
         <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;margin-bottom:8px;">Check Your Status</h3>
         <p style="color:var(--muted);font-size:0.85rem;margin-bottom:24px;">Enter your Discord username to check if your premium is active.</p>
-        <input type="text" id="status-discord-input" placeholder="Your Discord username..." style="width:100%;padding:12px 16px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;margin-bottom:12px;box-sizing:border-box;">
+        <input type="text" id="status-discord-input" placeholder="Your Discord username..." style="width:100%;padding:12px 16px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;margin-bottom:12px;box-sizing:border-box;" aria-label="Your Discord username...">
         <button onclick="checkStatus()" class="btn btn-gold" style="width:100%;">Check Status</button>
         <div id="status-result" style="display:none;margin-top:20px;border-radius:12px;padding:20px;">
           <div id="status-icon" style="font-size:2rem;margin-bottom:8px;"></div>

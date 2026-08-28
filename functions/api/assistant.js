@@ -72,6 +72,19 @@ async function handle({ request, env }) {
     }
   }
 
+  // Never let the model narrate numbers it does not have. Without this the
+  // answer comes back as "SPY is up/down by X%" -- a fill-in-the-blank
+  // template presented to the user as grounded analysis.
+  if (!aiReady) {
+    return json({
+      ok: true,
+      mode: 'data-unavailable',
+      narrative: null,
+      message: 'Live market data is unavailable right now, so I cannot give you prices I can stand behind. Try again in a few minutes.',
+      disclaimer: 'Educational information only — not financial advice.',
+    });
+  }
+
   const system = MARKET_GUARDRAILS;
   const userPrompt = `DATA BLOCK:\n${dataBlock || '(no live data available)'}\n\nUser question: ${question}`;
 

@@ -14,7 +14,7 @@
 //
 // Env: ALPACA_API_KEY, ALPACA_SECRET_KEY.
 
-import { json } from './_lib/http.js';
+import { json, checkRateLimit } from './_lib/http.js';
 import { alpacaConfigured, snapshots, summarizeSnapshot } from './_lib/alpaca.js';
 
 const EQUITIES = [
@@ -27,6 +27,9 @@ const EQUITIES = [
 ];
 
 export async function onRequestGet(context) {
+  // Abuse guard: this route costs money or calls a third party.
+  const _rl = await checkRateLimit(context.env, context.request, 'ticker', 60);
+  if (!_rl.allowed) return json({ ok: false, error: 'Too many requests. Wait a minute.' }, 429);
   const { env } = context;
   if (!alpacaConfigured(env)) {
     return json({ ok: false, pending: true, error: 'Live ticker not configured.' }, 200);

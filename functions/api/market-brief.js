@@ -16,7 +16,7 @@
 // Env: RESEARCH_DB (cache), RESEARCH_CRON_SECRET, DISCORD_ANNOUNCEMENTS_WEBHOOK,
 //      BRIEF_UNIVERSE (optional comma list), standard Alpaca keys.
 
-import { json } from './_lib/http.js';
+import { json, checkRateLimit } from './_lib/http.js';
 import { complete, MARKET_GUARDRAILS } from './_lib/ai.js';
 import { alpacaConfigured, snapshots, summarizeSnapshot, movers, computedMovers } from './_lib/alpaca.js';
 import { postEmbed, sanitizeDiscordText } from './_lib/discord.js';
@@ -27,6 +27,9 @@ const NEWS_SYMBOLS = ['SPY', 'QQQ', 'NVDA', 'TSLA', 'AAPL'];
 const MODULE = 'market_brief';
 
 export async function onRequestGet(context) {
+  // Abuse guard: this route costs money or calls a third party.
+  const _rl = await checkRateLimit(context.env, context.request, 'brief', 30);
+  if (!_rl.allowed) return json({ ok: false, error: 'Too many requests. Wait a minute.' }, 429);
   const { env } = context;
   const today = etDateString();
   const cached = await loadBrief(env, today);

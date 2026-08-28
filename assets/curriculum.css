@@ -207,3 +207,21 @@ body.light-mode .curr .tool canvas{background:rgba(0,0,0,.03);}
   .curr main{padding:8px 16px 50px;}
   .curr .lesson-body{padding-left:18px;}
 }
+
+
+/* ─── SKELETON LOADERS ───
+   Shown while a calculator's first paint is pending. Sized to the content
+   they replace so nothing shifts when the real values arrive (avoiding the
+   layout jump that a spinner causes). */
+.curr .skeleton{position:relative;overflow:hidden;background:var(--bg2);border-radius:8px;}
+.curr .skeleton::after{content:'';position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.055),transparent);
+  animation:skelSweep 1.4s ease-in-out infinite;}
+@keyframes skelSweep{to{transform:translateX(100%);}}
+.curr .skeleton-row{height:15px;margin:11px 0;}
+.curr .skeleton-row.w40{width:40%;} .curr .skeleton-row.w60{width:60%;} .curr .skeleton-row.w80{width:80%;}
+.curr .skeleton-chart{height:140px;margin-top:12px;border-radius:10px;}
+/* A sweeping highlight reads as motion to a screen reader user only as noise,
+   so the region announces itself as busy instead. */
+.curr [aria-busy="true"] .skeleton{opacity:1;}
+@media (prefers-reduced-motion:reduce){.curr .skeleton::after{animation:none;}}

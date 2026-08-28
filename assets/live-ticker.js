@@ -28,11 +28,19 @@
     return (n >= 0 ? '+' : '') + n.toFixed(2) + '%';
   }
 
+  // Values originate from our own endpoint, but they pass through a
+  // third-party API on the way, so nothing reaches innerHTML unescaped.
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
   function cellHtml(item) {
     const dir = Number.isFinite(item.changePct) ? (item.changePct >= 0 ? 'up' : 'down') : '';
     return (
-      '<span class="lt-cell" data-sym="' + item.symbol + '">' +
-        '<span class="lt-label">' + item.label + '</span>' +
+      '<span class="lt-cell" data-sym="' + esc(item.symbol) + '">' +
+        '<span class="lt-label">' + esc(item.label) + '</span>' +
         '<span class="lt-price">' + fmtPrice(item.price) + '</span>' +
         '<span class="lt-pct ' + dir + '">' + fmtPct(item.changePct) + '</span>' +
       '</span>'
@@ -81,7 +89,7 @@
     for (const item of items) {
       // Both copies of the row carry the cell; update each in place so the
       // loop stays seamless and nothing reflows.
-      wrap.querySelectorAll('.lt-cell[data-sym="' + item.symbol + '"]').forEach((cell) => {
+      wrap.querySelectorAll('.lt-cell[data-sym="' + esc(item.symbol) + '"]').forEach((cell) => {
         cell.querySelector('.lt-price').textContent = fmtPrice(item.price);
         const pct = cell.querySelector('.lt-pct');
         pct.textContent = fmtPct(item.changePct);
