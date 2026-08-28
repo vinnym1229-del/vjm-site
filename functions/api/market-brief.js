@@ -1,6 +1,8 @@
 // Cloudflare Pages Function: /api/market-brief
 //
-// GET  → today's Pre-Market Brief (from cache; 404 until first generation).
+// GET  → today's Pre-Market Brief (from cache). Responds 200 with
+//        { ok:false, pending:true } until the day's brief exists — "not
+//        generated yet" is a normal morning state, not an error.
 // POST → regenerate now. Authorized by X-Research-Cron (scheduled job) only.
 //        Optionally pushes the brief to the Discord announcements webhook.
 //
@@ -29,7 +31,11 @@ export async function onRequestGet(context) {
   const today = etDateString();
   const cached = await loadBrief(env, today);
   if (!cached) {
-    return json({ ok: false, error: 'No brief has been generated yet today.', date: today }, 404);
+    // 200, not 404: the brief legitimately does not exist until the scheduled
+    // POST runs each weekday morning, and every visitor hitting the homepage
+    // before then would otherwise log a console error for a normal state.
+    // Callers gate on `ok`/`pending`, not on the status code.
+    return json({ ok: false, pending: true, error: 'No brief has been generated yet today.', date: today }, 200);
   }
   return json({ ok: true, ...cached }, 200);
 }

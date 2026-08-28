@@ -32,7 +32,17 @@ jobs:
       RESEARCH_CRON_SECRET: ${{ secrets.RESEARCH_CRON_SECRET }}
     steps:
       - name: Validate configuration
-        run: test -n "$RESEARCH_REFRESH_URL" && test -n "$RESEARCH_CRON_SECRET"
+        run: |
+          missing=""
+          [ -n "$RESEARCH_REFRESH_URL" ] || missing="$missing RESEARCH_REFRESH_URL"
+          [ -n "$RESEARCH_CRON_SECRET" ] || missing="$missing RESEARCH_CRON_SECRET"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secret(s):$missing" >&2
+            echo "Set them under Settings > Secrets and variables > Actions." >&2
+            echo "RESEARCH_REFRESH_URL must point at the deployment that serves" >&2
+            echo "the pj Functions, e.g. https://pj.vjm.pages.dev" >&2
+            exit 1
+          fi
       - name: Generate today's pre-market brief
         run: |
           set -euo pipefail

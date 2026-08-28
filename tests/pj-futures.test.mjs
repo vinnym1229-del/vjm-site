@@ -10,13 +10,13 @@ const index = readFileSync(join(ROOT, 'index.html'), 'utf8');
 const premarket = readFileSync(join(ROOT, 'premarket.html'), 'utf8');
 const guidance = readFileSync(join(ROOT, 'premium-guidance.html'), 'utf8');
 
-test('bundles: $100 futures core with 6mo/1yr options, $129 all-markets tier', () => {
+test('bundles: $100 futures core with 6mo/1yr options, $129 complete tier', () => {
   assert.match(index, /\$100<span>\/mo<\/span>/, '$100/mo futures tier missing');
   assert.match(index, /\$529/, '6-month option missing');
   assert.match(index, /12% off/, '6-month save badge missing');
   assert.match(index, /\$1,000/, 'annual option missing');
   assert.match(index, /18% off/, 'annual save badge missing');
-  assert.match(index, /All-Markets/, 'all-markets tier missing');
+  assert.match(index, /Complete Bundle/, 'complete bundle badge missing');
   assert.match(index, /\$129<span>\/mo<\/span>/, '$129 all-markets price missing');
   assert.match(index, /Futures \+ Options \+ Stocks/, 'all-markets scope label missing');
   assert.match(index, /Complete educational materials/i, 'educational materials line missing');
@@ -30,7 +30,12 @@ test('futures-first identity', () => {
   assert.match(index, /Futures, Made Simple\./);
   assert.match(index, /NQ &amp; ES futures/);
   assert.match(index, /ten years/i, 'owner confirmed 10 years — must stay');
-  assert.match(index, /CME_MINI:NQ1!/, 'futures ticker tape missing NQ');
+  // The tape carries free ETF/crypto proxies, not the CME/NYMEX contracts:
+  // those need a paid TradingView data plan and rendered as blank restricted
+  // tiles for visitors. Guard both directions so neither regresses.
+  assert.match(index, /NASDAQ:QQQ/, 'ticker tape missing the NQ proxy (QQQ)');
+  assert.match(index, /AMEX:IVV/, 'ticker tape missing the ES proxy (IVV)');
+  assert.doesNotMatch(index, /CME_MINI:|NYMEX:/, 'paid-tier futures symbols must stay out of the tape');
   assert.doesNotMatch(index, /BINANCE:ETHUSDT/, 'crypto-heavy tape should be gone');
 });
 
@@ -154,10 +159,15 @@ test('session clock lives in the schedule section', () => {
 
 test('PWA manifest + theme color + PJ 404', () => {
   const manifest = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
-  assert.equal(manifest.theme_color, '#06090d');
+  assert.equal(manifest.theme_color, '#080708');
   assert.ok(existsSync(join(ROOT, 'assets', 'icon.svg')), 'manifest icon missing');
   assert.match(index, /<link rel="manifest" href="manifest\.json">/);
-  assert.match(index, /<meta name="theme-color" content="#06090d">/);
+  assert.match(index, /<meta name="theme-color" content="#080708">/);
+  // These drifted apart once when the palette changed: index.html was swept,
+  // manifest.json was not. Assert they agree rather than just their values.
+  const metaTheme = index.match(/<meta name="theme-color" content="(#[0-9a-f]{6})">/i);
+  assert.ok(metaTheme, 'theme-color meta missing');
+  assert.equal(manifest.theme_color, metaTheme[1], 'manifest and meta theme-color must match');
   const notFound = readFileSync(join(ROOT, '404.html'), 'utf8');
   assert.match(notFound, /PJ Trades x St/);
   assert.match(notFound, /discord\.gg\/pjtrades/);
