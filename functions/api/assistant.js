@@ -57,6 +57,9 @@ async function handle({ request, env }) {
     try {
       const snaps = await snapshots(env, UNIVERSE);
       const rows = UNIVERSE.map((s) => summarizeSnapshot(s, snaps[s])).filter(Boolean);
+      // Zero usable snapshots is a data failure even though nothing threw:
+      // the request succeeded, it just carried nothing we can quote.
+      if (!rows.length) aiReady = false;
       for (const r of rows.slice(0, 4)) {
         dataBlock += `${r.symbol}: $${r.price} (${r.changePct >= 0 ? '+' : ''}${r.changePct}% vs prior close, IEX feed${r.asOf ? ', asOf ' + r.asOf : ''})\n`;
         if (r.asOf) asOfParts.push(r.asOf);
