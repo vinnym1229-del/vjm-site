@@ -107,12 +107,126 @@
     node.className = 'lock-msg ' + (ok ? 'ok' : 'err');
   }
 
+  // Each .quiz block carries its question data as a JSON <script> sibling
+  // (type="application/json") so no extra network fetch is needed and the
+  // same static page still works offline. Grading is entirely client-side.
+  function initQuizzes() {
+    document.querySelectorAll('.quiz').forEach((quiz) => {
+      const dataNode = quiz.querySelector('script[type="application/json"]');
+      if (!dataNode) return;
+      let questions;
+      try { questions = JSON.parse(dataNode.textContent); } catch { return; }
+      const submitBtn = quiz.querySelector('.quiz-submit');
+      const scoreEl = quiz.querySelector('.quiz-score');
+      if (!submitBtn) return;
+      submitBtn.addEventListener('click', () => {
+        let correct = 0;
+        questions.forEach((q, qi) => {
+          const block = quiz.querySelector(`.quiz-q[data-qi="${qi}"]`);
+          if (!block) return;
+          const checked = block.querySelector('input[type="radio"]:checked');
+          const explain = block.querySelector('.quiz-explain');
+          block.querySelectorAll('.quiz-choice').forEach((choiceEl, ci) => {
+            choiceEl.classList.remove('correct', 'incorrect');
+            if (ci === q.correct) choiceEl.classList.add('correct');
+            else if (checked && Number(checked.value) === ci) choiceEl.classList.add('incorrect');
+          });
+          if (explain) explain.classList.add('show');
+          if (checked && Number(checked.value) === q.correct) correct++;
+        });
+        if (scoreEl) {
+          scoreEl.textContent = `Score: ${correct} / ${questions.length}`;
+          scoreEl.classList.add('show');
+        }
+      });
+    });
+  }
+
   async function init() {
     initGroupTabs();
     initLevelTabs();
     wireUnlockForms();
+    initQuizzes();
     if (await checkPremium()) unlockAll();
   }
+
+  // ---- shared tiny canvas helpers, used by each page's own calculator ----
+  function sizeCanvas(canvas) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(rect.width, 280);
+    const h = canvas.dataset.h ? Number(canvas.dataset.h) : 220;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.height = h + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx, w, h };
+  }
+
+  // bars: [{label, value, color}]. Draws a simple horizontal bar chart.
+  window.currDrawBars = function currDrawBars(canvas, bars, opts = {}) {
+    const { ctx, w, h } = sizeCanvas(canvas);
+    ctx.clearRect(0, 0, w, h);
+    const max = Math.max(1e-9, ...bars.map((b) => Math.abs(b.value)));
+    const rowH = Math.min(46, (h - 20) / bars.length);
+    const labelW = 96;
+    const barMaxW = w - labelW - 70;
+    const muted = getComputedStyle(document.body).getPropertyValue('--muted') || '#9b9296';
+    const text = getComputedStyle(document.body).getPropertyValue('--text') || '#eceaea';
+    bars.forEach((b, i) => {
+      const y = 10 + i * rowH;
+      ctx.fillStyle = muted.trim();
+      ctx.font = '600 12px Inter, sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(b.label, 0, y + rowH / 2 - 8);
+      const bw = Math.max(2, (Math.abs(b.value) / max) * barMaxW);
+      ctx.fillStyle = b.color || '#dc2626';
+      const barY = y + rowH / 2;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(labelW, barY - 8, bw, 16, 6) : ctx.rect(labelW, barY - 8, bw, 16);
+      ctx.fill();
+      ctx.fillStyle = text.trim();
+      ctx.font = '700 12px Inter, sans-serif';
+      ctx.fillText(opts.fmt ? opts.fmt(b.value) : String(b.value), labelW + bw + 8, barY);
+    });
+  };
+
+  // points: [{x,y}] in data space; drawn as a line with a zero-axis and an
+  // optional breakeven marker. xLabel/yLabel are formatter functions.
+  window.currDrawLine = function currDrawLine(canvas, points, opts = {}) {
+    const { ctx, w, h } = sizeCanvas(canvas);
+    ctx.clearRect(0, 0, w, h);
+    if (!points.length) return;
+    const pad = { l: 54, r: 16, t: 14, b: 26 };
+    const xs = points.map((p) => p.x);
+    const ys = points.map((p) => p.y);
+    const xMin = Math.min(...xs), xMax = Math.max(...xs);
+    const yAbs = Math.max(1e-9, ...ys.map((y) => Math.abs(y)));
+    const yMin = -yAbs, yMax = yAbs;
+    const px = (x) => pad.l + ((x - xMin) / (xMax - xMin || 1)) * (w - pad.l - pad.r);
+    const py = (y) => pad.t + (1 - (y - yMin) / (yMax - yMin || 1)) * (h - pad.t - pad.b);
+    const border = getComputedStyle(document.body).getPropertyValue('--border') || '#2c2528';
+    const muted = getComputedStyle(document.body).getPropertyValue('--muted') || '#9b9296';
+    ctx.strokeStyle = border.trim();
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, py(0)); ctx.lineTo(w - pad.r, py(0)); ctx.stroke();
+    ctx.fillStyle = muted.trim();
+    ctx.font = '600 11px Inter, sans-serif';
+    ctx.fillText(opts.yFmt ? opts.yFmt(0) : '0', 4, py(0) + 4);
+    ctx.fillText(opts.xFmt ? opts.xFmt(xMin) : String(xMin), pad.l, h - 8);
+    ctx.fillText(opts.xFmt ? opts.xFmt(xMax) : String(xMax), w - pad.r - 40, h - 8);
+    ctx.strokeStyle = opts.color || '#dc2626';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    points.forEach((p, i) => { const x = px(p.x), y = py(p.y); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+    ctx.stroke();
+    ctx.fillStyle = (opts.color || '#dc2626') + '22';
+    ctx.lineTo(px(points[points.length - 1].x), py(0));
+    ctx.lineTo(px(points[0].x), py(0));
+    ctx.closePath();
+    ctx.fill();
+  };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
