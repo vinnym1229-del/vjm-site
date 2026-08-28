@@ -174,6 +174,14 @@ test('PWA manifest + theme color + PJ 404', () => {
   assert.match(notFound, /noindex/);
 });
 
+test('live ticker progressive enhancement wired', () => {
+  assert.match(index, /assets\/live-ticker\.js/, 'live ticker script missing from index');
+  assert.ok(existsSync(join(ROOT, 'functions', 'api', 'ticker.js')), '/api/ticker function missing');
+  assert.ok(existsSync(join(ROOT, 'assets', 'live-ticker.js')), 'live-ticker asset missing');
+  const fn = readFileSync(join(ROOT, 'functions', 'api', 'ticker.js'), 'utf8');
+  assert.match(fn, /pending: true/, 'unconfigured deployments must respond pending, not an error status');
+});
+
 test('Organization JSON-LD with founder + socials', () => {
   assert.match(index, /"@type": "Organization"/);
   assert.match(index, /"founder": \{ "@type": "Person", "name": "PJ Trades"/);

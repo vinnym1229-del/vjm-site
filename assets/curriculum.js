@@ -12,6 +12,10 @@
     const m = document.getElementById('curr-mmenu');
     const h = document.getElementById('curr-hamb');
     if (!m) return;
+    // Pin the panel to the nav's real bottom edge: the bar's height varies
+    // with the brand size, so a hard-coded offset would drift.
+    const nav = document.querySelector('.curr nav, nav');
+    if (nav) m.style.top = Math.round(nav.getBoundingClientRect().bottom) + 'px';
     m.classList.toggle('open');
     h?.setAttribute('aria-expanded', m.classList.contains('open'));
   }
@@ -142,7 +146,34 @@
     });
   }
 
+  // Grouped nav dropdowns (same behavior as the homepage): hover opens via
+  // CSS; this adds click + keyboard control and outside-click/Escape close.
+  function initNavDropdowns() {
+    var items = document.querySelectorAll('.nav-item');
+    if (!items.length) return;
+    function closeAll() {
+      items.forEach(function (o) {
+        o.classList.remove('open');
+        var b = o.querySelector('.nav-top');
+        if (b) b.setAttribute('aria-expanded', 'false');
+      });
+    }
+    items.forEach(function (item) {
+      var btn = item.querySelector('.nav-top');
+      if (!btn) return;
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var wasOpen = item.classList.contains('open');
+        closeAll();
+        if (!wasOpen) { item.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); }
+      });
+    });
+    document.addEventListener('click', closeAll);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
+  }
+
   async function init() {
+    initNavDropdowns();
     initGroupTabs();
     initLevelTabs();
     wireUnlockForms();
