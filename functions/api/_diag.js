@@ -27,7 +27,7 @@ async function probe(url, headers) {
   try {
     const res = await fetch(url, { headers, signal: AbortSignal.timeout(8000) });
     const body = await res.text();
-    return { status: res.status, ok: res.ok, body: body.slice(0, 200) };
+    return { status: res.status, ok: res.ok, body: body.slice(0, 1400) };
   } catch (err) {
     return { status: null, ok: false, error: String((err && err.message) || err).slice(0, 200) };
   }
