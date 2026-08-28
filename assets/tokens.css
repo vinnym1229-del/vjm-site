@@ -105,9 +105,9 @@
 
 .vjm-note {
   font-size: 0.78rem; color: var(--vjm-muted);
-  border-left: 3px solid var(--vjm-gold);
+  border:1px solid rgba(220,38,38,.22);
   padding: 10px 14px; background: rgba(240, 180, 41, 0.05);
-  border-radius: 0 10px 10px 0;
+  border-radius: 12px;
 }
 
 /* Status cues always pair color with an icon/word (never color alone) */

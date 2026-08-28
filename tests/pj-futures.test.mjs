@@ -132,7 +132,13 @@ test('sticky mobile CTA appears after hero and never covers the chat FAB', () =>
   assert.match(index, /body\.show-ctabar \.vjm-chat-fab\{bottom:\d+px;\}/, 'chat FAB offset missing');
   assert.match(index, /IntersectionObserver/, 'reveal or cta observer missing');
   const m = index.match(/id="mobile-cta"[\s\S]*?href="(https:\/\/whop\.com[^"]*)"/);
-  assert.ok(m && m[1] === 'https://whop.com/pjtradespremium', 'CTA must link to Whop');
+  assert.ok(m, 'CTA must link to Whop');
+  // Destination is asserted on origin+path; the query string carries UTM
+  // attribution, which is how we tell which surface produced a sale. Pinning
+  // the bare URL here would silently forbid that.
+  const cta = new URL(m[1]);
+  assert.equal(cta.origin + cta.pathname, 'https://whop.com/pjtradespremium', 'CTA must link to the Whop product');
+  assert.ok(cta.searchParams.get('utm_content'), 'CTA must carry utm_content so the source is attributable');
 });
 
 test('latest-from-the-desk: CMS feeds + AI lean chip, hidden until data exists', () => {

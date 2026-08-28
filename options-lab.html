@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="canonical" href="https://not-financial-advice-vjm.com/pj/options-lab.html">
 <title>Options Lab | St Trades</title>
 <meta name="description" content="Options basics and how to trade them, plus gamma exposure explained: how to read a GEX chart, worked scenarios, where to get real-time data, and how to translate it into QQQ/NQ and SPY/ES intraday.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23080708'/%3E%3Ctext y='34' x='32' text-anchor='middle' dominant-baseline='central' font-size='40' font-family='Arial Black,sans-serif' font-weight='900' fill='%23dc2626'%3ES%3C/text%3E%3C/svg%3E">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
 :root {
   --gold: #dc2626; --gold2: #b91c1c;
@@ -21,7 +22,7 @@ body.light-mode {
   --card: #ffffff; --border: #d5cfd1; --text: #151213; --muted: #6b6165; --accent: #e3dee0;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; line-height: 1.6; transition: background .3s, color .3s; }
+body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; line-height: 1.6; transition: background .3s, color .3s; }
 h1,h2,h3 { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; }
 a { color: var(--gold); }
 .gold { color: var(--gold); }
@@ -41,12 +42,12 @@ body.light-mode nav { background: rgba(244,246,249,0.95); }
 .lab-hero p { color: var(--muted); max-width: 620px; margin: 0 auto; font-size: 0.95rem; }
 
 .tabs { position: sticky; top: 57px; z-index: 40; display: flex; gap: 6px; overflow-x: auto; padding: 12px 24px; background: var(--bg); border-bottom: 1px solid var(--border); }
-.tab-btn { flex: 0 0 auto; background: transparent; border: 1px solid var(--border); color: var(--muted); font-family:'Inter',sans-serif; font-weight: 700; font-size: 0.86rem; padding: 10px 18px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all .15s; }
+.tab-btn { flex: 0 0 auto; background: transparent; border: 1px solid var(--border); color: var(--muted); font-family:'IBM Plex Sans',sans-serif; font-weight: 700; font-size: 0.86rem; padding: 10px 18px; border-radius: 8px; cursor: pointer; white-space: nowrap; transition: all .15s; }
 .tab-btn.active { background: var(--gold); border-color: var(--gold); color: #fff; }
 .tab-btn:not(.active):hover { border-color: var(--gold); color: var(--gold); }
 
 .subtabs { position: sticky; top: 106px; z-index: 39; display: flex; gap: 6px; overflow-x: auto; padding: 10px 24px; background: var(--bg2); border-bottom: 1px solid var(--border); }
-.subtab-btn { flex: 0 0 auto; background: transparent; border: 1px solid var(--border); color: var(--muted); font-family:'Inter',sans-serif; font-weight: 600; font-size: 0.76rem; padding: 7px 14px; border-radius: 20px; cursor: pointer; white-space: nowrap; transition: all .15s; }
+.subtab-btn { flex: 0 0 auto; background: transparent; border: 1px solid var(--border); color: var(--muted); font-family:'IBM Plex Sans',sans-serif; font-weight: 600; font-size: 0.76rem; padding: 7px 14px; border-radius: 20px; cursor: pointer; white-space: nowrap; transition: all .15s; }
 .subtab-btn.active { background: rgba(220,38,38,0.14); border-color: var(--gold); color: var(--gold); }
 .subtab-btn:not(.active):hover { border-color: var(--gold); color: var(--gold); }
 
@@ -68,7 +69,7 @@ h2.panel-title { font-size: clamp(1.5rem,3.5vw,2.1rem); margin-bottom: 14px; }
 .diagram-wrap svg { width: 100%; height: auto; display: block; }
 .diagram-caption { font-size: 0.78rem; color: var(--muted); margin-top: 10px; text-align: center; }
 
-.callout { border-left: 3px solid var(--gold); background: rgba(220,38,38,0.06); border-radius: 0 10px 10px 0; padding: 14px 18px; font-size: 0.88rem; margin: 20px 0; }
+.callout { border:1px solid rgba(220,38,38,.22); background: rgba(220,38,38,0.06); border-radius: 12px; padding: 14px 18px; font-size: 0.88rem; margin: 20px 0; }
 .callout.green { border-color: var(--green); background: rgba(220,38,38,0.06); }
 .callout.warn { border-color: #f59e0b; background: rgba(245,158,11,0.06); }
 
@@ -235,8 +236,8 @@ body::before {
       <div class="diagram-wrap">
         <svg viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg">
           <line x1="40" y1="170" x2="740" y2="170" style="stroke:var(--border);stroke-width:1"/>
-          <text x="40" y="24" style="fill:var(--muted);font-size:11px;font-family:Inter,sans-serif;">Positive GEX (call-dominant)</text>
-          <text x="40" y="330" style="fill:var(--muted);font-size:11px;font-family:Inter,sans-serif;">Negative GEX (put-dominant)</text>
+          <text x="40" y="24" style="fill:var(--muted);font-size:11px;font-family:'IBM Plex Sans',sans-serif;">Positive GEX (call-dominant)</text>
+          <text x="40" y="330" style="fill:var(--muted);font-size:11px;font-family:'IBM Plex Sans',sans-serif;">Negative GEX (put-dominant)</text>
 
           <g style="fill:var(--green)">
             <rect x="560" y="90" width="26" height="80"/>
@@ -259,16 +260,16 @@ body::before {
           </g>
 
           <line x1="405" y1="40" x2="405" y2="300" style="stroke:var(--gold);stroke-width:2;stroke-dasharray:5,4"/>
-          <text x="411" y="52" style="fill:var(--gold);font-size:12px;font-weight:700;font-family:Inter,sans-serif;">Zero Gamma Flip</text>
+          <text x="411" y="52" style="fill:var(--gold);font-size:12px;font-weight:700;font-family:'IBM Plex Sans',sans-serif;">Zero Gamma Flip</text>
 
           <line x1="173" y1="265" x2="173" y2="278" style="stroke:var(--red);stroke-width:1"/>
-          <text x="173" y="294" text-anchor="middle" style="fill:var(--red);font-size:12px;font-weight:700;font-family:Inter,sans-serif;">Put Wall</text>
-          <text x="173" y="309" text-anchor="middle" style="fill:var(--muted);font-size:10px;font-family:Inter,sans-serif;">largest negative strike</text>
+          <text x="173" y="294" text-anchor="middle" style="fill:var(--red);font-size:12px;font-weight:700;font-family:'IBM Plex Sans',sans-serif;">Put Wall</text>
+          <text x="173" y="309" text-anchor="middle" style="fill:var(--muted);font-size:10px;font-family:'IBM Plex Sans',sans-serif;">largest negative strike</text>
 
           <line x1="613" y1="48" x2="613" y2="60" style="stroke:var(--green);stroke-width:1"/>
-          <text x="613" y="38" text-anchor="middle" style="fill:var(--green);font-size:12px;font-weight:700;font-family:Inter,sans-serif;">Call Wall</text>
+          <text x="613" y="38" text-anchor="middle" style="fill:var(--green);font-size:12px;font-weight:700;font-family:'IBM Plex Sans',sans-serif;">Call Wall</text>
 
-          <text x="740" y="185" text-anchor="end" style="fill:var(--muted);font-size:10px;font-family:Inter,sans-serif;">Strike →</text>
+          <text x="740" y="185" text-anchor="end" style="fill:var(--muted);font-size:10px;font-family:'IBM Plex Sans',sans-serif;">Strike →</text>
         </svg>
         <p class="diagram-caption">A GEX profile: bars show net dealer gamma at each strike. The put wall tends to act as a floor while dealers are net long gamma there; the call wall acts as a magnet/ceiling. The dashed line is the zero gamma flip — the strike where the whole market's net dealer gamma crosses from positive to negative.</p>
       </div>

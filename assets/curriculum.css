@@ -2,7 +2,7 @@
    (curriculum section), Futures Dissection, Psychology Enhancer.
    Reuses the site's red/black design tokens (see index.html :root) so these
    pages feel like the same product, not a bolted-on course platform. */
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
 :root{
   --gold:#dc2626; --gold2:#b91c1c; --green:#ff4d4d; --emerald:#ef4444;
@@ -15,7 +15,7 @@ body.light-mode{
 }
 *{box-sizing:border-box;}
 html{scroll-behavior:smooth;scroll-padding-top:80px;}
-body.curr{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;position:relative;}
+body.curr{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;position:relative;}
 .curr a{color:inherit;}
 .curr .skip{position:absolute;left:14px;top:-60px;background:var(--gold);color:#fff;padding:10px 14px;border-radius:10px;font-weight:900;text-decoration:none;z-index:10000;}
 .curr .skip:focus{top:14px;}
@@ -31,7 +31,7 @@ body.light-mode .curr nav{background:rgba(246,244,244,.96);}
 .curr .nav-links{display:flex;flex-wrap:nowrap;gap:4px;flex:1;justify-content:center;}
 .curr .nav-item{position:relative;}
 .curr .nav-top{display:flex;align-items:center;gap:7px;background:none;border:1px solid transparent;cursor:pointer;
-  color:var(--muted);font-family:'Inter',sans-serif;font-size:.76rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);font-family:'IBM Plex Sans',sans-serif;font-size:.76rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
   padding:10px 15px;border-radius:10px;white-space:nowrap;transition:color .18s,background .18s,border-color .18s;}
 .curr .nav-top .caret{width:7px;height:7px;margin-top:-3px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;
   border-radius:1px;opacity:.55;transform:rotate(45deg);transition:transform .18s,opacity .18s;}
@@ -80,7 +80,7 @@ body.light-mode .curr .nav-drop a:hover{color:#151213;}
 /* ─── MAIN / SECTION SWITCHER (Psychology Enhancer uses A/B/C/D groups) ─── */
 .curr main{max-width:1080px;margin:0 auto;padding:10px 22px 70px;position:relative;z-index:2;}
 .curr .group-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 28px;}
-.curr .group-tab{border:1px solid var(--border);background:var(--card);color:var(--muted);border-radius:999px;padding:10px 18px;font-weight:800;font-size:.82rem;cursor:pointer;font-family:'Inter',sans-serif;}
+.curr .group-tab{border:1px solid var(--border);background:var(--card);color:var(--muted);border-radius:999px;padding:10px 18px;font-weight:800;font-size:.82rem;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
 .curr .group-tab.active{color:#fff;background:linear-gradient(135deg,#ef4444,#b91c1c);border-color:transparent;}
 .curr .group-panel{display:none;}
 .curr .group-panel.active{display:block;}
@@ -88,7 +88,7 @@ body.light-mode .curr .nav-drop a:hover{color:#151213;}
 
 /* ─── LEVEL TABS ─── */
 .curr .level-tabs{display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:22px;}
-.curr .level-tab{border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:10px;padding:10px 16px;font-weight:800;font-size:.82rem;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;}
+.curr .level-tab{border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:10px;padding:10px 16px;font-weight:800;font-size:.82rem;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;display:flex;align-items:center;gap:6px;}
 .curr .level-tab.active{color:var(--gold);border-color:rgba(220,38,38,.5);background:rgba(220,38,38,.08);}
 .curr .level-tab .lock{font-size:.78rem;opacity:.75;}
 .curr .level-panel{display:none;}
@@ -128,7 +128,7 @@ body.light-mode .curr .formula{background:rgba(0,0,0,.05);}
 .curr .quiz-choice input{margin-top:3px;flex:0 0 auto;}
 .curr .quiz-choice.correct{border-color:var(--green);background:rgba(34,197,94,.08);}
 .curr .quiz-choice.incorrect{border-color:#ff6b6b;background:rgba(220,38,38,.08);}
-.curr .quiz-explain{display:none;font-size:.82rem;color:var(--muted);background:rgba(255,255,255,.03);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:9px 12px;margin-top:8px;}
+.curr .quiz-explain{display:none;font-size:.82rem;color:var(--muted);background:rgba(255,255,255,.03);border:1px solid rgba(220,38,38,.22);border-radius:0 8px 8px 0;padding:9px 12px;margin-top:8px;}
 .curr .quiz-explain.show{display:block;}
 .curr .quiz-actions{display:flex;align-items:center;gap:14px;margin-top:6px;flex-wrap:wrap;}
 .curr .quiz-score{font-family:'Barlow Condensed',sans-serif;font-size:1rem;color:var(--text);display:none;}
@@ -225,3 +225,13 @@ body.light-mode .curr .tool canvas{background:rgba(0,0,0,.03);}
    so the region announces itself as busy instead. */
 .curr [aria-busy="true"] .skeleton{opacity:1;}
 @media (prefers-reduced-motion:reduce){.curr .skeleton::after{animation:none;}}
+
+
+/* ─── NUMERALS ───
+   Any figure that updates in place (prices, P&L, counts) uses tabular lining
+   figures so digits keep a fixed advance width and the value does not shuffle
+   sideways on each tick. */
+.curr .tool-stat-row b, .curr .hero-stats div, .curr .formula, .curr .lesson-table td {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
