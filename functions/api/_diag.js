@@ -50,6 +50,9 @@ export async function onRequestGet({ request, env }) {
       liveTrading: await probe('https://api.alpaca.markets/v2/account', h),
       paperTrading: await probe('https://paper-api.alpaca.markets/v2/account', h),
       marketDataIex: await probe('https://data.alpaca.markets/v2/stocks/snapshots?symbols=SPY&feed=iex', h),
+      // The exact calls the live ticker makes: full symbol list + crypto.
+      tickerSymbolSet: await probe('https://data.alpaca.markets/v2/stocks/snapshots?symbols=QQQ,SPY,DIA,IWM,GLD,USO&feed=iex', h),
+      cryptoBtc: await probe('https://data.alpaca.markets/v1beta3/crypto/us/snapshots?symbols=BTC/USD', h),
     },
   });
 }
