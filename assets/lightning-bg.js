@@ -42,7 +42,7 @@
   animation:${REDUCED ? 'none' : 'sblStrike 5s ease-in-out infinite'}; animation-delay:-2.6s;}
 /* Real lightning does not breathe in a sine wave -- it sits dim, then cracks
    in a fast double/triple strike and decays. */
-@keyframes sblStrike{0%{opacity:.42;}4%{opacity:1;}7%{opacity:.5;}10%{opacity:.96;}14%{opacity:.55;}18%{opacity:.42;}44%{opacity:.42;}47%{opacity:1;}50%{opacity:.58;}54%{opacity:.92;}58%{opacity:.48;}63%{opacity:.42;}100%{opacity:.42;}}
+@keyframes sblStrike{0%{opacity:.42;}3%{opacity:1;}6%{opacity:.5;}9%{opacity:.9;}13%{opacity:.45;}17%{opacity:.42;}30%{opacity:.42;}33%{opacity:1;}36%{opacity:.55;}40%{opacity:.88;}44%{opacity:.45;}48%{opacity:.42;}64%{opacity:.42;}67%{opacity:1;}70%{opacity:.6;}74%{opacity:.92;}78%{opacity:.48;}82%{opacity:.42;}100%{opacity:.42;}}7%{opacity:.5;}10%{opacity:.96;}14%{opacity:.55;}18%{opacity:.42;}44%{opacity:.42;}47%{opacity:1;}50%{opacity:.58;}54%{opacity:.92;}58%{opacity:.48;}63%{opacity:.42;}100%{opacity:.42;}}
   44%{opacity:.62;}
   46%{opacity:.97;}
   48%{opacity:.7;}
