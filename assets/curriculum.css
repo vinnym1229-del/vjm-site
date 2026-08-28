@@ -166,6 +166,7 @@ body.light-mode .curr .tool canvas{background:rgba(0,0,0,.03);}
 .curr .lock-form{display:flex;gap:8px;max-width:380px;margin:0 auto;flex-wrap:wrap;justify-content:center;}
 .curr .lock-form input{flex:1;min-width:180px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-weight:700;outline:0;}
 .curr .lock-form input:focus{border-color:var(--gold);}
+.curr .lock-form .cf-turnstile{flex-basis:100%;display:flex;justify-content:center;margin:2px 0;}
 .curr .btn{border:0;background:linear-gradient(135deg,#f05252 0%,#dc2626 48%,#a81a1a 100%);color:#fff;border-radius:999px;padding:12px 20px;font-weight:900;text-transform:uppercase;letter-spacing:.8px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;font-size:.82rem;box-shadow:0 6px 20px rgba(220,38,38,.26),inset 0 1px 0 rgba(255,255,255,.16);transition:filter .18s,transform .18s;}
 .curr .btn:hover{filter:brightness(1.09);transform:translateY(-1px);}
 .curr .btn.ghost{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text);}

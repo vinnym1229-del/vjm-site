@@ -21,6 +21,7 @@ import {
   resolveSigningSecret, signSession, getSession, sessionDays,
 } from './_lib/session.js';
 import { json, jsonWithSession, checkRateLimit } from './_lib/http.js';
+import { turnstileConfigured, verifyTurnstile } from './_lib/turnstile.js';
 
 const GENERIC_BAD_CODE = 'We could not activate this code. Check it and try again, or DM St1101 on Discord.';
 
@@ -58,6 +59,18 @@ async function handlePost(context) {
   const code = String((body && body.code) || '').trim().toUpperCase().slice(0, 64);
   if (!code || code.length > 64 || !/^[A-Z0-9-]{4,64}$/.test(code)) {
     return json({ ok: false, error: GENERIC_BAD_CODE }, 401);
+  }
+
+  // Only enforced once the owner sets TURNSTILE_SECRET_KEY — see
+  // _lib/turnstile.js for why this stays soft-required until then.
+  if (turnstileConfigured(env)) {
+    const token = String((body && body.turnstileToken) || '');
+    const ip = request.headers.get('CF-Connecting-IP') || undefined;
+    const human = await verifyTurnstile(env, token, ip);
+    if (!human) {
+      await auditEvent(env, 'verify_code', 'bot_check_failed', code);
+      return json({ ok: false, error: 'Verification failed. Refresh the page and try again.' }, 401);
+    }
   }
 
   const record = await lookupByCode(env, code);

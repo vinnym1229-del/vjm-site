@@ -61,6 +61,29 @@
     } catch { return false; }
   }
 
+  // Cloudflare Turnstile: public site key, safe to ship client-side. The
+  // matching TURNSTILE_SECRET_KEY lives server-side only; until the owner
+  // sets it, /api/verify-premium skips the check, so shipping the widget
+  // here is safe ahead of that (see functions/api/_lib/turnstile.js).
+  const TURNSTILE_SITE_KEY = '0x4AAAAAAEf5izeTKE41bl6z';
+
+  // Turnstile's api.js auto-renders any .cf-turnstile div present when it
+  // loads, but the curriculum pages load it via <script defer>, which can
+  // race this init() running first. Inserting the div here (rather than in
+  // the static HTML) keeps one call site owning the markup for every gate.
+  function injectTurnstileWidgets() {
+    document.querySelectorAll('.lock-form').forEach((form, i) => {
+      if (form.querySelector('.cf-turnstile')) return;
+      const holder = document.createElement('div');
+      holder.className = 'cf-turnstile';
+      holder.id = 'curr-ts-' + i;
+      holder.dataset.sitekey = TURNSTILE_SITE_KEY;
+      holder.dataset.theme = 'dark';
+      const btn = form.querySelector('button[type="submit"], .quiz-submit, button');
+      if (btn) form.insertBefore(holder, btn); else form.appendChild(holder);
+    });
+  }
+
   function unlockAll() {
     document.querySelectorAll('.lock-gate').forEach((gate) => {
       const content = gate.nextElementSibling;
@@ -78,19 +101,26 @@
         const msg = form.parentElement.querySelector('.lock-msg');
         const code = (input.value || '').trim();
         if (!code) { setMsg(msg, 'Enter your premium access code.', false); return; }
+        const tsHolder = form.querySelector('.cf-turnstile');
+        const tsInput = form.querySelector('[name="cf-turnstile-response"]');
+        const turnstileToken = tsInput ? tsInput.value : '';
         setMsg(msg, 'Checking premium access...', true);
         try {
           const res = await fetch('/api/verify-premium', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin',
-            body: JSON.stringify({ code }),
+            body: JSON.stringify({ code, turnstileToken }),
           });
           const data = await res.json().catch(() => ({ ok: false }));
           if (res.ok && data.ok) { setMsg(msg, 'Premium unlocked.', true); unlockAll(); return; }
           setMsg(msg, data.error || 'Incorrect code.', false);
+          // Each Turnstile token is single-use; a rejected attempt needs a
+          // fresh one before the visitor can retry.
+          if (tsHolder && window.turnstile) window.turnstile.reset(tsHolder);
         } catch {
           setMsg(msg, 'Access check failed. Refresh and try again.', false);
+          if (tsHolder && window.turnstile) window.turnstile.reset(tsHolder);
         }
       });
     });
@@ -176,6 +206,7 @@
     initNavDropdowns();
     initGroupTabs();
     initLevelTabs();
+    injectTurnstileWidgets();
     wireUnlockForms();
     initQuizzes();
     if (await checkPremium()) unlockAll();

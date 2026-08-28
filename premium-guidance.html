@@ -59,6 +59,7 @@ body::before {
       <h2 id="signin-title">Member Sign In</h2>
       <p>Enter the private premium access code you received from Vinny. Once signed in, this device can reopen the guidance during your saved session.</p>
       <input class="field" id="premium-code-input" type="password" autocomplete="off" placeholder="Member access code" aria-label="Member access code">
+      <div class="cf-turnstile" id="pg-ts" data-sitekey="0x4AAAAAAEf5izeTKE41bl6z" data-theme="dark" style="margin:10px 0;display:flex;justify-content:center;"></div>
       <button class="btn btn-gold" type="button" onclick="unlockPremiumGuidance()">Unlock Guidance</button>
       <button class="btn btn-ghost" type="button" onclick="loadSavedSession()">I already signed in on this device</button>
       <div id="google-signin-block" style="display:none;margin-top:14px;">
@@ -295,9 +296,12 @@ async function unlockPremiumGuidance(){
   const input=document.getElementById('premium-code-input');
   const code=(input&&input.value||'').trim();
   if(!code){msg('Enter your member access code.',false);return;}
+  const tsEl=document.getElementById('pg-ts');
+  const tsInput=tsEl&&tsEl.querySelector('[name="cf-turnstile-response"]');
+  const turnstileToken=tsInput?tsInput.value:'';
   loading(true); msg('Checking member access…',true);
   try{
-    const res=await fetch(VERIFY_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({code})});
+    const res=await fetch(VERIFY_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({code,turnstileToken})});
     const data=await res.json().catch(()=>({}));
     if(res.ok&&data.ok){
       if(input)input.value='';
@@ -306,7 +310,8 @@ async function unlockPremiumGuidance(){
       return;
     }
     msg(data.error||'Incorrect code. DM St1101 on Discord for access.',false);
-  }catch(err){msg('Access check unavailable. Refresh and try again, or DM St1101.',false);}
+    if(window.turnstile&&tsEl)window.turnstile.reset(tsEl);
+  }catch(err){msg('Access check unavailable. Refresh and try again, or DM St1101.',false);if(window.turnstile&&tsEl)window.turnstile.reset(tsEl);}
   finally{loading(false);}
 }
 document.getElementById('premium-code-input').addEventListener('keydown',function(e){if(e.key==='Enter')unlockPremiumGuidance();});
@@ -346,6 +351,7 @@ async function handleGoogleCredential(response){
   finally{loading(false);}
 }
 </script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="assets/chatbot.js" defer></script>
 <script src="assets/lightning-bg.js" defer></script>
 </body>
