@@ -37,14 +37,12 @@
 #site-bolt-layer .sbl-r,#site-bolt-layer .sbl-l{position:absolute; inset:0;
   background-repeat:repeat-y; background-size:min(21vw,250px) 940px;}
 #site-bolt-layer .sbl-r{background-image:url("${RIGHT}"); background-position:right -16px top 0;
-  animation:${REDUCED ? 'none' : 'sblStrike 8s ease-in-out infinite'};}
+  animation:${REDUCED ? 'none' : 'sblStrike 5s ease-in-out infinite'};}
 #site-bolt-layer .sbl-l{background-image:url("${LEFT}"); background-position:left -16px top 470px;
-  animation:${REDUCED ? 'none' : 'sblStrike 8s ease-in-out infinite'}; animation-delay:-4.4s;}
+  animation:${REDUCED ? 'none' : 'sblStrike 5s ease-in-out infinite'}; animation-delay:-2.6s;}
 /* Real lightning does not breathe in a sine wave -- it sits dim, then cracks
    in a fast double/triple strike and decays. */
-@keyframes sblStrike{
-  0%,40%{opacity:.52;}
-  42%{opacity:1;}
+@keyframes sblStrike{0%{opacity:.42;}4%{opacity:1;}7%{opacity:.5;}10%{opacity:.96;}14%{opacity:.55;}18%{opacity:.42;}44%{opacity:.42;}47%{opacity:1;}50%{opacity:.58;}54%{opacity:.92;}58%{opacity:.48;}63%{opacity:.42;}100%{opacity:.42;}}
   44%{opacity:.62;}
   46%{opacity:.97;}
   48%{opacity:.7;}
