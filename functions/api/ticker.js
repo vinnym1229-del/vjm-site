@@ -52,7 +52,10 @@ export async function onRequestGet(context) {
         },
       }
     );
-  } catch {
+  } catch (err) {
+    // Surfaced in the Cloudflare Pages function logs; the public payload
+    // stays generic.
+    console.error('ticker: ' + String((err && err.message) || err).slice(0, 200));
     return json({ ok: false, error: 'Ticker data unavailable.' }, 200);
   }
 }
