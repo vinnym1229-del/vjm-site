@@ -59,8 +59,7 @@ export async function onRequestGet(context) {
     // Surfaced in the Cloudflare Pages function logs; the public payload
     // stays generic.
     console.error('ticker: ' + String((err && err.message) || err).slice(0, 200));
-    // TEMP diag: surface the real cause; revert once root-caused.
-    return json({ ok: false, error: 'Ticker data unavailable.', _diagMsg: String((err && err.stack) || err).slice(0, 500) }, 200);
+    return json({ ok: false, error: 'Ticker data unavailable.' }, 200);
   }
 }
 
