@@ -142,17 +142,90 @@ body::before {
 </head>
 <body>
 
+<div class="curr">
 <nav>
-  <a href="index.html" class="nav-brand"><img src="assets/logo-nav.jpg" alt="St Trades">PJ TRADES <span style='font-size:0.55em'>× ST</span></a>
-  <div style="display:flex;align-items:center;gap:16px;">
-    <a href="stock-breakdown.html" class="nav-back">Stock Breakdown</a>
-    <a href="futures-dissection.html" class="nav-back">Futures Dissection</a>
-    <a href="psychology-enhancer.html" class="nav-back">Psychology</a>
-    <a href="research-engine.html" class="nav-back">Research Engine</a>
-    <a href="index.html" class="nav-back">← Back to site</a>
-    <button id="theme-toggle" onclick="toggleTheme()">🌙 <span id="theme-label">Dark</span></button>
+  <a href="index.html" class="brand">PJ TRADES</a>
+  <div class="nav-links">
+    <div class="nav-item">
+      <button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Membership<span class="caret" aria-hidden="true"></span></button>
+      <div class="nav-drop">
+        <a href="index.html#features">What You Get</a>
+        <a href="index.html#bundles">Bundles &amp; Pricing</a>
+        <a href="premium-guidance.html">Premium Guidance</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Curriculum<span class="caret" aria-hidden="true"></span></button>
+      <div class="nav-drop">
+        <a href="stock-breakdown.html">Stock Breakdown</a>
+        <a href="options-lab.html" class="on">Options Lab</a>
+        <a href="futures-dissection.html">Futures Dissection</a>
+        <a href="psychology-enhancer.html">Psychology Enhancer</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Tools<span class="caret" aria-hidden="true"></span></button>
+      <div class="nav-drop">
+        <a href="stock-lab.html">Stock Lab</a>
+        <a href="research-engine.html">Research Engine</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Markets<span class="caret" aria-hidden="true"></span></button>
+      <div class="nav-drop">
+        <a href="premarket.html">Pre-Market</a>
+        <a href="forex-calendar.html">Forex Calendar</a>
+        <a href="prop-firms.html">Prop Firms</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Live<span class="caret" aria-hidden="true"></span></button>
+      <div class="nav-drop">
+        <a href="index.html#schedule">Stream Schedule</a>
+        <a href="index.html#team">Meet the Team</a>
+      </div>
+    </div>
+    <div class="nav-item">
+      <button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Community<span class="caret" aria-hidden="true"></span></button>
+      <div class="nav-drop">
+        <a href="index.html#about">About PJ</a>
+        <a href="index.html#wins">Member Results</a>
+        <a href="index.html#discord-cta">Discord</a>
+      </div>
+    </div>
+  </div>
+  <div class="nav-cta">
+    <button id="theme-toggle" onclick="toggleTheme()">&#127769; <span id="theme-label">Dark</span></button>
+    <a class="join" href="index.html#bundles">Join</a>
+    <button class="hamb" id="curr-hamb" type="button" aria-label="Menu" aria-expanded="false" onclick="currToggleMenu()"><span></span><span></span><span></span></button>
   </div>
 </nav>
+<div class="mmenu" id="curr-mmenu">
+  <div class="mm-group">Membership</div>
+  <a href="index.html#features">What You Get</a>
+  <a href="index.html#bundles">Bundles &amp; Pricing</a>
+  <a href="premium-guidance.html">Premium Guidance</a>
+  <div class="mm-group">Curriculum</div>
+  <a href="stock-breakdown.html">Stock Breakdown</a>
+  <a href="options-lab.html" class="on">Options Lab</a>
+  <a href="futures-dissection.html">Futures Dissection</a>
+  <a href="psychology-enhancer.html">Psychology Enhancer</a>
+  <div class="mm-group">Tools</div>
+  <a href="stock-lab.html">Stock Lab</a>
+  <a href="research-engine.html">Research Engine</a>
+  <div class="mm-group">Markets</div>
+  <a href="premarket.html">Pre-Market</a>
+  <a href="forex-calendar.html">Forex Calendar</a>
+  <a href="prop-firms.html">Prop Firms</a>
+  <div class="mm-group">Live</div>
+  <a href="index.html#schedule">Stream Schedule</a>
+  <a href="index.html#team">Meet the Team</a>
+  <div class="mm-group">Community</div>
+  <a href="index.html#about">About PJ</a>
+  <a href="index.html#wins">Member Results</a>
+  <a href="index.html#discord-cta">Discord</a>
+</div>
+</div>
 
 <div class="lab-hero">
   <div class="tag">Options Lab</div>
