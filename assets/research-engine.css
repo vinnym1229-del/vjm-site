@@ -55,3 +55,11 @@ body::before {
 }
 @keyframes pagePulse { 0%,100% { opacity:.55; } 50% { opacity: var(--page-pulse-peak, 1); } }
 @media (prefers-reduced-motion: reduce) { body::before { animation: none; opacity: .75; } }
+
+/* Keyboard focus ring. Plain text links previously showed no visible focus
+   change at all, so keyboard users could not tell where they were. 2px at
+   3:1+ against both the dark surfaces and the white chart panel satisfies
+   WCAG 2.4.7 and 1.4.11. :focus-visible keeps mouse clicks ring-free. */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,
+textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid var(--red-ink,#ef4444);outline-offset:3px;border-radius:4px;}

@@ -896,3 +896,11 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
  .nav-links a.active { color: var(--red); }
 html { font-size: 1.02rem; }
 
+
+/* Keyboard focus ring. Plain text links previously showed no visible focus
+   change at all, so keyboard users could not tell where they were. 2px at
+   3:1+ against both the dark surfaces and the white chart panel satisfies
+   WCAG 2.4.7 and 1.4.11. :focus-visible keeps mouse clicks ring-free. */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,
+textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
+  outline:2px solid var(--gold-ink,#ef4444);outline-offset:3px;border-radius:4px;}
