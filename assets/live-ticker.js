@@ -49,21 +49,44 @@
     });
   }
 
-  // Crypto trades around the clock; equities follow NYSE regular + extended
-  // hours. Computed from wall-clock America/New_York time rather than a
-  // second API call — accurate enough for a tape badge, no extra round trip.
+  // Crypto trades around the clock; equities run four distinct sessions.
+  // Computed from wall-clock America/New_York time (Intl handles DST) rather
+  // than a second API call — accurate enough for a tape badge, no round trip.
+  //
+  // The weekend boundary is the part worth stating explicitly: the US equity
+  // week ends Friday 8:00pm ET and does not resume until Sunday 8:00pm ET,
+  // so Friday night, all of Saturday, and Sunday daytime are CLOSED — not
+  // "overnight". Overnight means a session is actually running.
+  const MINS = { PRE: 4 * 60, OPEN: 9 * 60 + 30, CLOSE: 16 * 60, AFTER_END: 20 * 60 };
+  const DAYNUM = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+
   function marketSession(asset) {
-    if (asset === 'crypto') return { code: '24/7', cls: 'sess-ov', title: 'Crypto trades 24/7' };
+    if (asset === 'crypto') return { code: '24/7', cls: 'sess-247', title: 'Crypto trades 24 hours a day, 7 days a week' };
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York', hour12: false, weekday: 'short', hour: '2-digit', minute: '2-digit',
     }).formatToParts(new Date());
     const get = (t) => { const p = parts.find((x) => x.type === t); return p ? p.value : ''; };
-    const wd = get('weekday');
-    const mins = Number(get('hour')) * 60 + Number(get('minute'));
-    if (wd === 'Sat' || wd === 'Sun') return { code: 'CLOSED', cls: 'sess-cl', title: 'Market closed for the weekend' };
-    if (mins >= 570 && mins < 960) return { code: 'OPEN', cls: 'sess-op', title: 'Regular market hours (9:30am–4:00pm ET)' };
-    if (mins >= 960 && mins < 1200) return { code: 'AH', cls: 'sess-ah', title: 'After-hours trading (4:00pm–8:00pm ET)' };
-    return { code: 'O/N', cls: 'sess-on', title: 'Overnight — outside regular and after-hours trading' };
+    const day = DAYNUM[get('weekday')];
+    // Intl can return hour "24" for midnight in some engines; normalize.
+    const mins = (Number(get('hour')) % 24) * 60 + Number(get('minute'));
+
+    const CLOSED = { code: 'CLOSED', cls: 'sess-cl', title: 'Market closed — US equities reopen Sunday 8:00pm ET' };
+    if (day === 6) return CLOSED;                                  // all Saturday
+    if (day === 0 && mins < MINS.AFTER_END) return CLOSED;         // Sunday until 8pm
+    if (day === 5 && mins >= MINS.AFTER_END) return CLOSED;        // Friday after 8pm
+
+    const OVERNIGHT = { code: '🌙 OVERNIGHT', cls: 'sess-on', title: 'Overnight session (8:00pm–4:00am ET)' };
+    if (day === 0) return OVERNIGHT;                               // Sunday 8pm onward
+    if (mins >= MINS.OPEN && mins < MINS.CLOSE) {
+      return { code: 'OPEN', cls: 'sess-op', title: 'Regular market hours (9:30am–4:00pm ET)' };
+    }
+    if (mins >= MINS.PRE && mins < MINS.OPEN) {
+      return { code: '🌅 PRE-MARKET', cls: 'sess-ah', title: 'Pre-market extended hours (4:00am–9:30am ET)' };
+    }
+    if (mins >= MINS.CLOSE && mins < MINS.AFTER_END) {
+      return { code: '🌅 AFTER HOURS', cls: 'sess-ah', title: 'After-hours extended trading (4:00pm–8:00pm ET)' };
+    }
+    return OVERNIGHT;
   }
 
   function tvHref(item) {
@@ -109,12 +132,12 @@
 #ticker-wrap .lt-pct{font-family:'Inter',sans-serif;font-size:.7rem;font-weight:800;}
 #ticker-wrap .lt-pct.up{color:#4ade80;}
 #ticker-wrap .lt-pct.down{color:#ff6b6b;}
-#ticker-wrap .lt-sess{font-family:'Inter',sans-serif;font-size:.56rem;font-weight:900;letter-spacing:.5px;padding:2px 6px;border-radius:5px;white-space:nowrap;}
+#ticker-wrap .lt-sess{font-family:'Inter',sans-serif;font-size:.54rem;font-weight:900;letter-spacing:.4px;padding:2px 6px;border-radius:5px;white-space:nowrap;}
 #ticker-wrap .lt-sess.sess-op{color:#4ade80;background:rgba(74,222,128,.12);}
-#ticker-wrap .lt-sess.sess-ah{color:#f0b429;background:rgba(240,180,41,.12);}
-#ticker-wrap .lt-sess.sess-on{color:#9b9296;background:rgba(155,146,150,.16);}
+#ticker-wrap .lt-sess.sess-ah{color:#ffa53c;background:rgba(255,165,60,.14);}
+#ticker-wrap .lt-sess.sess-on{color:#a9b6ff;background:rgba(169,182,255,.14);}
 #ticker-wrap .lt-sess.sess-cl{color:#ff6b6b;background:rgba(255,107,107,.12);}
-#ticker-wrap .lt-sess.sess-ov{color:#7dd3fc;background:rgba(125,211,252,.12);}
+#ticker-wrap .lt-sess.sess-247{color:#7dd3fc;background:rgba(125,211,252,.12);}
 `;
     document.head.appendChild(style);
   }
