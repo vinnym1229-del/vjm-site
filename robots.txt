@@ -1,7 +1,4 @@
 # PJ Trades x St
-# NOTE: the /pj/ proxy currently sends "X-Robots-Tag: noindex", which
-# overrides everything here. Until that header is lifted this file has no
-# practical effect — it is in place so indexing works the moment it is.
 User-agent: *
 Allow: /
 Disallow: /api/
