@@ -6,7 +6,10 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const index = readFileSync(join(ROOT, 'index.html'), 'utf8');
+// Homepage CSS lives in assets/site.css (extracted from the old inline
+// <style> for caching); concatenate so CSS assertions still see it.
+const index = readFileSync(join(ROOT, 'index.html'), 'utf8')
+  + readFileSync(join(ROOT, 'assets', 'site.css'), 'utf8');
 const premarket = readFileSync(join(ROOT, 'premarket.html'), 'utf8');
 const guidance = readFileSync(join(ROOT, 'premium-guidance.html'), 'utf8');
 

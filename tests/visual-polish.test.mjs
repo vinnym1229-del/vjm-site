@@ -8,7 +8,10 @@ import { fileURLToPath } from 'node:url';
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 
-const index = read('index.html');
+// Homepage CSS now lives in assets/site.css (extracted for caching);
+// concatenate so pattern assertions keep covering markup + styles.
+const siteCss = read('assets/site.css');
+const index = read('index.html') + siteCss;
 const guidance = read('premium-guidance.html');
 const propFirms = read('prop-firms.html');
 
@@ -27,7 +30,7 @@ test('blob budget respected and sections scope their blobs', () => {
 });
 
 test('reduced-motion guard covers every blob instance', () => {
-  const css = index.slice(index.indexOf('<style>'), index.indexOf('</style>'));
+  const css = siteCss;
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)\{\.liquid-blob\{animation:none!important;\}\}/);
 });
 
