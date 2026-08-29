@@ -75,7 +75,12 @@ export async function onRequestGet(context) {
       .map((e) => normalizeEvent(e))
       .filter(Boolean)
       .filter((e) => e.currency === 'USD' || currency === 'ALL')
-      .filter((e) => impactClass(e.impact) === 'high' || (impact === 'medium' && impactClass(e.impact) === 'medium'))
+      .filter((e) => {
+        const cls = impactClass(e.impact);
+        if (impact === 'high') return cls === 'high';
+        if (impact === 'medium') return cls === 'medium';
+        return cls === 'high' || cls === 'medium'; // 'major' = red + orange folders
+      })
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .slice(0, MAX_EVENTS);
 
