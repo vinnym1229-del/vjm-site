@@ -282,3 +282,8 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
    sitewide focus ring; restate it at matching specificity. */
 .field:focus-visible,.control:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
   outline:2px solid var(--gold-ink,#ef4444);outline-offset:2px;}
+
+/* .curr .tool-field input (0,2,1) outranks the generic input:focus-visible
+   rule above, so the calculator fields still had no ring. Match it. */
+.curr .tool-field input:focus-visible,.curr .tool-field select:focus-visible,
+.curr .lock-form input:focus-visible{outline:2px solid var(--gold-ink,#ef4444);outline-offset:2px;}
