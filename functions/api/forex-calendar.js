@@ -31,7 +31,11 @@ export async function onRequestGet(context) {
 
   try {
     const res = await fetch(FEED_URL, {
-      cf: { cacheTtl: 600, cacheEverything: true },
+      // faireconomy 429s bare Workers fetches; a browser-ish UA gets served.
+      // Successes cache for 30 min so one good fetch rides out upstream
+      // throttling windows (the feed is a weekly calendar — staleness is cheap).
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PJTradesBot/1.0)', Accept: 'application/json' },
+      cf: { cacheTtl: 1800, cacheEverything: true },
       signal: AbortSignal.timeout(9000),
     });
     if (!res.ok) throw new Error('upstream status ' + res.status);
