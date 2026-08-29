@@ -31,8 +31,8 @@ body.light-mode .curr nav{background:rgba(246,244,244,.96);}
 .curr .nav-links{display:flex;flex-wrap:nowrap;gap:4px;flex:1;justify-content:center;}
 .curr .nav-item{position:relative;}
 .curr .nav-top{display:flex;align-items:center;gap:7px;background:none;border:1px solid transparent;cursor:pointer;
-  color:var(--muted);font-family:'IBM Plex Sans',sans-serif;font-size:.76rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-  padding:10px 15px;border-radius:10px;white-space:nowrap;transition:color .18s,background .18s,border-color .18s;}
+  color:var(--muted);font-family:'IBM Plex Sans',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
+  padding:10px 11px;border-radius:10px;white-space:nowrap;transition:color .18s,background .18s,border-color .18s;}
 .curr .nav-top .caret{width:7px;height:7px;margin-top:-3px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;
   border-radius:1px;opacity:.55;transform:rotate(45deg);transition:transform .18s,opacity .18s;}
 .curr .nav-item:hover > .nav-top,.curr .nav-item.open > .nav-top,.curr .nav-top.on{
@@ -65,7 +65,9 @@ body.light-mode .curr .nav-drop a:hover{color:#151213;}
 .curr .mmenu .mm-group{grid-column:1 / -1;font-family:'Barlow Condensed',sans-serif;font-size:.74rem;font-weight:900;
   letter-spacing:2.4px;text-transform:uppercase;color:var(--gold);padding:10px 4px 2px;opacity:.85;}
 .curr .mmenu a.on{color:var(--gold);border-color:rgba(220,38,38,.4);}
-@media(max-width:980px){.curr .nav-links{display:none;}.curr .hamb{display:flex;}}
+/* Six dropdowns need more room than the previous four: below this the bar
+   would overflow horizontally, so hand off to the hamburger earlier. */
+@media(max-width:1180px){.curr .nav-links{display:none;}.curr .hamb{display:flex;}}
 
 /* ─── HERO ─── */
 .curr .hero{max-width:1080px;margin:0 auto;padding:54px 22px 20px;position:relative;z-index:2;}
