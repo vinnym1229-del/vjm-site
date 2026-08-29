@@ -17,13 +17,18 @@
 import { json, checkRateLimit } from './_lib/http.js';
 import { alpacaConfigured, snapshots, summarizeSnapshot } from './_lib/alpaca.js';
 
+// [alpaca symbol, tape label, TradingView symbol for click-through]
 const EQUITIES = [
-  ['QQQ', 'NQ · QQQ'],
-  ['SPY', 'ES · SPY'],
-  ['DIA', 'YM · DIA'],
-  ['IWM', 'RTY · IWM'],
-  ['GLD', 'GOLD · GLD'],
-  ['USO', 'OIL · USO'],
+  ['QQQ', 'NQ · QQQ', 'NASDAQ:QQQ'],
+  ['SPY', 'ES · SPY', 'AMEX:SPY'],
+  ['DIA', 'YM · DIA', 'AMEX:DIA'],
+  ['IWM', 'RUSSELL · IWM', 'AMEX:IWM'],
+  ['GLD', 'GOLD · GLD', 'AMEX:GLD'],
+  ['USO', 'OIL · USO', 'AMEX:USO'],
+  ['AAPL', 'AAPL', 'NASDAQ:AAPL'],
+  ['TSLA', 'TSLA', 'NASDAQ:TSLA'],
+  ['NVDA', 'NVDA', 'NASDAQ:NVDA'],
+  ['MSFT', 'MSFT', 'NASDAQ:MSFT'],
 ];
 
 export async function onRequestGet(context) {
@@ -37,9 +42,9 @@ export async function onRequestGet(context) {
   try {
     const snaps = await snapshots(env, EQUITIES.map((e) => e[0]));
     const items = [];
-    for (const [sym, label] of EQUITIES) {
+    for (const [sym, label, tv] of EQUITIES) {
       const s = summarizeSnapshot(sym, snaps[sym]);
-      if (s) items.push({ symbol: s.symbol, label, price: s.price, changePct: s.changePct, asOf: s.asOf });
+      if (s) items.push({ symbol: s.symbol, label, price: s.price, changePct: s.changePct, asOf: s.asOf, tv, asset: 'equity' });
     }
     const btc = await cryptoBtc(env);
     if (btc) items.push(btc);
@@ -84,6 +89,8 @@ async function cryptoBtc(env) {
       price: +last.toFixed(0),
       changePct: Number.isFinite(prev) && prev ? +(((last - prev) / prev) * 100).toFixed(2) : null,
       asOf: snap.latestTrade.t || null,
+      tv: 'BINANCE:BTCUSDT',
+      asset: 'crypto',
     };
   } catch {
     return null;
