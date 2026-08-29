@@ -44,7 +44,12 @@ export async function onRequest(context) {
   // Each page already carries its own correct <meta name="robots"> (course
   // and marketing pages say index,follow; research-engine.html and 404.html
   // opt out on their own) — let that per-page decision stand instead of a
-  // blanket override at the proxy.
+  // blanket override at the proxy. `pj` is a non-production branch, so
+  // Cloudflare Pages itself force-injects X-Robots-Tag: noindex on every
+  // pj.vjm.pages.dev response; strip that inherited header too, or it leaks
+  // through onto the real customer-facing domain regardless of what this
+  // proxy does or doesn't set.
+  headers.delete('X-Robots-Tag');
 
   if (upstreamResponse.status >= 300 && upstreamResponse.status < 400) {
     const loc = headers.get('location');
