@@ -97,9 +97,13 @@
     if (!code) { setMessage('Enter your premium access code.', 'error'); return; }
     $('unlockButton').disabled = true; setMessage('Checking access…');
     try {
-      await jsonFetch('/api/verify-premium', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});
+      // turnstileToken is required by the server since bot protection went live;
+      // omitting it made every unlock on this page fail with 'Verification failed'.
+      const tsEl = document.getElementById('re-ts');
+      const tsInput = tsEl && tsEl.querySelector('[name="cf-turnstile-response"]');
+      await jsonFetch('/api/verify-premium', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code, turnstileToken: tsInput ? tsInput.value : ''})});
       setMessage('Access verified.', 'ok'); activateEngine();
-    } catch (err) { setMessage(err.message, 'error'); }
+    } catch (err) { setMessage(err.message, 'error'); if (window.turnstile) { const t=document.getElementById('re-ts'); if (t) window.turnstile.reset(t); } }
     finally { $('unlockButton').disabled = false; }
   }
   async function restore(quiet = false) {
@@ -134,9 +138,16 @@
     loadCurrent();
   }
   function loading(button, active, label) {
+    if (!active) state.loading = false;
     if (!button) return;
-    if (active) { button.dataset.original = button.textContent; button.disabled = true; button.innerHTML = '<i class="loader"></i> ' + esc(label || 'Loading'); }
-    else { button.disabled = false; button.textContent = button.dataset.original || 'Refresh'; }
+    if (active) {
+      // A second call while already loading must not capture the spinner text
+      // as the "original" label — that's how buttons got stuck on "Scanning".
+      if (!button.dataset.loading) { button.dataset.original = button.textContent; }
+      button.dataset.loading = '1';
+      button.disabled = true; button.innerHTML = '<i class="loader"></i> ' + esc(label || 'Loading');
+    }
+    else { delete button.dataset.loading; button.disabled = false; button.textContent = button.dataset.original || 'Refresh'; }
   }
   function updateGlobal(response) {
     if (!response) return;
@@ -149,6 +160,7 @@
   }
 
   async function loadOptions() {
+    if (state.loading) return; state.loading = true;
     const button = $('loadOptions'); loading(button, true, 'Scanning');
     $('optionsSourceStatus').textContent = 'Loading current chain and intraday bars…';
     try {
@@ -215,6 +227,7 @@
   }
 
   async function loadStock() {
+    if (state.loading) return; state.loading = true;
     const button = $('loadStock'); loading(button, true, 'Testing'); $('stockSourceStatus').textContent = 'Downloading adjusted daily bars…';
     try {
       const symbol = $('stockSymbol').value.trim().toUpperCase();
@@ -240,6 +253,7 @@
   }
 
   async function loadSectors() {
+    if (state.loading) return; state.loading = true;
     const button = $('loadSectors'); loading(button, true, 'Refreshing'); $('sectorSourceStatus').textContent = 'Loading sector ETFs…';
     try { const response = await jsonFetch('/api/research-engine?module=sectors'); state.data.sectors = response; renderSectors(response); updateGlobal(response); }
     catch (err) { showModuleError('sectorSourceStatus', err); }
@@ -257,6 +271,7 @@
   }
 
   async function loadBiotech() {
+    if (state.loading) return; state.loading = true;
     const button = $('loadBiotech'); loading(button, true, 'Refreshing'); $('biotechSourceStatus').textContent = 'Loading biotech price and volume…';
     try { const response = await jsonFetch('/api/research-engine?module=biotech'); state.data.biotech = response; renderBiotech(response); updateGlobal(response); }
     catch (err) { showModuleError('biotechSourceStatus', err); }

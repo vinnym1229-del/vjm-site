@@ -155,8 +155,8 @@ test('latest-from-the-desk: CMS feeds + AI lean chip, hidden until data exists',
 
 test('futures calculators: real contract math + prop risk guard', () => {
   assert.match(index, /calcFutures/);
-  assert.match(index, /value="2">MNQ — Micro Nasdaq \(\$2\/pt\)</);
-  assert.match(index, /value="50">ES — E-mini S&amp;P \(\$50\/pt\)</);
+  assert.match(index, /value="MNQ">MNQ — Micro Nasdaq \(\$2\/pt\)</);
+  assert.match(index, /value="ES">ES — E-mini S&amp;P \(\$50\/pt\)</);
   assert.match(index, /calcPropRisk/);
   assert.match(index, /Trailing Drawdown/);
 });

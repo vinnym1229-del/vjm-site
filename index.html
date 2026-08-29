@@ -717,14 +717,7 @@
         <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">🎯 Futures Tick Calc</h3>
         <p style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;">NQ · ES · MNQ · MES · YM · RTY — real contract math.</p>
         <label for="fc-contract" style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
-        <select id="fc-contract" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
-          <option value="2">MNQ — Micro Nasdaq ($2/pt)</option>
-          <option value="20">NQ — E-mini Nasdaq ($20/pt)</option>
-          <option value="5">MES — Micro S&amp;P ($5/pt)</option>
-          <option value="50">ES — E-mini S&amp;P ($50/pt)</option>
-          <option value="1">YM — E-mini Dow ($1/pt)</option>
-          <option value="50">RTY — E-mini Russell ($50/pt)</option>
-        </select>
+        <select id="fc-contract" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;"> <option value="MNQ">MNQ — Micro Nasdaq ($2/pt)</option> <option value="NQ">NQ — E-mini Nasdaq ($20/pt)</option> <option value="MES">MES — Micro S&amp;P ($5/pt)</option> <option value="ES">ES — E-mini S&amp;P ($50/pt)</option> <option value="YM">YM — E-mini Dow ($5/pt)</option> <option value="RTY">RTY — E-mini Russell ($50/pt)</option> </select>
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Entry Price</label>
         <input id="fc-entry" type="number" value="21500" step="0.25" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="fc entry">
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Exit Price</label>
@@ -1982,17 +1975,22 @@ setBundlePeriod('monthly');
 // ─── FUTURES TICK CALCULATOR ───
 // Point values: MNQ $2, NQ $20, MES $5, ES $50, YM $1, RTY $50. Tick = 0.25pt.
 function calcFutures() {
-  const perPt = parseFloat(document.getElementById('fc-contract').value) || 0;
+  // $/pt AND tick size are per contract: YM ticks in whole points at $5/pt
+  // (the old option said $1/pt — every YM result was 5x too small), RTY in
+  // 0.10s; the equity-index minis tick in 0.25s.
+  const FC_SPECS = { MNQ: { perPt: 2, tick: 0.25 }, NQ: { perPt: 20, tick: 0.25 }, MES: { perPt: 5, tick: 0.25 }, ES: { perPt: 50, tick: 0.25 }, YM: { perPt: 5, tick: 1 }, RTY: { perPt: 50, tick: 0.10 } };
+  const spec = FC_SPECS[document.getElementById('fc-contract').value];
+  const perPt = spec ? spec.perPt : 0;
   const entry = parseFloat(document.getElementById('fc-entry').value);
   const exit = parseFloat(document.getElementById('fc-exit').value);
   const contracts = parseInt(document.getElementById('fc-contracts').value) || 1;
   if (!perPt || !Number.isFinite(entry) || !Number.isFinite(exit) || contracts < 1) return;
   const pts = exit - entry;
   const pnl = pts * perPt * contracts;
-  const ticks = Math.abs(pts / 0.25);
+  const ticks = Math.abs(pts / spec.tick);
   const isWin = pnl >= 0;
   const pnlEl = document.getElementById('fc-pnl');
-  pnlEl.textContent = (isWin ? '+' : '') + '$' + Math.abs(Math.round(pnl)).toLocaleString();
+  pnlEl.textContent = (isWin ? '+' : '−') + '$' + Math.abs(Math.round(pnl)).toLocaleString();
   pnlEl.style.color = isWin ? 'var(--green)' : 'var(--red)';
   document.getElementById('fc-details').textContent =
     Math.abs(pts).toFixed(2) + ' points (' + ticks.toFixed(0) + ' ticks) × ' + contracts +
@@ -2028,7 +2026,7 @@ function tickSessionClock() {
     el.innerHTML = '<span class="sc-dot"></span> ' + next.session.name + ' session is LIVE now — join in the Discord';
   } else {
     const s = next.session;
-    const when = next.dayOffset === 0 ? 'today' : next.dayOffset === 1 ? 'tomorrow' : PJ_DAY_NAMES[pjEtNow().getDay() + next.dayOffset];
+    const when = next.dayOffset === 0 ? 'today' : next.dayOffset === 1 ? 'tomorrow' : PJ_DAY_NAMES[(pjEtNow().getDay() + next.dayOffset) % 7];
     el.innerHTML = '<span class="sc-dot"></span> Next up: ' + s.name + ' — ' + when + ' ' + pjFmtClock(s.start) + ' ET';
   }
 }

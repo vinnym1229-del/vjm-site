@@ -55,7 +55,10 @@ async function handle(context) {
   }
 
   const claims = await verifyGoogleIdToken(credential, env.GOOGLE_CLIENT_ID);
-  if (!claims || !claims.email || claims.email_verified === false) {
+  // tokeninfo returns claims as STRINGS ('email_verified': 'true'/'false'),
+  // so a strict === false check never fired and unverified accounts passed.
+  // Require an affirmative 'true' rather than the absence of false.
+  if (!claims || !claims.email || String(claims.email_verified) !== 'true') {
     return json({ ok: false, error: 'Could not verify that Google account.' }, 401);
   }
 
@@ -75,7 +78,11 @@ async function handle(context) {
   const days = sessionDays(env);
   const fallbackExpiry = Date.now() + days * 24 * 60 * 60 * 1000;
   const storedExpiry = row.expires_at ? Date.parse(row.expires_at) : NaN;
-  const expiresAt = Number.isFinite(storedExpiry) && storedExpiry > Date.now() ? storedExpiry : fallbackExpiry;
+  // A yearly Whop plan must not mint a year-long irrevocable token: honor
+  // the plan expiry but never exceed the session-length cap.
+  const capped = Date.now() + days * 24 * 60 * 60 * 1000;
+  const expiresAt = Number.isFinite(storedExpiry) && storedExpiry > Date.now()
+    ? Math.min(storedExpiry, capped) : fallbackExpiry;
 
   const token = await signSession(
     { v: 1, mr: String(row.code_hash).slice(0, 16), dn: row.discord || '', exp: expiresAt },

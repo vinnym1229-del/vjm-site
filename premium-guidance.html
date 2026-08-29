@@ -6,7 +6,7 @@
 <title>Premium Guidance | PJ Trades x St</title>
 <meta name="description" content="Sign in to The Blueprint premium guidance by PJ Trades x St. Free Start Here preview, member-only modules, quizzes, stock lab links, and trading checklists.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://not-financial-advice-vjm.com/premium-guidance/">
+<link rel="canonical" href="https://not-financial-advice-vjm.com/pj/premium-guidance.html">
 <meta property="og:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
@@ -258,11 +258,14 @@ async function runAnalyst(){
     }
     status.textContent='';
     const m=data.metrics||{};
-    [['Last close',m.lastClose],['Total return',m.totalReturnPct+'%'],['CAGR',m.cagrPct+'%'],
-     ['Max drawdown',m.maxDrawdownPct+'%'],['30D volatility',m.vol30AnnualizedPct+'%'],
-     ['12M momentum',m.momentum&&m.momentum.m12!=null?m.momentum.m12+'%':'—'],
-     ['vs 50D avg',m.aboveSma50?'Above':'Below'],['vs 200D avg',m.aboveSma200?'Above':'Below'],
-     ['From 52w high',m.from52wHighPct+'%'],['Up days',m.upDayRatioPct+'%']]
+    // pctOr: concatenating before the null check rendered literal
+    // 'undefined%' chips whenever the API omitted a metric.
+    const pctOr=(x)=>x!=null&&Number.isFinite(Number(x))?x+'%':null;
+    [['Last close',m.lastClose],['Total return',pctOr(m.totalReturnPct)],['CAGR',pctOr(m.cagrPct)],
+     ['Max drawdown',pctOr(m.maxDrawdownPct)],['30D volatility',pctOr(m.vol30AnnualizedPct)],
+     ['12M momentum',m.momentum&&m.momentum.m12!=null?pctOr(m.momentum.m12):'—'],
+     ['vs 50D avg',m.aboveSma50!=null?(m.aboveSma50?'Above':'Below'):null],['vs 200D avg',m.aboveSma200!=null?(m.aboveSma200?'Above':'Below'):null],
+     ['From 52w high',pctOr(m.from52wHighPct)],['Up days',pctOr(m.upDayRatioPct)]]
     .forEach(([l,v])=>{ if(v!=null) metricsBox.appendChild(analystChip(l,String(v))); });
     metricsBox.style.display='grid';
     const cov=data.coverage||{};

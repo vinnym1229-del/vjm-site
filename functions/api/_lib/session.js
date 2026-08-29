@@ -9,7 +9,11 @@
 //   only honored as a read-only migration path when explicitly enabled.
 // - All comparisons are constant-time. Missing secret = fail closed.
 
-const SESSION_COOKIE = 'vjm_session';
+// __Host- gives browser-enforced guarantees: Secure, Path=/, no Domain —
+// a subdomain (or attacker-controlled sibling) cannot plant or override it.
+// Renaming invalidates sessions issued under the old name; members sign in
+// again once.
+const SESSION_COOKIE = '__Host-vjm_session';
 const DEFAULT_SESSION_DAYS = 7;
 const MAX_SESSION_DAYS = 30;
 

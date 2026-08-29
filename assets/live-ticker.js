@@ -217,11 +217,15 @@
       '<div class="lt-viewport"><div class="lt-track">' + rowHtml + rowHtml + '</div></div>';
     track = wrap.querySelector('.lt-track');
     viewport = wrap.querySelector('.lt-viewport');
-    half = track.scrollWidth / 2;
+    // scrollWidth = padding-left + 2 x rowWidth; the repeat period is
+    // rowWidth alone. Including half the padding made the tape jump ~43px
+    // at every wraparound.
+    const PAD = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+    half = (track.scrollWidth - PAD) / 2;
     // Widths measured before webfonts swap in can be slightly off; refine
     // once they've settled so the wraparound point stays accurate.
     if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => { if (track) half = track.scrollWidth / 2; });
+      document.fonts.ready.then(() => { if (track) { const p = parseFloat(getComputedStyle(track).paddingLeft) || 0; half = (track.scrollWidth - p) / 2; } });
     }
     built = true;
     if (!REDUCED) {

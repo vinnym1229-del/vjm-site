@@ -17,6 +17,7 @@
 //      BRIEF_UNIVERSE (optional comma list), standard Alpaca keys.
 
 import { json, checkRateLimit } from './_lib/http.js';
+import { timingSafeEqual } from './_lib/session.js';
 import { complete, MARKET_GUARDRAILS } from './_lib/ai.js';
 import { alpacaConfigured, snapshots, summarizeSnapshot, movers, computedMovers } from './_lib/alpaca.js';
 import { postEmbed, sanitizeDiscordText } from './_lib/discord.js';
@@ -46,7 +47,8 @@ export async function onRequestGet(context) {
 export async function onRequestPost(context) {
   const { request, env } = context;
   const cron = request.headers.get('X-Research-Cron') || '';
-  if (!env.RESEARCH_CRON_SECRET || cron !== env.RESEARCH_CRON_SECRET) {
+  // Constant-time, matching content-sync/research-engine for the same header.
+  if (!env.RESEARCH_CRON_SECRET || !timingSafeEqual(cron, env.RESEARCH_CRON_SECRET)) {
     return json({ ok: false, error: 'Unauthorized.' }, 401);
   }
   try {
@@ -79,7 +81,7 @@ async function generateBrief(env) {
       qqqPct = q && q.changePct !== null ? q.changePct : 0;
       proxyRows = [s, q].filter(Boolean);
       for (const r of proxyRows) {
-        dataBlock += `${r.symbol}: $${r.price} (${r.changePct >= 0 ? '+' : ''}${r.changePct}% vs prior close)\n`;
+        dataBlock += `${r.symbol}: $${r.price}${Number.isFinite(r.changePct) ? ` (${r.changePct >= 0 ? '+' : ''}${r.changePct}% vs prior close)` : ''}\n`;
       }
     } catch { warnings.push('Index proxy quotes unavailable.'); }
   } else {
@@ -91,7 +93,7 @@ async function generateBrief(env) {
   if (alpacaConfigured(env)) {
     mv = (await movers(env).catch(() => null)) || (await computedMovers(env, universe).catch(() => null));
     if (mv) {
-      const fmt = (arr) => arr.map((m) => `${m.symbol} ${m.changePct >= 0 ? '+' : ''}${m.changePct}%`).join(', ');
+      const fmt = (arr) => arr.filter((m) => Number.isFinite(m.changePct)).map((m) => `${m.symbol} ${m.changePct >= 0 ? '+' : ''}${m.changePct}%`).join(', ');
       dataBlock += `Gainers: ${fmt(mv.gainers)}\nLosers: ${fmt(mv.losers)}\n`;
     }
   }
@@ -156,19 +158,21 @@ async function fetchHeadlines(symbols) {
   const out = [];
   await Promise.all(symbols.map(async (sym) => {
     try {
+      // Yahoo retired the RSS headline feed (404 direct, 429 via CF egress);
+      // same JSON search endpoint yahoo-news.js migrated to.
       const res = await fetch(
-        `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${encodeURIComponent(sym)}&region=US&lang=en-US`,
-        { signal: AbortSignal.timeout(6000), cf: { cacheTtl: 300, cacheEverything: true } }
+        `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(sym)}&newsCount=8&quotesCount=0&enableFuzzyQuery=false`,
+        { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PJTradesBot/1.0)', Accept: 'application/json' },
+          signal: AbortSignal.timeout(6000), cf: { cacheTtl: 300, cacheEverything: true } }
       );
       if (!res.ok) return;
-      const xml = await res.text();
-      const re = /<item[\s\S]*?<\/item>/g;
-      let m;
-      while ((m = re.exec(xml)) !== null && out.length < 24) {
-        const block = m[0];
-        const title = decodeEntities(pick(block, 'title'));
-        const link = decodeEntities(pick(block, 'link'));
-        const pub = pick(block, 'pubDate');
+      const data = await res.json();
+      for (const item of (Array.isArray(data && data.news) ? data.news : [])) {
+        if (out.length >= 24) break;
+        const title = String(item.title || '');
+        const link = String(item.link || '');
+        const pub = Number.isFinite(Number(item.providerPublishTime))
+          ? new Date(Number(item.providerPublishTime) * 1000).toUTCString() : '';
         if (!title || !link || !/^https:/i.test(link) || seen.has(link)) continue;
         seen.add(link);
         out.push({

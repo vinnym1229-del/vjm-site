@@ -69,7 +69,12 @@ export async function onRequestPost(context) {
   let discordPosted = 0;
   const dryRun = String(env.CONTENT_DISCORD_DRYRUN ?? 'true').toLowerCase() !== 'false';
   if (env.DISCORD_ANNOUNCEMENTS_WEBHOOK && !dryRun) {
-    for (const ann of newAnnouncements.slice(0, 10)) {
+    // Cap the number POSTED, not the number considered: newAnnouncements
+    // holds every upserted row, so slicing candidates meant a genuinely new
+    // announcement past index 9 was silently never posted once the sheet
+    // held more than ten rows.
+    for (const ann of newAnnouncements) {
+      if (discordPosted >= 10) break;
       const already = await env.RESEARCH_DB.prepare(
         'SELECT event_id FROM webhook_events WHERE provider=?1 AND event_id=?2'
       ).bind('content_announcement', ann.id).first();

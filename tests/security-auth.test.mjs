@@ -75,7 +75,7 @@ test('session cookies are HttpOnly+Secure+SameSite=Lax with Max-Age', () => {
 });
 
 test('cookie reader extracts session value only', () => {
-  const req = { headers: { get: (h) => h === 'Cookie' ? 'other=1; vjm_session=tok.value; x=y' : null } };
+  const req = { headers: { get: (h) => h === 'Cookie' ? 'other=1; __Host-vjm_session=tok.value; x=y' : null } };
   assert.equal(readSessionCookie(req), 'tok.value');
   const none = { headers: { get: () => null } };
   assert.equal(readSessionCookie(none), null);
@@ -84,7 +84,7 @@ test('cookie reader extracts session value only', () => {
 test('getSession verifies request end-to-end', async () => {
   const exp = Date.now() + 60_000;
   const token = await signSession({ v: 1, mr: 'ff', dn: '', exp }, SECRET);
-  const req = { headers: { get: (h) => h === 'Cookie' ? `vjm_session=${token}` : null } };
+  const req = { headers: { get: (h) => h === 'Cookie' ? `__Host-vjm_session=${token}` : null } };
   const payload = await getSession(req, env);
   assert.ok(payload && payload.mr === 'ff');
   assert.equal(await getSession(req, {}), null);

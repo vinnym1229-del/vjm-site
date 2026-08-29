@@ -65,6 +65,16 @@ export async function checkRateLimit(env, request, scope, limit, identifier = ''
         .bind(key)
         .first();
       const count = row ? Number(row.count) : 1;
+      // The minute is baked into the bucket key, so every scope+IP+minute is a
+      // fresh row and nothing ever deleted them — the table grew forever. On
+      // the first hit of each new bucket (count===1, so ~one delete per
+      // client-minute), sweep rows older than two minutes.
+      if (count === 1) {
+        await env.RATELIMIT_DB
+          .prepare('DELETE FROM rate_limits WHERE window_minute < ?1')
+          .bind(minute - 2)
+          .run().catch(() => {});
+      }
       return { allowed: count <= limit, count };
     } catch {
       // D1 unavailable/misconfigured: fall through to memory limiter rather

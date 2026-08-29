@@ -8,7 +8,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
   <title>Research Engine | PJ Trades x St</title>
-  <meta name="description" content="Private VJM market research engine for options, stocks, sectors, and biotech. Conditional statistics, Fibonacci studies, gamma exposure, session-pattern testing, and auditable data-source status.">
+  <meta name="description" content="Private PJ Trades market research engine for options, stocks, sectors, and biotech. Conditional statistics, Fibonacci studies, gamma exposure, session-pattern testing, and auditable data-source status.">
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="assets/logo-nav.jpg">
   <link rel="stylesheet" href="assets/research-engine.css">
@@ -17,7 +17,7 @@
 <a class="skip" href="#engine">Skip to research engine</a>
 <div class="top-strip"><strong>Research, not prediction.</strong> Every result shows its source, precision, sample size, and last refresh.</div>
 <nav class="nav" aria-label="Main navigation">
-  <a class="brand" href="index.html">ST TRADES</a>
+  <a class="brand" href="index.html">PJ TRADES</a>
   <div class="nav-links">
     <a href="index.html">Home</a><a href="stock-lab.html">Stock Lab</a><a href="stock-breakdown.html">Curriculum</a><a href="options-lab.html">Options Lab</a>
     <a class="active" href="research-engine.html">Research Engine</a><a href="premium-guidance.html">Guidance</a><a href="index.html#discord-cta">Discord</a>
@@ -29,7 +29,7 @@
   <section class="hero">
     <div class="hero-grid">
       <div class="hero-copy">
-        <span class="eyebrow">VJM Research Engine</span>
+        <span class="eyebrow">PJ Trades Research Engine</span>
         <h1>Find the condition.<span>Test the outcome.</span></h1>
         <p>A persistent research dashboard for QQQ/options, stock swing setups, sector rotation, and biotech-specific risk. It refreshes in place, archives snapshots when storage is connected, and exports the current result set to Excel-compatible CSV.</p>
         <div class="hero-chips"><span class="chip green">Observed vs modeled separated</span><span class="chip">Conditional probabilities</span><span class="chip">MFE / MAE</span><span class="chip">GEX</span><span class="chip">Fib outcomes</span><span class="chip amber">Sample-size guardrails</span></div>
@@ -52,14 +52,14 @@
     <div class="gate-grid">
       <div><h2>Private research access</h2><p>This engine uses the same premium session as the rest of the site. Enter your code once, or restore a session already saved on this device.</p></div>
       <div>
-        <div class="gate-form"><input class="field" id="premiumCode" type="password" autocomplete="current-password" placeholder="Premium access code" aria-label="Premium access code"><button class="btn" id="unlockButton" type="button">Unlock</button></div>
+        <div class="gate-form"><input class="field" id="premiumCode" type="password" autocomplete="current-password" placeholder="Premium access code" aria-label="Premium access code"><button class="btn" id="unlockButton" type="button">Unlock</button></div><div class="cf-turnstile" id="re-ts" data-sitekey="0x4AAAAAAEf5izeTKE41bl6z" data-theme="dark" style="margin-top:10px;display:flex;justify-content:center;"></div>
         <button class="btn ghost" id="restoreButton" type="button" style="width:100%;margin-top:9px">Restore saved session</button>
         <div class="message" id="gateMessage" role="status" aria-live="polite"></div>
       </div>
     </div>
   </section>
 
-  <section class="engine" id="engine" aria-label="VJM Research Engine">
+  <section class="engine" id="engine" aria-label="PJ Trades Research Engine">
     <div class="toolbar">
       <div class="toolbar-left"><span class="status-pill"><i class="dot ok"></i><strong>Private session</strong></span><span class="status-pill">As of <strong id="globalAsOf">Not loaded</strong></span><span class="status-pill">Mode <strong id="globalMode">Observed</strong></span></div>
       <div class="toolbar-right"><button class="btn ghost small" id="refreshButton" type="button">Refresh current</button><button class="btn ghost small" id="exportButton" type="button">Export CSV</button><button class="btn ghost small" id="signOutButton" type="button">Sign out</button></div>
@@ -123,5 +123,6 @@
 <script src="assets/research-engine.js" defer></script>
 <script src="assets/chatbot.js" defer></script>
 <script src="assets/lightning-bg.js" defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </body>
 </html>
