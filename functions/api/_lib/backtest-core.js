@@ -160,7 +160,9 @@ export const TRIGGERS = {
       for (let j = i - p.streak; j < i; j++) {
         if ((b[j].c - b[j - 1].c) * sign <= 0) return false;
       }
-      return (b[i].c - b[i - 1].c) * sign > 0;
+      // Opposite sign to the streak: the same sign matched an (N+1)th day in
+      // the SAME direction, so this never detected a reversal at all.
+      return (b[i].c - b[i - 1].c) * sign < 0;
     },
     describe: (p) => `${p.streak} consecutive ${p.dir} days then a close in the opposite direction`,
     directionHint: 'long',
@@ -303,16 +305,20 @@ export function simulateEvent(bars, i, opts) {
   const rMultiple = riskPerShare ? move / riskPerShare : null;
 
   // Excursions across the holding window (in R when risk known, else %).
-  let bestFav = sign === 1 ? -Infinity : -Infinity;
-  let worstAdv = Infinity;
+  // Track raw extremes and derive per side. The previous form negated the
+  // short-side extremes and then subtracted them from entry, so a short's MFE
+  // came out as entry + highestHigh — e.g. entry 100 with a 105 high and 2
+  // risk reported ~102R instead of ~2R.
+  let hi = -Infinity;
+  let lo = Infinity;
   for (let j = entryIdx; j <= exitIdx; j++) {
-    const fav = sign === 1 ? bars[j].h : -bars[j].l;
-    const adv = sign === 1 ? bars[j].l : -bars[j].h;
-    bestFav = Math.max(bestFav, fav);
-    worstAdv = Math.min(worstAdv, adv);
+    hi = Math.max(hi, bars[j].h);
+    lo = Math.min(lo, bars[j].l);
   }
-  const mfeRaw = sign === 1 ? bestFav - entry : entry - worstAdv;
-  const maeRaw = sign === 1 ? worstAdv - entry : entry - bestFav;
+  // MFE is the best move in the trade's favour (positive); MAE the worst move
+  // against it (negative), both measured from entry.
+  const mfeRaw = sign === 1 ? hi - entry : entry - lo;
+  const maeRaw = sign === 1 ? lo - entry : entry - hi;
   const conv = (x) => (riskPerShare ? +(x / riskPerShare).toFixed(4) : +((x / entry) * 100).toFixed(4));
 
   return {

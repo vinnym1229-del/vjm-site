@@ -36,9 +36,19 @@ export async function onRequestGet(context) {
   }
 
   try {
-    const stmt = env.RESEARCH_DB.prepare(
-      'SELECT payload, source_updated_at FROM site_content WHERE content_type = ?1 ORDER BY position LIMIT 60'
-    ).bind(type);
+    // The ticker filter used to run in JS after SQL had already truncated to
+    // 60 rows by position, so once more than 60 reviews existed an older
+    // ticker returned count:0 even though its rows were in the table. Push
+    // the match into SQL (json_extract keeps it parameterized) so the LIMIT
+    // applies to matching rows.
+    const stmt = tickerFilter
+      ? env.RESEARCH_DB.prepare(
+        "SELECT payload, source_updated_at FROM site_content WHERE content_type = ?1"
+        + " AND json_extract(payload, '$.ticker') = ?2 ORDER BY position LIMIT 60"
+      ).bind(type, tickerFilter)
+      : env.RESEARCH_DB.prepare(
+        'SELECT payload, source_updated_at FROM site_content WHERE content_type = ?1 ORDER BY position LIMIT 60'
+      ).bind(type);
     const { results } = await stmt.all();
     const items = (results || [])
       .map((r) => {

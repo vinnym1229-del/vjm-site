@@ -94,8 +94,11 @@ export async function onRequestGet(context) {
       sma50: metrics.sma50,
       sma200: metrics.sma200,
       lastClose: metrics.lastClose,
-      aboveSma50: metrics.lastClose > metrics.sma50,
-      aboveSma200: metrics.lastClose > metrics.sma200,
+      // A null average means not enough history, not "price is above it":
+      // `lastClose > null` coerces to `> 0` and reported true for every
+      // symbol with under 200 bars.
+      aboveSma50: Number.isFinite(metrics.sma50) ? metrics.lastClose > metrics.sma50 : null,
+      aboveSma200: Number.isFinite(metrics.sma200) ? metrics.lastClose > metrics.sma200 : null,
       momentum: metrics.momentum,
       from52wHighPct: metrics.from52wHighPct,
       upDayRatioPct: metrics.upDayRatioPct,
@@ -174,7 +177,7 @@ function buildDataBlock(symbol, years, m) {
   return [
     `Symbol: ${symbol} (Nasdaq-100 ETF proxy), daily bars, last ${years} year(s), IEX feed.`,
     `Coverage: ${m.coverage.from} to ${m.coverage.to} (${m.coverage.tradingDays} trading days).`,
-    `Last close: ${m.lastClose}; 50-day avg: ${m.sma50}; 200-day avg: ${m.sma200}.`,
+    `Last close: ${m.lastClose}; 50-day avg: ${Number.isFinite(m.sma50) ? m.sma50 : 'not enough history'}; 200-day avg: ${Number.isFinite(m.sma200) ? m.sma200 : 'not enough history'}.`,
     `Total return: ${m.totalReturnPct}%; CAGR: ${m.cagrPct}%; max drawdown: ${m.maxDrawdownPct}%.`,
     `30-day annualized volatility: ${m.vol30AnnPct}%; up-day ratio: ${m.upDayRatioPct}%.`,
     `Momentum: 1M ${m.momentum.m1}%, 3M ${m.momentum.m3}%, 6M ${m.momentum.m6}%, 12M ${m.momentum.m12}%.`,
