@@ -277,3 +277,8 @@ body.light-mode .curr .tool canvas{background:rgba(0,0,0,.03);}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,
 textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
   outline:2px solid var(--gold-ink,#ef4444);outline-offset:3px;border-radius:4px;}
+
+/* These inputs set outline:0 for their resting state, which also killed the
+   sitewide focus ring; restate it at matching specificity. */
+.field:focus-visible,.control:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--gold-ink,#ef4444);outline-offset:2px;}
