@@ -204,3 +204,28 @@ test('course pages ship Course JSON-LD matching the free-tier rule', () => {
     assert.ok(ld.name && ld.description && ld.url, `${page}: Course missing name/description/url`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Incident: gating was purely cosmetic. `.gated-content` used `hidden` +
+// client-side JS to reveal paid lessons after /api/verify-premium succeeded,
+// but the full lesson text (including quiz answer keys) was always present
+// in the raw HTML — a plain unauthenticated curl of any course page returned
+// every paid lesson for free, no session or payment required. Fixed by
+// functions/_middleware.js, which strips .gated-content server-side for any
+// request without a valid session, verified live via local wrangler pages
+// dev (anonymous request returns 0 bytes of lesson text; a request carrying
+// a validly-signed session cookie gets the full page).
+test('gated course content is stripped server-side, not just hidden client-side', () => {
+  const mw = read('functions/_middleware.js');
+  assert.match(mw, /getSession/, 'middleware must check the real session, not reinvent auth');
+  assert.match(mw, /HTMLRewriter/, 'middleware must actually transform the response, not just read it');
+  assert.match(mw, /\.gated-content/, 'middleware must target the same class the course pages hide with');
+  for (const page of COURSE_PAGES) {
+    const clean = page.replace(/\.html$/, '');
+    assert.match(mw, new RegExp(`['"\`]/${clean}['"\`]`), `${page}: middleware does not gate the extensionless route`);
+    assert.match(mw, new RegExp(`['"\`]/${page}['"\`]`), `${page}: middleware does not gate the .html route`);
+  }
+  // Fail-closed: an error reading the session must not fall through to
+  // serving the unstripped page (that would silently reopen the leak).
+  assert.match(mw, /catch\s*\{[^}]*authorized\s*=\s*false/, 'session-check errors must default to unauthorized');
+});

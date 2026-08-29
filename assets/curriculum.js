@@ -113,7 +113,15 @@
             body: JSON.stringify({ code, turnstileToken }),
           });
           const data = await res.json().catch(() => ({ ok: false }));
-          if (res.ok && data.ok) { setMsg(msg, 'Premium unlocked.', true); unlockAll(); return; }
+          if (res.ok && data.ok) {
+            // The lesson text for an anonymous visitor is stripped server-side
+            // (see functions/_middleware.js), so unlockAll() has nothing to
+            // reveal yet. Reload so this request carries the new session
+            // cookie and comes back with the real content.
+            setMsg(msg, 'Premium unlocked. Loading your course...', true);
+            location.reload();
+            return;
+          }
           setMsg(msg, data.error || 'Incorrect code.', false);
           // Each Turnstile token is single-use; a rejected attempt needs a
           // fresh one before the visitor can retry.
@@ -129,7 +137,7 @@
         const msg = btn.closest('.lock-gate').querySelector('.lock-msg');
         setMsg(msg, 'Checking saved premium session...', true);
         const ok = await checkPremium();
-        if (ok) { setMsg(msg, 'Premium session active.', true); unlockAll(); }
+        if (ok) { setMsg(msg, 'Premium session active. Loading your course...', true); location.reload(); }
         else setMsg(msg, 'No active session found. Enter your code above.', false);
       });
     });
