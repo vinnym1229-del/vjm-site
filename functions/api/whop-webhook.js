@@ -52,10 +52,22 @@ export async function onRequestPost(context) {
   if (!evt || evt.action === 'ignore' || !evt.eventId) return json({ ok: true, ignored: true });
 
   // ── Idempotency ─────────────────────────────────────────────────────────
-  const seen = await env.RESEARCH_DB.prepare(
-    'SELECT event_id FROM webhook_events WHERE provider=?1 AND event_id=?2'
-  ).bind('whop', evt.eventId).first();
-  if (seen) return json({ ok: true, duplicate: true });
+  // Claim the event by INSERTing rather than SELECT-then-INSERT: two
+  // concurrent deliveries of one event both passed the old check and minted
+  // two codes for one purchase. INSERT OR IGNORE is atomic, so exactly one
+  // request sees changes === 1 and proceeds.
+  const claim = await env.RESEARCH_DB.prepare(
+    "INSERT OR IGNORE INTO webhook_events (provider, event_id, note) VALUES ('whop', ?1, ?2)"
+  ).bind(evt.eventId, 'claimed:' + evt.action).run();
+  if (!claim || !claim.meta || claim.meta.changes !== 1) {
+    return json({ ok: true, duplicate: true });
+  }
+  // Release the claim so Whop's retry can run this event again.
+  const releaseClaim = async () => {
+    await env.RESEARCH_DB.prepare(
+      'DELETE FROM webhook_events WHERE provider=?1 AND event_id=?2'
+    ).bind('whop', evt.eventId).run().catch(() => {});
+  };
 
   if (evt.action === 'grant') {
     const bytes = new Uint8Array(8);
@@ -78,13 +90,19 @@ export async function onRequestPost(context) {
       emailHash, evt.planName, evt.expiresAt, evt.amountPaidCents, evt.currency
     ).run();
 
-    await env.RESEARCH_DB.prepare(
-      "INSERT OR IGNORE INTO webhook_events (provider, event_id, note) VALUES ('whop', ?1, ?2)"
-    ).bind(evt.eventId, 'grant:' + (evt.memberId || '?')).run();
-
     const hook = env.DISCORD_WHOP_CODES_WEBHOOK;
+    // Only the plaintext `code` in this local variable can reach the owner —
+    // the table stores a hash. So the event must NOT be marked processed
+    // until delivery actually succeeds, or a failed post silently destroys a
+    // paying customer's access with no way to recover it.
+    if (!hook) {
+      await env.RESEARCH_DB.prepare('DELETE FROM whop_codes WHERE code_hash=?1').bind(hash).run().catch(() => {});
+      await releaseClaim();
+      console.error('whop-webhook: DISCORD_WHOP_CODES_WEBHOOK unset; cannot deliver code for ' + evt.eventId);
+      return json({ ok: false, error: 'Code delivery channel is not configured.' }, 503);
+    }
     let delivered = false;
-    if (hook) {
+    {
       delivered = await postEmbed(hook, {
         title: 'New Whop purchase → premium code ready',
         description:
@@ -99,19 +117,38 @@ export async function onRequestPost(context) {
         await env.RESEARCH_DB.prepare(
           "UPDATE whop_codes SET status='delivered' WHERE code_hash=?1"
         ).bind(hash).run();
+        await env.RESEARCH_DB.prepare(
+          "UPDATE webhook_events SET note=?2 WHERE provider='whop' AND event_id=?1"
+        ).bind(evt.eventId, 'grant:' + (evt.memberId || '?')).run().catch(() => {});
       }
+    }
+    if (!delivered) {
+      // Undeliverable code is unrecoverable (only its hash is stored), so drop
+      // the row and release the claim: Whop's retry mints and delivers a fresh
+      // one rather than the customer being left with nothing.
+      await env.RESEARCH_DB.prepare('DELETE FROM whop_codes WHERE code_hash=?1').bind(hash).run().catch(() => {});
+      await releaseClaim();
+      console.error('whop-webhook: delivery failed for ' + evt.eventId + '; released for retry');
+      return json({ ok: false, error: 'Code delivery failed; will retry.' }, 503);
     }
     return json({ ok: true, action: 'grant', delivered });
   }
 
   if (evt.action === 'revoke') {
-    await env.RESEARCH_DB.prepare(
+    // A null memberId matches zero rows, so access would silently stay live
+    // while the event was recorded as handled — fail-open on revocation.
+    if (!evt.memberId) {
+      await releaseClaim();
+      console.error('whop-webhook: revoke event ' + evt.eventId + ' carried no member id');
+      return json({ ok: false, error: 'Revoke event missing member id.' }, 422);
+    }
+    const res = await env.RESEARCH_DB.prepare(
       "UPDATE whop_codes SET status='revoked' WHERE whop_member_id=?1 AND status!='revoked'"
     ).bind(evt.memberId).run();
     await env.RESEARCH_DB.prepare(
-      "INSERT OR IGNORE INTO webhook_events (provider, event_id, note) VALUES ('whop', ?1, 'revoke')"
-    ).bind(evt.eventId).run();
-    return json({ ok: true, action: 'revoke' });
+      "UPDATE webhook_events SET note='revoke' WHERE provider='whop' AND event_id=?1"
+    ).bind(evt.eventId).run().catch(() => {});
+    return json({ ok: true, action: 'revoke', revoked: (res && res.meta && res.meta.changes) || 0 });
   }
 
   return json({ ok: true, ignored: true });
