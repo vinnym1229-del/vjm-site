@@ -520,7 +520,11 @@
       <div class="section-tag xl">Meet PJ Trades</div>
     </div>
     <div class="video-facade" id="video-facade" data-video-mp4="/video/pj-intro.mp4" data-video-yt="" role="button" tabindex="0" aria-label="Play introduction video" data-reveal>
-      <div class="video-poster" aria-hidden="true" style="background-image:linear-gradient(180deg,rgba(6,9,13,.10) 0%,rgba(6,9,13,.24) 55%,rgba(6,9,13,.86) 100%),url('assets/pj-intro-poster.jpg');background-size:cover;background-position:center;">
+      <div class="video-poster" aria-hidden="true">
+        <!-- lazy <img> instead of a CSS background: the poster is below the
+             fold and 111KB; CSS backgrounds load eagerly, loading=lazy defers
+             it until the visitor scrolls near the video. Gradient overlays it. -->
+        <img class="video-poster-img" src="assets/pj-intro-poster.jpg" alt="" width="1600" height="900" loading="lazy" decoding="async">
         <div class="video-poster-glow"></div>
         <div class="video-play"><span>▶</span></div>
         <p class="video-poster-title">PJ Trades — Live Futures Trading &amp; Analysis</p>

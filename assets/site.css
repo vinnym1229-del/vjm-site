@@ -727,6 +727,9 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .video-facade{position:relative;z-index:3;aspect-ratio:16/9;border-radius:20px;overflow:hidden;border:1px solid var(--border-strong);cursor:pointer;box-shadow:0 20px 60px rgba(0,0,0,.5);outline:none;background:#04060a;isolation:isolate;}
 .video-facade:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
 .video-poster{position:relative;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#05070b;}
+.video-poster-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
+.video-poster::before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(6,9,13,.10) 0%,rgba(6,9,13,.24) 55%,rgba(6,9,13,.86) 100%);pointer-events:none;}
+.video-poster>*:not(.video-poster-img){position:relative;z-index:2;}
 /* Neutral vignette only -- the red/gold wash used to tint the poster and
    made the thumbnail look muddy. The red ambience stays on every other
    section, just not across the player. */
