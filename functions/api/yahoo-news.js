@@ -1,33 +1,38 @@
 // Cloudflare Pages Function: GET /api/yahoo-news?symbol=TSLA
 //                       or:  GET /api/yahoo-news?topic=forex
 //
-// Company headlines from Yahoo Finance's public RSS feed. Hardened:
-// - strict symbol validation, host allowlist, no open URL construction
+// Headlines from Yahoo Finance. Hardened:
+// - strict symbol validation, single allowlisted host, no caller-built URLs
 // - titles/links sanitized and length-capped; deduped by link
 // - cached ~5 min; explicit unavailable state on failure (no fake items)
+//
+// Source note: this used to read feeds.finance.yahoo.com/rss/2.0/headline.
+// Yahoo has since retired that path -- it now answers 404 to a direct fetch
+// and 429 through Cloudflare's egress, so the route returned "temporarily
+// unavailable" on every single call and both callers (stock-lab's news reel
+// and the forex calendar's headline panel) sat permanently empty. Swapped to
+// the JSON search endpoint, which is live and returns structured items.
 
 import { json, cleanSymbol, checkRateLimit } from './_lib/http.js';
 
-const FEED_HOST = 'feeds.finance.yahoo.com';
+const API_HOST = 'query1.finance.yahoo.com';
 const MAX_ITEMS = 12;
 
 // forex-calendar.html has always called this route with ?topic=forex, which
-// the symbol-only contract rejected with a 400 -- so that page's headline
-// panel silently fell back to its 'unavailable' state on every load. Topics
-// map to a fixed set of Yahoo symbols; the map is a closed allowlist so this
-// stays as constrained as the symbol path (no caller-built feed URLs).
+// the symbol-only contract rejected with a 400. Topics map to a fixed query
+// through a closed allowlist, so no caller can steer the upstream request.
 const TOPICS = {
-  forex: { symbols: 'EURUSD=X,GBPUSD=X,USDJPY=X,DX-Y.NYB', label: 'Forex' },
-  futures: { symbols: 'ES=F,NQ=F,YM=F,RTY=F', label: 'Index futures' },
-  market: { symbols: 'SPY,QQQ,DIA,IWM', label: 'US market' },
+  forex: { query: 'EURUSD=X', label: 'Forex' },
+  futures: { query: 'ES=F', label: 'Index futures' },
+  market: { query: 'SPY', label: 'US market' },
 };
 
 export async function onRequestGet(context) {
-  // Abuse guard: this route costs money or calls a third party.
+  // Abuse guard: this route calls a third party.
   const _rl = await checkRateLimit(context.env, context.request, 'yahoo-news', 30);
   if (!_rl.allowed) return json({ ok: false, error: 'Too many requests. Wait a minute.' }, 429);
-  const { request } = context;
-  const url = new URL(request.url);
+
+  const url = new URL(context.request.url);
   const symbol = cleanSymbol(url.searchParams.get('symbol'));
   const topicKey = String(url.searchParams.get('topic') || '').toLowerCase();
   const topic = Object.prototype.hasOwnProperty.call(TOPICS, topicKey) ? TOPICS[topicKey] : null;
@@ -36,27 +41,35 @@ export async function onRequestGet(context) {
     return json({ ok: false, error: 'Provide a valid ticker symbol or topic.' }, 400);
   }
 
-  const feedQuery = topic ? topic.symbols : symbol;
-  const feedUrl = `https://${FEED_HOST}/rss/2.0/headline?s=${encodeURIComponent(feedQuery)}&region=US&lang=en-US`;
+  const query = topic ? topic.query : symbol;
+  const feedUrl = `https://${API_HOST}/v1/finance/search`
+    + `?q=${encodeURIComponent(query)}&newsCount=${MAX_ITEMS}&quotesCount=0&enableFuzzyQuery=false`;
 
   try {
     const res = await fetch(feedUrl, {
+      headers: {
+        // Yahoo rejects requests without a browser-ish UA.
+        'User-Agent': 'Mozilla/5.0 (compatible; PJTradesBot/1.0)',
+        Accept: 'application/json',
+      },
       cf: { cacheTtl: 300, cacheEverything: true },
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) throw new Error('upstream status ' + res.status);
-    const xml = await res.text();
-    const items = parseRss(xml)
-      .filter((it) => it.title && it.link && /^https:\/\//i.test(it.link))
-      // Only pass through yahoo/finance-hosted links or any https link from
-      // the feed itself — the feed is publisher-controlled; we sanitize
-      // rather than allowlist individual publishers.
+
+    const data = await res.json();
+    const raw = Array.isArray(data && data.news) ? data.news : [];
+
+    const items = raw
       .map((it) => ({
-        title: sanitizeText(it.title, 200),
+        title: sanitizeText(fixMojibake(it.title), 200),
         link: sanitizeLink(it.link),
-        publisher: sanitizeText(it.publisher || 'Yahoo Finance', 80),
-        pubDate: it.pubDate ? new Date(it.pubDate).toISOString() : null,
-        description: it.description ? sanitizeText(stripTags(it.description), 240) : '',
+        publisher: sanitizeText(fixMojibake(it.publisher) || 'Yahoo Finance', 80),
+        // providerPublishTime is unix seconds.
+        pubDate: Number.isFinite(Number(it.providerPublishTime))
+          ? new Date(Number(it.providerPublishTime) * 1000).toISOString()
+          : null,
+        description: '',
       }))
       .filter((it) => it.title && it.link);
 
@@ -72,7 +85,7 @@ export async function onRequestGet(context) {
       symbol: symbol || null,
       topic: topic ? topicKey : null,
       source: {
-        name: 'Yahoo Finance RSS',
+        name: 'Yahoo Finance',
         url: topic ? 'https://finance.yahoo.com/news/' : `https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}/news`,
       },
       mode: 'observed',
@@ -87,43 +100,23 @@ export async function onRequestGet(context) {
       error: 'News feed is temporarily unavailable.',
       symbol: symbol || null,
       topic: topic ? topicKey : null,
-      detail: String(err && err.message || err).slice(0, 160),
+      detail: String((err && err.message) || err).slice(0, 160),
     }, 502);
   }
 }
 
-function parseRss(xml) {
-  const out = [];
-  const itemRe = /<item[\s\S]*?<\/item>/g;
-  let m;
-  while ((m = itemRe.exec(xml)) !== null && out.length < MAX_ITEMS * 3) {
-    const block = m[0];
-    out.push({
-      title: pickTag(block, 'title'),
-      link: pickTag(block, 'link'),
-      pubDate: pickTag(block, 'pubDate'),
-      description: pickTag(block, 'description'),
-      publisher: 'Yahoo Finance',
-    });
+// Yahoo occasionally double-encodes UTF-8 in these titles, so a curly
+// apostrophe arrives as "â€™". Repair only when that exact pattern shows up;
+// leaving it produces visible garbage in the headline.
+function fixMojibake(s) {
+  const str = String(s == null ? '' : s);
+  if (!/[\u00C2-\u00C3][\u0080-\u00BF]/.test(str)) return str;
+  try {
+    const bytes = Uint8Array.from([...str].map((c) => c.charCodeAt(0) & 0xff));
+    return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+  } catch {
+    return str;
   }
-  return out;
-}
-
-function pickTag(block, tag) {
-  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i');
-  const m = re.exec(block);
-  if (!m) return '';
-  // Decode common XML entities; leave other text for client-side escaping.
-  return m[1]
-    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
-    .replace(/&amp;/g, '&')
-    .trim();
-}
-
-function stripTags(s) {
-  return String(s).replace(/<[^>]*>/g, '');
 }
 
 function sanitizeText(s, max) {
