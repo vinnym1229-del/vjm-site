@@ -325,7 +325,7 @@ body::before {
     <div class="wrap">
       <div class="section-tag">The Model</div>
       <h2 class="panel-title">What gamma exposure actually is</h2>
-      <p class="lead">Options dealers (market makers) are usually short gamma on puts and long gamma on calls they've sold, and they hedge their book by buying and selling the underlying as price moves. GEX estimates, strike by strike, how much stock/futures dealers have to buy or sell per $1 move to stay hedged. That hedging flow is what turns options positioning into real support, resistance, and volatility regimes on the chart.</p>
+      <p class="lead">Options dealers (market makers) typically end up short gamma from the puts customers buy for protection, and long gamma from the calls customers sell against stock, and they hedge their book by buying and selling the underlying as price moves. GEX estimates, strike by strike, how much stock/futures dealers have to buy or sell per $1 move to stay hedged. That hedging flow is what turns options positioning into real support, resistance, and volatility regimes on the chart.</p>
 
       <div class="diagram-wrap">
         <svg viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg">
@@ -365,7 +365,7 @@ body::before {
 
           <text x="740" y="185" text-anchor="end" style="fill:var(--muted);font-size:10px;font-family:'IBM Plex Sans',sans-serif;">Strike →</text>
         </svg>
-        <p class="diagram-caption">A GEX profile: bars show net dealer gamma at each strike. The put wall tends to act as a floor while dealers are net long gamma there; the call wall acts as a magnet/ceiling. The dashed line is the zero gamma flip — the strike where the whole market's net dealer gamma crosses from positive to negative.</p>
+        <p class="diagram-caption">A GEX profile: bars show net dealer gamma at each strike. The put wall is the most negative strike — where dealer hedging amplifies moves rather than damping them — and it often marks where heavy put positioning concentrates; the call wall, being long gamma, acts as a magnet/ceiling. The dashed line is the zero gamma flip — the strike where the whole market's net dealer gamma crosses from positive to negative.</p>
       </div>
 
       <div class="grid-2">
