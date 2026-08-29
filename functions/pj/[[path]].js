@@ -88,6 +88,14 @@ export async function onRequest(context) {
     ? rewriteHtml(await upstreamResponse.text())
     : rewriteApiFetchCalls(await upstreamResponse.text());
   headers.delete('content-length');
+  if (isJs) {
+    // Cloudflare's edge cache treats .js paths as static by extension and
+    // caches this Function's output for hours by default, independent of
+    // this file's own deploys -- exactly how the fetch-path bug above stayed
+    // live on the real domain long after pj.vjm.pages.dev itself was fine.
+    // Never let that happen to a rewritten response again.
+    headers.set('Cache-Control', 'no-store');
+  }
 
   return new Response(body, {
     status: upstreamResponse.status,
@@ -104,7 +112,14 @@ function rewriteHtml(html) {
   const attrPattern = /((?:src|href|action|srcset)\s*=\s*)(["'])([^"']+)\2/gi;
   html = html.replace(attrPattern, (full, prefix, quote, value) => {
     if (!shouldRewrite(value)) return full;
-    return `${prefix}${quote}${prefixPath(value)}${quote}`;
+    let out = prefixPath(value);
+    // Force a one-time cache-bust on .js references: Cloudflare's edge had
+    // already cached the pre-fix (broken) output of this proxy for these
+    // exact URLs for hours before this fix shipped, and this Function has
+    // no way to purge that. A new query string is a new cache key, so this
+    // makes the fix effective immediately instead of waiting out the TTL.
+    if (/\.js(\?|$)/i.test(value)) out += (out.includes('?') ? '&' : '?') + 'cbfix1';
+    return `${prefix}${quote}${out}${quote}`;
   });
 
   // Inline style="background-image:url(...)" and any <style> block url(...).
