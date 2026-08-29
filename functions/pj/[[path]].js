@@ -13,6 +13,18 @@
 // HTML responses are rewritten (buffered -- these pages are well under a
 // megabyte, streaming isn't worth the complexity) so every asset/link/fetch
 // path stays scoped under /pj.
+//
+// Incident: that rewrite only ever touched the HTML document text, so any
+// fetch('/api/...') sitting inside an EXTERNAL .js file (curriculum.js,
+// chatbot.js, live-ticker.js, research-engine.js all have one) was never
+// rewritten. On the real customer-facing domain that meant a root-relative
+// fetch('/api/verify-premium') resolved against not-financial-advice-vjm.com
+// itself -- a completely different site's Functions -- instead of pj's,
+// so the premium unlock form, saved-session check, chatbot, live ticker,
+// and research engine were all silently talking to the wrong backend and
+// failing (confirmed live: not-financial-advice-vjm.com/api/verify-premium
+// returned 400 "Missing token", a different app's error entirely). JS
+// responses now go through the same fetch-path rewrite as HTML.
 
 const UPSTREAM_ORIGIN = 'https://pj.vjm.pages.dev';
 
@@ -62,7 +74,9 @@ export async function onRequest(context) {
   }
 
   const contentType = headers.get('content-type') || '';
-  if (!contentType.includes('text/html')) {
+  const isHtml = contentType.includes('text/html');
+  const isJs = contentType.includes('javascript');
+  if (!isHtml && !isJs) {
     return new Response(upstreamResponse.body, {
       status: upstreamResponse.status,
       statusText: upstreamResponse.statusText,
@@ -70,10 +84,12 @@ export async function onRequest(context) {
     });
   }
 
-  const html = rewriteHtml(await upstreamResponse.text());
+  const body = isHtml
+    ? rewriteHtml(await upstreamResponse.text())
+    : rewriteApiFetchCalls(await upstreamResponse.text());
   headers.delete('content-length');
 
-  return new Response(html, {
+  return new Response(body, {
     status: upstreamResponse.status,
     statusText: upstreamResponse.statusText,
     headers,
@@ -94,10 +110,15 @@ function rewriteHtml(html) {
   // Inline style="background-image:url(...)" and any <style> block url(...).
   html = html.replace(/url\((['"]?)assets\//g, 'url($1/pj/assets/');
 
-  // fetch('/api/...'), fetch("/video/..."), template-literal variants.
-  html = html.replace(/(['"`])\/(api|video)\//g, '$1/pj/$2/');
+  return rewriteApiFetchCalls(html);
+}
 
-  return html;
+// fetch('/api/...'), fetch("/video/..."), template-literal variants. Shared
+// between the HTML rewrite above and external .js assets (see incident note
+// at the top of this file) — a fetch call reads the same whether it's typed
+// inline in a <script> tag or sitting in a separately-served .js file.
+function rewriteApiFetchCalls(text) {
+  return text.replace(/(['"`])\/(api|video)\//g, '$1/pj/$2/');
 }
 
 function shouldRewrite(value) {
