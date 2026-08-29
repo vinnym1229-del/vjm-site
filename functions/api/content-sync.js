@@ -10,6 +10,7 @@
 // → website + Discord update themselves. No code edits, no AI needed.
 
 import { json, checkRateLimit } from './_lib/http.js';
+import { timingSafeEqual } from './_lib/session.js';
 import { sanitizeContentRow, CONTENT_TYPES } from './_lib/integrations-core.js';
 import { postEmbed } from './_lib/discord.js';
 
@@ -21,7 +22,9 @@ export async function onRequestPost(context) {
   if (!_rl.allowed) return json({ ok: false, error: 'Too many requests. Wait a minute.' }, 429);
   const { request, env } = context;
   const cron = request.headers.get('X-Research-Cron') || '';
-  if (!env.RESEARCH_CRON_SECRET || cron !== env.RESEARCH_CRON_SECRET) {
+  // Constant-time compare: research-engine already does this for the same
+  // header; a plain !== here leaked a timing oracle on the shared secret.
+  if (!env.RESEARCH_CRON_SECRET || !timingSafeEqual(cron, env.RESEARCH_CRON_SECRET)) {
     return json({ ok: false, error: 'Unauthorized.' }, 401);
   }
   if (!env.CONTENT_BRIDGE_URL || !env.CONTENT_BRIDGE_SECRET) {
