@@ -1664,7 +1664,10 @@ function toggleMobileMenu() {
   const btn = document.getElementById('hamburger');
   menu.classList.toggle('open');
   btn.classList.toggle('open');
+  btn.setAttribute('aria-expanded', menu.classList.contains('open'));
 }
+// Escape closes the mobile menu (keyboard parity with the dropdowns).
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMobileMenu(); });
 function closeMobileMenu() {
   document.getElementById('mobile-menu').classList.remove('open');
   document.getElementById('hamburger').classList.remove('open');
