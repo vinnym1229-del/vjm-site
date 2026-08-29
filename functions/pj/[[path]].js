@@ -40,7 +40,11 @@ export async function onRequest(context) {
   }
 
   const headers = new Headers(upstreamResponse.headers);
-  headers.set('X-Robots-Tag', 'noindex, follow');
+  // Indexing was force-blocked here while the site was still being hardened.
+  // Each page already carries its own correct <meta name="robots"> (course
+  // and marketing pages say index,follow; research-engine.html and 404.html
+  // opt out on their own) — let that per-page decision stand instead of a
+  // blanket override at the proxy.
 
   if (upstreamResponse.status >= 300 && upstreamResponse.status < 400) {
     const loc = headers.get('location');
