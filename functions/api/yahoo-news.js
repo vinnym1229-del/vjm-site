@@ -1,4 +1,5 @@
 // Cloudflare Pages Function: GET /api/yahoo-news?symbol=TSLA
+//                       or:  GET /api/yahoo-news?topic=forex
 //
 // Company headlines from Yahoo Finance's public RSS feed. Hardened:
 // - strict symbol validation, host allowlist, no open URL construction
@@ -10,6 +11,17 @@ import { json, cleanSymbol, checkRateLimit } from './_lib/http.js';
 const FEED_HOST = 'feeds.finance.yahoo.com';
 const MAX_ITEMS = 12;
 
+// forex-calendar.html has always called this route with ?topic=forex, which
+// the symbol-only contract rejected with a 400 -- so that page's headline
+// panel silently fell back to its 'unavailable' state on every load. Topics
+// map to a fixed set of Yahoo symbols; the map is a closed allowlist so this
+// stays as constrained as the symbol path (no caller-built feed URLs).
+const TOPICS = {
+  forex: { symbols: 'EURUSD=X,GBPUSD=X,USDJPY=X,DX-Y.NYB', label: 'Forex' },
+  futures: { symbols: 'ES=F,NQ=F,YM=F,RTY=F', label: 'Index futures' },
+  market: { symbols: 'SPY,QQQ,DIA,IWM', label: 'US market' },
+};
+
 export async function onRequestGet(context) {
   // Abuse guard: this route costs money or calls a third party.
   const _rl = await checkRateLimit(context.env, context.request, 'yahoo-news', 30);
@@ -17,12 +29,15 @@ export async function onRequestGet(context) {
   const { request } = context;
   const url = new URL(request.url);
   const symbol = cleanSymbol(url.searchParams.get('symbol'));
+  const topicKey = String(url.searchParams.get('topic') || '').toLowerCase();
+  const topic = Object.prototype.hasOwnProperty.call(TOPICS, topicKey) ? TOPICS[topicKey] : null;
 
-  if (!symbol) {
-    return json({ ok: false, error: 'Provide a valid ticker symbol.' }, 400);
+  if (!symbol && !topic) {
+    return json({ ok: false, error: 'Provide a valid ticker symbol or topic.' }, 400);
   }
 
-  const feedUrl = `https://${FEED_HOST}/rss/2.0/headline?s=${encodeURIComponent(symbol)}&region=US&lang=en-US`;
+  const feedQuery = topic ? topic.symbols : symbol;
+  const feedUrl = `https://${FEED_HOST}/rss/2.0/headline?s=${encodeURIComponent(feedQuery)}&region=US&lang=en-US`;
 
   try {
     const res = await fetch(feedUrl, {
@@ -54,8 +69,12 @@ export async function onRequestGet(context) {
 
     return json({
       ok: true,
-      symbol,
-      source: { name: 'Yahoo Finance RSS', url: `https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}/news` },
+      symbol: symbol || null,
+      topic: topic ? topicKey : null,
+      source: {
+        name: 'Yahoo Finance RSS',
+        url: topic ? 'https://finance.yahoo.com/news/' : `https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}/news`,
+      },
       mode: 'observed',
       fetchedAt: new Date().toISOString(),
       cached: false,
@@ -66,7 +85,8 @@ export async function onRequestGet(context) {
     return json({
       ok: false,
       error: 'News feed is temporarily unavailable.',
-      symbol,
+      symbol: symbol || null,
+      topic: topic ? topicKey : null,
       detail: String(err && err.message || err).slice(0, 160),
     }, 502);
   }

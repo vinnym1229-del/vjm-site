@@ -40,7 +40,12 @@ export async function onRequestGet(context) {
     );
     if (!res.ok) throw new Error('upstream status ' + res.status);
     const data = JSON.parse(text);
-    const snap = data && data.snapshots && data.snapshots[symbol];
+    // /v2/stocks/snapshots returns the symbol->snapshot map at the TOP
+    // LEVEL, not wrapped in a "snapshots" key (see _lib/alpaca.js, where
+    // this same bug was already fixed once). Accept either shape so a
+    // future upstream change cannot silently empty this out again.
+    const snapMap = (data && data.snapshots) ? data.snapshots : data;
+    const snap = snapMap && snapMap[symbol];
     if (!snap) throw new Error('empty snapshot');
 
     const bar = snap.dailyBar || snap.prevDailyBar || null;
