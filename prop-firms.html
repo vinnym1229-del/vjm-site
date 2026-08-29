@@ -42,7 +42,7 @@
   @media(max-width:560px){.mmenu{grid-template-columns:1fr}}
   .firms{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;margin-top:24px}
   .firm img{width:100%;border-radius:12px;border:1px solid var(--vjm-border);aspect-ratio:3/2;object-fit:cover;background:#0f0d0e}
-  .firm h3{font-family:var(--vjm-font-display);text-transform:uppercase;font-weight:900;font-size:1.35rem;margin:12px 0 4px}
+  .firm h2{font-family:var(--vjm-font-display);text-transform:uppercase;font-weight:900;font-size:1.35rem;margin:12px 0 4px}
   .code-row{display:flex;gap:8px;align-items:center;margin-top:10px}
   .code-box{flex:1;font-family:var(--vjm-font-mono);background:#0f0d0e;border:1px dashed var(--vjm-border-strong);
     border-radius:10px;padding:10px 12px;text-align:center;letter-spacing:2px}
@@ -132,7 +132,7 @@ body::before {
     div.className = 'vjm-card firm';
     let html = '';
     if (f.imageUrl) html += '<img src="' + esc(f.imageUrl) + '" alt="' + esc(f.name) + ' promotion" loading="lazy">';
-    html += '<h3>' + esc(f.name) + '</h3>';
+    html += '<h2>' + esc(f.name) + '</h2>';
     if (f.discount) html += '<span class="vjm-chip green">' + esc(f.discount) + '</span>';
     if (f.notes) html += '<p style="color:var(--vjm-muted);font-size:.84rem;margin-top:8px">' + esc(f.notes) + '</p>';
     if (f.code) {

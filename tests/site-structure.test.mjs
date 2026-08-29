@@ -38,6 +38,13 @@ for (const file of ['research-engine.html', 'assets/research-engine.js', 'functi
   assert.doesNotMatch(source, /ALPACA_SECRET_KEY\s*=\s*["'][^"']+/i, `${file} must not contain an Alpaca secret value`);
 }
 
+// prop-firms.html has a single h1 and no static h2 — its firm cards are the
+// only content section, so they must render as h2, not h3 (a screen reader
+// heading-level skip from h1 straight to h3).
+const propFirms = readFileSync(resolve(root, 'prop-firms.html'), 'utf8');
+assert.doesNotMatch(propFirms, /<h3>/, 'prop-firms firm cards must not skip a heading level from h1 to h3');
+assert.match(propFirms, /'<h2>' \+ esc\(f\.name\) \+ '<\/h2>'/, 'prop-firms firm cards must render as h2');
+
 assert.match(html, /meta name="robots" content="noindex,nofollow"/);
 assert.match(html, /Educational research only—not financial advice/);
 // Sessions travel via HttpOnly cookies; no Bearer tokens in client code.
