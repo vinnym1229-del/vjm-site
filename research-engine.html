@@ -12,16 +12,27 @@
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="assets/logo-nav.jpg">
   <link rel="stylesheet" href="assets/research-engine.css">
+  <style>
+  .links{display:flex;align-items:center;justify-content:center;gap:2px;flex:1;min-width:0}
+  .nav .nav-item{position:relative}
+  .nav .nav-top{display:flex;align-items:center;gap:7px;background:none;border:1px solid transparent;cursor:pointer;color:var(--muted);font-family:inherit;font-size:.73rem;font-weight:900;letter-spacing:.7px;text-transform:uppercase;padding:9px 11px;border-radius:999px;white-space:nowrap;transition:color .18s,background .18s,border-color .18s}
+  .nav .nav-item:hover>.nav-top,.nav .nav-item.open>.nav-top{color:var(--red);background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.28)}
+  .nav .nav-top .caret{width:6px;height:6px;margin-top:-3px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;border-radius:1px;opacity:.55;transform:rotate(45deg);transition:transform .18s,opacity .18s}
+  .nav .nav-item:hover>.nav-top .caret,.nav .nav-item.open>.nav-top .caret{transform:rotate(225deg);margin-top:2px;opacity:.9}
+  .nav .nav-drop{position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-50%) translateY(-6px);min-width:214px;padding:8px;z-index:1001;background:rgba(5,7,11,.99);border:1px solid var(--line2);border-radius:14px;box-shadow:0 20px 54px rgba(0,0,0,.62);display:flex;flex-direction:column;gap:2px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s,transform .18s,visibility .18s}
+  .nav .nav-drop::before{content:'';position:absolute;left:0;right:0;top:-14px;height:14px}
+  .nav .nav-item:hover>.nav-drop,.nav .nav-item.open>.nav-drop{opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0)}
+  .nav .nav-drop a{display:block;padding:10px 13px;border-radius:9px;color:var(--muted);text-decoration:none;white-space:nowrap;font-size:.82rem;font-weight:700;letter-spacing:.2px;text-transform:none}
+  .nav .nav-drop a:hover,.nav .nav-drop a.on{color:var(--red);background:rgba(220,38,38,.12)}
+  @media(max-width:1120px){.links{display:none}}
+  </style>
 </head>
 <body>
 <a class="skip" href="#engine">Skip to research engine</a>
 <div class="top-strip"><strong>Research, not prediction.</strong> Every result shows its source, precision, sample size, and last refresh.</div>
 <nav class="nav" aria-label="Main navigation">
   <a class="brand" href="index.html">PJ TRADES</a>
-  <div class="nav-links">
-    <a href="index.html">Home</a><a href="stock-lab.html">Stock Lab</a><a href="stock-breakdown.html">Curriculum</a><a href="options-lab.html">Options Lab</a>
-    <a class="active" href="research-engine.html">Research Engine</a><a href="premium-guidance.html">Guidance</a><a href="index.html#discord-cta">Discord</a>
-  </div>
+  <div class="links"><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Membership<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="index.html#features">What You Get</a><a href="index.html#bundles">Bundles &amp; Pricing</a><a href="premium-guidance.html">Premium Guidance</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Curriculum<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="stock-breakdown.html">Stock Breakdown</a><a href="options-lab.html">Options Lab</a><a href="futures-dissection.html">Futures Dissection</a><a href="psychology-enhancer.html">Psychology Enhancer</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Tools<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="stock-lab.html">Stock Lab</a><a href="research-engine.html" class="on">Research Engine</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Markets<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="premarket.html">Pre-Market</a><a href="forex-calendar.html">Forex Calendar</a><a href="prop-firms.html">Prop Firms</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Live<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="index.html#schedule">Stream Schedule</a><a href="index.html#team">Meet the Team</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Community<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="index.html#about">About PJ</a><a href="index.html#wins">Member Results</a><a href="index.html#discord-cta">Discord</a></div></div></div>
   <a class="nav-action" href="index.html#premium">Premium Access</a>
 </nav>
 
@@ -120,6 +131,28 @@
 </main>
 
 <footer class="footer"><div>Educational research only—not financial advice. Market data may be delayed, incomplete, or indicative. Verify live prices before trading.</div><div class="footer-links"><a href="index.html">Home</a><a href="stock-lab.html">Stock Lab</a><a href="options-lab.html">Options Lab</a><a href="risk-disclosure.html">Risk Disclosure</a><a href="privacy.html">Privacy</a></div></footer>
+<script>
+(function(){
+  function initNavDropdowns(){
+    var items = document.querySelectorAll('.nav .nav-item');
+    if (!items.length) return;
+    function closeAll(){ items.forEach(function(o){ o.classList.remove('open'); var b = o.querySelector('.nav-top'); if (b) b.setAttribute('aria-expanded','false'); }); }
+    items.forEach(function(item){
+      var btn = item.querySelector('.nav-top');
+      if (!btn) return;
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var was = item.classList.contains('open');
+        closeAll();
+        if (!was){ item.classList.add('open'); btn.setAttribute('aria-expanded','true'); }
+      });
+    });
+    document.addEventListener('click', closeAll);
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAll(); });
+  }
+  initNavDropdowns();
+})();
+</script>
 <script src="assets/research-engine.js" defer></script>
 <script src="assets/chatbot.js" defer></script>
 <script src="assets/lightning-bg.js" defer></script>
