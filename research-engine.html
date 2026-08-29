@@ -24,7 +24,8 @@
   .nav .nav-item:hover>.nav-drop,.nav .nav-item.open>.nav-drop{opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0)}
   .nav .nav-drop a{display:block;padding:10px 13px;border-radius:9px;color:var(--muted);text-decoration:none;white-space:nowrap;font-size:.82rem;font-weight:700;letter-spacing:.2px;text-transform:none}
   .nav .nav-drop a:hover,.nav .nav-drop a.on{color:var(--red);background:rgba(220,38,38,.12)}
-  @media(max-width:1120px){.links{display:none}}
+  @media(max-width:1120px){.links{flex-wrap:wrap;justify-content:center;row-gap:4px}
+    nav{flex-wrap:wrap;justify-content:center;padding:10px 12px;gap:8px}}
   </style>
 </head>
 <body>
