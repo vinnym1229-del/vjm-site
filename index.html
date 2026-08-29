@@ -1480,7 +1480,7 @@ html { font-size: 1.02rem; }
       <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
         <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">🎯 Tick Simulator</h3>
         <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">Select a contract and input stop loss or $ risk to see total point/$ value.</p>
-        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
+        <label for="tick-contract" style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
         <select id="tick-contract" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
           <option value="NQ">NQ — E-mini Nasdaq</option>
           <option value="MNQ">MNQ — Micro Nasdaq</option>
@@ -1510,7 +1510,7 @@ html { font-size: 1.02rem; }
       <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
         <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">📏 Sizing Simulator</h3>
         <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">Enter contracts and stop loss to see total $ at risk — or a $ amount to see how many contracts it buys.</p>
-        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
+        <label for="size-contract" style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
         <select id="size-contract" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
           <option value="NQ">NQ — E-mini Nasdaq</option>
           <option value="MNQ">MNQ — Micro Nasdaq</option>
@@ -1542,7 +1542,7 @@ html { font-size: 1.02rem; }
       <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
         <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold);margin-bottom:4px;">🎯 Futures Tick Calc</h3>
         <p style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;">NQ · ES · MNQ · MES · YM · RTY — real contract math.</p>
-        <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
+        <label for="fc-contract" style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
         <select id="fc-contract" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
           <option value="2">MNQ — Micro Nasdaq ($2/pt)</option>
           <option value="20">NQ — E-mini Nasdaq ($20/pt)</option>

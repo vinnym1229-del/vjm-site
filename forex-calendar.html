@@ -62,8 +62,8 @@ body::before {
 
   <section class="controls">
     <input class="control" id="search" type="search" placeholder="Search USD events: CPI, FOMC, GDP, PCE..." aria-label="Search USD events: CPI, FOMC, GDP, PCE...">
-    <select class="control" id="impact"><option value="major" selected>Red + Orange Folders</option><option value="High">Red Folder Only</option><option value="Medium">Orange Folder Only</option></select>
-    <select class="control" id="range"><option value="week" selected>This week</option><option value="today">Today only</option><option value="next24">Next 24 hours</option><option value="future">Future only</option></select>
+    <select class="control" id="impact" aria-label="Filter by impact level"><option value="major" selected>Red + Orange Folders</option><option value="High">Red Folder Only</option><option value="Medium">Orange Folder Only</option></select>
+    <select class="control" id="range" aria-label="Filter by date range"><option value="week" selected>This week</option><option value="today">Today only</option><option value="next24">Next 24 hours</option><option value="future">Future only</option></select>
   </section>
   <div class="quick"><button class="active" data-impact="major" data-range="week">USD Red + Orange · Week</button><button data-impact="High" data-range="week">Red Folder Only</button><button data-impact="Medium" data-range="week">Orange Folder Only</button><button data-impact="major" data-range="today">Today</button><button data-impact="major" data-range="next24">Next 24h</button></div>
   <div class="status"><div id="calendar-status"><strong>Loading</strong> calendar...</div><button class="btn" onclick="loadCalendar(true)">Refresh Now</button></div>

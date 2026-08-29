@@ -118,7 +118,7 @@ body.light-mode .curr .formula{background:rgba(0,0,0,.05);}
 .curr .lesson-table th{background:rgba(220,38,38,.08);color:var(--gold);font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;}
 .curr .table-wrap{overflow-x:auto;}
 .curr .key-takeaways{background:rgba(240,180,41,.06);border:1px solid rgba(240,180,41,.25);border-radius:12px;padding:16px 18px;margin:6px 0 20px;}
-.curr .key-takeaways h4{margin:0 0 10px;font-family:'Barlow Condensed',sans-serif;font-size:1.02rem;font-weight:900;letter-spacing:.5px;color:var(--gold);text-transform:uppercase;}
+.curr .key-takeaways h3{margin:0 0 10px;font-family:'Barlow Condensed',sans-serif;font-size:1.02rem;font-weight:900;letter-spacing:.5px;color:var(--gold);text-transform:uppercase;}
 .curr .key-takeaways ul{margin:0;padding-left:20px;display:grid;gap:8px;}
 .curr .key-takeaways li{font-size:.94rem;line-height:1.5;color:var(--text);}
 .curr .key-takeaways li b{color:var(--gold);}
