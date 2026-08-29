@@ -4,7 +4,7 @@
 // Public read view over owner-managed content synced from their Google Sheet.
 // Non-personal → short shared cache is appropriate.
 
-import { json, cleanSymbol } from './_lib/http.js';
+import { json, cleanSymbol, checkRateLimit } from './_lib/http.js';
 
 const TYPES = new Set([
   'announcements', 'trade_reviews', 'prop_firms',
@@ -13,6 +13,9 @@ const TYPES = new Set([
 const ORDERED_TYPES = new Set(['team', 'faqs', 'results']);
 
 export async function onRequestGet(context) {
+  // Abuse guard: public read; generous cap stops hammering without touching normal browsing
+  const _rl = await checkRateLimit(context.env, context.request, 'content', 120);
+  if (!_rl.allowed) return json({ ok: false, error: 'Too many requests. Wait a minute.' }, 429);
   const { request, env } = context;
   const url = new URL(request.url);
   const type = (url.searchParams.get('type') || '').toLowerCase();

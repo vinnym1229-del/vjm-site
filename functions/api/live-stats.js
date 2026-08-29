@@ -12,11 +12,14 @@
 // Cached at the edge for 5 minutes; this endpoint is meant to be polled
 // by every page load, so keep it cheap.
 
-import { json } from './_lib/http.js';
+import { json, checkRateLimit } from './_lib/http.js';
 
 const DISCORD_INVITE_CODE = 'pjtrades';
 
 export async function onRequestGet(context) {
+  // Abuse guard: public read that calls third parties
+  const _rl = await checkRateLimit(context.env, context.request, 'live-stats', 60);
+  if (!_rl.allowed) return json({ ok: false, error: 'Too many requests. Wait a minute.' }, 429);
   const { env } = context;
   const [discord, whop] = await Promise.all([discordStats(), whopStats(env)]);
   return json({ ok: true, discord, whop, asOf: new Date().toISOString() }, 200, {

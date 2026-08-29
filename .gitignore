@@ -1,3 +1,17 @@
+# Real environment files must never be committed. .env.example is the
+# template and is intentionally NOT ignored; every other .env variant is.
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+.wrangler/
+dist/
+.DS_Store
+
+# Local tooling scratch
+.opencode/
 
 # Stray nested repo (NLM.pine working copy) — not part of this site
 vjm-site/

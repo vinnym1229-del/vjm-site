@@ -1,3 +1,5 @@
+import { checkRateLimit } from './_lib/http.js';
+
 // Cloudflare Pages Function: GET /api/research-engine?module=<health|options|intraday|stock|sectors|biotech>
 //
 // Security:
@@ -17,6 +19,11 @@ const OPTION_FEED = 'indicative';
 const ET_FORMATTER = new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
 
 export async function onRequestGet(context) {
+  // Expensive: the data modules paginate Alpaca option chains, up to 20
+  // upstream calls per request. Also stops the premium-token check from
+  // being brute-forced.
+  const _rl = await checkRateLimit(context.env, context.request, 'research-engine', 30);
+  if (!_rl.allowed) return json({ ok: false, error: 'Too many requests. Wait a minute.' }, 429);
   const request = context.request;
   const url = new URL(request.url);
   const module = (url.searchParams.get('module') || 'health').toLowerCase();

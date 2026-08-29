@@ -9,13 +9,16 @@
 // prop_firms) → this sync runs hourly via GitHub Actions (or manual dispatch)
 // → website + Discord update themselves. No code edits, no AI needed.
 
-import { json } from './_lib/http.js';
+import { json, checkRateLimit } from './_lib/http.js';
 import { sanitizeContentRow, CONTENT_TYPES } from './_lib/integrations-core.js';
 import { postEmbed } from './_lib/discord.js';
 
 const MAX_ROWS_PER_TYPE = 200;
 
 export async function onRequestPost(context) {
+  // Secret-gated, but without a limit the shared secret is brute-forceable.
+  const _rl = await checkRateLimit(context.env, context.request, 'content-sync', 20);
+  if (!_rl.allowed) return json({ ok: false, error: 'Too many requests. Wait a minute.' }, 429);
   const { request, env } = context;
   const cron = request.headers.get('X-Research-Cron') || '';
   if (!env.RESEARCH_CRON_SECRET || cron !== env.RESEARCH_CRON_SECRET) {
