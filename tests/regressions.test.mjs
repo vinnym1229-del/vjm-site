@@ -160,3 +160,13 @@ test('no route reads data.snapshots from the stocks snapshot endpoint without a 
       `${f} fetches /v2/stocks/snapshots but may still assume a .snapshots wrapper`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Incident: the brand-unification pass (657a6fa) renamed the nav brand to
+// PJ TRADES everywhere except privacy.html, terms.html, and risk-disclosure.html,
+// which still showed the pre-rebrand "ST TRADES" — stale legal-page branding
+// undiscovered because no test read those three pages' nav markup.
+test('no page still shows the pre-rebrand ST TRADES brand name', () => {
+  const stale = PAGES.filter((p) => /class="(?:brand|nav-brand)"[^>]*>\s*ST TRADES\s*</.test(read(p)));
+  assert.deepEqual(stale, [], `pages with stale brand name:\n  ${stale.join('\n  ')}`);
+});
