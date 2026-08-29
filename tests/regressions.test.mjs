@@ -170,3 +170,37 @@ test('no page still shows the pre-rebrand ST TRADES brand name', () => {
   const stale = PAGES.filter((p) => /class="(?:brand|nav-brand)"[^>]*>\s*ST TRADES\s*</.test(read(p)));
   assert.deepEqual(stale, [], `pages with stale brand name:\n  ${stale.join('\n  ')}`);
 });
+
+// ---------------------------------------------------------------------------
+// Incident: 96 of 100 quiz answers were the longest option, so a member who
+// never opened a lesson scored 96% by always picking the longest. Chance is
+// 25%; this pins the leak closed.
+test('quizzes do not leak their answers through option length', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const out = execFileSync(process.execPath, [join(ROOT, 'tools', 'quiz-audit.mjs')],
+    { cwd: ROOT, encoding: 'utf8' });
+  const m = /OVERALL\s+\d+ questions\s+longest-is-correct\s+(\d+)%/.exec(out);
+  assert.ok(m, `quiz-audit produced no OVERALL line:\n${out}`);
+  const pct = Number(m[1]);
+  assert.ok(pct <= 45, `correct answer is the longest option ${pct}% of the time (chance is 25%):\n${out}`);
+});
+
+// ---------------------------------------------------------------------------
+// Course pages carry Course structured data so they are eligible for rich
+// results; isAccessibleForFree must track the real gating.
+test('course pages ship Course JSON-LD matching the free-tier rule', () => {
+  const expected = {
+    'futures-dissection.html': true,   // the one free starter course
+    'stock-breakdown.html': false,
+    'options-lab.html': false,
+    'psychology-enhancer.html': false,
+  };
+  for (const [page, free] of Object.entries(expected)) {
+    const m = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(read(page));
+    assert.ok(m, `${page}: no JSON-LD block`);
+    const ld = JSON.parse(m[1]);
+    assert.equal(ld['@type'], 'Course', `${page}: JSON-LD is not a Course`);
+    assert.equal(ld.isAccessibleForFree, free, `${page}: isAccessibleForFree should be ${free}`);
+    assert.ok(ld.name && ld.description && ld.url, `${page}: Course missing name/description/url`);
+  }
+});
