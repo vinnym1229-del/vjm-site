@@ -1,10 +1,10 @@
 // Regression coverage for /api/content (functions/api/content.js).
 //
-// This is one of the two remaining probe-targeted endpoints (the run cycle's
-// own live-deployment check hits /api/content?type=schedule by curl) with
-// zero test references -- ticker.js is the other and remains open for a
-// future run. content.js's own comment documents a real fixed bug that
-// nothing pinned: the trade_reviews ticker filter used to run in JS AFTER
+// This was one of the two remaining probe-targeted endpoints (the run
+// cycle's own live-deployment check hits /api/content?type=schedule by
+// curl) with zero test references -- ticker.js, the other one, now has
+// tests/ticker-api.test.mjs. content.js's own comment documents a real
+// fixed bug that nothing pinned: the trade_reviews ticker filter used to run in JS AFTER
 // the SQL query had already truncated to 60 rows by position, so once more
 // than 60 reviews existed, an older ticker could return count:0 even though
 // its rows were sitting in the table -- just past the LIMIT. The fix pushes
