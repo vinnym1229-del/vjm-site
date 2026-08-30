@@ -48,12 +48,23 @@ export async function onRequestGet(context) {
   }
 
   const match = /bytes=(\d*)-(\d*)/.exec(range);
-  if (!match) {
+  if (!match || (match[1] === '' && match[2] === '')) {
     return new Response('Malformed Range header.', { status: 416, headers: { 'Content-Range': `bytes */${total}` } });
   }
 
-  let start = match[1] ? parseInt(match[1], 10) : 0;
-  let end = match[2] ? parseInt(match[2], 10) : total - 1;
+  // A leading-empty spec ("bytes=-500") is a *suffix* range per RFC 7233
+  // §2.1: the last 500 bytes, not bytes 0-500. Players fetching a trailing
+  // moov atom (or scrubbing to the end) rely on this — treating it as a
+  // normal range silently served the wrong bytes as a "successful" 206.
+  let start, end;
+  if (match[1] === '') {
+    const suffixLength = parseInt(match[2], 10);
+    start = Math.max(0, total - suffixLength);
+    end = total - 1;
+  } else {
+    start = parseInt(match[1], 10);
+    end = match[2] ? parseInt(match[2], 10) : total - 1;
+  }
   if (Number.isNaN(start) || Number.isNaN(end) || start > end || start >= total) {
     return new Response('Range not satisfiable.', { status: 416, headers: { 'Content-Range': `bytes */${total}` } });
   }
