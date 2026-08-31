@@ -100,6 +100,10 @@ body.light-mode .chip.growth{color:var(--gold-ink);border-color:rgba(20,20,22,.1
 body.light-mode .chip.aggressive{color:var(--orange);border-color:rgba(20,20,22,.12);background:rgba(20,20,22,.035)}
 body.light-mode .chip.speculative{color:var(--red);border-color:rgba(179,37,29,.22);background:rgba(179,37,29,.07)}
 body.light-mode .fib-level{border-color:rgba(20,20,22,.09)}
+/* calcFib() writes an inline white-alpha (or red) border per row; restate both
+   against white without touching the script. */
+body.light-mode .fib-level[style*="255,255,255"]{border-color:rgba(20,20,22,.09)!important}
+body.light-mode .fib-level[style*="209,67,67"]{border-color:rgba(179,37,29,.45)!important}
 body.light-mode .news-item{border-color:rgba(20,20,22,.09);background:#fafafa}
 body.light-mode .news-item a{color:var(--text)}
 body.light-mode .news-empty{border-color:var(--line2);color:var(--muted)}
@@ -107,6 +111,7 @@ body.light-mode .footer{border-top-color:var(--line);color:var(--muted)}
 body.light-mode .premium-frame{background:#ffffff;border-color:var(--line2)}
 body.light-mode .premium-frame-shell{background:#ffffff;border-color:rgba(20,20,22,.10)}
 </style>
+<script src="assets/theme.js"></script>
 </head>
 <body>
 <a class="skip" href="#basic-research">Skip to stock lab</a>

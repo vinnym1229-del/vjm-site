@@ -633,6 +633,21 @@ footer { background:#0c0c0d; border-top:1px solid var(--border); padding:32px 24
 .mega-bolt .bh-trunk { stroke-width: 2.4; filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px #d14343); }
 .mega-bolt .bh-twig { stroke-width: 1.3; filter: drop-shadow(0 0 4px #fff); }
 @media (max-width: 768px) { .mega-bolt { width: min(66vw, 280px); opacity: calc(var(--mega-bolt-base, .5) * .85); } }
+
+/* Light mode: the bolt art is built white-core-on-dark, so on a white hero
+   only its dark red glow survived and the strike itself vanished. Invert the
+   core/highlight to near-black and let the red glow carry the color, keeping
+   the same layer structure, filters and sweep animation. */
+body.light-mode .mega-bolt .bolt-core .c-trunk,
+body.light-mode .bolt-underline .bc-trunk { stroke: #26262a; }
+body.light-mode .mega-bolt .bolt-core .c-twig,
+body.light-mode .bolt-underline .bc-twig { stroke: #4a4a50; }
+body.light-mode .mega-bolt .bolt-highlight path,
+body.light-mode .bolt-underline .bolt-highlight path { stroke: #141416; }
+body.light-mode .mega-bolt .bh-trunk { filter: drop-shadow(0 0 5px rgba(20,20,22,.45)) drop-shadow(0 0 12px var(--gold)); }
+body.light-mode .mega-bolt .bh-twig,
+body.light-mode .bolt-underline .bh-twig { filter: drop-shadow(0 0 4px rgba(20,20,22,.35)); }
+body.light-mode .bolt-underline .bh-trunk { filter: drop-shadow(0 0 4px rgba(20,20,22,.4)) drop-shadow(0 0 9px var(--gold)); }
 .win-card:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.45); }
 .premium-box { box-shadow: 0 0 80px rgba(0,0,0,0.5), 0 0 30px rgba(209,67,67,0.04); transition: box-shadow 0.4s; }
 .premium-box:hover { box-shadow: 0 0 120px rgba(0,0,0,0.55), 0 0 50px rgba(209,67,67,0.05); }
@@ -768,6 +783,9 @@ body.light-mode .tier-card li{color:#ededee;}
 body.light-mode .tier-name{color:#9a9aa0;}
 body.light-mode .tier-sub,body.light-mode .tier-price span,body.light-mode .tier-note{color:#9a9aa0;}
 body.light-mode .tier-card .btn-outline{color:#d9d9dd;border-color:rgba(255,255,255,.3);}
+/* Same reason: these all resolved to near-black on the dark card in light mode. */
+body.light-mode .tier-price{color:#e26060;}
+body.light-mode .tier-card li .tick,body.light-mode .tier-plus,body.light-mode .tier-save{color:#d9d9dd;}
 .tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px;max-width:1020px;margin:20px auto 0;align-items:stretch;}
 .tier-card{position:relative;background:linear-gradient(168deg,#1d1d20 0%,#161618 42%,#131315 100%);border:1.5px solid var(--border);border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;box-shadow:0 18px 46px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.045);}
 .tier-card.hot{border-color:transparent;box-shadow:0 0 78px rgba(0,0,0,.5),inset 0 0 60px rgba(209,67,67,.05);transform:translateY(-16px);z-index:2;}
@@ -789,7 +807,9 @@ body.light-mode .tier-card .btn-outline{color:#d9d9dd;border-color:rgba(255,255,
 .tier-save{display:inline-block;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);color:var(--emerald);font-size:.72rem;font-weight:800;border-radius:20px;padding:3px 12px;margin-left:8px;vertical-align:middle;}
 .tier-card ul{list-style:none;padding:0;margin:0 0 22px;display:grid;gap:10px;flex:1;}
 .tier-card li{font-size:.84rem;color:var(--text);display:flex;gap:8px;line-height:1.4;}
-.tier-card li b{color:var(--gold-ink);font-weight:900;}
+/* Bold emphasis inside the pricing lists is neutral -- ~20 red phrases per
+   card read as a red block, not an accent; weight already carries it. */
+.tier-card li b{color:inherit;font-weight:900;}
 .tier-card li .tick{color:var(--emerald);font-weight:900;}
 .tier-plus{font-family:'Barlow Condensed',sans-serif;font-size:.8rem;font-weight:900;letter-spacing:2px;color:var(--emerald);text-transform:uppercase;margin:-8px 0 10px;}
 

@@ -22,7 +22,7 @@ body.curr{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;background:v
 
 /* ─── NAV (matches index.html) ─── */
 .curr nav{position:sticky;top:0;z-index:999;background:rgba(12,12,13,.94);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 26px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
-body.light-mode .curr nav{background:rgba(255,255,255,.96);}
+body.light-mode .curr nav,body.light-mode.curr nav{background:rgba(255,255,255,.96);}
 .curr .brand{font-family:'Barlow Condensed',sans-serif;color:var(--gold-ink);font-weight:900;letter-spacing:2px;font-size:1.72rem;text-decoration:none;white-space:nowrap;line-height:1;}
 
 /* Grouped dropdown nav — mirrors the homepage's four-menu structure so every
@@ -49,9 +49,9 @@ body.light-mode .curr nav{background:rgba(255,255,255,.96);}
 .curr .nav-drop a{display:block;padding:10px 13px;border-radius:9px;color:var(--muted);text-decoration:none;white-space:nowrap;
   font-size:.83rem;font-weight:600;letter-spacing:.2px;transition:color .15s,background .15s;}
 .curr .nav-drop a:hover,.curr .nav-drop a.on{color:var(--text);background:rgba(255,255,255,.08);}
-body.light-mode .curr .nav-drop{background:linear-gradient(180deg,#ffffff,#f6f6f7);}
-body.light-mode .curr .nav-drop a{color:#5f5f66;}
-body.light-mode .curr .nav-drop a:hover{color:#141416;}
+body.light-mode .curr .nav-drop,body.light-mode.curr .nav-drop{background:linear-gradient(180deg,#ffffff,#f6f6f7);}
+body.light-mode .curr .nav-drop a,body.light-mode.curr .nav-drop a{color:#5f5f66;}
+body.light-mode .curr .nav-drop a:hover,body.light-mode.curr .nav-drop a:hover{color:#141416;}
 .curr .nav-cta{display:flex;align-items:center;gap:10px;}
 .curr .nav-cta a.join{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;text-decoration:none;font-weight:900;font-size:.76rem;
   text-transform:uppercase;letter-spacing:.8px;padding:10px 18px;border-radius:999px;white-space:nowrap;
@@ -112,7 +112,7 @@ body.light-mode .curr .nav-drop a:hover{color:#141416;}
 .curr .lesson-body .correct .label{color:var(--emerald);}
 .curr .lesson-body .extra{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-top:8px;}
 .curr .formula{font-family:'JetBrains Mono',ui-monospace,monospace;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:8px;padding:8px 11px;margin:6px 0;font-size:.82rem;color:var(--text);overflow-x:auto;}
-body.light-mode .curr .formula{background:rgba(0,0,0,.05);}
+body.light-mode .curr .formula,body.light-mode.curr .formula{background:rgba(0,0,0,.05);}
 .curr .lesson-table{width:100%;border-collapse:collapse;margin:8px 0;font-size:.82rem;}
 .curr .lesson-table th,.curr .lesson-table td{border:1px solid var(--border);padding:7px 9px;text-align:left;}
 .curr .lesson-table th{background:rgba(255,255,255,.05);color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;}
@@ -157,7 +157,7 @@ body.light-mode .curr .formula{background:rgba(0,0,0,.05);}
 .curr .tool-stat-row b{color:var(--gold-ink);font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;}
 .curr .tool-canvas-wrap{margin-top:12px;}
 .curr .tool canvas{width:100%;height:auto;display:block;background:rgba(0,0,0,.15);border-radius:10px;}
-body.light-mode .curr .tool canvas{background:rgba(0,0,0,.03);}
+body.light-mode .curr .tool canvas,body.light-mode.curr .tool canvas{background:rgba(0,0,0,.03);}
 @media(max-width:760px){.curr .tool-grid{grid-template-columns:1fr;}}
 
 /* ─── REVIEW CADENCE (Journal section) ─── */
@@ -291,38 +291,42 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
 .curr .lock-form input:focus-visible{outline:2px solid var(--gold-ink,#e26060);outline-offset:2px;}
 
 /* ─── LIGHT MODE SURFACES ───
+   NOTE: .curr is on <body> for the standalone course pages and on a wrapper
+   <div> inside options-lab.html, so each rule is stated in both forms —
+   "body.light-mode.curr X" and "body.light-mode .curr X". The single
+   descendant form alone silently matched nothing on the course pages. ───
    The neutral fills above are white-on-dark overlays; on the light ground they
    would be invisible, so restate them as black overlays. Same class names,
    colour values only. */
-body.light-mode .curr .nav-item:hover > .nav-top,
-body.light-mode .curr .nav-item.open > .nav-top,
-body.light-mode .curr .nav-top.on{background:rgba(0,0,0,.05);}
-body.light-mode .curr .nav-drop a:hover,
-body.light-mode .curr .nav-drop a.on{background:rgba(0,0,0,.05);}
-body.light-mode .curr .hamb{background:rgba(0,0,0,.03);}
-body.light-mode .curr .mmenu{background:rgba(255,255,255,.98);}
-body.light-mode .curr .mmenu a{background:rgba(0,0,0,.02);border-color:var(--border);}
-body.light-mode .curr .eyebrow{background:rgba(179,37,29,.07);border-color:rgba(179,37,29,.22);}
-body.light-mode .curr .level-tab.active{border-color:rgba(179,37,29,.22);background:rgba(179,37,29,.07);}
-body.light-mode .curr .level-intro{border-left-color:rgba(179,37,29,.22);}
-body.light-mode .curr .mmenu a.on{border-color:rgba(179,37,29,.22);}
-body.light-mode .curr .lesson-body .correct{background:rgba(0,0,0,.03);}
-body.light-mode .curr .lesson-body .extra{background:rgba(0,0,0,.025);}
-body.light-mode .curr .lesson-table th{background:rgba(0,0,0,.04);}
-body.light-mode .curr .key-takeaways{background:rgba(0,0,0,.03);}
-body.light-mode .curr .quiz{background:linear-gradient(145deg,rgba(0,0,0,.025),var(--card));}
-body.light-mode .curr .quiz-choice{background:rgba(0,0,0,.02);}
-body.light-mode .curr .quiz-choice:hover{border-color:var(--muted);}
-body.light-mode .curr .quiz-choice.correct{background:rgba(0,0,0,.05);}
-body.light-mode .curr .quiz-choice.incorrect{background:rgba(179,37,29,.07);}
-body.light-mode .curr .quiz-explain{background:rgba(0,0,0,.025);}
-body.light-mode .curr .tool{background:linear-gradient(145deg,rgba(0,0,0,.025),var(--card));}
-body.light-mode .curr .essay{background:linear-gradient(145deg,rgba(0,0,0,.025),var(--card));}
-body.light-mode .curr .lock-gate{background:linear-gradient(145deg,rgba(179,37,29,.05),var(--card));border-color:rgba(179,37,29,.22);}
-body.light-mode .curr .unlocked-badge{background:rgba(0,0,0,.04);}
-body.light-mode .curr .btn{background:linear-gradient(135deg,#c9342b 0%,#b3251d 48%,#8c1a14 100%);}
-body.light-mode .curr .btn.ghost{background:rgba(0,0,0,.04);color:var(--text);}
-body.light-mode .curr .nav-cta a.join{box-shadow:0 6px 20px rgba(0,0,0,.18);}
-body.light-mode .curr .tool h2,
-body.light-mode .curr .essay h2{border-bottom-color:rgba(179,37,29,.22);}
-body.light-mode .curr .skeleton::after{background:linear-gradient(90deg,transparent,rgba(0,0,0,.06),transparent);}
+body.light-mode .curr .nav-item:hover > .nav-top,body.light-mode.curr .nav-item:hover > .nav-top,
+body.light-mode .curr .nav-item.open > .nav-top,body.light-mode.curr .nav-item.open > .nav-top,
+body.light-mode .curr .nav-top.on,body.light-mode.curr .nav-top.on{background:rgba(0,0,0,.05);}
+body.light-mode .curr .nav-drop a:hover,body.light-mode.curr .nav-drop a:hover,
+body.light-mode .curr .nav-drop a.on,body.light-mode.curr .nav-drop a.on{background:rgba(0,0,0,.05);}
+body.light-mode .curr .hamb,body.light-mode.curr .hamb{background:rgba(0,0,0,.03);}
+body.light-mode .curr .mmenu,body.light-mode.curr .mmenu{background:rgba(255,255,255,.98);}
+body.light-mode .curr .mmenu a,body.light-mode.curr .mmenu a{background:rgba(0,0,0,.02);border-color:var(--border);}
+body.light-mode .curr .eyebrow,body.light-mode.curr .eyebrow{background:rgba(179,37,29,.07);border-color:rgba(179,37,29,.22);}
+body.light-mode .curr .level-tab.active,body.light-mode.curr .level-tab.active{border-color:rgba(179,37,29,.22);background:rgba(179,37,29,.07);}
+body.light-mode .curr .level-intro,body.light-mode.curr .level-intro{border-left-color:rgba(179,37,29,.22);}
+body.light-mode .curr .mmenu a.on,body.light-mode.curr .mmenu a.on{border-color:rgba(179,37,29,.22);}
+body.light-mode .curr .lesson-body .correct,body.light-mode.curr .lesson-body .correct{background:rgba(0,0,0,.03);}
+body.light-mode .curr .lesson-body .extra,body.light-mode.curr .lesson-body .extra{background:rgba(0,0,0,.025);}
+body.light-mode .curr .lesson-table th,body.light-mode.curr .lesson-table th{background:rgba(0,0,0,.04);}
+body.light-mode .curr .key-takeaways,body.light-mode.curr .key-takeaways{background:rgba(0,0,0,.03);}
+body.light-mode .curr .quiz,body.light-mode.curr .quiz{background:linear-gradient(145deg,rgba(0,0,0,.025),var(--card));}
+body.light-mode .curr .quiz-choice,body.light-mode.curr .quiz-choice{background:rgba(0,0,0,.02);}
+body.light-mode .curr .quiz-choice:hover,body.light-mode.curr .quiz-choice:hover{border-color:var(--muted);}
+body.light-mode .curr .quiz-choice.correct,body.light-mode.curr .quiz-choice.correct{background:rgba(0,0,0,.05);}
+body.light-mode .curr .quiz-choice.incorrect,body.light-mode.curr .quiz-choice.incorrect{background:rgba(179,37,29,.07);}
+body.light-mode .curr .quiz-explain,body.light-mode.curr .quiz-explain{background:rgba(0,0,0,.025);}
+body.light-mode .curr .tool,body.light-mode.curr .tool{background:linear-gradient(145deg,rgba(0,0,0,.025),var(--card));}
+body.light-mode .curr .essay,body.light-mode.curr .essay{background:linear-gradient(145deg,rgba(0,0,0,.025),var(--card));}
+body.light-mode .curr .lock-gate,body.light-mode.curr .lock-gate{background:linear-gradient(145deg,rgba(179,37,29,.05),var(--card));border-color:rgba(179,37,29,.22);}
+body.light-mode .curr .unlocked-badge,body.light-mode.curr .unlocked-badge{background:rgba(0,0,0,.04);}
+body.light-mode .curr .btn,body.light-mode.curr .btn{background:linear-gradient(135deg,#c9342b 0%,#b3251d 48%,#8c1a14 100%);}
+body.light-mode .curr .btn.ghost,body.light-mode.curr .btn.ghost{background:rgba(0,0,0,.04);color:var(--text);}
+body.light-mode .curr .nav-cta a.join,body.light-mode.curr .nav-cta a.join{box-shadow:0 6px 20px rgba(0,0,0,.18);}
+body.light-mode .curr .tool h2,body.light-mode.curr .tool h2,
+body.light-mode .curr .essay h2,body.light-mode.curr .essay h2{border-bottom-color:rgba(179,37,29,.22);}
+body.light-mode .curr .skeleton::after,body.light-mode.curr .skeleton::after{background:linear-gradient(90deg,transparent,rgba(0,0,0,.06),transparent);}

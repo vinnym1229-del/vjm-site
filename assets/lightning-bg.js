@@ -40,7 +40,7 @@
   opacity:.3;}
 /* Light mode: the bolt art is a white/gray ramp, so on a white page it reads as
    ghosting. Invert it to dark-on-white and hold it to the same restraint. */
-body.light-mode #site-bolt-layer{filter:invert(1); opacity:.45;}
+body.light-mode #site-bolt-layer{filter:invert(1); opacity:.34;}
 #site-bolt-layer .sbl-r,#site-bolt-layer .sbl-l{position:absolute; inset:0;
   background-repeat:repeat-y; background-size:min(23vw,270px) 940px;}
 #site-bolt-layer .sbl-r{background-image:url("${RIGHT}"); background-position:right -18px top 0;

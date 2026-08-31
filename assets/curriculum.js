@@ -244,22 +244,48 @@
     const v = getComputedStyle(document.body).getPropertyValue(name);
     return (v && v.trim()) || fallback;
   }
+  const isLight = () => document.body.classList.contains('light-mode');
   // --emerald is the neutral accent; --gold is the accent red (see PALETTE).
-  const NEUTRAL = () => cssVar('--emerald', '#d9d9dd');
-  const RED = () => cssVar('--gold', '#d14343');
+  const NEUTRAL = () => cssVar('--emerald', isLight() ? '#26262a' : '#d9d9dd');
+  const SECONDARY = () => cssVar('--muted', isLight() ? '#5f5f66' : '#9a9aa0');
+  const DIM = () => (isLight() ? '#a5a5ab' : '#5a5a60');
+  const RED = () => cssVar('--gold', isLight() ? '#b3251d' : '#d14343');
   const RISK_RE = /loss|risk|drawdown|draw down|alert|max ?dd|worst|stop|danger/i;
   // A series means "loss/risk" when its value is negative or its label says so.
-  // Call sites that still pass the old blanket red are normalised the same way,
-  // so a positive, non-risk series is never drawn red.
   function isRisk(label, value) {
     return Number(value) < 0 || RISK_RE.test(String(label || ''));
   }
-  const ACCENT_REDS = ['#d14343', '#e26060', '#a63333', '#b3251d', '#c9342b', '#8c1a14'];
+  // Call sites still hand us fixed hex values from the palette. Those literals
+  // are dark-theme tones, so on the light page a "neutral" bar came out
+  // near-white on white. Map every known palette literal back onto the live
+  // token for its tier, and normalise the old blanket red so a positive,
+  // non-risk series is never drawn red. Unknown colours pass through.
+  const TIERS = {
+    red: ['#d14343', '#e26060', '#a63333', '#b3251d', '#c9342b', '#8c1a14'],
+    neutral: ['#ededee', '#d9d9dd', '#cfcfd4', '#141416', '#26262a'],
+    secondary: ['#9a9aa0', '#8e8e95', '#5f5f66', '#c4c4c9'],
+    dim: ['#6f6f76', '#3a3a40', '#2a2a2e', '#e3e3e6'],
+  };
+  function tierOf(color) {
+    const c = String(color || '').trim().toLowerCase();
+    if (!c) return null;
+    if (TIERS.red.includes(c)) return 'red';
+    if (TIERS.neutral.includes(c)) return 'neutral';
+    if (TIERS.secondary.includes(c)) return 'secondary';
+    if (TIERS.dim.includes(c)) return 'dim';
+    return null;
+  }
   function seriesColor(label, value, requested) {
-    const risk = isRisk(label, value);
-    if (risk) return requested && !ACCENT_REDS.includes(String(requested).toLowerCase()) ? requested : RED();
-    if (!requested || ACCENT_REDS.includes(String(requested).toLowerCase())) return NEUTRAL();
-    return requested;
+    if (!requested) return isRisk(label, value) ? RED() : NEUTRAL();
+    switch (tierOf(requested)) {
+      // A red request is honoured only for a series that actually means
+      // loss/risk; otherwise it was the old monochrome default and goes neutral.
+      case 'red': return isRisk(label, value) ? RED() : NEUTRAL();
+      case 'neutral': return NEUTRAL();
+      case 'secondary': return SECONDARY();
+      case 'dim': return DIM();
+      default: return requested;
+    }
   }
 
   // bars: [{label, value, color}]. Draws a simple horizontal bar chart.
