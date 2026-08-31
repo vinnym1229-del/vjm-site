@@ -385,7 +385,7 @@
       </g>
     </svg></span> TRADES <span style="display:inline-block;"><span style="font-size:0.42em;vertical-align:middle;color:var(--muted);font-weight:700;letter-spacing:2px;">× St</span></span><br>
     <span class="gold">Futures, Made Simple.</span></h1>
-    <p class="hero-sub">With ten years of hands-on experience navigating the fast-paced world of financial markets, PJ Trades is a seasoned day trader specializing in <strong style="color:var(--text);">NQ &amp; ES futures</strong>. Technical analysis, market research, and risk management — combined to identify high-probability setups and deliver results.</p>
+    <p class="hero-sub">With ten years of hands-on experience navigating the fast-paced world of financial markets, PJ Trades is a seasoned day trader specializing in <strong style="color:var(--text);">NQ &amp; ES futures</strong>. His approach combines technical analysis, market research, and risk management. <!-- TODO: owner to substantiate before any performance or win-rate claim is restored here: broker or prop-firm statements covering every account traded, the exact start and end dates, all deposits and withdrawals, every losing period in the same range, and the method used to compute any figure quoted. --></p>
     <div class="hero-ctas">
       <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=hero-cta" target="_blank" rel="noopener" class="btn btn-gold" style="font-size:1rem;padding:15px 30px;">⭐ Join Complete — $129/mo</a>
       <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;">💬 Join the Free Discord</a>
@@ -401,7 +401,10 @@
 
 <!-- PROOF BAR -->
 <div class="proof-bar">
-  <!-- Source: owner's Whop listing screenshots, 2026-08-24 -->
+  <!-- Source: owner's Whop listing screenshots, 2026-08-24 (a snapshot, not a
+       live count; overwritten by /api/live-stats when connected).
+       TODO: owner to confirm these are still accurate, or connect the live feed.
+       None of these are performance figures and none may be presented as one. -->
   <div class="proof-item"><strong id="pb-joined">49,136</strong><span>joined on Whop</span></div>
   <div class="proof-item"><strong id="pb-rating">5.0 ★</strong><span id="pb-reviews-label">2,240 reviews</span></div>
   <div class="proof-item"><strong>3–5x</strong><span>live futures trading per week</span></div>
@@ -416,8 +419,8 @@
   <div class="section-inner">
     <div style="text-align:center;margin-bottom:44px;" data-reveal>
       <div class="section-tag">Inside PJ Trades Premium</div>
-      <h2 class="section-title">Learn To Become A <span class="gold">Profitable Futures Trader</span></h2>
-      <p class="section-sub" style="margin:0 auto 20px;">Join PJ Trades and trade alongside a 10-year pro! Get real-time trading guidance, exclusive insights, proven strategies, PJ's Starter Crash Course, and access to prop firm giveaways.</p>
+      <h2 class="section-title">Learn How PJ <span class="gold">Trades Futures</span></h2>
+      <p class="section-sub" style="margin:0 auto 20px;">Join PJ Trades and follow along with a full-time futures trader. You get real-time trading commentary, the strategies PJ actually uses, PJ's Starter Crash Course, and access to prop firm giveaways. This is education, not advice, and nothing here is a promise that you will make money — most traders lose money.</p>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">
       <div class="feature-card" data-reveal>
@@ -586,7 +589,8 @@
       <!-- Growth Simulator (futures‑connected) -->
       <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
         <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">📈 Growth Simulator</h3>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">Futures‑connected: tell me your starting balance and daily $ target, I'll show you the path to a prop firm payout.</p>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Repeats the daily gain you type for the number of days you set, so you can see what that arithmetic adds up to.</p>
+        <p style="font-size:0.72rem;line-height:1.55;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-bottom:14px;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> This tool does arithmetic on the numbers you type. It is not a forecast, and no figure it shows has been achieved by PJ Trades, by a member, or by anyone. A fixed daily dollar target is not a trading edge: markets do not pay a set amount per day, losing days and losing weeks are normal, and the tool ignores losses, drawdown, commissions, slippage, taxes and prop-firm rules. Results are not typical and most traders lose money.</p>
 
         <!-- Mode toggle -->
         <div style="display:flex;background:var(--accent);border-radius:10px;padding:3px;margin-bottom:18px;gap:3px;">
@@ -617,7 +621,7 @@
 
           <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Trading Days: <span id="sim-days-val">20</span></label>
           <input id="sim-days" type="range" min="1" max="252" value="20" oninput="document.getElementById('sim-days-val').textContent=this.value" style="width:100%;margin-bottom:16px;" aria-label="sim days">
-          <button onclick="runGrowthSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">PROJECT PAYOUT</button>
+          <button onclick="runGrowthSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">RUN HYPOTHETICAL</button>
         </div>
 
         <!-- Prop mode inputs -->
@@ -630,24 +634,25 @@
           </div>
           <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Holding Period (days)</label>
           <input id="sim-prop-days" type="number" value="30" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;" aria-label="sim prop days">
-          <button onclick="runPropPayout()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE PAYOUT</button>
+          <button onclick="runPropPayout()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">RUN HYPOTHETICAL</button>
           <div id="sim-prop-result" style="margin-top:16px;display:none;">
             <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
-              <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Payout Schedule</div>
+              <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Hypothetical Total &mdash; Not A Payout Forecast</div>
               <div id="sim-prop-end-val" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
               <div id="sim-prop-weekly" style="font-size:0.9rem;color:var(--emerald);margin-top:4px;">~$X per week / ~$Y per month</div>
             </div>
+            <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> Arithmetic on the numbers you entered, with no losing days, fees or slippage. Results are not typical.</p>
           </div>
         </div>
 
         <div id="sim-result" style="margin-top:16px;display:none;">
           <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
-            <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Projected Payout</div>
+            <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Hypothetical Balance &mdash; Not A Projection</div>
             <div id="sim-end-val" style="font-family:'Barlow Condensed',sans-serif;font-size:2.5rem;font-weight:900;color:var(--green);text-shadow:0 0 16px rgba(255,255,255,0.16);"></div>
             <div id="sim-gain-val" style="font-size:0.82rem;color:var(--emerald);margin-top:4px;"></div>
             <div id="sim-extra-val" style="font-size:0.78rem;color:var(--muted);margin-top:4px;"></div>
           </div>
-          <p style="font-size:0.7rem;color:var(--muted);margin-top:10px;text-align:center;">Projections only. Not financial advice.</p>
+          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> Arithmetic on the numbers you entered, with no losing days, fees or slippage. Results are not typical.</p>
         </div>
       </div>
 
@@ -678,6 +683,7 @@
             <div id="tick-output" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
             <div id="tick-interpret" style="font-size:0.82rem;color:var(--muted);margin-top:4px;"></div>
           </div>
+          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> Contract math on the numbers you entered; your real fill, fees and slippage will differ.</p>
         </div>
       </div>
 
@@ -710,6 +716,7 @@
             <div id="size-output" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
             <div id="size-interpret" style="font-size:0.82rem;color:var(--muted);margin-top:4px;"></div>
           </div>
+          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> A stop is an order, not a guaranteed fill: gaps and thin liquidity can fill you past it, so the real loss can exceed the figure shown.</p>
         </div>
       </div>
 
@@ -731,13 +738,14 @@
             <div id="fc-pnl" style="font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;"></div>
             <div id="fc-details" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></div>
           </div>
+          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> Contract math on the entry and exit you typed, before commissions, exchange fees and slippage.</p>
         </div>
       </div>
 
       <!-- Prop Firm Risk Guard -->
       <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
         <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">🛡️ Prop Risk Guard</h3>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;">Know exactly how many trades stand between you and a breach.</p>
+        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;">Shows how many full-size losses, at the risk you type, would use up the loss limit you type.</p>
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Account Size ($)</label>
         <input id="pr-account" type="number" value="50000" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="pr account">
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Trailing Drawdown / Loss Limit ($)</label>
@@ -750,6 +758,7 @@
             <div id="pr-trades" style="font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;color:var(--green);"></div>
             <div id="pr-details" style="font-size:0.78rem;color:var(--muted);margin-top:6px;line-height:1.6;"></div>
           </div>
+          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> It assumes every loss is exactly the size you typed. Real losses can be larger, and each prop firm&rsquo;s own trailing-drawdown rules govern &mdash; read your firm&rsquo;s agreement.</p>
         </div>
       </div>
 
@@ -843,9 +852,16 @@
       </div>
     </div>
 
-    <p style="text-align:center;color:var(--muted);font-size:.78rem;margin:22px auto 0;max-width:640px;">There are no refunds. You can cancel your membership at anytime. Educational content only — profits are never guaranteed.</p>
+    <p style="text-align:center;color:var(--muted);font-size:.78rem;margin:22px auto 0;max-width:640px;">Memberships auto-renew each billing period until you cancel in your Whop account. Cancelling stops the next renewal; it does not end the period you already paid for. There are no refunds for any period, used or unused. See the <a href="terms.html" style="color:var(--gold-ink);">Terms</a> for the full billing terms. Educational content only — profits are never guaranteed.</p>
 
-    <!-- Review summary — mirrors the owner's Whop listing (5.0 · 2,240 ratings) -->
+    <!-- Review summary — mirrors the owner's Whop listing (5.0 · 2,240 ratings)
+         snapshotted 2026-08-24; the live values are overwritten by /api/live-stats
+         and /api/content?type=stats when either is connected.
+         TODO: owner to substantiate — these are Whop platform ratings and member
+         counts, not trading performance. If they are shown as current, they need a
+         dated Whop listing export; if any number is ever restated as a result, it
+         needs broker/prop-firm records, exact dates, deposits and withdrawals, all
+         losing periods in the same range, and the calculation method. -->
     <div class="review-summary" data-reveal>
       <div class="review-score">
         <div class="big">5.0</div>
@@ -861,7 +877,7 @@
       </div>
       <div style="text-align:center;">
         <span class="vjm-chip green" style="font-size:.8rem;" id="hb-joined-chip">2.8K members</span>
-        <p style="font-size:.72rem;color:var(--muted);margin-top:8px;max-width:150px;">on the Whop listing right now</p>
+        <p style="font-size:.72rem;color:var(--muted);margin-top:8px;max-width:180px;">On the Whop listing as of the owner&rsquo;s 2026-08-24 snapshot; updates live when that feed is connected. Ratings and member counts are not trading results.</p>
       </div>
     </div>
 
@@ -968,7 +984,7 @@
       </details>
       <details>
         <summary>What is your refund policy?</summary>
-        <p>There are no refunds. You can cancel your membership at anytime.</p>
+        <p>There are no refunds. You can cancel your membership at anytime. Your membership auto-renews at the end of each billing period until you cancel it in your Whop account; cancelling stops the next renewal but does not refund the period you already paid for. Full detail is in the <a href="terms.html" style="color:var(--gold-ink);">Terms</a>.</p>
       </details>
     </div>
   </div>
@@ -1115,7 +1131,7 @@
 
       <div data-reveal>
         <p style="font-size:1.02rem;line-height:1.75;color:var(--text);">With ten years of hands-on experience navigating the fast-paced world of financial markets, <strong>PJ Trades</strong> is a seasoned day trader specializing in <strong style="color:var(--gold-ink);">futures</strong>.</p>
-        <p style="font-size:1.02rem;line-height:1.75;color:var(--text);margin-top:16px;">Disciplined technical analysis and risk management, built to consistently identify high-probability setups.</p>
+        <p style="font-size:1.02rem;line-height:1.75;color:var(--text);margin-top:16px;">Disciplined technical analysis and risk management, taught as a repeatable process rather than a promise of outcomes.</p>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;">
           <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=site" target="_blank" rel="noopener" class="btn btn-gold">⭐ Whop — 5.0 ★</a>
           <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-outline">💬 Discord</a>
