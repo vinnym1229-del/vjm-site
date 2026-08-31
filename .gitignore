@@ -15,8 +15,3 @@ dist/
 
 # Stray nested repo (NLM.pine working copy) — not part of this site
 vjm-site/
-
-# Local visual-check scratch (screenshot harness, not part of the site)
-/shoot.mjs
-/slices.mjs
-/pixels.mjs
