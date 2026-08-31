@@ -189,20 +189,61 @@ test('quizzes do not leak their answers through option length', async () => {
 // Course pages carry Course structured data so they are eligible for rich
 // results; isAccessibleForFree must track the real gating.
 test('course pages ship Course JSON-LD matching the free-tier rule', () => {
-  const expected = {
-    'futures-dissection.html': true,   // the one free starter course
-    'stock-breakdown.html': false,
-    'options-lab.html': false,
-    'psychology-enhancer.html': false,
-  };
-  for (const [page, free] of Object.entries(expected)) {
+  // Every course page is a PAID course: futures-dissection used to claim
+  // isAccessibleForFree:true for the whole four-level course when only Level 1
+  // is ungated, which advertises three paid levels as free. The free unit is
+  // now modelled where it actually is — a hasPart Course that is itself free —
+  // so the parent course is correctly false on all four pages.
+  for (const page of ['futures-dissection.html', 'stock-breakdown.html', 'options-lab.html', 'psychology-enhancer.html']) {
     const m = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(read(page));
     assert.ok(m, `${page}: no JSON-LD block`);
     const ld = JSON.parse(m[1]);
     assert.equal(ld['@type'], 'Course', `${page}: JSON-LD is not a Course`);
-    assert.equal(ld.isAccessibleForFree, free, `${page}: isAccessibleForFree should be ${free}`);
+    assert.equal(ld.isAccessibleForFree, false, `${page}: a paid course must not be marked free`);
     assert.ok(ld.name && ld.description && ld.url, `${page}: Course missing name/description/url`);
+    // Unsupported claims: numberOfCredits was a lesson count (not credit
+    // hours) and courseWorkload was never-measured seat time.
+    assert.equal(ld.numberOfCredits, undefined, `${page}: numberOfCredits is not a lesson count`);
+    assert.equal(ld.hasCourseInstance?.courseWorkload, undefined, `${page}: unmeasured courseWorkload must stay removed`);
+    // Offers must be purchasable: Futures Core is $100/mo and covers futures
+    // + psychology; Complete is $129/mo and adds stocks and options
+    // (functions/api/_lib/entitlements.js is the authority on that split).
+    const expectedPrice = ['futures-dissection.html', 'psychology-enhancer.html'].includes(page) ? '100.00' : '129.00';
+    assert.equal(ld.offers?.price, expectedPrice, `${page}: offer must match the tier that unlocks it`);
   }
+  // Futures Level 1 is genuinely ungated, and only that unit.
+  const futuresLd = JSON.parse(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(read('futures-dissection.html'))[1]);
+  assert.equal(futuresLd.hasPart?.isAccessibleForFree, true, 'futures Level 1 is the free starter unit and must be modelled as such');
+});
+
+// Canonical/social URLs use one origin at the root path shape (no /pj/), so
+// search engines are not asked to choose between two URLs for one page.
+test('course and member pages agree on one canonical origin and path shape', () => {
+  const ORIGIN = 'https://not-financial-advice-vjm.com';
+  const pages = {
+    'futures-dissection.html': '/futures-dissection',
+    'stock-breakdown.html': '/stock-breakdown',
+    'options-lab.html': '/options-lab',
+    'psychology-enhancer.html': '/psychology-enhancer',
+    'premium-guidance.html': '/premium-guidance',
+  };
+  for (const [page, path] of Object.entries(pages)) {
+    const src = read(page);
+    const url = ORIGIN + path;
+    for (const [label, re] of [
+      ['canonical', /<link rel="canonical" href="([^"]+)"/],
+      ['og:url', /<meta property="og:url" content="([^"]+)"/],
+      ['twitter:url', /<meta name="twitter:url" content="([^"]+)"/],
+    ]) {
+      const m = re.exec(src);
+      assert.ok(m, `${page}: missing ${label}`);
+      assert.equal(m[1], url, `${page}: ${label} must be ${url}`);
+    }
+    assert.doesNotMatch(src.replace(/<!--[\s\S]*?-->/g, ''), /not-financial-advice-vjm\.com\/pj\//,
+      `${page}: /pj/ path prefix must be gone`);
+  }
+  // The member sign-in page stays out of the index whatever the site decides.
+  assert.match(read('premium-guidance.html'), /<meta name="robots" content="noindex,nofollow">/);
 });
 
 // ---------------------------------------------------------------------------
@@ -269,4 +310,118 @@ test('every target="_blank" link carries rel="noopener"', () => {
     }
   }
   assert.deepEqual(offenders, [], `target="_blank" missing rel="noopener":\n  ${offenders.join('\n  ')}`);
+});
+
+// ---------------------------------------------------------------------------
+// Incident: tiers became real server-side (functions/api/_lib/entitlements.js:
+// futures_core = $100/mo covers Futures + Psychology, complete = $129/mo adds
+// Stocks, Options and the research tools) but the course pages never learned
+// about them. assets/curriculum.js asked one question — "is there a session?"
+// — so a $100 Futures Core member opening /options-lab passed that check,
+// unlockAll() hid the gate, and the middleware had already blanked
+// .gated-content: a valid paying member got an empty page with no explanation
+// and no way to buy the plan that would fix it.
+const curriculumJs = read('assets/curriculum.js');
+
+test('a valid session alone no longer unlocks a page the server stripped', () => {
+  assert.match(curriculumJs, /data-locked="1"/,
+    'the client must read the middleware decision, not just the session');
+  assert.match(curriculumJs, /if \(active && !stripped\) \{ unlockAll\(\); return 'entitled'; \}/,
+    'unlockAll must require BOTH a session and content the server did not strip');
+  assert.match(curriculumJs, /const state = active \? 'under_tier' : 'signed_out';/,
+    'signed-in-but-under-tier and signed-out must be told apart');
+});
+
+test('a signed-in under-tier member is never shown an access-code box', () => {
+  const fn = /function renderUnderTierGate\([\s\S]*?\n  \}/.exec(curriculumJs);
+  assert.ok(fn, 'renderUnderTierGate must exist');
+  assert.match(fn[0], /qsa\('\.lock-form', gate\)/, 'the code form must be removed for a member who already has a code');
+  assert.match(fn[0], /check-status-btn/, 'the "I already unlocked" button is meaningless when already signed in');
+  assert.match(fn[0], /core_to_complete_upgrade/, 'the Core -> Complete step must be reported where it happens');
+});
+
+test('the upgrade copy is derived from the two real prices and invents nothing', () => {
+  // $100 and $129 are the only prices the repo establishes; the $29 step is
+  // computed from them rather than typed in, so it cannot drift.
+  assert.match(curriculumJs, /futures_core: \{[^}]*price: 100/);
+  assert.match(curriculumJs, /complete: \{[^}]*price: 129/);
+  assert.match(curriculumJs, /need\.price - held\.price/, 'the upgrade delta must be computed, not asserted');
+  const code = curriculumJs.replace(/^\s*\/\/.*$/gm, '');   // prose comments may quote a price
+  const priceLiterals = [...code.matchAll(/\$\d[\d,.]*/g)].map((m) => m[0]);
+  assert.deepEqual(priceLiterals, [], `curriculum.js must carry no hard-coded price strings: ${priceLiterals.join(', ')}`);
+  // No urgency, no member counts, no invented per-plan checkout URL.
+  assert.doesNotMatch(curriculumJs, /spots? left|only \d+ left|members? strong|join \d+/i);
+  assert.match(curriculumJs, /TODO: owner to confirm per-plan Whop checkout URLs/);
+  const whopLinks = [...curriculumJs.matchAll(/https:\/\/whop\.com\/[^\s'"]*/g)].map((m) => m[0]);
+  assert.deepEqual([...new Set(whopLinks)], ['https://whop.com/pjtradespremium'],
+    'only the Whop listing the site already uses may be linked');
+});
+
+test('the lock and upgrade UI renders outside the region the middleware blanks', () => {
+  // .gated-content is emptied server-side for exactly the visitors this UI is
+  // written for, so anything rendered into it would be invisible to them.
+  assert.match(curriculumJs, /attach\(gate, panel\)/, 'plan panels attach to .lock-gate, a sibling of .gated-content');
+  assert.match(curriculumJs, /if \(inGatedRegion\(quiz\)\) return;/, 'paid quizzes are left alone');
+  assert.match(curriculumJs, /qsa\('\.lesson-card', panel\)\.filter\(\(c\) => !inGatedRegion\(c\)\)/,
+    'only free lessons are tracked');
+  for (const page of COURSE_PAGES) {
+    const html = read(page);
+    const gates = [...html.matchAll(/<div class="lock-gate">/g)];
+    assert.ok(gates.length, `${page}: no lock gate found`);
+    for (const g of gates) {
+      const after = html.slice(g.index, g.index + 1400);
+      assert.ok(after.includes('<div class="gated-content"'),
+        `${page}: a lock gate must sit before its gated block, never inside it`);
+    }
+  }
+});
+
+test('local progress is stored defensively and never persists the rendered order', () => {
+  assert.match(curriculumJs, /function storage\(\) \{\s*try \{/, 'localStorage access must be wrapped: it throws in private mode');
+  assert.match(curriculumJs, /catch \{ return null; \}/);
+  assert.match(curriculumJs, /rec\.quizzes\[id\] = \{[\s\S]*?missed: result\.missed\.map\(\(m\) => m\.qi\)/,
+    'only original question indices may be stored');
+  assert.doesNotMatch(curriculumJs, /rec\.[a-z]+\s*=\s*[^;]*orderChoices/i, 'the shuffled order must never be persisted');
+  // Honest about what it is: a device-local convenience, not an account.
+  assert.match(curriculumJs, /saved on this device only, not an account/);
+});
+
+test('course pages call the funnel contract without implementing it', () => {
+  for (const stage of ['lesson_expand', 'free_level_complete', 'lock_view', 'plan_cta', 'core_to_complete_upgrade']) {
+    assert.match(curriculumJs, new RegExp(`'${stage}'`), `${stage} is not instrumented on the course pages`);
+  }
+  assert.match(curriculumJs, /if \(window\.vjmTrack\) window\.vjmTrack\(name, props \|\| \{\}\);/,
+    'vjmTrack must be called defensively — assets/funnel.js may not have loaded');
+  assert.doesNotMatch(curriculumJs, /window\.vjmTrack\s*=/, 'assets/funnel.js owns vjmTrack; this file must not define it');
+  for (const page of [...COURSE_PAGES, 'premium-guidance.html']) {
+    const html = read(page);
+    assert.match(html, /<script src="assets\/funnel\.js" defer><\/script>/, `${page} does not load the event layer`);
+    assert.match(html, /window\.vjmTrackQueue = window\.vjmTrackQueue \|\| \[\]/, `${page} has no pre-load queue shim`);
+  }
+});
+
+test('each course lock names the plan that actually unlocks that course', () => {
+  // "Unlock it with your Futures or Complete membership access code" was on
+  // all four pages, and it was false on two of them: Futures Core does not
+  // include Stock Breakdown or Options Lab.
+  const expected = {
+    'futures-dissection.html': ['Futures Core', '$100/mo'],
+    'psychology-enhancer.html': ['Futures Core', '$100/mo'],
+    'stock-breakdown.html': ['Complete', '$129/mo'],
+    'options-lab.html': ['Complete', '$129/mo'],
+  };
+  for (const [page, [plan, price]] of Object.entries(expected)) {
+    const html = read(page);
+    const gates = html.split('<div class="lock-gate">').slice(1).map((s) => s.slice(0, 900));
+    assert.ok(gates.length, `${page}: no lock gate`);
+    for (const gate of gates) {
+      assert.ok(gate.includes(plan) && gate.includes(price), `${page}: a lock gate does not name ${plan} at ${price}`);
+      assert.doesNotMatch(gate, /Futures or Complete membership/, `${page}: stale ambiguous plan copy`);
+    }
+    if (plan === 'Complete') {
+      for (const gate of gates) {
+        assert.match(gate, /Futures Core does not/, `${page}: a Complete-only course must say Futures Core does not include it`);
+      }
+    }
+  }
 });

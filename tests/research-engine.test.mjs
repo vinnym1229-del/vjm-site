@@ -23,6 +23,11 @@ const {
   summarizeConditions,
   summarizeFvg,
   summarizeTiming,
+  scanDisplacement,
+  classifyDirectionalOutcome,
+  barCloseTime,
+  studyProvenance,
+  TIMING_CONVENTION,
 } = __test;
 
 function bar(t, o, h, l, c, v = 1000) {
@@ -63,21 +68,87 @@ assert.ok(trend.return20 > 0);
 assert.ok(trend.atr14Pct > 0);
 assert.ok(trend.upDayShare > 0.99);
 
-const fibBars = [
-  bar('2026-01-01T00:00:00Z', 94, 100, 90, 98),
-  bar('2026-01-02T00:00:00Z', 98, 105, 92, 103),
-  bar('2026-01-03T00:00:00Z', 103, 110, 95, 108),
-  bar('2026-01-04T00:00:00Z', 108, 120, 100, 117),
-  bar('2026-01-05T00:00:00Z', 117, 115, 105, 108),
-  bar('2026-01-06T00:00:00Z', 108, 112, 107, 110),
-  bar('2026-01-07T00:00:00Z', 110, 121, 109, 120),
-  bar('2026-01-08T00:00:00Z', 120, 116, 110, 114),
-  bar('2026-01-09T00:00:00Z', 114, 113, 106, 109),
+// ---------------------------------------------------------------------------
+// LOOK-AHEAD: fib swing highs (analyseFib)
+//
+// A pivot with `pivot`=2 is only a pivot once TWO more bars have printed
+// without exceeding it. Anything the study does between the pivot bar and its
+// confirmation bar is trading on a high nobody had identified yet.
+//
+// The tape below is built to be hostile: the ONLY retracement into the fib
+// band happens on the bar right after the (not yet confirmed) high, and from
+// the confirmation bar onward price gaps up and never trades near the band
+// again. A study that measures from the pivot bar therefore books a touch that
+// fills 100% of the time; a study that waits for confirmation correctly finds
+// no tradable event at all. The pre-fix engine reported 3 touches / 100% fill
+// / 100% new-high here -- a fabricated perfect setup.
+const lookAheadFibBars = [
+  bar('2026-01-01T00:00:00Z', 94, 100, 90, 98),   // 0  swing low anchor (90)
+  bar('2026-01-02T00:00:00Z', 98, 105, 95, 103),  // 1
+  bar('2026-01-05T00:00:00Z', 103, 110, 100, 108),// 2
+  bar('2026-01-06T00:00:00Z', 108, 120, 112, 118),// 3  swing high (120)
+  bar('2026-01-07T00:00:00Z', 118, 115, 100, 113),// 4  the ONLY dip into the band
+  bar('2026-01-08T00:00:00Z', 113, 118, 112, 117),// 5  confirmation bar for the high
+  bar('2026-01-09T00:00:00Z', 125, 130, 125, 129),// 6  gone -- never returns
+  bar('2026-01-12T00:00:00Z', 130, 140, 135, 139),// 7
+  bar('2026-01-13T00:00:00Z', 140, 150, 145, 149),// 8
+  bar('2026-01-14T00:00:00Z', 150, 160, 155, 159),// 9
 ];
-const fib = analyseFib(fibBars, 2, 4, 'Daily');
-const fib382 = fib.stats.find((row) => row.level === 0.382);
-assert.ok(fib382.touches >= 1, '38.2% retracement should be detected');
-assert.ok(fib382.fillRate > 0, 'return to the prior high should count as a fill');
+const lookAheadFib = analyseFib(lookAheadFibBars, 2, 6, 'Daily');
+assert.equal(
+  lookAheadFib.events.length,
+  0,
+  'a retracement that happens before the swing high is confirmable is not tradable and must not be counted',
+);
+for (const row of lookAheadFib.stats) {
+  assert.equal(row.touches, 0, `level ${row.level} must report no touches from unconfirmable pivots`);
+  assert.equal(row.fillRate, null, `level ${row.level} must not report a fill rate built on look-ahead`);
+}
+assert.equal(
+  lookAheadFib.latestSwing.confirmedDate,
+  '2026-01-08',
+  'the current swing must publish the date its pivot became confirmable, not just the high date',
+);
+
+// Positive control for the test above: move the identical dip to AFTER the
+// confirmation bar and the same study finds it. This proves the assertion
+// above is about timing, not about the study having stopped working.
+const confirmedFibBars = [
+  ...lookAheadFibBars.slice(0, 4),
+  bar('2026-01-07T00:00:00Z', 118, 118, 116, 117),  // 4 no longer dips
+  bar('2026-01-08T00:00:00Z', 117, 118, 115, 117),  // 5 confirmation bar
+  bar('2026-01-09T00:00:00Z', 117, 118, 100, 105),  // 6 dip, now actionable
+  bar('2026-01-12T00:00:00Z', 105, 121, 104, 120),  // 7 back through the high -> fill
+  bar('2026-01-13T00:00:00Z', 120, 122, 118, 121),  // 8
+  bar('2026-01-14T00:00:00Z', 121, 123, 119, 122),  // 9
+];
+const confirmedFib = analyseFib(confirmedFibBars, 2, 6, 'Daily');
+const confirmed382 = confirmedFib.stats.find((row) => row.level === 0.382);
+assert.ok(confirmed382.touches >= 1, '38.2% retracement after confirmation must still be detected');
+assert.ok(confirmed382.fillRate > 0, 'a post-confirmation return to the prior high still counts as a fill');
+const confirmedEvent = confirmedFib.events.find((row) => row.level === 0.382);
+assert.equal(confirmedEvent.confirmDate, '2026-01-08', 'events carry the pivot confirmation date');
+assert.ok(
+  confirmedEvent.touchDate > confirmedEvent.confirmDate,
+  'a touch can never be dated before the pivot that defines it was confirmable',
+);
+assert.equal(confirmedEvent.confirmBars, 2, 'events record how many bars the pivot needed to confirm');
+
+// The touch bar's own high must not settle the touch: daily bars cannot order
+// the intrabar path, so a same-bar spike back to the high is not a known fill.
+const sameBarFibBars = [
+  ...lookAheadFibBars.slice(0, 4),
+  bar('2026-01-07T00:00:00Z', 118, 118, 116, 117),
+  bar('2026-01-08T00:00:00Z', 117, 118, 115, 117),
+  bar('2026-01-09T00:00:00Z', 117, 125, 100, 105),  // dips to the band AND tags the high
+  bar('2026-01-12T00:00:00Z', 105, 106, 100, 101),  // then dies
+  bar('2026-01-13T00:00:00Z', 101, 102, 98, 99),
+  bar('2026-01-14T00:00:00Z', 99, 100, 96, 97),
+];
+const sameBarFib = analyseFib(sameBarFibBars, 2, 6, 'Daily');
+for (const row of sameBarFib.events) {
+  assert.equal(row.filled, false, 'a fill printed on the touch bar itself is unknowable and must not be scored');
+}
 
 const sweepBars = [
   bar('2026-08-20T13:30:00Z', 99.9, 100, 99.9, 100),
@@ -261,4 +332,326 @@ const planBranch = clientJs.slice(planBranchStart, clientJs.indexOf('return;', p
 assert.doesNotMatch(planBranch, /#[0-9a-fA-F]{3,8}/, 'the plan state must not add a new colour literal');
 assert.ok(planBranch.includes('var(--amber)'), 'the plan state reuses an existing palette token');
 
+
+// ---------------------------------------------------------------------------
+// LOOK-AHEAD: grouped (5m/15m/60m) bars carry a completed candle's values but
+// are timestamped at the group's OPEN.
+//
+// A 5m FVG whose third candle spans 13:40-13:45 does not exist until 13:45.
+// Reacting at 13:40 means the "retest" can be a one-minute bar that is still
+// building the very candle that defines the zone -- the study sees its own
+// future. The tape below is hostile on purpose: the only visit to the zone
+// happens INSIDE the third candle, and once that candle closes price leaves
+// and never comes back. Pre-fix this reported a retested zone with
+// continuation; post-fix there is nothing to react to.
+// ---------------------------------------------------------------------------
+const groupedFvgBars = [
+  // 13:30-13:34 -> group A, high 100
+  bar('2026-08-20T13:30:00Z', 95, 100, 94, 99),
+  bar('2026-08-20T13:31:00Z', 99, 100, 95, 99.5),
+  bar('2026-08-20T13:32:00Z', 99.5, 100, 96, 99.8),
+  bar('2026-08-20T13:33:00Z', 99.8, 100, 97, 99.9),
+  bar('2026-08-20T13:34:00Z', 99.9, 100, 98, 100),
+  // 13:35-13:39 -> group B
+  bar('2026-08-20T13:35:00Z', 100.5, 104, 100.5, 103),
+  bar('2026-08-20T13:36:00Z', 103, 104, 101, 103),
+  bar('2026-08-20T13:37:00Z', 103, 104, 101, 103),
+  bar('2026-08-20T13:38:00Z', 103, 104, 101, 103),
+  bar('2026-08-20T13:39:00Z', 103, 104, 101, 104),
+  // 13:40-13:44 -> group C: low 101 > group A high 100 => bullish 5m FVG,
+  // zone [100, 101]. The 13:41 bar dips to 101 -- inside the forming candle.
+  bar('2026-08-20T13:40:00Z', 105, 106, 105, 105.5),
+  bar('2026-08-20T13:41:00Z', 105.5, 105.5, 101, 104),
+  bar('2026-08-20T13:42:00Z', 104, 106, 104, 105),
+  bar('2026-08-20T13:43:00Z', 105, 106, 104, 105),
+  bar('2026-08-20T13:44:00Z', 105, 106, 104, 106),
+  // 13:45 onward: gone. Nothing ever trades back down to the zone.
+  bar('2026-08-20T13:45:00Z', 112, 114, 110, 113),
+  bar('2026-08-20T13:46:00Z', 113, 116, 112, 115),
+  bar('2026-08-20T13:47:00Z', 115, 118, 114, 117),
+  bar('2026-08-20T13:48:00Z', 117, 120, 116, 119),
+  bar('2026-08-20T13:49:00Z', 119, 122, 118, 121),
+  bar('2026-08-20T13:50:00Z', 121, 124, 120, 123),
+  bar('2026-08-20T13:51:00Z', 123, 126, 122, 125),
+  bar('2026-08-20T13:52:00Z', 125, 128, 124, 127),
+  bar('2026-08-20T13:53:00Z', 127, 130, 126, 129),
+  bar('2026-08-20T13:54:00Z', 129, 132, 128, 131),
+];
+const groupedScan = scanFvgs(groupedFvgBars, '2026-08-20', 5);
+const zoneRecord = groupedScan.records.find((row) => row.zoneLow === 100 && row.zoneHigh === 101);
+assert.ok(zoneRecord, 'the 5m bullish imbalance must still be detected');
+assert.equal(zoneRecord.formedAt, '09:40', 'the zone is drawn at the third candle’s open');
+assert.equal(
+  zoneRecord.observableAt,
+  '09:45',
+  'a grouped bar is only observable when its group ends -- results must publish that instant',
+);
+assert.equal(
+  zoneRecord.retested,
+  false,
+  'a "retest" printed inside the still-forming third candle is look-ahead and must not count',
+);
+assert.equal(zoneRecord.continuation, false, 'continuation cannot follow a retest that never happened');
+assert.equal(zoneRecord.minutesToRetest, null);
+assert.equal(
+  groupedScan.events.length,
+  0,
+  'no tradable FVG event exists on this tape once the zone is timed to its completion',
+);
+
+// Positive control: same shape, but the visit to the zone happens AFTER the
+// third candle completes, so the study is expected to find it.
+const tradableFvgBars = groupedFvgBars.slice(0, 11).concat([
+  bar('2026-08-20T13:41:00Z', 105.5, 106, 104, 105),
+  bar('2026-08-20T13:42:00Z', 105, 106, 104, 105),
+  bar('2026-08-20T13:43:00Z', 105, 106, 104, 105),
+  bar('2026-08-20T13:44:00Z', 105, 106, 101, 102),
+  bar('2026-08-20T13:45:00Z', 102, 102.5, 100.5, 101),
+  bar('2026-08-20T13:46:00Z', 101, 104, 100.8, 103),
+  bar('2026-08-20T13:47:00Z', 103, 108, 102, 107),
+  bar('2026-08-20T13:48:00Z', 107, 110, 106, 109),
+  bar('2026-08-20T13:49:00Z', 109, 112, 108, 111),
+]);
+const tradableScan = scanFvgs(tradableFvgBars, '2026-08-20', 5);
+const tradableRecord = tradableScan.records.find((row) => row.zoneLow === 100 && row.zoneHigh === 101);
+assert.equal(tradableRecord.retested, true, 'a retest after the candle completed is real and must count');
+assert.ok(tradableRecord.minutesToRetest >= 0, 'time-to-retest is measured from the observation instant, never negative');
+
+// barCloseTime is the single gate the studies use. It must never hand back the
+// bar's drawing timestamp for a grouped bar.
+const oneHour = resampleMinutes(groupedFvgBars, 60);
+assert.equal(oneHour[0].t, '2026-08-20T13:30:00.000Z');
+assert.equal(
+  barCloseTime(oneHour[0], 60) - Date.parse(oneHour[0].t),
+  60 * 60000,
+  'a 60m bar is observable one hour after the timestamp it is drawn at',
+);
+assert.equal(
+  barCloseTime(bar('2026-08-20T13:30:00Z', 1, 1, 1, 1), 1) - Date.parse('2026-08-20T13:30:00Z'),
+  60000,
+  'a plain one-minute bar is observable at its own close',
+);
+
+// ---------------------------------------------------------------------------
+// LOOK-AHEAD: five-minute displacement is stamped at the group open too.
+//
+// The displacement candle below runs 100 -> 110 across its five minutes and
+// then the tape reverses hard. Entering at the group's OPENING minute books
+// the whole 10-point candle as favourable excursion; entering when the candle
+// actually completed books the reversal that followed. Pre-fix this printed
+// continuation; post-fix it prints the reversal that really happened.
+// ---------------------------------------------------------------------------
+const SESSION_OPEN = Date.parse('2026-08-20T13:30:00Z');
+const minuteAt = (index) => new Date(SESSION_OPEN + index * 60000).toISOString();
+const displacementBars = [];
+// 100 quiet minutes -> 20 uneventful 5m bars establishing the median body/range.
+for (let i = 0; i < 100; i++) displacementBars.push(bar(minuteAt(i), 100, 100.3, 99.9, 100.2));
+// Minutes 100-104 (11:10-11:15 ET) are the displacement candle: 100 -> 110,
+// closing on its high.
+const rise = [102, 104, 106, 108, 110];
+for (let i = 0; i < 5; i++) displacementBars.push(bar(minuteAt(100 + i), rise[i] - 2, rise[i], rise[i] - 2, rise[i]));
+// From 11:15 on, the tape drifts straight back down (gently enough not to be a
+// displacement candle of its own).
+for (let i = 0; i < 60; i++) {
+  const price = 110 - i * 0.05;
+  displacementBars.push(bar(minuteAt(105 + i), price, price + 0.02, price - 0.06, price - 0.05));
+}
+const displacementEvents = scanDisplacement(displacementBars, '2026-08-20');
+assert.equal(displacementEvents.length, 1, 'exactly one displacement candle exists on this tape');
+const displacement = displacementEvents[0];
+assert.equal(
+  displacement.time,
+  '11:15',
+  'a 5m displacement candle spanning 11:10-11:15 is actionable at 11:15, not at 11:10',
+);
+assert.equal(
+  displacement.continuation,
+  false,
+  'the move inside the displacement candle is not a post-signal continuation',
+);
+assert.equal(displacement.reversal, true, 'the tape reversed immediately after the candle completed');
+
+// ---------------------------------------------------------------------------
+// The entry bar's own excursion is already history when the entry price
+// exists. A sweep bar that spikes 0.3% past the level and then closes back at
+// the level, followed by a tape that only falls, is a reversal -- not a
+// continuation manufactured out of the entry bar's own high.
+// ---------------------------------------------------------------------------
+const entryBarSweep = classifySweep([
+  bar('2026-08-20T13:30:00Z', 99.9, 100.4, 99.8, 100),   // sweep + the whole up-move, entry 100
+  bar('2026-08-20T13:31:00Z', 100, 100.05, 99.7, 99.75),
+  bar('2026-08-20T13:32:00Z', 99.75, 99.8, 99.5, 99.6),
+], 100, 'high', 'PDH', '2026-08-20');
+assert.equal(
+  entryBarSweep.continuation,
+  false,
+  'the sweep bar’s own high printed before the entry close and must not score as continuation',
+);
+assert.equal(entryBarSweep.reversal, true, 'the only post-entry move was down');
+assert.ok(entryBarSweep.mfe <= 0.0006, 'MFE must be measured from the entry bar forward only');
+
+const directional = classifyDirectionalOutcome([
+  bar('2026-08-20T13:30:00Z', 100, 101, 99.9, 100),      // entry bar, already spiked
+  bar('2026-08-20T13:31:00Z', 100, 100.02, 99.6, 99.7),
+  bar('2026-08-20T13:32:00Z', 99.7, 99.8, 99.4, 99.5),
+], 0, 'up', 'test', '2026-08-20');
+assert.equal(directional.continuation, false, 'entry-bar excursion is not post-entry excursion');
+assert.equal(directional.reversal, true);
+assert.equal(
+  classifyDirectionalOutcome([bar('2026-08-20T13:30:00Z', 100, 101, 99, 100)], 0, 'up', 'test', '2026-08-20'),
+  null,
+  'an event with no bar after entry has no measurable outcome and must be dropped, not scored from its own bar',
+);
+
+// ---------------------------------------------------------------------------
+// Provenance: every study result must be able to say what it is.
+// ---------------------------------------------------------------------------
+const provenance = studyProvenance('Test study');
+assert.equal(provenance.results, 'hypothetical-gross');
+assert.equal(provenance.timingConvention, TIMING_CONVENTION, 'studies stamp the single frozen convention');
+assert.match(provenance.disclaimer, /not achieved or live-tradable results/i);
+assert.match(provenance.disclaimer, /no commissions, fees, spread, slippage/i);
+assert.ok(TIMING_CONVENTION.version, 'the timing convention is versioned so a change is visible downstream');
+assert.throws(
+  () => { TIMING_CONVENTION.fill = 'anything'; },
+  'the timing convention is frozen: a study may not quietly redefine when it fills',
+);
+
 console.log('VJM research-engine calculation tests passed.');
+
+// ---------------------------------------------------------------------------
+// PROVENANCE IN THE UI
+//
+// The API stamps every study response with what the numbers are (hypothetical,
+// gross) and the timing convention that produced them. Until this was
+// rendered, a member read a hit rate with nothing on screen saying it was
+// gross of every cost and computed under a specific look-ahead-free timing
+// rule -- the exact claim posture the compliance audit flagged.
+//
+// These tests actually run the shipped client module against a stub DOM and
+// assert on what it writes, so a silent regression (a renamed hook, a dropped
+// call site) fails here rather than in front of a paying member.
+// ---------------------------------------------------------------------------
+assert.match(clientHtml, /id="optionsProvenance"/, 'the options study must ship a provenance region');
+assert.match(clientHtml, /id="stocksProvenance"/, 'the fib study must ship a provenance region');
+assert.equal(
+  (clientHtml.match(/data-provenance-short=/g) || []).length,
+  4,
+  'every study table/heatmap carries the short form beside its numbers',
+);
+assert.match(clientHtml, /<details class="provenance-detail">/, 'the full timing convention is reachable in an expander');
+// Not a footer: the audit criticised burying the basis at the bottom of the
+// page. The provenance regions must sit inside the study modules themselves.
+const footerStart = clientHtml.indexOf('<footer');
+assert.ok(footerStart > 0);
+assert.ok(clientHtml.indexOf('id="optionsProvenance"') < footerStart, 'provenance must not live in the footer');
+assert.ok(clientHtml.indexOf('id="stocksProvenance"') < footerStart, 'provenance must not live in the footer');
+assert.ok(
+  clientJs.includes("renderProvenance('options', intradayResponse.provenance)"),
+  "the options tab's rate tables are the intraday study, so its provenance governs them",
+);
+assert.ok(clientJs.includes("renderProvenance('stocks', response.provenance)"), 'the fib study renders its own provenance');
+
+// --- run the real client module against a stub DOM ---------------------------
+function stubNode() {
+  const n = { textContent: '', innerHTML: '', classes: new Set() };
+  n.classList = { toggle: (c, on) => { if (on) n.classes.add(c); else n.classes.delete(c); }, contains: (c) => n.classes.has(c) };
+  return n;
+}
+function renderProvenanceWith(provenance) {
+  const tag = stubNode(), line = stubNode(), body = stubNode();
+  const basis = stubNode(), pill = stubNode(), shortA = stubNode(), shortB = stubNode();
+  const root = stubNode();
+  root.querySelector = (sel) => ({ '[data-provenance-tag]': tag, '[data-provenance-line]': line, '[data-provenance-body]': body }[sel] || null);
+  const byId = { optionsProvenance: root, globalBasis: basis, globalBasisPill: pill };
+  const priorDocument = globalThis.document, priorStyle = globalThis.getComputedStyle;
+  globalThis.document = {
+    body: {},
+    getElementById: (id) => byId[id] || null,
+    querySelectorAll: (sel) => (sel.includes('data-provenance-short') ? [shortA, shortB] : []),
+    addEventListener() {},
+  };
+  globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
+  try {
+    // Swap only the boot line so nothing else in the module changes.
+    const bootable = clientJs.replace(
+      "document.addEventListener('DOMContentLoaded',wire);",
+      'globalThis.__researchEngineTestHooks = { renderProvenance };',
+    );
+    assert.ok(bootable !== clientJs, 'the client module must still boot from DOMContentLoaded');
+    new Function(bootable)();
+    globalThis.__researchEngineTestHooks.renderProvenance('options', provenance);
+  } finally {
+    globalThis.document = priorDocument;
+    globalThis.getComputedStyle = priorStyle;
+  }
+  return { root, tag, line, body, basis, pill, shorts: [shortA, shortB] };
+}
+
+const liveProvenance = studyProvenance('Intraday sweep / FVG / SMT event study');
+const rendered = renderProvenanceWith(liveProvenance);
+assert.match(rendered.tag.textContent, /hypothetical/i, 'the short tag states the numbers are hypothetical');
+assert.match(rendered.tag.textContent, /gross/i, 'the short tag states the numbers are gross');
+assert.match(rendered.line.textContent, /Intraday sweep/, 'the strip names the study');
+assert.match(rendered.line.textContent, /no commissions, fees, spread, slippage/i, 'the absent cost model is stated, not implied');
+assert.ok(rendered.line.textContent.includes(TIMING_CONVENTION.version), 'the frozen convention version is on screen');
+assert.match(rendered.basis.textContent, /hypothetical/i, 'the toolbar basis pill states the result basis');
+for (const short of rendered.shorts) {
+  assert.match(short.textContent, /Hypothetical/i, 'every study table carries the short form beside its numbers');
+  assert.equal(short.classes.has('missing'), false);
+}
+for (const key of ['observable', 'actionable', 'fill', 'outcome', 'costs', 'nature']) {
+  assert.ok(rendered.body.innerHTML.includes(TIMING_CONVENTION[key].slice(0, 40)), `the expander must state the convention's "${key}" rule verbatim`);
+}
+assert.ok(rendered.body.innerHTML.includes(liveProvenance.disclaimer.slice(0, 50)), 'the full disclaimer is reachable');
+assert.equal(rendered.root.classes.has('missing'), false);
+
+// A snapshot cached in D1 before the look-ahead fix has no provenance block.
+// It must NOT be given an invented one -- an assumed convention would be a
+// stronger claim than the missing one. It is labelled as suspect instead.
+for (const preFix of [undefined, null, {}, { study: 'Old study' }, { study: 'Old', results: 'hypothetical-gross' }]) {
+  const stale = renderProvenanceWith(preFix);
+  assert.match(stale.line.textContent, /predates the timing-convention fix/i, 'the pre-fix state must say so explicitly');
+  assert.match(stale.line.textContent, /may be overstated/i, 'the pre-fix state must warn the numbers can be inflated');
+  assert.match(stale.tag.textContent, /missing/i);
+  assert.equal(stale.root.classes.has('missing'), true, 'the pre-fix state is styled as a warning, not as a normal result');
+  assert.match(stale.body.innerHTML, /predates the timing-convention fix/i);
+  assert.doesNotMatch(stale.line.textContent, /timing convention 20/, 'a missing convention must never be invented');
+  assert.doesNotMatch(stale.body.innerHTML, new RegExp(TIMING_CONVENTION.version), 'a missing convention must never be invented');
+  for (const short of stale.shorts) {
+    assert.match(short.textContent, /pre-fix|missing/i, 'the short form beside the numbers also flags the pre-fix result');
+    assert.equal(short.classes.has('missing'), true);
+  }
+}
+
+// --- palette: the new state must not introduce a colour --------------------
+// The site is white/black with red as a restrained accent and
+// tests/palette.test.mjs asserts zero non-red chromatic hues site-wide. The
+// provenance UI must therefore be built from existing tokens only.
+const clientCss = readFileSync(resolve(projectRoot, 'assets/research-engine.css'), 'utf8');
+const provenanceCss = clientCss.slice(clientCss.indexOf('/* ─── RESULT PROVENANCE'));
+assert.ok(provenanceCss.length > 200, 'the provenance styles must be present');
+assert.doesNotMatch(provenanceCss, /#[0-9a-fA-F]{3,8}\b/, 'the provenance styles must not add a colour literal');
+assert.doesNotMatch(provenanceCss, /\brgba?\(\s*(?!0\s*,\s*0\s*,\s*0|255\s*,\s*255\s*,\s*255)/, 'only neutral black/white washes are allowed; hues come from tokens');
+assert.ok(provenanceCss.includes('var(--red-ink)'), 'the warning state reuses the existing red accent token');
+assert.ok(provenanceCss.includes('body.light-mode .provenance'), 'the provenance UI must be readable in the light theme too');
+const provenanceJs = clientJs.slice(clientJs.indexOf('  function setBasis('), clientJs.indexOf('const PLAN_LOCKED_TEXT'));
+assert.doesNotMatch(provenanceJs, /#[0-9a-fA-F]{3,8}\b/, 'the provenance renderer must not inline a colour');
+assert.doesNotMatch(provenanceJs, /\brgba?\(/, 'the provenance renderer must not inline a colour');
+
+// --- canonical / OG / JSON-LD ----------------------------------------------
+// Single origin, root path shape, no /pj/ prefix, no .html alias -- and the
+// page stays noindexed: it is a member tool, not a public document.
+const CANONICAL = 'https://not-financial-advice-vjm.com/research-engine';
+assert.ok(clientHtml.includes(`<link rel="canonical" href="${CANONICAL}">`), 'canonical uses the shared origin and root path');
+assert.ok(clientHtml.includes(`<meta property="og:url" content="${CANONICAL}">`), 'og:url must not contradict the canonical');
+assert.ok(clientHtml.includes(`<meta name="twitter:url" content="${CANONICAL}">`), 'twitter:url must not contradict the canonical');
+assert.doesNotMatch(clientHtml, /not-financial-advice-vjm\.com\/pj\//, 'no absolute link may keep the retired /pj/ path shape');
+const ldMatch = clientHtml.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+assert.ok(ldMatch, 'the page ships structured data');
+const ld = JSON.parse(ldMatch[1]);
+assert.equal(ld.url, CANONICAL, 'JSON-LD url must equal the canonical');
+assert.equal(ld['@id'], CANONICAL + '#app');
+assert.equal(ld.isAccessibleForFree, false, 'the research engine is not free — do not mark a paid tool free');
+assert.match(ld.disclaimer, /not achieved or live-tradable/i, 'structured data must not claim more than the page does');
+assert.match(clientHtml, /<meta name="robots" content="noindex/i, 'the research engine stays noindexed');

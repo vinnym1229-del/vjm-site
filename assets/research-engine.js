@@ -173,6 +173,76 @@
     $('globalAsOf').textContent = dateText(response.asOf);
     $('globalMode').textContent = String(response.mode || 'Observed').toUpperCase();
   }
+  // ─── Result provenance ────────────────────────────────────────────────────
+  // Every study number this engine shows is a hypothetical, gross frequency
+  // computed from historical bars, and it only means anything next to the
+  // timing convention that produced it. The API stamps that convention on each
+  // study response, so it is rendered ADJACENT TO THE NUMBERS -- short form on
+  // the result strip and beside each study table, full convention one click
+  // away in the expander. Deliberately not a footer: a member reading a hit
+  // rate must see what it is without hunting.
+  //
+  // A response with NO provenance block is a snapshot cached in D1 before the
+  // look-ahead fix. We do not synthesise a convention for it -- an invented
+  // provenance would be a stronger claim than the missing one. It is labelled
+  // as predating the fix and possibly overstated.
+  const MISSING_PROVENANCE_TEXT = 'This result predates the timing-convention fix and may be overstated. It was produced before signals were timed to the bar at which they became knowable, so hit, fill, retest and continuation rates in it can be inflated. Re-run the study for a corrected result.';
+  const HYPOTHETICAL_GROSS_TEXT = 'Hypothetical, gross results. No commissions, fees, spread, slippage or fill modelling are applied, so these are not achieved or live-tradable results.';
+
+  function setBasis(text, missing) {
+    const node = $('globalBasis');
+    if (node) node.textContent = text;
+    const pill = $('globalBasisPill');
+    if (pill) pill.classList.toggle('missing', Boolean(missing));
+  }
+  function provenanceRows(p) {
+    const t = p.timingConvention || {};
+    return [
+      ['Study', p.study],
+      ['Results', HYPOTHETICAL_GROSS_TEXT],
+      ['Timing convention', t.version ? 'Frozen convention ' + t.version : null],
+      ['Signal observable', t.observable],
+      ['Actionable', t.actionable],
+      ['Entry price', t.fill],
+      ['Outcome measured', t.outcome],
+      ['Same-bar ambiguity', t.ambiguity],
+      ['Costs', t.costs],
+      ['Nature', t.nature],
+      ['Signal confirmation', p.signalConfirmation],
+      ['Disclaimer', p.disclaimer],
+      ['Computed', p.asOf ? dateText(p.asOf) : null],
+    ].filter((row) => row[1]);
+  }
+  function renderProvenance(key, provenance) {
+    const has = Boolean(provenance && provenance.timingConvention && provenance.results);
+    const version = has ? provenance.timingConvention.version : null;
+    const shortText = has
+      ? 'Hypothetical & gross' + (version ? ' — timing convention ' + version : '')
+      : 'Provenance missing — pre-fix result, may be overstated';
+    document.querySelectorAll(`[data-provenance-short="${key}"]`).forEach((node) => {
+      node.textContent = shortText;
+      node.classList.toggle('missing', !has);
+    });
+    setBasis(has ? 'Hypothetical · gross' : 'Unstated (pre-fix)', !has);
+    const root = $(key + 'Provenance');
+    if (!root) return;
+    root.classList.toggle('missing', !has);
+    const tag = root.querySelector('[data-provenance-tag]');
+    const line = root.querySelector('[data-provenance-line]');
+    const body = root.querySelector('[data-provenance-body]');
+    if (tag) tag.textContent = has ? 'Hypothetical · gross' : 'Provenance missing';
+    if (line) {
+      line.textContent = has
+        ? `${provenance.study || 'Study'} — ${HYPOTHETICAL_GROSS_TEXT} Signals are timed under frozen convention ${version || 'unversioned'}.`
+        : MISSING_PROVENANCE_TEXT;
+    }
+    if (body) {
+      body.innerHTML = has
+        ? '<dl class="provenance-list">' + provenanceRows(provenance).map(([label, value]) => `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`).join('') + '</dl>'
+        : `<p class="provenance-line">${esc(MISSING_PROVENANCE_TEXT)}</p>`;
+    }
+  }
+
   const PLAN_LOCKED_TEXT = 'Your plan does not include the Research Engine. It is part of the Complete membership.';
   function showPlanNotice(message) {
     const node = $('planNotice');
@@ -218,6 +288,9 @@
     const coverage=intra.coverage||{};
     $('optionsSourceStatus').textContent = `${response.source?.equities || 'IEX spot'} • ${num(coverage.sipBars)} SIP + ${num(coverage.boatsBars)} BOATS bars • ${response.source?.options || 'Indicative options'} • ${dateText(response.asOf)}`;
     $('optionsSourceStatus').style.color = '';
+    // The options tab's rate tables come from the intraday study, so that is
+    // the response whose provenance governs them.
+    renderProvenance('options', intradayResponse.provenance);
     setKpi('optSpot', money(d.spot));
     setKpi('optNetGex', (Number.isFinite(d.netGexMm) ? signedMoney(d.netGexMm) + 'mm' : '—'), d.netGexMm > 0 ? 'positive' : d.netGexMm < 0 ? 'negative' : '');
     setKpi('optGammaFlip', Number.isFinite(d.gammaFlip) ? money(d.gammaFlip) : 'Not detected');
@@ -278,6 +351,7 @@
   function renderStock(response) {
     const d = response.data || {}, s = d.summary || {};
     $('stockSourceStatus').textContent = `${response.source?.equities || 'IEX'} • ${dateText(response.asOf)}`; $('stockSourceStatus').style.color = '';
+    renderProvenance('stocks', response.provenance);
     setKpi('stockPrice', money(s.lastPrice)); $('stockAsOf').textContent = 'As of ' + (s.lastDate || '—');
     setKpi('stockReturn20', signedPct(s.return20), s.return20 > 0 ? 'positive' : s.return20 < 0 ? 'negative' : '');
     setKpi('stockAtr', pct(s.atr14Pct), s.atr14Pct > .05 ? 'caution' : '');
@@ -300,6 +374,9 @@
   function renderSectors(response) {
     const d = response.data || {}, rows = d.rows || [];
     $('sectorSourceStatus').textContent = `${response.source?.equities || 'IEX'} • ${dateText(response.asOf)}`; $('sectorSourceStatus').style.color = '';
+    // Not an event study -- a current snapshot. Say so rather than leaving the
+    // last study's hypothetical/gross basis showing over unrelated numbers.
+    setBasis('Snapshot, not a study', false);
     const leader = rows[0], laggard = rows[rows.length-1];
     setKpi('sectorLeader', leader ? leader.etf : '—'); setKpi('sectorLaggard', laggard ? laggard.etf : '—');
     setKpi('sectorRiskOn', num(rows.filter((r)=>r.relativeStrength > 0).length));
@@ -318,6 +395,9 @@
   function renderBiotech(response) {
     const d=response.data||{}, rows=d.rows||[];
     $('biotechSourceStatus').textContent = `${response.source?.equities || 'IEX'} • ${dateText(response.asOf)}`; $('biotechSourceStatus').style.color = '';
+    // Not an event study -- a current snapshot. Say so rather than leaving the
+    // last study's hypothetical/gross basis showing over unrelated numbers.
+    setBasis('Snapshot, not a study', false);
     setKpi('bioCount', num(rows.length)); setKpi('bioHighRisk', num(rows.filter((r)=>r.riskFlag==='HIGH').length)); setKpi('bioAtr', pct(median(rows.map((r)=>r.atr14Pct)))); setKpi('bioVolume', num(rows.filter((r)=>r.volumeRatio>=2).length));
     $('biotechBody').innerHTML = rows.map((r)=>`<tr><td><b>${esc(r.ticker)}</b></td><td>${esc(r.type)}</td><td class="num ${classify(r.return5)}">${signedPct(r.return5)}</td><td class="num ${classify(r.return20)}">${signedPct(r.return20)}</td><td class="num ${r.atr14Pct>.06?'warn':''}">${pct(r.atr14Pct)}</td><td class="num ${r.volumeRatio>=2?'warn':''}">${num(r.volumeRatio,2)}x</td><td class="num ${classify(r.gap)}">${signedPct(r.gap)}</td><td class="${r.riskFlag==='HIGH'?'bad':r.riskFlag==='REVIEW'?'warn':'good'}">${esc(r.riskFlag)}</td><td class="warn">Not connected</td></tr>`).join('');
   }

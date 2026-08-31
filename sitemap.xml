@@ -1,17 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Canonical origin: https://not-financial-advice-vjm.com — defined once in
+  robots.txt (`canonical-origin:` line); change it there, then here.
+
+  This file lists ONLY canonical, public, 200-status URLs in the root path
+  shape, and every <loc> matches the <link rel="canonical"> on the page it
+  points at (asserted by tests/site-contract.test.mjs). Deliberately absent:
+  .html aliases (they redirect to the extensionless form), /pj/* preview
+  copies, and the pages that must never be indexed — stock-lab,
+  research-engine, premium-guidance, 404 and /api/*.
+
+  Indexing is currently held off site-wide by `_headers`; this file describes
+  the URLs that become indexable when the owner lifts that hold.
+-->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://not-financial-advice-vjm.com/pj/</loc><lastmod>2026-08-28</lastmod><priority>1.0</priority></url>
-  <url><loc>https://not-financial-advice-vjm.com/pj/stock-breakdown.html</loc><lastmod>2026-08-28</lastmod><priority>0.9</priority></url>
-  <url><loc>https://not-financial-advice-vjm.com/pj/futures-dissection.html</loc><lastmod>2026-08-28</lastmod><priority>0.9</priority></url>
-  <url><loc>https://not-financial-advice-vjm.com/pj/psychology-enhancer.html</loc><lastmod>2026-08-28</lastmod><priority>0.9</priority></url>
-  <url><loc>https://not-financial-advice-vjm.com/pj/options-lab.html</loc><lastmod>2026-08-28</lastmod><priority>0.9</priority></url>
-  <url><loc>https://not-financial-advice-vjm.com/pj/stock-lab.html</loc><lastmod>2026-08-28</lastmod><priority>0.7</priority></url>
-  <url><loc>https://not-financial-advice-vjm.com/pj/research-engine.html</loc><lastmod>2026-08-28</lastmod><priority>0.7</priority></url>
-  <url><loc>https://not-financial-advice-vjm.com/pj/premarket.html</loc><lastmod>2026-08-28</lastmod><priority>0.7</priority></url>
-  <url><loc>https://not-financial-advice-vjm.com/pj/forex-calendar.html</loc><lastmod>2026-08-28</lastmod><priority>0.7</priority></url>
-  <url><loc>https://not-financial-advice-vjm.com/pj/prop-firms.html</loc><lastmod>2026-08-28</lastmod><priority>0.7</priority></url>
-  <url><loc>https://not-financial-advice-vjm.com/pj/premium-guidance.html</loc><lastmod>2026-08-28</lastmod><priority>0.7</priority></url>
-  <url><loc>https://not-financial-advice-vjm.com/pj/risk-disclosure.html</loc><lastmod>2026-08-28</lastmod><priority>0.3</priority></url>
-  <url><loc>https://not-financial-advice-vjm.com/pj/terms.html</loc><lastmod>2026-08-28</lastmod><priority>0.3</priority></url>
-  <url><loc>https://not-financial-advice-vjm.com/pj/privacy.html</loc><lastmod>2026-08-28</lastmod><priority>0.3</priority></url>
+  <url><loc>https://not-financial-advice-vjm.com/</loc><lastmod>2026-08-31</lastmod><priority>1.0</priority></url>
+  <url><loc>https://not-financial-advice-vjm.com/stock-breakdown</loc><lastmod>2026-08-31</lastmod><priority>0.9</priority></url>
+  <url><loc>https://not-financial-advice-vjm.com/futures-dissection</loc><lastmod>2026-08-31</lastmod><priority>0.9</priority></url>
+  <url><loc>https://not-financial-advice-vjm.com/psychology-enhancer</loc><lastmod>2026-08-31</lastmod><priority>0.9</priority></url>
+  <url><loc>https://not-financial-advice-vjm.com/options-lab</loc><lastmod>2026-08-31</lastmod><priority>0.9</priority></url>
+  <url><loc>https://not-financial-advice-vjm.com/premarket</loc><lastmod>2026-08-31</lastmod><priority>0.7</priority></url>
+  <url><loc>https://not-financial-advice-vjm.com/forex-calendar</loc><lastmod>2026-08-31</lastmod><priority>0.7</priority></url>
+  <url><loc>https://not-financial-advice-vjm.com/prop-firms</loc><lastmod>2026-08-31</lastmod><priority>0.7</priority></url>
+  <url><loc>https://not-financial-advice-vjm.com/risk-disclosure</loc><lastmod>2026-08-31</lastmod><priority>0.3</priority></url>
+  <url><loc>https://not-financial-advice-vjm.com/terms</loc><lastmod>2026-08-31</lastmod><priority>0.3</priority></url>
+  <url><loc>https://not-financial-advice-vjm.com/privacy</loc><lastmod>2026-08-31</lastmod><priority>0.3</priority></url>
 </urlset>

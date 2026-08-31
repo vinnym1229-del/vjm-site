@@ -5,11 +5,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Premium Guidance | PJ Trades x St</title>
 <meta name="description" content="Sign in to PJ Trades x St premium guidance. Free Start Here preview, member-only modules, quizzes, stock lab links, and trading checklists.">
-<meta name="robots" content="index, follow">
-<link rel="canonical" href="https://not-financial-advice-vjm.com/pj/premium-guidance.html">
-<meta property="og:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
+<!-- Member sign-in / gated guidance: noindex,nofollow regardless of the
+     site-wide indexing decision. -->
+<meta name="robots" content="noindex,nofollow">
+<!-- Canonical origin: https://not-financial-advice-vjm.com, at the ROOT (no /pj/
+     prefix). Canonical, og:url and twitter:url below all use this one origin
+     and path shape. This is a member sign-in page and stays noindex.
+     NOTE: CNAME currently says not-financial-advice.com, which disagrees with
+     this origin; the owner must reconcile DNS/host with these tags before
+     indexing is enabled anywhere on the site. -->
+<link rel="canonical" href="https://not-financial-advice-vjm.com/premium-guidance">
+<meta property="og:url" content="https://not-financial-advice-vjm.com/premium-guidance">
+<meta property="og:image" content="https://not-financial-advice-vjm.com/assets/pj-banner.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
+<meta name="twitter:url" content="https://not-financial-advice-vjm.com/premium-guidance">
+<meta name="twitter:image" content="https://not-financial-advice-vjm.com/assets/pj-banner.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=IBM+Plex+Sans:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -82,6 +92,8 @@ body.light-mode #analyst-metrics>div{background:#ffffff!important;border-color:v
 body.light-mode footer{background:#ffffff!important;border-top-color:var(--bdr)}
 </style>
 <script src="assets/theme.js"></script>
+<script>window.vjmTrackQueue = window.vjmTrackQueue || [];
+window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueue.push([n, p || {}, Date.now()]); } catch (e) {} };</script>
 </head>
 <body>
 <a class="skip-link" href="#signin">Skip to sign in</a>
@@ -148,21 +160,28 @@ body.light-mode footer{background:#ffffff!important;border-top-color:var(--bdr)}
     <div class="disclaimer">Educational content only. Trading options, futures, stocks, forex, and crypto involves risk. Results shown anywhere on this site are examples, not guarantees or typical outcomes. <a href="risk-disclosure.html" style="color:var(--gold-ink);">Read the full risk disclosure</a>.</div>
   </section>
 
-  <!-- Lesson Assistant: verified members only. Server-side (functions/api/assistant.js)
-       restricts every answer to the LESSON TEXT collected from #free-preview, so the
-       assistant cannot invent material outside the lesson. -->
-  <!-- TODO: owner to point lessonText() at each paid module's text as modules ship;
-       the endpoint clamps lesson text to 6000 chars per request. -->
+  <!-- Lesson Assistant: verified members only. The browser NEVER sends lesson
+       text — it names a lesson id + immutable version, and the server
+       (functions/api/assistant.js) looks the lesson up in its own corpus,
+       checks the member's tier with authorizeResource(), answers only from
+       that text, and cites the section it used. -->
+  <!-- Coverage is deliberately stated in the UI: only the lessons the server
+       has wired appear in the picker below (Foundational level of each track
+       today). TODO(owner): as LESSON_LIBRARY grows to levels 2-4, this picker
+       picks them up automatically — no page edit needed. -->
   <section class="preview" id="lesson-companion" aria-labelledby="lesson-title" hidden>
     <h2 id="lesson-title">Lesson <span class="gold">Assistant</span></h2>
-    <p>Ask questions about the guidance material. Answers come strictly from this page's foundation lessons — if something isn't covered there, the assistant says so instead of guessing.</p>
+    <p>Pick a lesson, then ask about it. The answer is built only from that lesson's text on the server and names the section it came from — if the lesson doesn't cover it, the assistant says so instead of guessing.</p>
     <div style="background:rgba(22,22,24,.72);border:1px solid var(--bdr);border-radius:14px;padding:16px;">
+      <label for="lesson-select" style="display:block;font-size:.72rem;color:var(--m2);text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:6px;">Lesson</label>
+      <select class="field" id="lesson-select" style="margin:0 0 6px;width:100%;"><option value="">Loading your lessons…</option></select>
+      <p id="lesson-coverage" style="color:var(--muted);font-size:.72rem;margin:0 0 12px;"></p>
       <div id="lesson-log" aria-live="polite" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:12px;"></div>
       <form id="lesson-form" style="display:flex;gap:8px;flex-wrap:wrap;">
         <input class="field" id="lesson-question" type="text" maxlength="500" placeholder="Ask about this lesson…" aria-label="Your lesson question" style="margin:0;flex:1;min-width:200px;">
         <button class="btn btn-gold" type="submit" id="lesson-ask">Ask</button>
       </form>
-      <p style="color:var(--muted);font-size:.72rem;margin-top:10px;">Answers are generated only from this lesson's text. Educational content — not financial advice.</p>
+      <p style="color:var(--muted);font-size:.72rem;margin-top:10px;">Answers are generated only from the selected lesson's text. Educational content — not financial advice.</p>
     </div>
   </section>
 
@@ -208,25 +227,19 @@ function showVerifiedCard(){
   if(card){
     card.removeAttribute('aria-labelledby');
     card.setAttribute('aria-label','Premium verified');
-    card.innerHTML='<h2>✅ Premium Verified</h2><p>Your membership is active. Everything below is unlocked with this session — the same code works on every course and lab.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;"><a class="btn btn-gold" href="futures-dissection.html" style="width:100%;">Futures Dissection</a><a class="btn btn-gold" href="stock-breakdown.html" style="width:100%;">Stock Breakdown</a><a class="btn btn-gold" href="options-lab.html" style="width:100%;">Options Lab</a><a class="btn btn-gold" href="psychology-enhancer.html" style="width:100%;">Psychology</a><a class="btn btn-ghost" href="stock-lab.html" style="width:100%;">Stock Lab</a><a class="btn btn-ghost" href="research-engine.html" style="width:100%;">Research Engine</a></div><p style="font-size:.82rem;color:var(--m2);">Live callouts and daily insights run in Discord — questions to <strong>St1101</strong>.</p><button class="btn btn-ghost" type="button" onclick="signOutGuidance()">Sign Out</button>';
+    card.innerHTML='<h2>✅ Premium Verified</h2><p>Your membership is active. What it opens depends on your plan: <b>Futures Core ($100/mo)</b> covers Futures Dissection and Psychology Enhancer, and <b>Complete ($129/mo)</b> adds Stock Breakdown, Options Lab and the premium research tools. A course below that still shows a lock is one your plan does not include.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;"><a class="btn btn-gold" href="futures-dissection.html" style="width:100%;">Futures Dissection</a><a class="btn btn-gold" href="stock-breakdown.html" style="width:100%;">Stock Breakdown</a><a class="btn btn-gold" href="options-lab.html" style="width:100%;">Options Lab</a><a class="btn btn-gold" href="psychology-enhancer.html" style="width:100%;">Psychology</a><a class="btn btn-ghost" href="stock-lab.html" style="width:100%;">Stock Lab</a><a class="btn btn-ghost" href="research-engine.html" style="width:100%;">Research Engine</a></div><p style="font-size:.82rem;color:var(--m2);">On Futures Core and want Stock Breakdown, Options Lab and the research tools? Complete is $129/mo, $29/mo more than Futures Core — <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&amp;utm_medium=site&amp;utm_content=guidance-core-to-complete" target="_blank" rel="noopener" data-vjm-event="plan_cta" data-vjm-plan="complete" data-vjm-location="premium_guidance_verified" style="color:var(--gold-ink);">upgrade on Whop</a>.</p><p style="font-size:.82rem;color:var(--m2);">Live callouts and daily insights run in Discord — questions to <strong>St1101</strong>.</p><button class="btn btn-ghost" type="button" onclick="signOutGuidance()">Sign Out</button>';
   }
   showLessonCompanion();
   msg('',true);
 }
 // ─── Lesson Assistant (verified members only) ───
-// Every answer is grounded server-side on the lesson text below; the model is
-// instructed to refuse anything the lesson does not cover.
-function lessonText(){
-  const parts=[];
-  const intro=document.querySelector('#free-preview > p');
-  if(intro) parts.push('OVERVIEW: '+intro.textContent.trim());
-  document.querySelectorAll('#free-preview .step').forEach((s,i)=>{
-    const h=s.querySelector('h3'), p=s.querySelector('p');
-    if(h) parts.push((i+1)+'. '+h.textContent.trim());
-    if(p) parts.push(p.textContent.trim());
-  });
-  return parts.join('\n').slice(0,6000);
-}
+// The browser never sends lesson text. It asks the server which lessons this
+// member is entitled to (GET /api/assistant), then sends only the chosen
+// lesson's id + immutable version with the question. The server looks the
+// lesson up itself, re-checks entitlement, answers from that text alone and
+// names the section it used — so the picker can only ever list lessons this
+// membership actually includes, and only lessons the server has wired.
+let lessonCatalogue=[];
 function lessonRow(text, kind){
   const log=document.getElementById('lesson-log');
   const d=document.createElement('div');
@@ -239,23 +252,76 @@ function lessonRow(text, kind){
   log.scrollTop=log.scrollHeight;
   return d;
 }
+function lessonCite(heading){
+  const log=document.getElementById('lesson-log');
+  const d=document.createElement('div');
+  d.style.cssText='font-size:.7rem;color:var(--muted);max-width:88%;padding:0 4px;';
+  d.textContent='From this lesson’s section: '+heading;
+  log.appendChild(d);
+  log.scrollTop=log.scrollHeight;
+}
+async function loadLessonCatalogue(){
+  const sel=document.getElementById('lesson-select');
+  const cov=document.getElementById('lesson-coverage');
+  if(!sel) return;
+  try{
+    const res=await fetch('/api/assistant',{credentials:'same-origin'});
+    const data=await res.json().catch(()=>({ok:false}));
+    if(!res.ok||!data.ok||!Array.isArray(data.lessons)||!data.lessons.length){
+      sel.innerHTML='';
+      const o=document.createElement('option');o.value='';
+      o.textContent=res.status===401?'Sign in to use the lesson assistant':'No lessons available yet';
+      sel.appendChild(o);sel.disabled=true;
+      document.getElementById('lesson-ask').disabled=true;
+      if(cov) cov.textContent=(data&&data.error)||'The lesson assistant has no lessons wired for your membership yet.';
+      return;
+    }
+    lessonCatalogue=data.lessons;
+    sel.innerHTML='';sel.disabled=false;
+    lessonCatalogue.forEach(l=>{
+      const o=document.createElement('option');
+      o.value=l.id;
+      o.textContent=l.course+' — '+l.title;
+      sel.appendChild(o);
+    });
+    // Say plainly how much of the curriculum is actually wired, so the UI
+    // never implies coverage the server does not have.
+    if(cov) cov.textContent=(data.coverage&&data.coverage.note?data.coverage.note+' ':'')
+      +lessonCatalogue.length+' lesson'+(lessonCatalogue.length===1?'':'s')+' available to your membership.';
+  }catch(err){
+    if(cov) cov.textContent='Could not load your lessons — reload the page.';
+  }
+}
 let lessonBusy=false;
 async function askLesson(event){
   event.preventDefault();
   if(lessonBusy) return;
   const input=document.getElementById('lesson-question');
+  const sel=document.getElementById('lesson-select');
   const q=(input.value||'').trim();
   if(!q) return;
+  const lesson=lessonCatalogue.find(l=>l.id===(sel&&sel.value));
+  if(!lesson){lessonRow('Pick a lesson first.','a');return;}
   lessonBusy=true;
   document.getElementById('lesson-ask').disabled=true;
   input.value='';
   lessonRow(q,'q');
   const thinking=lessonRow('Checking the lesson…','a');
   try{
-    const res=await fetch('/api/assistant',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({question:q,lessonText:lessonText()})});
+    const res=await fetch('/api/assistant',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({question:q,lessonId:lesson.id,lessonVersion:lesson.version})});
     const data=await res.json().catch(()=>({ok:false}));
     thinking.remove();
-    lessonRow(data.ok&&data.narrative ? data.narrative : (data.error||'Assistant unavailable right now — try again shortly.'),'a');
+    if(res.status===409){
+      lessonRow('That lesson was updated — reloading the lesson list. Ask again.','a');
+      await loadLessonCatalogue();
+    }else if(data.ok&&data.narrative){
+      lessonRow(data.narrative,'a');
+      if(data.citation&&data.citation.heading) lessonCite(data.citation.heading);
+    }else if(data.ok&&data.message){
+      lessonRow(data.message,'a');
+    }else{
+      lessonRow(data.error||'Assistant unavailable right now — try again shortly.','a');
+    }
   }catch(err){
     thinking.remove();
     lessonRow('Network hiccup — try again in a moment.','a');
@@ -268,6 +334,7 @@ document.getElementById('lesson-form').addEventListener('submit',askLesson);
 function showLessonCompanion(){
   const s=document.getElementById('lesson-companion');
   if(s) s.hidden=false;
+  loadLessonCatalogue();
   const a=document.getElementById('market-analyst');
   if(a) a.hidden=false;
 }
@@ -408,6 +475,7 @@ async function handleGoogleCredential(response){
 }
 </script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script src="assets/funnel.js" defer></script>
 <script src="assets/chatbot.js" defer></script>
 <script src="assets/lightning-bg.js" defer></script>
 </body>

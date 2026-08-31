@@ -3,8 +3,15 @@
 // Public membership lookup used by the homepage status widget.
 // Hardened: rate limited, generic responses that do not reveal whether a
 // handle exists on the sheet vs is inactive, no upstream error leakage.
+//
+// D1 is the authority (migration 0006). The owner's Google Sheet is a
+// human-maintained mirror that lags behind cancellations, so a whop_codes row
+// that says revoked or expired wins outright and the bridge is never asked.
+// The Sheet is consulted only when D1 has nothing on this handle — a member
+// who predates whop_codes — and then only to say "yes".
 
 import { checkRateLimit } from './_lib/http.js';
+import { entitlementRowState } from './_lib/session.js';
 
 const GENERIC = 'Membership status for this Discord handle is not currently active.';
 
@@ -30,7 +37,9 @@ async function handle(context) {
     return json({ ok: false, error: 'Too many lookups. Wait a minute and try again.' }, 429);
   }
 
-  if (!env.MEMBERS_STATUS_URL && !(env.MEMBERS_BRIDGE_URL && env.MEMBERS_BRIDGE_SECRET)) {
+  // Configured means "at least one authority is reachable": D1, or the Sheet
+  // bridge. A D1-only deployment is the end state once the Sheet is retired.
+  if (!env.RESEARCH_DB && !env.MEMBERS_STATUS_URL && !(env.MEMBERS_BRIDGE_URL && env.MEMBERS_BRIDGE_SECRET)) {
     return json({ ok: false, error: 'Status lookup is not configured.' }, 503);
   }
 
@@ -52,6 +61,36 @@ async function handle(context) {
 }
 
 async function lookupActive(env, handle) {
+  const d1 = await lookupD1(env, handle);
+  // A definite answer from D1 — live OR dead — ends the lookup. Falling
+  // through to the Sheet on a "dead" answer is exactly how a canceled member
+  // kept showing as active.
+  if (d1 !== null) return d1;
+  return lookupViaSheet(env, handle);
+}
+
+// Returns true/false when D1 has a record for this handle, or null when it
+// has nothing to say (no binding, no rows, or an outage — an outage must not
+// be read as "not a member", so it defers to the bridge instead).
+async function lookupD1(env, handle) {
+  if (!env.RESEARCH_DB) return null;
+  let rows;
+  try {
+    rows = await env.RESEARCH_DB.prepare(
+      `SELECT status, expires_at, session_epoch FROM whop_codes
+       WHERE lower(discord) = ?1 ORDER BY created_at DESC LIMIT 10`
+    ).bind(handle).all();
+  } catch {
+    return null;
+  }
+  const results = rows && Array.isArray(rows.results) ? rows.results : [];
+  if (results.length === 0) return null;
+  const now = Date.now();
+  return results.some((row) => entitlementRowState(row, now).live);
+}
+
+async function lookupViaSheet(env, handle) {
+  if (!env.MEMBERS_STATUS_URL && !(env.MEMBERS_BRIDGE_URL && env.MEMBERS_BRIDGE_SECRET)) return false;
   if (env.MEMBERS_BRIDGE_URL && env.MEMBERS_BRIDGE_SECRET) {
     const record = await bridgeLookup(env, { type: 'discord', value: handle });
     if (!record) return false;

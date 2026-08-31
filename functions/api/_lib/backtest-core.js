@@ -11,6 +11,53 @@
 
 export const SAME_TOUCH_POLICY = 'conservative (stop assumed first when both touched in one bar)';
 
+// ─── FROZEN TIMING CONVENTION ──────────────────────────────────────────────
+// The single source of truth for WHEN a study is allowed to know something,
+// when it may act, which bar fills it, and what the resulting numbers do and
+// do not include. functions/api/research-engine.js imports this object and
+// stamps it onto every study result it returns; docs/research-engine-setup.md
+// restates it in prose. Changing any clause here changes the meaning of every
+// published statistic, so treat it as a versioned contract, not a comment.
+//
+// Why it exists: an audit found two look-ahead defects in the shipped studies.
+//   1. Fibonacci pivots are identified by comparing a bar with the N bars on
+//      BOTH sides, so a pivot is not knowable until N bars later -- yet
+//      measurement started at the pivot bar itself.
+//   2. Resampled 5m/15m/60m bars are timestamped at the group's OPEN while
+//      carrying the group's completed high/low/close -- yet studies acted at
+//      that opening timestamp, i.e. up to 59 minutes before the candle that
+//      defines the signal had finished forming.
+// Both let a study transact on information that did not exist yet, which
+// inflates hit rates, fill rates and continuation rates. Any new study that
+// violates a clause below is reintroducing that bug.
+//
+// The four clauses, and how each engine satisfies them:
+//   OBSERVABLE  A signal exists only at the close of the last bar required to
+//               define it. Pivot -> confirmation bar (pivot index + N).
+//               Grouped bar -> the group's end (_closeTime), never its `t`.
+//               Indicator -> value at index i uses indices <= i only.
+//   ACTIONABLE  No transaction before the first bar opening at or after that
+//               instant. This engine enters at the NEXT bar's open after the
+//               signal bar; the intraday studies enter at the close of the bar
+//               that made the signal observable.
+//   FILL        The entry price is a price that still lay in the future when
+//               the signal completed: next bar's open here; the observing
+//               bar's close (or the resting fib level) in research-engine.js.
+//   OUTCOME     Excursions and exits are scanned strictly from the entry bar
+//               forward. Bars that printed before entry are never scored.
+// Ambiguity that bar data cannot resolve is always resolved AGAINST the study
+// (SAME_TOUCH_POLICY above; intrabar ordering is never assumed favourable).
+export const TIMING_CONVENTION = Object.freeze({
+  version: '2026-08-31',
+  observable: 'A signal is observable only at the close of the last bar needed to define it: a pivot needs its confirmation bars, a grouped 5m/15m/60m bar needs its whole group (not its opening timestamp).',
+  actionable: 'The study may transact no earlier than the first bar that opens at or after that observation instant.',
+  fill: 'Entry price is the close of the bar that made the signal observable (or the level itself for a fib touch); no bar prior to it can supply an entry.',
+  outcome: 'MFE, MAE, continuation, reversal and fill are measured strictly after the entry bar. Bars that printed before the entry existed are never scored.',
+  ambiguity: SAME_TOUCH_POLICY,
+  costs: 'Gross of commissions, fees, financing, borrow, spread and slippage. No fill model, no queue position, no partial fills.',
+  nature: 'Hypothetical descriptive frequencies from historical bars. Not achieved results, not a forecast, not a recommendation.',
+});
+
 // ─── Indicators (all causal: value at index i uses indices ≤ i) ───────────
 
 export function sma(values, n) {

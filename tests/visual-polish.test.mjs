@@ -55,11 +55,21 @@ test('floating market assistant is wired into member-facing pages', () => {
   }
 });
 
-test('lesson companion answers only from lesson text via assistant endpoint', () => {
+test('lesson companion is bound to a server-held lesson, not browser text', () => {
+  const assistant = read('functions/api/assistant.js');
   assert.match(guidance, /id="lesson-companion"/);
   assert.match(guidance, /hidden>/, 'lesson companion must be hidden until premium is verified');
-  assert.match(guidance, /lessonText:/, 'must send lessonText so the server grounds answers on it');
-  assert.match(read('functions/api/assistant.js'), /Answer ONLY using the LESSON TEXT/);
+  // The page names a lesson; it never ships lesson prose to the endpoint.
+  assert.match(guidance, /lessonId:\s*lesson\.id/, 'must send a lesson id so the server does the lookup');
+  assert.match(guidance, /lessonVersion:\s*lesson\.version/, 'must pin the immutable lesson version');
+  assert.doesNotMatch(guidance, /lessonText\s*[:(]/, 'browser must never send lesson text — that is the LLM-proxy hole');
+  assert.match(assistant, /Answer ONLY using the LESSON TEXT/);
+  // Entitlement is enforced server-side with the shared tier table.
+  assert.match(assistant, /authorizeResource\(session, lesson\.resource, env\)/);
+  // Coverage is stated rather than implied: the picker lists what is wired.
+  assert.match(guidance, /id="lesson-select"/);
+  assert.match(guidance, /id="lesson-coverage"/);
+  assert.match(assistant, /coverage:/);
   // Companion must stay hidden until a verified session exists.
   assert.match(guidance, /function showVerifiedCard\(\)[\s\S]*?showLessonCompanion\(\)/);
 });

@@ -20,6 +20,38 @@
   let sendBtn = null;
   let busy = false;
 
+  // Lesson mode. The widget never holds lesson TEXT: it holds the id +
+  // immutable version the server handed it, and the server does the lookup,
+  // the entitlement check and the grounding. `null` = normal market mode.
+  let lesson = null;
+  let lessonsForPage = null; // null = not fetched yet, [] = none for this page
+
+  function pagePaths() {
+    const p = location.pathname.replace(/\/index\.html$/, '/');
+    const set = [p];
+    if (p.endsWith('.html')) set.push(p.slice(0, -5));
+    else if (p !== '/') set.push(p + '.html');
+    return set;
+  }
+
+  // Lessons this member is entitled to AND that belong to the page being read.
+  // A 401 (not signed in) or an empty list simply means no lesson lane — the
+  // widget must not advertise a companion it cannot ground.
+  async function fetchLessonsForPage() {
+    if (lessonsForPage) return lessonsForPage;
+    try {
+      const res = await fetch('/api/assistant', { credentials: 'same-origin' });
+      const data = await res.json().catch(() => ({ ok: false }));
+      const here = pagePaths();
+      lessonsForPage = (res.ok && data.ok && Array.isArray(data.lessons))
+        ? data.lessons.filter((l) => here.includes(l.resource))
+        : [];
+    } catch {
+      lessonsForPage = [];
+    }
+    return lessonsForPage;
+  }
+
   function ensurePanel() {
     if (panel) return;
     panel = el('div', 'vjm-chat-panel');
@@ -81,6 +113,44 @@
     row.append(marketBtn, supportBtn);
     log.append(row);
     log.scrollTop = log.scrollHeight;
+
+    // Third lane, offered only when the server confirms this member may ask
+    // about lessons on THIS page. Nothing here is decided client-side.
+    fetchLessonsForPage().then((lessons) => {
+      if (!lessons.length || !row.isConnected) return;
+      const lessonBtn = el('button', 'vjm-topic-btn', '\uD83D\uDCDA Ask about a lesson on this page');
+      lessonBtn.type = 'button';
+      lessonBtn.addEventListener('click', () => {
+        row.remove();
+        addLessonPicker(lessons);
+      });
+      row.append(lessonBtn);
+    });
+  }
+
+  function addLessonPicker(lessons) {
+    addMsg('Pick the lesson you are reading. Answers come only from that lesson\u2019s text, and name the section they came from.', 'bot');
+    const wrap = el('div', 'vjm-topic-row');
+    for (const l of lessons) {
+      const b = el('button', 'vjm-topic-btn', l.title);
+      b.type = 'button';
+      b.addEventListener('click', () => {
+        lesson = l;
+        wrap.remove();
+        addMsg('Lesson set: ' + l.title + '. Ask away \u2014 if the lesson does not cover it, I will say so.', 'bot');
+        input.placeholder = 'Ask about this lesson\u2026';
+        input.focus();
+      });
+      wrap.append(b);
+    }
+    log.append(wrap);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function addCitation(heading) {
+    const d = el('div', 'vjm-cite', 'From this lesson\u2019s section: ' + heading);
+    log.append(d);
+    log.scrollTop = log.scrollHeight;
   }
 
   function addSupportLinks() {
@@ -120,24 +190,36 @@
     sendBtn.disabled = true;
     input.value = '';
     addMsg(q, 'user');
-    const thinking = addMsg('Checking live data…', 'bot thinking');
+    const thinking = addMsg(lesson ? 'Checking the lesson\u2026' : 'Checking live data\u2026', 'bot thinking');
 
     try {
+      const payload = lesson
+        ? { question: q, lessonId: lesson.id, lessonVersion: lesson.version }
+        : { question: q };
       const res = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ question: q }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json().catch(() => ({ ok: false }));
       thinking.remove();
-      if (!res.ok || !data.ok) {
+      if (res.status === 409 && lesson) {
+        // The lesson text changed under us; drop the stale copy and re-fetch.
+        lesson = null;
+        lessonsForPage = null;
+        addMsg('That lesson was updated \u2014 reopen the lesson list and ask again.', 'bot');
+      } else if (!res.ok || !data.ok) {
         addMsg(data.error || 'The assistant is unavailable right now.', 'bot');
       } else if (data.narrative) {
         addMsg(data.narrative, 'bot');
+        if (data.citation && data.citation.heading) addCitation(data.citation.heading);
       } else if (data.dataBlock) {
         addMsg(data.message || 'Narrative engine is offline — live data:', 'bot');
         addMsg(data.dataBlock.trim(), 'bot data');
+      } else if (data.message) {
+        // Lesson mode refusal: the lesson does not support the question.
+        addMsg(data.message, 'bot');
       }
     } catch {
       thinking.remove();
@@ -199,6 +281,7 @@
 .vjm-topic-btn{background:#1d1d2033;border:1px solid #2a2a2e;color:#ededee;border-radius:12px;padding:10px 13px;
  font-size:.85rem;font-family:'DM Sans',sans-serif;text-align:left;cursor:pointer;transition:border-color .15s ease;}
 .vjm-topic-btn:hover,.vjm-topic-btn:focus-visible{border-color:var(--vjm-red,#d14343);outline:none;}
+.vjm-cite{align-self:flex-start;font-size:.7rem;color:#8a8a91;padding:0 4px;max-width:88%;font-family:'DM Sans',sans-serif;}
 .vjm-support-links{display:flex;flex-direction:column;gap:6px;padding:8px 13px;}
 .vjm-support-links a{color:#d9d9dd;text-decoration:none;font-size:.84rem;font-weight:700;}
 .vjm-support-links a:hover,.vjm-support-links a:focus-visible{text-decoration:underline;}

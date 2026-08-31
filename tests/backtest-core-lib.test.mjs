@@ -21,6 +21,7 @@ import assert from 'node:assert/strict';
 import {
   sma, atr, rsi, TRIGGERS, simulateEvent, runEventStudy,
   wilsonInterval, summarizeReturns, monteCarloPaths,
+  TIMING_CONVENTION, SAME_TOUCH_POLICY,
 } from '../functions/api/_lib/backtest-core.js';
 
 function bar(t, o, h, l, c, v = 1000) {
@@ -189,3 +190,63 @@ function bar(t, o, h, l, c, v = 1000) {
 }
 
 console.log('# VJM backtest-core (Edge Lab) library tests passed.');
+
+// ─── The frozen timing convention ─────────────────────────────────────────
+// This module is where the methodology is pinned down; research-engine.js
+// imports TIMING_CONVENTION and stamps it onto every study it publishes. An
+// audit found two look-ahead defects in those studies (pivots measured from
+// the pivot bar, grouped bars acted on at their opening timestamp), so the
+// convention is a contract: it must stay frozen, stay versioned, and keep
+// saying that these results are hypothetical and gross.
+{
+  assert.ok(TIMING_CONVENTION.version, 'the convention must be versioned so downstream can detect a change');
+  assert.equal(Object.isFrozen(TIMING_CONVENTION), true, 'a study must not be able to redefine the convention at runtime');
+  assert.equal(TIMING_CONVENTION.ambiguity, SAME_TOUCH_POLICY, 'unresolvable intrabar order stays resolved against the study');
+  for (const key of ['observable', 'actionable', 'fill', 'outcome', 'costs', 'nature']) {
+    assert.equal(typeof TIMING_CONVENTION[key], 'string', `the convention must state its ${key} clause`);
+    assert.ok(TIMING_CONVENTION[key].length > 20, `the ${key} clause must actually say something`);
+  }
+  assert.match(TIMING_CONVENTION.costs, /slippage/i, 'the convention must disclose that no cost model exists');
+  assert.match(TIMING_CONVENTION.nature, /[Hh]ypothetical/, 'the convention must state results are hypothetical');
+}
+
+// ─── simulateEvent obeys the convention: nothing before the entry bar ──────
+// The signal bar itself carries an enormous favourable spike. It printed
+// BEFORE the entry (next bar's open) existed, so none of it may show up as
+// excursion, and it must not settle a target. This is the daily-bar form of
+// the same bug fixed in the intraday studies.
+{
+  const bars = [
+    bar('d0', 100, 130, 99, 100),   // signal bar: +30% spike, already history
+    bar('d1', 100, 101, 99, 100),   // entry at 100
+    bar('d2', 100, 101, 98, 99),
+    bar('d3', 99, 100, 97, 98),
+  ];
+  const res = simulateEvent(bars, 0, { holdDays: 3, direction: 'long', stopR: 0, targetR: 0, atrValue: 0 });
+  assert.equal(res.status, 'ok');
+  assert.equal(res.entryDate, 'd1', 'entry is the bar AFTER the signal, never the signal bar');
+  assert.equal(res.entryPx, 100);
+  assert.ok(res.mfe <= 1, 'the signal bar’s own 30% spike must not be scored as favourable excursion');
+
+  const withTarget = simulateEvent(bars, 0, {
+    holdDays: 3, direction: 'long', stopR: 2, targetR: 2, atrValue: 5,
+  });
+  assert.notEqual(withTarget.result, 'target', 'a target reachable only on the signal bar must never be filled');
+}
+
+// A trigger may only read bars up to and including the signal bar. gap_up at
+// index i compares i's open with i-1's close and touches nothing later.
+{
+  const bars = [
+    bar('d0', 100, 101, 99, 100),
+    bar('d1', 105, 106, 104, 105),  // +5% gap
+    bar('d2', 105, 106, 104, 105),
+  ];
+  assert.equal(TRIGGERS.gap_up.test(bars, 1, { pct: 1 }), true);
+  const truncated = bars.slice(0, 2);
+  assert.equal(
+    TRIGGERS.gap_up.test(truncated, 1, { pct: 1 }),
+    true,
+    'a trigger must decide from history alone: removing every later bar cannot change it',
+  );
+}

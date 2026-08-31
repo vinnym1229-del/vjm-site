@@ -3,15 +3,42 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="canonical" href="https://not-financial-advice-vjm.com/pj/research-engine.html">
-<meta property="og:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
+<!-- Single canonical origin, root path shape, no /pj/ prefix and no .html
+     alias — the same origin every canonical, og:url and JSON-LD url on the
+     site uses. NOTE: CNAME currently says not-financial-advice.com, which
+     disagrees with this origin; the owner must reconcile DNS with the
+     canonical host before indexing is ever enabled. This page itself stays
+     noindexed regardless — it is a member tool, not a public document. -->
+<link rel="canonical" href="https://not-financial-advice-vjm.com/research-engine">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PJ Trades x St">
+<meta property="og:url" content="https://not-financial-advice-vjm.com/research-engine">
+<meta property="og:title" content="Research Engine | PJ Trades x St">
+<meta property="og:description" content="Private PJ Trades market research engine. Every study result is hypothetical and gross, computed under a published timing convention.">
+<meta property="og:image" content="https://not-financial-advice-vjm.com/assets/pj-banner.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
+<meta name="twitter:url" content="https://not-financial-advice-vjm.com/research-engine">
+<meta name="twitter:image" content="https://not-financial-advice-vjm.com/assets/pj-banner.jpg">
   <title>Research Engine | PJ Trades x St</title>
   <meta name="description" content="Private PJ Trades market research engine for options, stocks, sectors, and biotech. Conditional statistics, Fibonacci studies, gamma exposure, session-pattern testing, and auditable data-source status.">
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" href="assets/logo-nav.jpg">
   <link rel="stylesheet" href="assets/research-engine.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "@id": "https://not-financial-advice-vjm.com/research-engine#app",
+  "url": "https://not-financial-advice-vjm.com/research-engine",
+  "name": "PJ Trades Research Engine",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Web browser",
+  "isAccessibleForFree": false,
+  "description": "Member research tool for conditional price-action, Fibonacci, gamma-exposure and session-pattern studies. Study results are hypothetical and gross of all costs.",
+  "disclaimer": "Hypothetical, gross theoretical results computed from historical bars. No commissions, fees, spread, slippage or fill modelling are applied, so these are not achieved or live-tradable results. Educational only; not financial advice.",
+  "publisher": { "@type": "Organization", "name": "PJ Trades x St", "url": "https://not-financial-advice-vjm.com/" }
+}
+</script>
   <style>
   .links{display:flex;align-items:center;justify-content:center;gap:2px;flex:1;min-width:0}
   .nav .nav-item{position:relative}
@@ -85,7 +112,7 @@
 
   <section class="engine" id="engine" aria-label="PJ Trades Research Engine">
     <div class="toolbar">
-      <div class="toolbar-left"><span class="status-pill"><i class="dot ok"></i><strong>Private session</strong></span><span class="status-pill">As of <strong id="globalAsOf">Not loaded</strong></span><span class="status-pill">Mode <strong id="globalMode">Observed</strong></span></div>
+      <div class="toolbar-left"><span class="status-pill"><i class="dot ok"></i><strong>Private session</strong></span><span class="status-pill">As of <strong id="globalAsOf">Not loaded</strong></span><span class="status-pill">Mode <strong id="globalMode">Observed</strong></span><span class="status-pill basis-pill" id="globalBasisPill">Results <strong id="globalBasis">Not loaded</strong></span></div>
       <div class="toolbar-right"><button class="btn ghost small" id="refreshButton" type="button">Refresh current</button><button class="btn ghost small" id="exportButton" type="button">Export CSV</button><button class="btn ghost small" id="signOutButton" type="button">Sign out</button></div>
     </div>
 
@@ -101,16 +128,20 @@
     <article class="module active" id="module-options" data-module-panel="options">
       <header class="module-head"><div><h2>QQQ/SPY Futures-Style Price Action</h2><p>Overnight, Asia, London, premarket, and RTH structure using QQQ/SPY as a transparent ETF proxy—plus current option-chain Greeks, gamma exposure, contract modeling, and hedge scenarios.</p></div><div class="module-controls"><div class="control"><label for="optionsSymbol">Underlying</label><select class="select" id="optionsSymbol"><option>QQQ</option><option>SPY</option></select></div><div class="control"><label for="intradayDays">PA sample</label><select class="select" id="intradayDays"><option value="5">5 trade days</option><option value="20" selected>20 trade days</option><option value="40">40 trade days</option></select></div><div class="control"><label for="optionsExpiry">Expiry window</label><select class="select" id="optionsExpiry"><option value="7">Next 7 days</option><option value="14">Next 14 days</option><option value="30">Next 30 days</option></select></div><button class="btn small" id="loadOptions" type="button">Run full scan</button></div></header>
       <div class="source-bar"><span><b>Observed:</b> delayed SIP + BOATS QQQ/SPY bars</span><span><b>Proxy:</b> ETF sessions, not CME NQ/ES order flow</span><span><b>Modeled:</b> dealer GEX sign + fixed-Greek slope lab</span><span id="optionsSourceStatus">Waiting to load</span></div>
+      <section class="provenance" id="optionsProvenance" data-provenance="options" aria-label="How these price-action study results were produced">
+        <p class="provenance-head"><span class="provenance-tag" data-provenance-tag>Not loaded</span><span class="provenance-line" data-provenance-line>Run the study to load its provenance. Every number this engine reports is hypothetical and gross of costs.</span></p>
+        <details class="provenance-detail"><summary>Timing convention and what these numbers are not</summary><div class="provenance-body" data-provenance-body><p class="provenance-line">No study has been loaded yet.</p></div></details>
+      </section>
       <div class="kpis">
         <div class="kpi"><span>Spot</span><b id="optSpot">—</b><small>Underlying snapshot</small></div><div class="kpi"><span>Net GEX</span><b id="optNetGex">—</b><small>Modeled dealer sign</small></div><div class="kpi"><span>Gamma flip</span><b id="optGammaFlip">—</b><small>Nearest sign change</small></div><div class="kpi"><span>Contracts analyzed</span><b id="optContracts">—</b><small>Joined snapshot + OI</small></div><div class="kpi caution"><span>Precision</span><b id="optPrecision">—</b><small id="optPrecisionNote">Feed entitlement</small></div>
       </div>
       <div class="grid-2">
         <section class="panel"><div class="panel-head"><div><h3>Gamma exposure by strike</h3><p>Calls positive / puts negative by the selected model convention.</p></div><span class="chip amber">Modeled sign</span></div><div class="chart" id="gexChart"><div class="chart-empty">Run the options scan to load GEX.</div></div></section>
-        <section class="panel"><div class="panel-head"><div><h3>Complete model outcome matrix</h3><p>PDH/PDL, PWH/PWL, prior VAH/VAL, overnight, Asia/London proxies, premarket, BSL/SSL, opening range, initial balance, FVG/IFVG, displacement, SMT, continuation models, VWAP, MFE, and MAE.</p></div><span class="chip">Conditional</span></div><div class="table-wrap"><table><thead><tr><th>Condition</th><th>N</th><th>Continuation</th><th>Reversal</th><th>VWAP hit</th><th>Median min to VWAP</th><th>Median MFE</th><th>Median MAE</th><th>MFE:MAE</th></tr></thead><tbody id="optionsConditionBody"><tr><td colspan="9">Run the full scan to calculate observed outcomes.</td></tr></tbody></table></div><p class="panel-note red">“Asia” and “London” are QQQ/SPY ETF proxies built from BOATS/SIP bars. They are useful for similar price-action testing but are not actual CME NQ/ES volume or order flow.</p></section>
+        <section class="panel"><div class="panel-head"><div><h3>Complete model outcome matrix</h3><p>PDH/PDL, PWH/PWL, prior VAH/VAL, overnight, Asia/London proxies, premarket, BSL/SSL, opening range, initial balance, FVG/IFVG, displacement, SMT, continuation models, VWAP, MFE, and MAE.</p></div><span class="chip">Conditional</span></div><p class="result-basis" data-provenance-short="options">Hypothetical &amp; gross — not loaded</p><div class="table-wrap"><table><thead><tr><th>Condition</th><th>N</th><th>Continuation</th><th>Reversal</th><th>VWAP hit</th><th>Median min to VWAP</th><th>Median MFE</th><th>Median MAE</th><th>MFE:MAE</th></tr></thead><tbody id="optionsConditionBody"><tr><td colspan="9">Run the full scan to calculate observed outcomes.</td></tr></tbody></table></div><p class="panel-note red">“Asia” and “London” are QQQ/SPY ETF proxies built from BOATS/SIP bars. They are useful for similar price-action testing but are not actual CME NQ/ES volume or order flow.</p></section>
       </div>
       <div class="grid-2">
         <section class="panel"><div class="panel-head"><div><h3>Current futures-proxy levels</h3><p>Latest observed session highs/lows and overnight liquidity pivots.</p></div><span class="chip green" id="proxyCoverageChip">Waiting</span></div><div class="table-wrap"><table><thead><tr><th>Level</th><th>Price</th><th>Window</th><th>Feed</th></tr></thead><tbody id="sessionLevelBody"><tr><td colspan="4">Run the full scan to load levels.</td></tr></tbody></table></div><p class="panel-note">Overnight proxy: SIP 6:00–8:00 PM, BOATS 8:00 PM–4:00 AM, SIP 4:00–9:30 AM ET. Free-plan historical results end at least 16 minutes before the request time.</p></section>
-        <section class="panel"><div class="panel-head"><div><h3>Multi-timeframe FVG / IFVG matrix</h3><p>1m, 5m, 15m, and 1H imbalances, retests, fills, continuation, inversion, and timing.</p></div><span class="chip">Observed structure</span></div><div class="table-wrap"><table><thead><tr><th>FVG type</th><th>N</th><th>Retested</th><th>Filled</th><th>Continued</th><th>Became IFVG</th><th>Median retest</th></tr></thead><tbody id="fvgBody"><tr><td colspan="7">Run the full scan to calculate FVG behavior.</td></tr></tbody></table></div></section>
+        <section class="panel"><div class="panel-head"><div><h3>Multi-timeframe FVG / IFVG matrix</h3><p>1m, 5m, 15m, and 1H imbalances, retests, fills, continuation, inversion, and timing.</p></div><span class="chip">Observed structure</span></div><p class="result-basis" data-provenance-short="options">Hypothetical &amp; gross — not loaded</p><div class="table-wrap"><table><thead><tr><th>FVG type</th><th>N</th><th>Retested</th><th>Filled</th><th>Continued</th><th>Became IFVG</th><th>Median retest</th></tr></thead><tbody id="fvgBody"><tr><td colspan="7">Run the full scan to calculate FVG behavior.</td></tr></tbody></table></div></section>
       </div>
       <section class="panel"><div class="panel-head"><div><h3>Interactive contract slope & hedge lab</h3><p>Transparent delta + gamma + theta + vega approximation. Adjust the scenario and inspect how contract profile and hedge size change the path.</p></div><span class="chip amber">Modeled, not observed</span></div>
         <div class="lab-inputs">
@@ -118,14 +149,18 @@
         </div>
         <div class="profile-grid" id="slopeProfiles"></div><div class="formula" id="hedgeSummary" aria-live="polite"></div><div class="chart" id="slopeChart"></div><div class="formula">Synthetic profile estimate: premium(t) = max(0.01, premium₀ + delta·ΔS + ½·gamma·ΔS² + theta·minutes/390 + vega·IV-point change). Greeks are held constant; this is a scenario comparison, not a contract quote.</div>
       </section>
-      <section class="panel"><div class="panel-head"><div><h3>Session-sweep timing heatmap</h3><p>Observed occurrence count and conditional continuation rate before 10:00, 10:30, 11:00, and across full RTH.</p></div></div><div class="heatmap" id="timingHeatmap"><div class="chart-empty">Run the full scan to calculate session timing.</div></div></section>
+      <section class="panel"><div class="panel-head"><div><h3>Session-sweep timing heatmap</h3><p>Observed occurrence count and conditional continuation rate before 10:00, 10:30, 11:00, and across full RTH.</p></div></div><p class="result-basis" data-provenance-short="options">Hypothetical &amp; gross — not loaded</p><div class="heatmap" id="timingHeatmap"><div class="chart-empty">Run the full scan to calculate session timing.</div></div></section>
     </article>
 
     <article class="module" id="module-stocks" data-module-panel="stocks">
       <header class="module-head"><div><h2>Stock Swing Lab</h2><p>Daily and weekly swing retracements, Fibonacci-touch outcomes, prior-extreme fills, new highs, timing, MFE, MAE, ATR, and volume context.</p></div><div class="module-controls"><div class="control"><label for="stockSymbol">Ticker</label><input class="field" id="stockSymbol" value="NVDA" maxlength="8"></div><div class="control"><label for="stockTimeframe">Timeframe</label><select class="select" id="stockTimeframe"><option value="combined">Daily + weekly</option><option value="daily">Daily only</option><option value="weekly">Weekly only</option></select></div><div class="control"><label for="stockLookback">Lookback</label><select class="select" id="stockLookback"><option value="365">1 year</option><option value="1095">3 years</option><option value="2190">6 years</option></select></div><div class="control"><label for="stockHorizon">Outcome horizon</label><select class="select" id="stockHorizon"><option value="20">20 sessions</option><option value="40">40 sessions</option><option value="60">60 sessions</option></select></div><button class="btn small" id="loadStock" type="button">Run fib study</button></div></header>
       <div class="source-bar"><span><b>Source:</b> Alpaca adjusted daily IEX bars</span><span><b>Definition:</b> visible pivot window + explicit outcome horizon</span><span id="stockSourceStatus">Waiting to load</span></div>
+      <section class="provenance" id="stocksProvenance" data-provenance="stocks" aria-label="How these Fibonacci study results were produced">
+        <p class="provenance-head"><span class="provenance-tag" data-provenance-tag>Not loaded</span><span class="provenance-line" data-provenance-line>Run the study to load its provenance. Every number this engine reports is hypothetical and gross of costs.</span></p>
+        <details class="provenance-detail"><summary>Timing convention and what these numbers are not</summary><div class="provenance-body" data-provenance-body><p class="provenance-line">No study has been loaded yet.</p></div></details>
+      </section>
       <div class="kpis"><div class="kpi"><span>Last price</span><b id="stockPrice">—</b><small id="stockAsOf">As of —</small></div><div class="kpi"><span>20-day return</span><b id="stockReturn20">—</b><small>Adjusted closes</small></div><div class="kpi"><span>ATR 14</span><b id="stockAtr">—</b><small>Percent of close</small></div><div class="kpi"><span>Fib setups</span><b id="stockSetups">—</b><small>Level touches tested</small></div><div class="kpi"><span>Best fill level</span><b id="stockBestFib">—</b><small>Minimum N guardrail</small></div></div>
-      <div class="grid-2"><section class="panel"><div class="panel-head"><div><h3>Fib outcome matrix</h3><p>Touch → prior-high fill → new high within the selected horizon.</p></div></div><div class="table-wrap"><table><thead><tr><th>Level</th><th>Touches</th><th>Fill rate</th><th>New-high rate</th><th>Median days</th><th>Median MFE</th><th>Median MAE</th></tr></thead><tbody id="fibBody"><tr><td colspan="7">Run a study to calculate results.</td></tr></tbody></table></div></section><section class="panel"><div class="panel-head"><div><h3>Fill vs new-high probability</h3><p>Conditional on the retracement level being touched.</p></div></div><div class="chart" id="fibChart"><div class="chart-empty">No study loaded.</div></div></section></div>
+      <div class="grid-2"><section class="panel"><div class="panel-head"><div><h3>Fib outcome matrix</h3><p>Touch → prior-high fill → new high within the selected horizon.</p></div></div><p class="result-basis" data-provenance-short="stocks">Hypothetical &amp; gross — not loaded</p><div class="table-wrap"><table><thead><tr><th>Level</th><th>Touches</th><th>Fill rate</th><th>New-high rate</th><th>Median days</th><th>Median MFE</th><th>Median MAE</th></tr></thead><tbody id="fibBody"><tr><td colspan="7">Run a study to calculate results.</td></tr></tbody></table></div></section><section class="panel"><div class="panel-head"><div><h3>Fill vs new-high probability</h3><p>Conditional on the retracement level being touched.</p></div></div><div class="chart" id="fibChart"><div class="chart-empty">No study loaded.</div></div></section></div>
       <section class="panel"><div class="panel-head"><div><h3>Latest swing map</h3><p>The exact pivot points and price levels used in the current study.</p></div><span class="chip">Auditable</span></div><div class="table-wrap"><table><thead><tr><th>Swing low date</th><th>Swing low</th><th>Swing high date</th><th>Swing high</th><th>38.2%</th><th>50%</th><th>61.8%</th><th>Status</th></tr></thead><tbody id="swingBody"><tr><td colspan="8">Run a study to display the current swing.</td></tr></tbody></table></div></section>
     </article>
 

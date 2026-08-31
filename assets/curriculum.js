@@ -235,6 +235,9 @@
       });
       submitBtn.addEventListener('click', () => {
         let correct = 0;
+        // Missed questions are collected by ORIGINAL index (qi), which is the
+        // authored order — never the shuffled render order.
+        const missed = [];
         questions.forEach((q, qi) => {
           const block = quiz.querySelector(`.quiz-q[data-qi="${qi}"]`);
           if (!block) return;
@@ -249,13 +252,539 @@
           });
           if (explain) explain.classList.add('show');
           if (checked && isCorrectPick(picked, q)) correct++;
+          else {
+            const qtext = block.querySelector('.qtext');
+            missed.push({
+              qi,
+              answered: !!checked,
+              question: (qtext && (qtext.textContent || '').trim()) || `Question ${qi + 1}`,
+              explain: (explain && (explain.textContent || '').trim()) || '',
+            });
+          }
         });
         if (scoreEl) {
           scoreEl.textContent = `Score: ${correct} / ${questions.length}`;
           scoreEl.classList.add('show');
         }
+        // Saving progress and drawing the next step must never be able to
+        // swallow a score the learner already earned.
+        try { onQuizGraded(quiz, { correct, total: questions.length, missed }); } catch { /* ignore */ }
       });
     });
+  }
+
+  // ─── FUNNEL INSTRUMENTATION ───────────────────────────────────────────
+  // assets/funnel.js owns window.vjmTrack(name, props). It may not have
+  // loaded yet, or at all, so every call site is defensive: analytics must
+  // never be able to break a lesson.
+  function track(name, props) {
+    try { if (window.vjmTrack) window.vjmTrack(name, props || {}); } catch { /* ignore */ }
+  }
+
+  // ─── PLANS AND WHICH ONE ACTUALLY CONTAINS THIS PAGE ──────────────────
+  // Mirrors RESOURCE_TIERS in functions/api/_lib/entitlements.js, which is
+  // the authority. This copy grants nothing; it exists so a locked page can
+  // say which plan contains it and what that plan costs, instead of the old
+  // "Futures or Complete" line that was wrong on two of the four courses.
+  const PLANS = {
+    futures_core: {
+      key: 'futures_core', name: 'Futures Core', price: 100,
+      includes: 'Futures Dissection and Psychology Enhancer',
+    },
+    complete: {
+      key: 'complete', name: 'Complete', price: 129,
+      includes: 'everything in Futures Core plus Stock Breakdown, Options Lab and the premium research tools',
+    },
+  };
+  const COURSES = {
+    'futures-dissection': { title: 'Futures Dissection', plan: 'futures_core' },
+    'psychology-enhancer': { title: 'Psychology Enhancer', plan: 'futures_core' },
+    'stock-breakdown': { title: 'Stock Breakdown', plan: 'complete' },
+    'options-lab': { title: 'Options Lab', plan: 'complete' },
+  };
+  // TODO: owner to confirm per-plan Whop checkout URLs. Whop currently lists
+  // one product page for both plans, so every CTA points at that listing and
+  // distinguishes itself with utm_content only. No invented checkout paths.
+  const WHOP_LISTING = 'https://whop.com/pjtradespremium';
+  function whopUrl(utmContent) {
+    return WHOP_LISTING + '?utm_source=pjtrades&utm_medium=site&utm_content=' + encodeURIComponent(utmContent);
+  }
+
+  function pageKey() {
+    try {
+      const last = String(location.pathname || '').split('/').pop() || '';
+      return last.replace(/\.html$/, '');
+    } catch { return ''; }
+  }
+  function pageCourse() {
+    const c = COURSES[pageKey()];
+    return c ? { key: pageKey(), ...c } : null;
+  }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  function money(n) { return '$' + n; }
+
+  // ─── LOCAL PROGRESS (this device only, never a server-side account) ────
+  // localStorage throws outright in some private-browsing modes and inside
+  // embedded webviews, so every read and write is wrapped and a failure just
+  // degrades to "no saved progress" rather than breaking the page.
+  const PROGRESS_KEY = 'vjm-progress-v1';
+  function storage() {
+    try {
+      const s = window.localStorage;
+      if (!s) return null;
+      const probe = '__vjm_probe';
+      s.setItem(probe, '1');
+      s.removeItem(probe);
+      return s;
+    } catch { return null; }
+  }
+  function readAllProgress() {
+    const s = storage();
+    if (!s) return {};
+    try {
+      const raw = s.getItem(PROGRESS_KEY);
+      const data = raw ? JSON.parse(raw) : {};
+      return data && typeof data === 'object' && !Array.isArray(data) ? data : {};
+    } catch { return {}; }
+  }
+  function writeAllProgress(data) {
+    const s = storage();
+    if (!s) return false;
+    try { s.setItem(PROGRESS_KEY, JSON.stringify(data)); return true; } catch { return false; }
+  }
+  function courseRecord(key) {
+    const rec = readAllProgress()[key];
+    return {
+      lessons: (rec && rec.lessons && typeof rec.lessons === 'object') ? rec.lessons : {},
+      quizzes: (rec && rec.quizzes && typeof rec.quizzes === 'object') ? rec.quizzes : {},
+      updatedAt: (rec && Number(rec.updatedAt)) || 0,
+    };
+  }
+  // Mutate one course's record. NOTHING here records the order choices were
+  // drawn in: the shuffle is per render by design, and persisting it would
+  // hand back the very position leak the shuffle exists to close. Only
+  // ORIGINAL question indices are stored.
+  function updateCourseRecord(key, mutate) {
+    if (!key) return null;
+    const all = readAllProgress();
+    const rec = all[key] && typeof all[key] === 'object' ? all[key] : {};
+    rec.lessons = rec.lessons && typeof rec.lessons === 'object' ? rec.lessons : {};
+    rec.quizzes = rec.quizzes && typeof rec.quizzes === 'object' ? rec.quizzes : {};
+    try { mutate(rec); } catch { return null; }
+    rec.updatedAt = Date.now();
+    all[key] = rec;
+    writeAllProgress(all);
+    return rec;
+  }
+  function clearCourseRecord(key) {
+    const all = readAllProgress();
+    if (key in all) { delete all[key]; writeAllProgress(all); }
+  }
+
+  // ─── SMALL DOM GUARDS ─────────────────────────────────────────────────
+  // These run against real browsers and against the tiny DOM stub the tests
+  // use, so every optional API is feature-checked before it is called.
+  function canRender() {
+    return typeof document !== 'undefined' && typeof document.createElement === 'function';
+  }
+  function qsa(sel, root) {
+    const scope = root || (typeof document !== 'undefined' ? document : null);
+    if (!scope || typeof scope.querySelectorAll !== 'function') return [];
+    try { return [...scope.querySelectorAll(sel)]; } catch { return []; }
+  }
+  function qs(sel, root) {
+    const scope = root || (typeof document !== 'undefined' ? document : null);
+    if (!scope || typeof scope.querySelector !== 'function') return null;
+    try { return scope.querySelector(sel); } catch { return null; }
+  }
+  function upTo(el, sel) {
+    if (!el || typeof el.closest !== 'function') return null;
+    try { return el.closest(sel); } catch { return null; }
+  }
+  function inGatedRegion(el) { return !!upTo(el, '.gated-content'); }
+  function attach(parent, child) {
+    if (!parent || !child) return null;
+    if (typeof parent.appendChild === 'function') return parent.appendChild(child);
+    if (typeof parent.append === 'function') return parent.append(child);
+    return null;
+  }
+  function makeEl(tag, cls, html) {
+    if (!canRender()) return null;
+    const el = document.createElement(tag);
+    if (cls) el.className = cls;
+    if (html != null) el.innerHTML = html;
+    return el;
+  }
+
+  // ─── STYLES ───────────────────────────────────────────────────────────
+  // assets/curriculum.css is owned elsewhere, so the styles for the panels
+  // built here ship with the behaviour that needs them. Tokens only: no
+  // colour literals, and both themes work because every value resolves
+  // through the same custom properties body.light-mode redefines.
+  const PANEL_CSS = `
+.curr .vjm-panel{border:1px solid var(--border);background:var(--card);border-radius:14px;padding:16px 18px;margin:16px 0;text-align:left;}
+.curr .vjm-panel h4{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;text-transform:uppercase;letter-spacing:.5px;color:var(--text);margin:0 0 6px;}
+.curr .vjm-panel p{color:var(--muted);font-size:.86rem;margin:0 0 10px;max-width:640px;}
+.curr .vjm-panel p.vjm-lead{color:var(--text);}
+.curr .vjm-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:4px;}
+.curr .vjm-price{font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:900;color:var(--gold-ink);}
+.curr .vjm-plan-row{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline;margin-bottom:8px;}
+.curr .vjm-plan-row span{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:800;}
+.curr .vjm-link{color:var(--gold-ink);font-weight:800;font-size:.82rem;text-decoration:none;}
+.curr .vjm-link:hover{text-decoration:underline;}
+.curr .vjm-note{font-size:.76rem;color:var(--muted);margin-top:10px;}
+.curr .vjm-progress{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;border:1px solid var(--border);background:rgba(255,255,255,.03);border-radius:12px;padding:11px 14px;margin:0 0 16px;}
+body.light-mode .curr .vjm-progress{background:rgba(0,0,0,.03);}
+.curr .vjm-progress b{font-family:'Barlow Condensed',sans-serif;font-size:.98rem;color:var(--text);text-transform:uppercase;letter-spacing:.5px;}
+.curr .vjm-progress .vjm-meter{flex:1;min-width:120px;height:6px;border-radius:999px;background:rgba(255,255,255,.10);overflow:hidden;}
+body.light-mode .curr .vjm-progress .vjm-meter{background:rgba(0,0,0,.10);}
+.curr .vjm-progress .vjm-meter i{display:block;height:100%;background:var(--gold);}
+.curr .vjm-progress small{color:var(--muted);font-size:.76rem;}
+.curr .vjm-btn-sm{border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text);border-radius:999px;padding:7px 13px;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
+body.light-mode .curr .vjm-btn-sm{background:rgba(0,0,0,.04);}
+.curr .lesson-card.vjm-seen>summary .lnum{opacity:.55;}
+.curr .lesson-card.vjm-seen>summary::after{content:'seen';margin-left:auto;font-size:.62rem;letter-spacing:1px;text-transform:uppercase;color:var(--muted);font-weight:800;}
+.curr .vjm-miss{border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:0 10px 10px 0;padding:10px 12px;margin-bottom:8px;background:rgba(255,255,255,.03);}
+body.light-mode .curr .vjm-miss{background:rgba(0,0,0,.03);}
+.curr .vjm-miss b{display:block;font-size:.84rem;color:var(--text);margin-bottom:4px;}
+.curr .vjm-miss span{font-size:.8rem;color:var(--muted);}
+`;
+  function injectStyles() {
+    if (!canRender() || !document.head || qs('#vjm-curr-css')) return;
+    const style = document.createElement('style');
+    style.id = 'vjm-curr-css';
+    style.textContent = PANEL_CSS;
+    try { document.head.appendChild(style); } catch { /* ignore */ }
+  }
+
+  // ─── TIER-AWARE LOCK / UPGRADE STATE ──────────────────────────────────
+  // Three different people hit a locked course page and they need three
+  // different things:
+  //   signed_out  — an anonymous visitor: tell them which plan contains this
+  //                 course, what it costs, and where to sign in.
+  //   under_tier  — a SIGNED-IN member whose plan does not include this
+  //                 course. The server already made this distinction (the
+  //                 middleware stripped .gated-content even though the
+  //                 session is valid), so showing them an "enter your access
+  //                 code" box is nonsense: they have a code, it works, it
+  //                 just does not buy this course. On a Complete-only page
+  //                 the only paid tier below Complete is Futures Core, so
+  //                 the gap is exactly Complete minus Futures Core.
+  //   entitled    — handled by unlockAll().
+  //
+  // All of this renders INSIDE .lock-gate, which is a sibling of
+  // .gated-content, never inside it — the middleware blanks .gated-content
+  // for exactly the people this UI is written for.
+  function lockedByServer() {
+    // The middleware stamps data-locked="1" on the blocks it strips.
+    return !!qs('.gated-content[data-locked="1"]');
+  }
+
+  function planCtaButton(planKey, label, utm, placement, extraEvent) {
+    const plan = PLANS[planKey];
+    const a = makeEl('a', 'btn', esc(label));
+    if (!a) return null;
+    a.href = whopUrl(utm);
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.addEventListener('click', () => {
+      track('plan_cta', { course: pageKey(), plan: planKey, price: plan ? plan.price : null, placement });
+      if (extraEvent) track(extraEvent.name, extraEvent.props);
+    });
+    return a;
+  }
+
+  function renderUnderTierGate(gate, course) {
+    const need = PLANS[course.plan];
+    const held = course.plan === 'complete' ? PLANS.futures_core : null;
+    // A signed-in member does not need a code box or a "check my session"
+    // button; both are removed, not merely hidden behind more copy.
+    qsa('.lock-form', gate).forEach((f) => { f.hidden = true; f.style.display = 'none'; });
+    qsa('.check-status-btn', gate).forEach((b) => {
+      const wrap = b.parentElement || b;
+      wrap.hidden = true; wrap.style.display = 'none';
+    });
+    const icon = qs('.lock-icon', gate);
+    if (icon) icon.textContent = '⬆️';
+    const h = qs('h3', gate);
+    if (h) h.textContent = held ? 'Your plan does not include this course' : 'This course is not in your current session';
+    const lead = qs('p', gate);
+    if (lead) {
+      lead.textContent = held
+        ? `You are signed in on ${held.name} (${money(held.price)}/mo), which covers ${held.includes}. ${course.title} is part of ${need.name} (${money(need.price)}/mo) — a difference of ${money(need.price - held.price)}/mo.`
+        : `You are signed in, but this session does not carry access to ${course.title}. It is part of ${need.name} (${money(need.price)}/mo), which covers ${need.includes}.`;
+    }
+    const panel = makeEl('div', 'vjm-panel vjm-upgrade');
+    if (!panel) return;
+    const rows = makeEl('div', 'vjm-plan-row',
+      `<span>You have</span><b class="vjm-price">${esc(held ? held.name + ' · ' + money(held.price) + '/mo' : 'An active membership')}</b>`
+      + `<span>This course needs</span><b class="vjm-price">${esc(need.name + ' · ' + money(need.price) + '/mo')}</b>`
+      + (held ? `<span>Difference</span><b class="vjm-price">${esc(money(need.price - held.price) + '/mo')}</b>` : ''));
+    attach(panel, rows);
+    const actions = makeEl('div', 'vjm-actions');
+    const isUpgrade = !!held && course.plan === 'complete';
+    const cta = planCtaButton(
+      course.plan,
+      isUpgrade ? `Upgrade to Complete — ${money(need.price - held.price)}/mo more` : `Get ${need.name} — ${money(need.price)}/mo`,
+      isUpgrade ? 'core-to-complete-upgrade' : 'under-tier-' + course.plan,
+      'course_lock_under_tier',
+      isUpgrade ? { name: 'core_to_complete_upgrade', props: { course: pageKey(), from: 'futures_core', to: 'complete', delta: need.price - held.price } } : null,
+    );
+    attach(actions, cta);
+    if (held) {
+      const back = makeEl('a', 'btn ghost', 'Open a course you already have');
+      if (back) { back.href = 'futures-dissection.html'; attach(actions, back); }
+    }
+    attach(panel, actions);
+    const note = makeEl('div', 'vjm-note',
+      'Billing and plan changes are handled on Whop with the account you bought on. Questions: DM <b>St1101</b> on Discord.');
+    attach(panel, note);
+    attach(gate, panel);
+  }
+
+  function renderSignedOutGate(gate, course) {
+    const need = PLANS[course.plan];
+    const lead = qs('p', gate);
+    if (lead && !/\b(Futures Core|Complete)\b/.test(lead.textContent || '')) {
+      lead.textContent = `${course.title} is part of the ${need.name} plan. Enter your member access code below, or join to unlock it.`;
+    }
+    const panel = makeEl('div', 'vjm-panel vjm-plan-cta');
+    if (!panel) return;
+    attach(panel, makeEl('div', 'vjm-plan-row',
+      `<span>Unlocked by</span><b class="vjm-price">${esc(need.name + ' · ' + money(need.price) + '/mo')}</b>`));
+    attach(panel, makeEl('p', '', `${esc(need.name)} covers ${esc(need.includes)}.`));
+    const actions = makeEl('div', 'vjm-actions');
+    attach(actions, planCtaButton(course.plan, `Join ${need.name} — ${money(need.price)}/mo`, 'lock-' + course.plan, 'course_lock_signed_out'));
+    const signin = makeEl('a', 'vjm-link', 'Already a member? Sign in with Google or your code →');
+    if (signin) {
+      signin.href = 'premium-guidance.html#signin';
+      signin.addEventListener('click', () => track('plan_cta', { course: pageKey(), plan: course.plan, action: 'signin', placement: 'course_lock_signed_out' }));
+      attach(actions, signin);
+    }
+    attach(panel, actions);
+    attach(gate, panel);
+  }
+
+  function renderLockState(state) {
+    const course = pageCourse();
+    const gates = qsa('.lock-gate');
+    if (!course || !gates.length || !canRender()) return;
+    let rendered = 0;
+    gates.forEach((gate) => {
+      if (gate.getAttribute && gate.getAttribute('data-vjm-lock') === state) return;
+      if (gate.setAttribute) gate.setAttribute('data-vjm-lock', state);
+      try {
+        if (state === 'under_tier') renderUnderTierGate(gate, course);
+        else renderSignedOutGate(gate, course);
+        rendered++;
+      } catch { /* a broken panel must never hide the gate itself */ }
+    });
+    if (rendered) {
+      track('lock_view', { course: course.key, state, required_plan: course.plan, gates: rendered });
+    }
+  }
+
+  // ─── FREE PROGRESS: LESSONS ───────────────────────────────────────────
+  // Only ungated lessons are tracked. Paid lessons live inside
+  // .gated-content, which this code never reads, writes or reorders.
+  function levelOf(panel) {
+    return (panel && panel.getAttribute && panel.getAttribute('data-level')) || '1';
+  }
+  function pairOf(panel) {
+    return (panel && panel.getAttribute && panel.getAttribute('data-pair')) || 'main';
+  }
+  function lessonId(panel, index) { return pairOf(panel) + ':' + levelOf(panel) + ':' + index; }
+  function lessonTitle(card) {
+    const s = qs('summary', card);
+    return (s && (s.textContent || '').trim()) || 'this lesson';
+  }
+  function freeLessonCards(panel) {
+    return qsa('.lesson-card', panel).filter((c) => !inGatedRegion(c));
+  }
+
+  function initLessonProgress() {
+    const course = pageCourse();
+    if (!course || !canRender()) return;
+    qsa('.level-panel').forEach((panel) => {
+      if (qs('.lock-gate', panel) || inGatedRegion(panel)) return;   // paid level
+      const cards = freeLessonCards(panel);
+      if (!cards.length) return;
+      const saved = courseRecord(course.key).lessons;
+      cards.forEach((card, i) => {
+        const id = lessonId(panel, i);
+        if (saved[id] && card.classList) card.classList.add('vjm-seen');
+        card.addEventListener('toggle', () => {
+          if (!card.open) return;
+          if (card.classList) card.classList.add('vjm-seen');
+          updateCourseRecord(course.key, (rec) => { rec.lessons[id] = Date.now(); });
+          track('lesson_expand', {
+            course: course.key, level: levelOf(panel), pair: pairOf(panel),
+            lesson: i + 1, title: lessonTitle(card).slice(0, 120),
+          });
+          refreshProgressNote(panel, course);
+        });
+      });
+      const note = makeEl('div', 'vjm-progress');
+      if (!note) return;
+      panel.insertBefore ? panel.insertBefore(note, panel.firstChild) : attach(panel, note);
+      refreshProgressNote(panel, course, note);
+    });
+  }
+
+  function progressNoteOf(panel) { return qs('.vjm-progress', panel); }
+
+  function refreshProgressNote(panel, course, node) {
+    const note = node || progressNoteOf(panel);
+    if (!note || !canRender()) return;
+    const cards = freeLessonCards(panel);
+    const rec = courseRecord(course.key);
+    const level = levelOf(panel);
+    const done = cards.filter((c, i) => rec.lessons[lessonId(panel, i)]).length;
+    const quiz = rec.quizzes[pairOf(panel) + ':' + level];
+    const pct = cards.length ? Math.round((done / cards.length) * 100) : 0;
+    note.innerHTML =
+      `<b>Level ${esc(level)} progress</b>`
+      + `<div class="vjm-meter"><i style="width:${pct}%"></i></div>`
+      + `<small>${done} of ${cards.length} lessons opened`
+      + (quiz ? ` · best quiz score ${esc(quiz.best)} / ${esc(quiz.total)}` : '')
+      + ` · saved on this device only, not an account</small>`;
+    const first = cards.findIndex((c, i) => !rec.lessons[lessonId(panel, i)]);
+    if (first > -1) {
+      const btn = makeEl('button', 'vjm-btn-sm', done ? 'Resume' : 'Start');
+      if (btn) {
+        btn.type = 'button';
+        btn.addEventListener('click', () => {
+          const card = cards[first];
+          card.open = true;
+          if (typeof card.scrollIntoView === 'function') card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        attach(note, btn);
+      }
+    }
+    if (done || quiz) {
+      const reset = makeEl('button', 'vjm-btn-sm', 'Clear');
+      if (reset) {
+        reset.type = 'button';
+        reset.title = 'Clear the progress saved for this course on this device';
+        reset.addEventListener('click', () => {
+          clearCourseRecord(course.key);
+          qsa('.lesson-card.vjm-seen').forEach((c) => c.classList && c.classList.remove('vjm-seen'));
+          qsa('.level-panel').forEach((p) => { if (progressNoteOf(p)) refreshProgressNote(p, course); });
+        });
+        attach(note, reset);
+      }
+    }
+  }
+
+  // ─── FREE PROGRESS: QUIZ COMPLETION, REMEDIATION, NEXT STEP ───────────
+  // Called from the quiz submit handler with ORIGINAL question indices only.
+  function recordQuizResult(course, panel, result) {
+    if (!course) return;
+    const id = (panel ? pairOf(panel) + ':' + levelOf(panel) : 'quiz') + '';
+    updateCourseRecord(course.key, (rec) => {
+      const prev = rec.quizzes[id] || {};
+      rec.quizzes[id] = {
+        last: result.correct,
+        best: Math.max(Number(prev.best) || 0, result.correct),
+        total: result.total,
+        // Original question indices — never rendered positions.
+        missed: result.missed.map((m) => m.qi),
+        at: Date.now(),
+      };
+    });
+  }
+
+  function nextLevelInfo(panel) {
+    if (!panel) return null;
+    const level = Number(levelOf(panel));
+    const pair = pairOf(panel);
+    const next = qs(`.level-panel[data-pair="${pair}"][data-level="${level + 1}"]`);
+    if (!next) return null;
+    const tab = qs(`.level-tab[data-pair="${pair}"][data-level="${level + 1}"]`);
+    const label = tab ? (tab.textContent || '').replace(/🔒/g, '').trim() : 'Level ' + (level + 1);
+    return { panel: next, tab, label, locked: !!qs('.lock-gate', next) };
+  }
+
+  function renderCompletion(quiz, course, panel, result) {
+    if (!canRender()) return null;
+    const old = qs('.vjm-next', quiz);
+    if (old && old.parentNode && typeof old.parentNode.removeChild === 'function') old.parentNode.removeChild(old);
+    const box = makeEl('div', 'vjm-panel vjm-next');
+    if (!box) return null;
+    const level = levelOf(panel);
+    const passed = result.total > 0 && result.correct === result.total;
+    attach(box, makeEl('h4', '', passed ? `Level ${esc(level)} complete` : `Level ${esc(level)} — ${result.correct} of ${result.total}`));
+
+    if (result.missed.length) {
+      attach(box, makeEl('p', 'vjm-lead', `Review these ${result.missed.length === 1 ? 'question' : 'questions'} before moving on:`));
+      result.missed.forEach((m) => {
+        attach(box, makeEl('div', 'vjm-miss', `<b>${esc(m.question)}</b><span>${esc(m.explain)}</span>`));
+      });
+      const retry = makeEl('button', 'vjm-btn-sm', 'Retry the missed questions');
+      if (retry) {
+        retry.type = 'button';
+        retry.addEventListener('click', () => {
+          result.missed.forEach((m) => {
+            const block = qs(`.quiz-q[data-qi="${m.qi}"]`, quiz);
+            if (!block) return;
+            qsa('input[type="radio"]', block).forEach((r) => { r.checked = false; });
+            qsa('.quiz-choice', block).forEach((c) => c.classList && c.classList.remove('correct', 'incorrect'));
+            const ex = qs('.quiz-explain', block);
+            if (ex && ex.classList) ex.classList.remove('show');
+            if (typeof block.scrollIntoView === 'function') block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          });
+        });
+        attach(box, retry);
+      }
+    } else if (result.total) {
+      attach(box, makeEl('p', 'vjm-lead', 'Every answer correct. Your score is saved on this device.'));
+    }
+
+    const next = nextLevelInfo(panel);
+    const actions = makeEl('div', 'vjm-actions');
+    if (next && !next.locked) {
+      const go = makeEl('button', 'btn', `Next: ${esc(next.label)}`);
+      if (go) {
+        go.type = 'button';
+        go.addEventListener('click', () => {
+          if (next.tab && typeof next.tab.click === 'function') next.tab.click();
+          if (typeof next.panel.scrollIntoView === 'function') next.panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        attach(actions, go);
+      }
+    } else if (next && next.locked && course) {
+      // End of the free level: the honest next step is the plan that
+      // actually contains the next one.
+      const need = PLANS[course.plan];
+      attach(box, makeEl('p', '',
+        `${esc(next.label)} is part of ${esc(need.name)} (${esc(money(need.price))}/mo), which covers ${esc(need.includes)}.`));
+      attach(actions, planCtaButton(course.plan, `Continue with ${need.name} — ${money(need.price)}/mo`,
+        'free-level-complete-' + course.plan, 'free_level_complete'));
+      const signin = makeEl('a', 'vjm-link', 'Already a member? Sign in →');
+      if (signin) { signin.href = 'premium-guidance.html#signin'; attach(actions, signin); }
+    }
+    attach(box, actions);
+    attach(quiz, box);
+    return box;
+  }
+
+  function onQuizGraded(quiz, result) {
+    const course = pageCourse();
+    const panel = upTo(quiz, '.level-panel');
+    if (inGatedRegion(quiz)) return;   // paid quiz: leave the gated region alone
+    recordQuizResult(course, panel, result);
+    if (course && panel) {
+      track('free_level_complete', {
+        course: course.key, level: levelOf(panel), pair: pairOf(panel),
+        score: result.correct, total: result.total, missed: result.missed.length,
+      });
+    }
+    if (panel && course && progressNoteOf(panel)) refreshProgressNote(panel, course);
+    renderCompletion(quiz, course, panel, result);
   }
 
   // Test seam: the shuffle and grading rules are pure and unit-tested from
@@ -295,7 +824,27 @@
     injectTurnstileWidgets();
     wireUnlockForms();
     initQuizzes();
-    if (await checkPremium()) unlockAll();
+    try { injectStyles(); } catch { /* ignore */ }
+    try { initLessonProgress(); } catch { /* ignore */ }
+    try { await initEntitlementState(); } catch { /* ignore */ }
+  }
+
+  // Decide what a visitor is actually looking at.
+  //
+  // The old rule was `if (await checkPremium()) unlockAll()`, which asked one
+  // question — "is there a session?" — and that is not the question. Since the
+  // middleware started enforcing tiers, a $100 Futures Core member opening
+  // /options-lab has a perfectly valid session AND an empty .gated-content,
+  // so the old rule hid the gate and revealed nothing: a blank course page.
+  // The server's decision is readable here (it stamps data-locked="1" on what
+  // it stripped), so the two cases are told apart instead of conflated.
+  async function initEntitlementState() {
+    const active = await checkPremium();
+    const stripped = lockedByServer();
+    if (active && !stripped) { unlockAll(); return 'entitled'; }
+    const state = active ? 'under_tier' : 'signed_out';
+    renderLockState(state);
+    return state;
   }
 
   // ---- shared tiny canvas helpers, used by each page's own calculator ----

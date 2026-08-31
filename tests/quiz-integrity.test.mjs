@@ -189,6 +189,11 @@ function stubElement(tag, cls, attrs = {}) {
     },
     querySelectorAll: (sel) => el.descendants().filter((d) => d.matches(sel)),
     querySelector: (sel) => el.descendants().filter((d) => d.matches(sel))[0] || null,
+    closest(sel) {
+      let node = el;
+      while (node) { if (node.matches && node.matches(sel)) return node; node = node.parent; }
+      return null;
+    },
     addEventListener: (_ev, fn) => el.listeners.push(fn),
     listeners: [],
   };
@@ -197,7 +202,7 @@ function stubElement(tag, cls, attrs = {}) {
 
 // Build one .quiz with a single four-choice question whose answer is index 1 —
 // exactly the shape the course pages ship — and run curriculum.js against it.
-function renderQuiz() {
+function renderQuiz(opts = {}) {
   const quiz = stubElement('div', 'quiz');
   const block = stubElement('div', 'quiz-q', { 'data-qi': '0' });
   quiz.append(block);
@@ -209,18 +214,40 @@ function renderQuiz() {
     return block.append(label);
   });
   const explain = block.append(stubElement('div', 'quiz-explain'));
+  explain.textContent = 'Margin is a performance bond, not a loss cap.';
+  const qtext = block.append(stubElement('p', 'qtext'));
+  qtext.textContent = 'Is a long futures position capped at the margin deposited?';
   const submit = quiz.append(stubElement('button', 'quiz-submit'));
   const score = quiz.append(stubElement('span', 'quiz-score'));
   const data = quiz.append(stubElement('script', '', { type: 'application/json' }));
   data.textContent = '[{"correct":1}]';
 
+  // The quiz lives inside a level panel, the way it does on every course page:
+  // the completion panel reads the level/pair off it.
+  const panel = stubElement('section', 'level-panel', { 'data-level': '1', 'data-pair': 'futures' });
+  panel.append(quiz);
+
+  // localStorage that behaves (opts.storageThrows models private mode, where
+  // the accessor itself throws — the page must still grade and render).
+  const store = new Map();
+  const localStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => { if (opts.storageThrows) throw new Error('QuotaExceededError'); store.set(k, String(v)); },
+    removeItem: (k) => { store.delete(k); },
+  };
+  const events = [];
   const sandbox = {
     console,
     fetch: async () => ({ json: async () => ({}) }),
+    localStorage: opts.noStorage ? undefined : localStorage,
+    location: { pathname: opts.pathname || '/futures-dissection' },
+    vjmTrack: (name, props) => events.push({ name, props }),
     document: {
       readyState: 'complete',
       addEventListener() {},
+      createElement: (tag) => stubElement(tag, ''),
       querySelectorAll: (sel) => (sel === '.quiz' ? [quiz] : []),
+      querySelector: (sel) => (opts.lookup && opts.lookup[sel]) || null,
     },
   };
   sandbox.window = sandbox;
@@ -231,7 +258,19 @@ function renderQuiz() {
   const pick = (oi) => rendered().forEach((el) => {
     el.querySelector('input[type="radio"]').checked = el.getAttribute('data-oi') === String(oi);
   });
-  return { block, labels, rendered, explain, score, submitQuiz, pick };
+  // Everything the completion panel rendered, flattened for assertions.
+  const completion = () => {
+    const box = quiz.children[quiz.children.length - 1];
+    if (!box || box === score || box === data) return null;
+    const html = [box, ...box.descendants()].map((n) => n.innerHTML || '').join(' ');
+    const links = [box, ...box.descendants()].filter((n) => n.href).map((n) => n.href);
+    return { box, html, links, nodes: [box, ...box.descendants()] };
+  };
+  const saved = () => {
+    const raw = store.get('vjm-progress-v1');
+    return raw ? JSON.parse(raw) : null;
+  };
+  return { block, labels, rendered, explain, score, submitQuiz, pick, panel, events, saved, completion, store };
 }
 
 test('rendering stamps every choice with its original index', () => {
@@ -279,4 +318,92 @@ test('the second rendered slot is no longer a free pass', () => {
   const inSlot1 = slots.filter((s) => s === 1).length / slots.length;
   assert.ok(inSlot1 < 0.5, `answer stayed in slot 1 ${(inSlot1 * 100).toFixed(0)}% of loads`);
   assert.equal(new Set(slots).size, 4, 'the answer must be able to land in every slot');
+});
+
+// --- free progress, remediation, and the next step ------------------------
+// Finishing free Futures Level 1 used to produce a score and nothing else: no
+// saved progress, no remediation for what was missed, no next lesson, and no
+// prompt to the plan that contains Level 2. These pin the replacement, and
+// pin that none of it can reintroduce the position leak or break grading.
+
+test('finishing a free quiz saves progress on this device and reports the stage', () => {
+  const q = renderQuiz();
+  q.pick(1);
+  q.submitQuiz();
+
+  const rec = q.saved();
+  assert.ok(rec, 'a completed quiz must persist locally');
+  const quizRec = rec['futures-dissection'].quizzes['futures:1'];
+  assert.deepEqual(
+    { last: quizRec.last, best: quizRec.best, total: quizRec.total, missed: quizRec.missed },
+    { last: 1, best: 1, total: 1, missed: [] },
+  );
+
+  const stage = q.events.find((e) => e.name === 'free_level_complete');
+  assert.ok(stage, 'free_level_complete must be reported to the funnel');
+  assert.equal(stage.props.level, '1');
+  assert.equal(stage.props.course, 'futures-dissection');
+  assert.equal(stage.props.score, 1);
+});
+
+test('saved progress records original question indices, never the rendered order', () => {
+  // The shuffle is per render by design. Persisting the drawn order — or the
+  // picked slot — would hand back the "always click slot 1" leak the shuffle
+  // exists to close, so the record may only ever carry authored indices.
+  const q = renderQuiz();
+  q.pick(2);            // wrong: original index 2
+  q.submitQuiz();
+  assert.equal(q.score.textContent, 'Score: 0 / 1', 'saving progress must not disturb grading');
+
+  const raw = q.store.get('vjm-progress-v1');
+  const rec = JSON.parse(raw)['futures-dissection'].quizzes['futures:1'];
+  assert.deepEqual(rec.missed, [0], 'missed questions are keyed by question index');
+  assert.doesNotMatch(raw, /order|slot|rendered|position|picked/i,
+    `the stored record must not describe how choices were drawn: ${raw}`);
+});
+
+test('a missed question comes back with targeted remediation, not just a score', () => {
+  const q = renderQuiz();
+  q.pick(2);
+  q.submitQuiz();
+  const panel = q.completion();
+  assert.ok(panel, 'a completion panel must be rendered');
+  assert.match(panel.html, /Is a long futures position capped at the margin deposited\?/);
+  assert.match(panel.html, /Margin is a performance bond, not a loss cap\./);
+  assert.match(panel.html, /Review these/);
+});
+
+test('the end of the free level points at the plan that actually contains the next one', () => {
+  // Level 2 of Futures Dissection is Futures Core ($100/mo) — not Complete.
+  const lockedNext = { querySelector: (sel) => (sel === '.lock-gate' ? {} : null) };
+  const q = renderQuiz({
+    lookup: {
+      '.level-panel[data-pair="futures"][data-level="2"]': lockedNext,
+      '.level-tab[data-pair="futures"][data-level="2"]': { textContent: '2. Intermediate 🔒' },
+    },
+  });
+  q.pick(1);
+  q.submitQuiz();
+  const panel = q.completion();
+  assert.match(panel.html, /2\. Intermediate/, 'the next level must be named');
+  assert.match(panel.html, /Futures Core/);
+  assert.match(panel.html, /\$100\/mo/);
+  assert.doesNotMatch(panel.html, /\$129/, 'the free futures level must not upsell the wrong plan');
+  assert.ok(
+    panel.links.some((h) => h.includes('whop.com/pjtradespremium') && h.includes('free-level-complete-futures_core')),
+    `a plan CTA must be present: ${panel.links.join(', ')}`,
+  );
+});
+
+test('a device that cannot store progress still grades, renders and reports', () => {
+  // localStorage throws in private mode and in some embedded webviews; the
+  // lesson must not care.
+  for (const opts of [{ storageThrows: true }, { noStorage: true }]) {
+    const q = renderQuiz(opts);
+    q.pick(1);
+    q.submitQuiz();
+    assert.equal(q.score.textContent, 'Score: 1 / 1');
+    assert.equal(q.saved(), null, 'nothing is persisted when storage is unavailable');
+    assert.ok(q.events.some((e) => e.name === 'free_level_complete'));
+  }
 });

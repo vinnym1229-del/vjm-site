@@ -21,10 +21,16 @@ function sessionClaims(res) {
   return JSON.parse(Buffer.from(token.split('.')[0], 'base64url').toString());
 }
 
+// auth-google now selects the member's recent rows and applies the shared
+// entitlement rule to them, so the fake answers .all(). Rows default to a
+// live entitlement; a test states only the field it is about. Pass an array
+// to model several records for one email.
 function makeDb(row) {
+  const list = row === null || row === undefined ? [] : (Array.isArray(row) ? row : [row]);
+  const results = list.map((r) => ({ status: 'active', expires_at: null, session_epoch: 1, ...r }));
   return {
     prepare() {
-      return { bind() { return { async first() { return row; } }; } };
+      return { bind() { return { async all() { return { results }; } }; } };
     },
   };
 }
@@ -222,6 +228,69 @@ try {
     const { status, res } = await callAuth(env, { credential: 'tok' });
     assert.equal(status, 200);
     assert.equal(sessionClaims(res).t, TIERS.COMPLETE, 'a forged/unknown stored tier must not be signed through verbatim');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // D1 authority + revocation reach (migration 0006).
+  // ─────────────────────────────────────────────────────────────────────
+
+  // A revoked row is not a membership. `status != 'revoked'` used to be the
+  // whole filter; now the shared rule decides, so this is pinned explicitly.
+  {
+    const env = {
+      ...baseEnv(),
+      RESEARCH_DB: makeDb({ code_hash: 'e'.repeat(40), status: 'revoked', tier: TIERS.COMPLETE }),
+    };
+    const { status, res } = await callAuth(env, { credential: 'tok' });
+    assert.equal(status, 404);
+    assert.equal(res.headers.get('Set-Cookie'), null, 'a revoked record must mint no session');
+  }
+
+  // A 'pending' row — a code minted but never delivered — is likewise not an
+  // entitlement, and neither is a status this code has never seen. Fail
+  // closed rather than treating "not literally revoked" as permission.
+  {
+    for (const status of ['pending', 'suspended?', '']) {
+      const env = {
+        ...baseEnv(),
+        RESEARCH_DB: makeDb({ code_hash: 'f'.repeat(40), status, tier: TIERS.COMPLETE }),
+      };
+      const { status: code, res } = await callAuth(env, { credential: 'tok' });
+      assert.equal(code, 404, `status "${status}" must not authenticate`);
+      assert.equal(res.headers.get('Set-Cookie'), null);
+    }
+  }
+
+  // A live record wins over a dead one on the same account: buying again
+  // after a cancellation must work, and ordering alone must not hand back
+  // the newest row when the newest row is dead.
+  {
+    const env = {
+      ...baseEnv(),
+      RESEARCH_DB: makeDb([
+        { code_hash: '1'.repeat(40), status: 'revoked', tier: TIERS.COMPLETE },
+        { code_hash: '2'.repeat(40), status: 'active', tier: TIERS.FUTURES_CORE, session_epoch: 4 },
+      ]),
+    };
+    const { status, res } = await callAuth(env, { credential: 'tok' });
+    assert.equal(status, 200);
+    const claims = sessionClaims(res);
+    assert.equal(claims.t, TIERS.FUTURES_CORE);
+    assert.equal(claims.mr, '2'.repeat(16), 'the session must reference the LIVE record');
+    assert.equal(claims.sv, 4, 'the live row\u2019s epoch is what the revocation check compares against');
+    assert.equal(claims.src, 'd1');
+  }
+
+  // The session must carry the epoch and authority a later cancellation
+  // needs in order to reach it mid-flight.
+  {
+    const env = {
+      ...baseEnv(),
+      RESEARCH_DB: makeDb({ code_hash: '3'.repeat(40), tier: TIERS.COMPLETE, session_epoch: 7 }),
+    };
+    const claims = sessionClaims((await callAuth(env, { credential: 'tok' })).res);
+    assert.equal(claims.sv, 7);
+    assert.equal(claims.src, 'd1');
   }
 } finally {
   globalThis.fetch = originalFetch;

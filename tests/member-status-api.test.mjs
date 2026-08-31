@@ -67,4 +67,79 @@ try {
   globalThis.fetch = originalFetch;
 }
 
+// ---------------------------------------------------------------------------
+// D1 is the authority; the Sheet is only a fallback (migration 0006).
+//
+// The Sheet is maintained by hand and always lags a cancellation, so a
+// revoked whop_codes row must beat an active Sheet row — otherwise the widget
+// keeps telling a canceled customer (and the owner) that they are a member.
+// ---------------------------------------------------------------------------
+
+function d1(rows) {
+  return {
+    prepare() {
+      return { bind() { return { async all() { return { results: rows }; } }; } };
+    },
+  };
+}
+
+// The Sheet says active for every handle in this block.
+const sheetSaysActive = async () => Response.json({
+  ok: true,
+  statuses: { revokeduser: 'active', lapseduser: 'active', sheetonly: 'active' },
+});
+
+const originalFetch2 = globalThis.fetch;
+try {
+  globalThis.fetch = sheetSaysActive;
+  const SHEET = { MEMBERS_STATUS_URL: 'https://example.com/status.json' };
+
+  // Revoked in D1, Active on the Sheet: D1 wins.
+  {
+    const env = { ...SHEET, RESEARCH_DB: d1([{ status: 'revoked', expires_at: null, session_epoch: 2 }]) };
+    const { status, data } = await lookup(env, 'revokeduser');
+    assert.equal(status, 404);
+    assert.equal(data.active, false, 'a revoked D1 record must beat an active Sheet row');
+  }
+
+  // Expired in D1, Active on the Sheet: D1 wins here too.
+  {
+    const expired = new Date(Date.now() - 60_000).toISOString();
+    const env = { ...SHEET, RESEARCH_DB: d1([{ status: 'active', expires_at: expired, session_epoch: 1 }]) };
+    const { status, data } = await lookup(env, 'lapseduser');
+    assert.equal(status, 404);
+    assert.equal(data.active, false);
+  }
+
+  // Live in D1 with no Sheet configured at all: a purchase the webhook
+  // provisioned shows as active with no human step in between.
+  {
+    globalThis.fetch = async () => { throw new Error('no bridge may be contacted when D1 has the answer'); };
+    const env = { RESEARCH_DB: d1([{ status: 'active', expires_at: null, session_epoch: 1 }]) };
+    const { status, data } = await lookup(env, 'newbuyer');
+    assert.equal(status, 200);
+    assert.equal(data.active, true);
+  }
+
+  // No D1 row: the Sheet is still consulted, so legacy members keep working.
+  {
+    globalThis.fetch = sheetSaysActive;
+    const env = { ...SHEET, RESEARCH_DB: d1([]) };
+    const { status, data } = await lookup(env, 'sheetonly');
+    assert.equal(status, 200);
+    assert.equal(data.active, true);
+  }
+
+  // A D1 outage must not be read as "not a member" — it defers to the Sheet
+  // rather than telling a paying customer they do not exist.
+  {
+    globalThis.fetch = sheetSaysActive;
+    const env = { ...SHEET, RESEARCH_DB: { prepare() { throw new Error('D1 unavailable'); } } };
+    const { status } = await lookup(env, 'sheetonly');
+    assert.equal(status, 200);
+  }
+} finally {
+  globalThis.fetch = originalFetch2;
+}
+
 console.log('VJM check-member-status API tests passed.');

@@ -3,27 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="canonical" href="https://not-financial-advice-vjm.com/pj/options-lab.html">
+<!-- Canonical origin: https://not-financial-advice-vjm.com, at the ROOT (no /pj/
+     prefix). Canonical, og:url, twitter:url and the JSON-LD url/@id below all
+     use this one origin and path shape so search engines see a single URL.
+     NOTE: CNAME currently says not-financial-advice.com, which disagrees with
+     this origin. The owner must reconcile DNS/host with these tags BEFORE
+     indexing is enabled; this page stays out of the index until then. -->
+<link rel="canonical" href="https://not-financial-advice-vjm.com/options-lab">
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
  "@type": "Course",
+ "@id": "https://not-financial-advice-vjm.com/options-lab",
  "name": "Options Lab",
  "description": "Four-level options curriculum: contract anatomy, chain literacy, pricing inputs, the full Greek set, volatility and expected move, spreads and income structures, and portfolio Greeks.",
- "url": "https://not-financial-advice-vjm.com/pj/options-lab.html",
+ "url": "https://not-financial-advice-vjm.com/options-lab",
  "provider": {
   "@type": "Organization",
   "name": "PJ Trades x St",
-  "url": "https://not-financial-advice-vjm.com/pj/"
+  "url": "https://not-financial-advice-vjm.com/"
  },
  "educationalLevel": "Beginner to Professional",
  "teaches": "Options Lab",
- "numberOfCredits": 51,
  "isAccessibleForFree": false,
  "hasCourseInstance": {
   "@type": "CourseInstance",
   "courseMode": "online",
-  "courseWorkload": "PT51H",
   "instructor": {
    "@type": "Person",
    "name": "PJ Trades"
@@ -31,17 +36,28 @@
  },
  "offers": {
   "@type": "Offer",
+  "name": "Complete membership (monthly)",
   "category": "Subscription",
   "price": "129.00",
   "priceCurrency": "USD",
+  "priceSpecification": {
+   "@type": "UnitPriceSpecification",
+   "price": "129.00",
+   "priceCurrency": "USD",
+   "billingDuration": 1,
+   "billingIncrement": 1,
+   "unitCode": "MON"
+  },
   "availability": "https://schema.org/InStock",
   "url": "https://whop.com/pjtradespremium"
  }
 }
 </script>
-<meta property="og:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
+<meta property="og:url" content="https://not-financial-advice-vjm.com/options-lab">
+<meta property="og:image" content="https://not-financial-advice-vjm.com/assets/pj-banner.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
+<meta name="twitter:url" content="https://not-financial-advice-vjm.com/options-lab">
+<meta name="twitter:image" content="https://not-financial-advice-vjm.com/assets/pj-banner.jpg">
 <title>Options Lab | PJ Trades x St</title>
 <meta name="description" content="Options basics and how to trade them, plus gamma exposure explained: how to read a GEX chart, worked scenarios, where to get real-time data, and how to translate it into QQQ/NQ and SPY/ES intraday.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230c0c0d'/%3E%3Ctext y='34' x='32' text-anchor='middle' dominant-baseline='central' font-size='40' font-family='Arial Black,sans-serif' font-weight='900' fill='%23d14343'%3ES%3C/text%3E%3C/svg%3E">
@@ -178,6 +194,8 @@ body::before {
 </style>
 <link rel="stylesheet" href="assets/curriculum.css">
 <script src="assets/theme.js"></script>
+<script>window.vjmTrackQueue = window.vjmTrackQueue || [];
+window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueue.push([n, p || {}, Date.now()]); } catch (e) {} };</script>
 </head>
 <body>
 
@@ -636,7 +654,7 @@ body::before {
       <div class="lock-gate">
         <div class="lock-icon">🔐</div>
         <h3>Members-only content</h3>
-        <p>Level 1 — Foundational is part of the full PJ Trades options curriculum. Unlock it with your Futures or Complete membership access code.</p>
+        <p>Level 1 — Foundational is part of the full PJ Trades options curriculum. Unlock it with your Complete membership access code — Complete is $129/mo and is the plan that includes this course; Futures Core does not.</p>
         <form class="lock-form"><input type="password" placeholder="Premium access code" autocomplete="off" aria-label="Premium access code"><button class="btn" type="submit">Unlock</button></form>
         <div style="margin-top:10px;"><button type="button" class="btn ghost check-status-btn">I already unlocked</button></div>
         <div class="lock-msg"></div>
@@ -677,7 +695,7 @@ body::before {
       <div class="lock-gate">
         <div class="lock-icon">🔐</div>
         <h3>Members-only content</h3>
-        <p>Level 2 — Intermediate is part of the full PJ Trades curriculum. Unlock it with your Futures or Complete membership access code.</p>
+        <p>Level 2 — Intermediate is part of the full PJ Trades curriculum. Unlock it with your Complete membership access code — Complete is $129/mo and is the plan that includes this course; Futures Core does not.</p>
         <form class="lock-form"><input type="password" placeholder="Premium access code" autocomplete="off" aria-label="Premium access code"><button class="btn" type="submit">Unlock</button></form>
         <div style="margin-top:10px;"><button type="button" class="btn ghost check-status-btn">I already unlocked</button></div>
         <div class="lock-msg"></div>
@@ -768,7 +786,7 @@ straddle:  EM ~= straddle x 1.25       = 6.90 x 1.25          = $8.63</div>
 <tr><td>$115.00</td><td>+15.0%</td><td>15.01</td><td>0.01</td><td>15.02</td><td>+$812</td><td>+118%</td></tr>
 </tbody></table></div>
 <p>Every P&amp;L is (straddle mark &minus; 6.90) &times; 100. The two breakeven rows are the operative numbers: <b>the day after the event you need roughly a &plusmn;6% move to be flat</b>, not the &plusmn;6.90% the expiration formula suggests, because 20 days of time value survive the release. The decision rule follows from the table: this is an event trade, so it is closed on the event, not held &mdash; the $115 row is worth +118% one day after, but every remaining day of holding it gives back time value at 20% IV rather than the 30% you paid.</p>
-<p><b>8. Counterfactual &mdash; the same trade that fails.</b> VOLT gaps <b>+4.0% to $104</b>. Measured against the stock's own history that is a huge day: the largest move in the 10-session sample was 2.00%, so this is a two-sigma session. The straddle still loses $124. The move that matters is not large versus trailing RV, it is $2.00 short of the $6.00 the position needed. <i>How you tell them apart in advance:</i> compute the required move from the position's own breakevens (&plusmn;6%) and compare it to your forecast of the <b>event</b> move &mdash; never to the non-event RV. A 22.45% annualized RV measured over 10 quiet sessions contains no information about a one-day earnings gap. Splitting IV into event and non-event variance, rather than comparing it to a trailing RV number, is the only comparison that answers this question (see lesson 13).</p>
+<p><b>8. Counterfactual &mdash; the same trade that fails.</b> VOLT gaps <b>+4.0% to $104</b>. Measured against the stock's own history that is a huge day: the largest move in the 10-session sample was 2.00%, so this is twice the largest observed move and about 2.8 standard deviations at the measured 1.4142% daily sigma (4.00 ÷ 1.4142 = 2.83). The straddle still loses $124. The move that matters is not large versus trailing RV, it is $2.00 short of the $6.00 the position needed. <i>How you tell them apart in advance:</i> compute the required move from the position's own breakevens (&plusmn;6%) and compare it to your forecast of the <b>event</b> move &mdash; never to the non-event RV. A 22.45% annualized RV measured over 10 quiet sessions contains no information about a one-day earnings gap. Splitting IV into event and non-event variance, rather than comparing it to a trailing RV number, is the only comparison that answers this question (see lesson 13).</p>
 <p><b>9. Performance task.</b> A different constructed stock closes at $100.00, $103.05, $100.00, $103.05, $100.00 over five sessions. Its 21-trading-day at-the-money implied volatility is quoted at 60.0%. Produce: (a) the four log returns and sum of squares; (b) annualized RV using the n&nbsp;&minus;&nbsp;1 divisor; (c) the variance risk premium in vol points; (d) the 1-standard-deviation expected move in dollars for the 21-day expiry; (e) the straddle price the 1.25 rule implies for that expected move.</p>
 <div class="correct"><span class="label">Worked answer and rubric</span><p>(a) +3.00%, &minus;3.00%, +3.00%, &minus;3.00%; sum of squares = 9 + 9 + 9 + 9 = <b>36.00</b>, mean = 0. (b) 36.00 / 3 = 12.00 %&sup2;; daily sigma = sqrt(12) = 3.4641%; annualized = 3.4641 &times; 15.8745 = <b>55.0%</b> (check: sqrt(12 &times; 252) = sqrt(3024) = 54.99%). (c) 60.0 &minus; 55.0 = <b>5.0 vol points</b> &mdash; a third of the 15-point gap you would have guessed by eyeballing "60 vs a stock that moves 3% a day". (d) 100 &times; 0.60 &times; 0.28868 = <b>$17.32</b>. (e) 17.32 / 1.25 = <b>$13.86</b>.</p><p>Rubric: full marks require the n&nbsp;&minus;&nbsp;1 divisor stated explicitly, the sqrt(252) annualization shown, and the VRP expressed in volatility points rather than as a ratio. A good answer also notes that a 5-point premium on a 55% RV stock is a far smaller edge, in proportional terms, than a 5-point premium on a 15% RV stock &mdash; the points are not comparable across regimes.</p></div></div></div></details><details class="lesson-card"><summary><span class="lnum">13.</span> Expected move, event volatility, and IV crush around earnings and macro catalysts</summary><div class="lesson-body"><p class="why">ATM straddles and volatility models can imply a move distribution, but the quoted straddle also includes spread, risk premium, skew, and non-event time. Separating event variance from baseline variance lets traders judge whether the option market is pricing more or less movement than their evidence supports.</p><div class="correct"><span class="label">Watch for</span><p>Do not call the straddle price a guaranteed range, assume a stock staying inside the expected move makes every short-volatility trade profitable, or buy a directional contract without estimating the move already embedded in premium.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">14.</span> Strike and expiration selection by exposure—not by premium budget</summary><div class="lesson-body"><p class="why">Traders should compare candidate contracts using delta, gamma/theta balance, vega, break-even distribution, liquidity, and catalyst timing, then scale contracts to risk. This separates a good underlying thesis from a poor expression and teaches when deeper-ITM or longer-dated exposure behaves more like stock versus a short-lived convex bet.</p><div class="correct"><span class="label">Watch for</span><p>Do not maximize contract count, rely on delta alone for “probability,” buy exactly through an event without valuing event IV, or choose a round strike despite materially worse liquidity.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">15.</span> Covered calls and cash-secured puts: income overlays, opportunity cost, and the wheel myth</summary><div class="lesson-body"><p class="why">A covered call exchanges upside beyond the strike for premium, while a cash-secured put is economically similar to a willingness to acquire stock at an effective net price. Both require an underlying thesis, volatility assessment, tax awareness, and a plan for large downside—not merely a target monthly yield.</p><div class="correct"><span class="label">Watch for</span><p>Premium is not free income, assignment is not always desirable, rolling does not erase a loss, and the “wheel” does not manufacture safety from repeated short-put and covered-call exposure.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">16.</span> Uncovered short calls and puts — mechanics and risk recognition only: asymmetric tails, margin, and assignment</summary><div class="lesson-body"><p class="why">A naked short call has theoretically unlimited upside loss, while a naked short put can lose heavily toward a zero underlying; both are negative-gamma positions whose buying-power requirement and liquidation risk can expand before the terminal loss is realized. Collected premium is compensation for contingent obligations and tail liquidity, not a yield detached from the underlying distribution. At Intermediate, this is risk recognition—not live-trading permission; deployment remains gated until you have completed defined-risk spreads, portfolio scenarios, assignment operations, and Expert-level broker/margin controls.</p><div class="correct"><span class="label">Watch for</span><p>A far-OTM strike is not harmless, a stop order does not define gap risk, cash-secured and naked puts are not capitalized the same way, and a high probability of expiring OTM does not establish positive expectancy.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">17.</span> Protective puts and collars: hedge budget, strike choice, and basis risk</summary><div class="lesson-body"><p class="why">Protective puts define a floor but their cost, tenor, skew, and roll frequency determine whether the hedge helps over a full cycle; collars finance some protection by capping upside. Traders learn to choose protection against a specific loss horizon rather than buying the nearest cheap put after volatility has already surged.</p><div class="correct"><span class="label">Watch for</span><p>Do not confuse portfolio insurance with a guaranteed fill during stress, hedge a diversified portfolio with an index without measuring beta/basis risk, or judge a hedge solely because it loses money during calm markets.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">18.</span> Vertical debit spreads: construction, max profit/loss, breakeven, and capped convexity</summary><div class="lesson-body"><p class="why">Bull-call and bear-put debit spreads reduce premium and vega exposure by selling a farther strike, but cap payoff beyond that short strike. They are useful when direction and target are clearer than the belief in unlimited continuation, and when the long option alone embeds expensive volatility.</p><div class="correct"><span class="label">Watch for</span><p>Max profit normally requires expiration near/beyond the short strike, a spread can temporarily lose despite correct direction, and the short leg introduces assignment/expiration handling even though entry risk is defined.</p></div><div class="extra"><span class="label">Worked case &mdash; illustrative and hypothetical</span><p><b>Read this first.</b> The stock, the chain, the fills and the marks below are constructed for teaching. This is not a real trade, it is not attributable to anyone, and no outcome shown is typical or expected. Implied volatility is held flat at 34% across all strikes so the arithmetic stays checkable; a real chain carries skew.</p>
 <p><b>1. Setup &mdash; the chain.</b> A constructed stock, "MRT", trades at $100.00 with 21 trading days (about 30 calendar days) to the monthly expiration. One contract = 100 shares.</p>
@@ -854,7 +872,7 @@ expiry P&L:  $88.00 -> +$675   $90.00 -> +$675   $96.75 -> $0   $100.00 -> -$325
       <div class="lock-gate">
         <div class="lock-icon">🔐</div>
         <h3>Members-only content</h3>
-        <p>Level 3 — Advanced is part of the full PJ Trades curriculum. Unlock it with your Futures or Complete membership access code.</p>
+        <p>Level 3 — Advanced is part of the full PJ Trades curriculum. Unlock it with your Complete membership access code — Complete is $129/mo and is the plan that includes this course; Futures Core does not.</p>
         <form class="lock-form"><input type="password" placeholder="Premium access code" autocomplete="off" aria-label="Premium access code"><button class="btn" type="submit">Unlock</button></form>
         <div style="margin-top:10px;"><button type="button" class="btn ghost check-status-btn">I already unlocked</button></div>
         <div class="lock-msg"></div>
@@ -894,7 +912,7 @@ expiry P&L:  $88.00 -> +$675   $90.00 -> +$675   $96.75 -> $0   $100.00 -> -$325
       <div class="lock-gate">
         <div class="lock-icon">🔐</div>
         <h3>Members-only content</h3>
-        <p>Level 4 — Expert/Professional is part of the full PJ Trades curriculum. Unlock it with your Futures or Complete membership access code.</p>
+        <p>Level 4 — Expert/Professional is part of the full PJ Trades curriculum. Unlock it with your Complete membership access code — Complete is $129/mo and is the plan that includes this course; Futures Core does not.</p>
         <form class="lock-form"><input type="password" placeholder="Premium access code" autocomplete="off" aria-label="Premium access code"><button class="btn" type="submit">Unlock</button></form>
         <div style="margin-top:10px;"><button type="button" class="btn ghost check-status-btn">I already unlocked</button></div>
         <div class="lock-msg"></div>
@@ -980,6 +998,7 @@ function toggleTheme() {
 </script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="assets/curriculum.js" defer></script>
+<script src="assets/funnel.js" defer></script>
 <script src="assets/chatbot.js" defer></script>
 <script src="assets/lightning-bg.js" defer></script>
 </body>

@@ -3,27 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<link rel="canonical" href="https://not-financial-advice-vjm.com/pj/stock-breakdown.html">
+<!-- Canonical origin: https://not-financial-advice-vjm.com, at the ROOT (no /pj/
+     prefix). Canonical, og:url, twitter:url and the JSON-LD url/@id below all
+     use this one origin and path shape so search engines see a single URL.
+     NOTE: CNAME currently says not-financial-advice.com, which disagrees with
+     this origin. The owner must reconcile DNS/host with these tags BEFORE
+     indexing is enabled; this page stays out of the index until then. -->
+<link rel="canonical" href="https://not-financial-advice-vjm.com/stock-breakdown">
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
  "@type": "Course",
+ "@id": "https://not-financial-advice-vjm.com/stock-breakdown",
  "name": "Stock Breakdown",
  "description": "Four-level stock curriculum: tradability metrics, sessions and account mechanics, price and volume structure, playbooks, regime and internals, backtesting, and risk governance.",
- "url": "https://not-financial-advice-vjm.com/pj/stock-breakdown.html",
+ "url": "https://not-financial-advice-vjm.com/stock-breakdown",
  "provider": {
   "@type": "Organization",
   "name": "PJ Trades x St",
-  "url": "https://not-financial-advice-vjm.com/pj/"
+  "url": "https://not-financial-advice-vjm.com/"
  },
  "educationalLevel": "Beginner to Professional",
  "teaches": "Stock Breakdown",
- "numberOfCredits": 46,
  "isAccessibleForFree": false,
  "hasCourseInstance": {
   "@type": "CourseInstance",
   "courseMode": "online",
-  "courseWorkload": "PT46H",
   "instructor": {
    "@type": "Person",
    "name": "PJ Trades"
@@ -31,22 +36,34 @@
  },
  "offers": {
   "@type": "Offer",
+  "name": "Complete membership (monthly)",
   "category": "Subscription",
   "price": "129.00",
   "priceCurrency": "USD",
+  "priceSpecification": {
+   "@type": "UnitPriceSpecification",
+   "price": "129.00",
+   "priceCurrency": "USD",
+   "billingDuration": 1,
+   "billingIncrement": 1,
+   "unitCode": "MON"
+  },
   "availability": "https://schema.org/InStock",
   "url": "https://whop.com/pjtradespremium"
  }
 }
 </script>
-<meta property="og:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
+<meta property="og:url" content="https://not-financial-advice-vjm.com/stock-breakdown">
+<meta property="og:image" content="https://not-financial-advice-vjm.com/assets/pj-banner.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
+<meta name="twitter:url" content="https://not-financial-advice-vjm.com/stock-breakdown">
+<meta name="twitter:image" content="https://not-financial-advice-vjm.com/assets/pj-banner.jpg">
 <title>Stock Breakdown | PJ Trades x St</title>
 <meta name="description" content="PJ Trades x St — the complete stock trading curriculum, from beyond-beginner market mechanics through professional edge validation, position sizing, and trading-desk governance.">
-<meta name="robots" content="index, follow">
 <link rel="stylesheet" href="assets/curriculum.css">
 <script src="assets/theme.js"></script>
+<script>window.vjmTrackQueue = window.vjmTrackQueue || [];
+window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueue.push([n, p || {}, Date.now()]); } catch (e) {} };</script>
 </head>
 <body class="curr">
 <a class="skip" href="#curriculum">Skip to curriculum</a>
@@ -193,12 +210,12 @@
       <div class="lock-gate">
         <div class="lock-icon">🔐</div>
         <h3>Members-only content</h3>
-        <p>Level 1 — Foundational is part of the full PJ Trades stock curriculum. Unlock it with your Futures or Complete membership access code.</p>
+        <p>Level 1 — Foundational is part of the full PJ Trades stock curriculum. Unlock it with your Complete membership access code — Complete is $129/mo and is the plan that includes this course; Futures Core does not.</p>
         <form class="lock-form"><input type="password" placeholder="Premium access code" autocomplete="off" aria-label="Premium access code"><button class="btn" type="submit">Unlock</button></form>
         <div style="margin-top:10px;"><button type="button" class="btn ghost check-status-btn">I already unlocked</button></div>
         <div class="lock-msg"></div>
       </div>
-      <div class="gated-content" hidden><p class="level-intro">Work through it in this order: what makes a stock tradable, how sessions and account type govern execution, then the vocabulary of price and volume.</p><details class="lesson-card"><summary><span class="lnum">1.</span> Tradability Metrics: Float, Market Capitalization, ADV, Relative Volume, ATR, Beta, and Spread</summary><div class="lesson-body"><p class="why">Two stocks at the same price can behave completely differently because float, average daily volume, spread, volatility, and index sensitivity determine how easily a position can be entered and exited. Traders need these variables before choosing a strategy because a low-float momentum stock, a liquid mega-cap, and a slow defensive stock require different entries, stops, and sizing.</p><div class="correct"><span class="label">Watch for</span><p>Selecting stocks by share price alone; confusing float with shares outstanding; assuming high percentage volatility means good liquidity; ignoring the bid-ask spread when estimating risk.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">2.</span> Trading Sessions and Price Discovery: Premarket, Opening Auction, RTH, Closing Auction, and After-Hours</summary><div class="lesson-body"><p class="why">Liquidity, spreads, volatility, and participant behavior change materially between premarket, the opening drive, midday, the close, and after-hours trading. Understanding when price discovery is reliable prevents traders from applying the same execution rules to a thin premarket print and a high-volume regular-session breakout.</p><div class="correct"><span class="label">Watch for</span><p>Treating all candles as equally meaningful; using regular-session size in extended hours; assuming a premarket high or low is irrelevant; forgetting that opening and closing auction imbalances can produce abrupt moves.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">3.</span> Order Types and Time-in-Force: Market, Limit, Stop, Stop-Limit, Trailing Stop, MOO/LOO, MOC/LOC, DAY, GTC, and IOC</summary><div class="lesson-body"><p class="why">Order selection determines whether the priority is execution certainty, price control, or participation in an auction. Traders must understand trigger behavior and fill risk before using stops or breakout entries in volatile stocks.</p><div class="correct"><span class="label">Watch for</span><p>Assuming a stop order guarantees the stop price; using stop-limit orders without recognizing non-fill risk; placing market orders into wide spreads; leaving stale GTC orders active through earnings or corporate events.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">4.</span> Cash vs. Margin Accounts: T+1 Settlement, Good-Faith Risk, Buying Power, and the 2026 Intraday-Margin Transition</summary><div class="lesson-body"><p class="why">Account structure determines when sale proceeds are settled, what buying power is actually available, whether shorting is permitted, and which violations or margin deficits can restrict trading. T+1 means a stock trade settles one business day after the trade date: sell shares Monday and the cash is settled Tuesday, not the moment the sale fills. Buying a second security with unsettled proceeds is generally permitted; the good-faith violation occurs when that second security is <em>sold</em> before the sale that funded it has settled. Using Monday’s $5,000 in settled cash to buy stock A, selling A that afternoon for $5,200, then buying stock B with the unsettled $5,200 is fine on its own — hold B until Tuesday, when A’s proceeds settle, and nothing is violated. Sell B on Monday, before A has settled, and B was bought <em>and</em> sold on proceeds that had not yet settled: that is the good-faith violation. Verify your broker’s current implementation because FINRA’s new intraday-margin standards became effective June 4, 2026, while member firms may phase them in through October 20, 2027, so legacy pattern-day-trader rules should not be treated as universally controlling during the transition.</p><div class="correct"><span class="label">Watch for</span><p>Treating unsettled cash as consequence-free buying power; confusing a cash-account good-faith violation with a margin deficit; assuming margin is additional capital rather than leverage; repeating the old day-trade-count/$25,000 rule without checking the broker’s live policy and transition status.</p></div><div class="extra"><span class="label">Simplified overview — three cash-account violations, side by side</span><p>This is a simplified summary of U.S. cash-account settlement rules for teaching purposes, not legal or compliance advice. Brokers implement their own rule controls on top of the regulations — some block purchases against unsettled proceeds outright, some show a separate “settled cash” buying-power figure, some warn at the order ticket and some only flag the violation after the fact — so confirm the behaviour of your own account before relying on any of it. The dollar figures below are constructed for the example.</p><div class="table-wrap"><table class="lesson-table"><thead><tr><th>Violation</th><th>What triggers it</th><th>Worked sequence (T+1 settlement)</th><th>Typical consequence</th></tr></thead><tbody><tr><td>Good-faith violation</td><td>A security bought with unsettled proceeds is <em>sold</em> before the funding sale settles.</td><td>Mon: $5,000 settled cash buys A. Mon: A sold for $5,200 (settles Tue). Mon: B bought with the unsettled $5,200 — permitted. Mon: <b>B sold the same day</b> — violation. Holding B into Tue instead would not be one.</td><td>Brokers commonly restrict the account to settled-cash-only trading for a period after repeated violations.</td></tr><tr><td>Freeriding</td><td>A purchase is never paid for with anything except the proceeds of selling that same security.</td><td>Mon: $0 settled cash; B bought for $5,000 with no funds to cover it. Wed: B sold for $5,300 and the sale is used to pay for the Monday purchase. The position was never funded.</td><td>Under Regulation T this is the classic 90-day settled-cash-only restriction on the account.</td></tr><tr><td>Cash-liquidation violation</td><td>A purchase is covered by selling a <em>different</em> security that was sold on or after the purchase date, so the covering cash settles too late.</td><td>Mon: settled cash is $2,000 but B is bought for $5,000. Tue: unrelated holding C is sold for $3,000 to cover the shortfall — but C settles Wed, after B was due to be paid for on Tue.</td><td>Same family of restrictions; the account is flagged for buying without settled funds in place.</td></tr></tbody></table></div><p>The distinction that matters in practice: a good-faith violation is about the <em>second sale</em>, freeriding is about <em>never funding the purchase at all</em>, and a cash-liquidation violation is about <em>covering after the fact with the wrong asset</em>. None of the three exist in a margin account with sufficient buying power — there the equivalent failure mode is a margin deficit, which is a different rule set with different consequences.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">5.</span> Corporate Actions and Event Hygiene: Splits, Reverse Splits, Dividends, Offerings, Buybacks, Mergers, Halts, and Earnings Dates</summary><div class="lesson-body"><p class="why">Corporate actions can change the apparent chart, float, reference prices, and economic value of a position without representing ordinary supply and demand. An event calendar is therefore part of basic trade preparation, especially when holding overnight.</p><div class="correct"><span class="label">Watch for</span><p>Reading a split-adjusted gap as a tradable move; assuming a dividend adjustment is unexplained weakness; ignoring dilution or secondary-offering risk; carrying a position through earnings without consciously accepting discontinuous gap risk.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">6.</span> Price-Structure Grammar: Swing Highs/Lows, Trend, Range, Support/Resistance Zones, Breaks, Reclaims, and Failed Breaks</summary><div class="lesson-body"><p class="why">Traders need an objective language for describing what price is doing before learning named chart patterns. Swing structure and invalidation levels turn “looks bullish” into a testable premise with a defined point at which the trade is wrong.</p><div class="correct"><span class="label">Watch for</span><p>Drawing support and resistance as exact single-price barriers; labeling every minor pivot a trend change; entering solely because a line was touched; moving an invalidation level after price violates the original setup.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">7.</span> Volume and Liquidity Baselines: Total Volume, Relative Volume, Volume-at-Time, Turnover, and Dollar Volume</summary><div class="lesson-body"><p class="why">Volume only becomes informative when compared with what is normal for that stock and that time of day. Relative participation helps distinguish a meaningful breakout or catalyst response from price movement occurring in thin, easily reversed conditions.</p><div class="correct"><span class="label">Watch for</span><p>Comparing raw volume across stocks; calling midday volume “low” without a time-of-day baseline; assuming any volume spike is bullish; ignoring whether the trader’s own size is meaningful relative to available liquidity.</p></div></div></details><div class="key-takeaways">
+      <div class="gated-content" hidden><p class="level-intro">Work through it in this order: what makes a stock tradable, how sessions and account type govern execution, then the vocabulary of price and volume.</p><details class="lesson-card"><summary><span class="lnum">1.</span> Tradability Metrics: Float, Market Capitalization, ADV, Relative Volume, ATR, Beta, and Spread</summary><div class="lesson-body"><p class="why">Two stocks at the same price can behave completely differently because float, average daily volume, spread, volatility, and index sensitivity determine how easily a position can be entered and exited. Traders need these variables before choosing a strategy because a low-float momentum stock, a liquid mega-cap, and a slow defensive stock require different entries, stops, and sizing.</p><div class="correct"><span class="label">Watch for</span><p>Selecting stocks by share price alone; confusing float with shares outstanding; assuming high percentage volatility means good liquidity; ignoring the bid-ask spread when estimating risk.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">2.</span> Trading Sessions and Price Discovery: Premarket, Opening Auction, RTH, Closing Auction, and After-Hours</summary><div class="lesson-body"><p class="why">Liquidity, spreads, volatility, and participant behavior change materially between premarket, the opening drive, midday, the close, and after-hours trading. Understanding when price discovery is reliable prevents traders from applying the same execution rules to a thin premarket print and a high-volume regular-session breakout.</p><div class="correct"><span class="label">Watch for</span><p>Treating all candles as equally meaningful; using regular-session size in extended hours; assuming a premarket high or low is irrelevant; forgetting that opening and closing auction imbalances can produce abrupt moves.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">3.</span> Order Types and Time-in-Force: Market, Limit, Stop, Stop-Limit, Trailing Stop, MOO/LOO, MOC/LOC, DAY, GTC, and IOC</summary><div class="lesson-body"><p class="why">Order selection determines whether the priority is execution certainty, price control, or participation in an auction. Traders must understand trigger behavior and fill risk before using stops or breakout entries in volatile stocks.</p><div class="correct"><span class="label">Watch for</span><p>Assuming a stop order guarantees the stop price; using stop-limit orders without recognizing non-fill risk; placing market orders into wide spreads; leaving stale GTC orders active through earnings or corporate events.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">4.</span> Cash vs. Margin Accounts: T+1 Settlement, Good-Faith Risk, Buying Power, and the 2026 Intraday-Margin Transition</summary><div class="lesson-body"><p class="why">Account structure determines when sale proceeds are settled, what buying power is actually available, whether shorting is permitted, and which violations or margin deficits can restrict trading. T+1 means a stock trade settles one business day after the trade date: sell shares Monday and the cash is settled Tuesday, not the moment the sale fills. Buying a second security with unsettled proceeds is generally permitted; the good-faith violation occurs when that second security is <em>sold</em> before the sale that funded it has settled. Using Monday’s $5,000 in settled cash to buy stock A, selling A that afternoon for $5,200, then buying stock B with the unsettled $5,200 is fine on its own — hold B until Tuesday, when A’s proceeds settle, and nothing is violated. Sell B on Monday, before A has settled, and B was bought <em>and</em> sold on proceeds that had not yet settled: that is the good-faith violation. Verify your broker’s current implementation because FINRA’s new intraday-margin standards became effective June 4, 2026, while member firms may phase them in through October 20, 2027, so legacy pattern-day-trader rules should not be treated as universally controlling during the transition.</p><div class="correct"><span class="label">Watch for</span><p>Treating unsettled cash as consequence-free buying power; confusing a cash-account good-faith violation with a margin deficit; assuming margin is additional capital rather than leverage; repeating the old day-trade-count/$25,000 rule without checking the broker’s live policy and transition status.</p></div><div class="extra"><span class="label">Simplified overview — three cash-account violations, side by side</span><p>This is a simplified summary of U.S. cash-account settlement rules for teaching purposes, not legal or compliance advice. Brokers implement their own rule controls on top of the regulations — some block purchases against unsettled proceeds outright, some show a separate “settled cash” buying-power figure, some warn at the order ticket and some only flag the violation after the fact — so confirm the behaviour of your own account before relying on any of it. The dollar figures below are constructed for the example; no trade described here was taken by anyone, and nothing here is a claim about typical results.</p><div class="table-wrap"><table class="lesson-table"><thead><tr><th>Violation</th><th>What triggers it</th><th>Worked sequence (T+1 settlement)</th><th>Typical consequence</th></tr></thead><tbody><tr><td>Good-faith violation</td><td>A security bought with unsettled proceeds is <em>sold</em> before the funding sale settles.</td><td>Mon: $5,000 settled cash buys A. Mon: A sold for $5,200 (settles Tue). Mon: B bought with the unsettled $5,200 — permitted. Mon: <b>B sold the same day</b> — violation. Holding B into Tue instead would not be one.</td><td>Brokers commonly restrict the account to settled-cash-only trading for a period after repeated violations.</td></tr><tr><td>Freeriding</td><td>A purchase is never paid for with anything except the proceeds of selling that same security.</td><td>Mon: $0 settled cash; B bought for $5,000 with no funds to cover it. Wed: B sold for $5,300 and the sale is used to pay for the Monday purchase. The position was never funded.</td><td>Under Regulation T this is the classic 90-day settled-cash-only restriction on the account.</td></tr><tr><td>Cash-liquidation violation</td><td>A purchase is covered by selling a <em>different</em> security <em>after</em> the purchase date, so the covering cash settles after payment was due. (Selling C on the same day as the B purchase would settle on the same day and would not be a violation.)</td><td>Mon: settled cash is $2,000 but B is bought for $5,000. Tue: unrelated holding C is sold for $3,000 to cover the shortfall — but C settles Wed, after B was due to be paid for on Tue.</td><td>Same family of restrictions; the account is flagged for buying without settled funds in place.</td></tr></tbody></table></div><p>The distinction that matters in practice: a good-faith violation is about the <em>second sale</em>, freeriding is about <em>never funding the purchase at all</em>, and a cash-liquidation violation is about <em>covering after the fact with the wrong asset</em>. None of the three exist in a margin account with sufficient buying power — there the equivalent failure mode is a margin deficit, which is a different rule set with different consequences.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">5.</span> Corporate Actions and Event Hygiene: Splits, Reverse Splits, Dividends, Offerings, Buybacks, Mergers, Halts, and Earnings Dates</summary><div class="lesson-body"><p class="why">Corporate actions can change the apparent chart, float, reference prices, and economic value of a position without representing ordinary supply and demand. An event calendar is therefore part of basic trade preparation, especially when holding overnight.</p><div class="correct"><span class="label">Watch for</span><p>Reading a split-adjusted gap as a tradable move; assuming a dividend adjustment is unexplained weakness; ignoring dilution or secondary-offering risk; carrying a position through earnings without consciously accepting discontinuous gap risk.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">6.</span> Price-Structure Grammar: Swing Highs/Lows, Trend, Range, Support/Resistance Zones, Breaks, Reclaims, and Failed Breaks</summary><div class="lesson-body"><p class="why">Traders need an objective language for describing what price is doing before learning named chart patterns. Swing structure and invalidation levels turn “looks bullish” into a testable premise with a defined point at which the trade is wrong.</p><div class="correct"><span class="label">Watch for</span><p>Drawing support and resistance as exact single-price barriers; labeling every minor pivot a trend change; entering solely because a line was touched; moving an invalidation level after price violates the original setup.</p></div></div></details><details class="lesson-card"><summary><span class="lnum">7.</span> Volume and Liquidity Baselines: Total Volume, Relative Volume, Volume-at-Time, Turnover, and Dollar Volume</summary><div class="lesson-body"><p class="why">Volume only becomes informative when compared with what is normal for that stock and that time of day. Relative participation helps distinguish a meaningful breakout or catalyst response from price movement occurring in thin, easily reversed conditions.</p><div class="correct"><span class="label">Watch for</span><p>Comparing raw volume across stocks; calling midday volume “low” without a time-of-day baseline; assuming any volume spike is bullish; ignoring whether the trader’s own size is meaningful relative to available liquidity.</p></div></div></details><div class="key-takeaways">
   <h3>Key Takeaways</h3>
   <ul>
     <li><b>Sizing comes from float, ADV, ATR, beta, and spread — not share price.</b> Two stocks at the same price can require completely different entries and stops.</li>
@@ -233,7 +250,7 @@
       <div class="lock-gate">
         <div class="lock-icon">🔐</div>
         <h3>Members-only content</h3>
-        <p>Level 2 — Intermediate is part of the full PJ Trades curriculum. Unlock it with your Futures or Complete membership access code.</p>
+        <p>Level 2 — Intermediate is part of the full PJ Trades curriculum. Unlock it with your Complete membership access code — Complete is $129/mo and is the plan that includes this course; Futures Core does not.</p>
         <form class="lock-form"><input type="password" placeholder="Premium access code" autocomplete="off" aria-label="Premium access code"><button class="btn" type="submit">Unlock</button></form>
         <div style="margin-top:10px;"><button type="button" class="btn ghost check-status-btn">I already unlocked</button></div>
         <div class="lock-msg"></div>
@@ -281,7 +298,7 @@ bar 16 change = +2.00 (Wilder smoothing, not a fresh 14-bar window)
 <p>This is the comparison the lesson is really about. Run each indicator over bars 5–12 (the leg) and bars 13–20 (the range) and count, rather than eyeballing.</p>
 <div class="table-wrap"><table class="lesson-table"><thead><tr><th>Reading</th><th>Bars 5–12 (trend)</th><th>Bars 13–20 (range)</th><th>What changed</th></tr></thead><tbody>
 <tr><td>Close crossing EMA(5)</td><td>0 crossings</td><td>6 crossings</td><td>The same moving average is a trend filter in one segment and a whipsaw generator in the other. Nothing about the indicator changed.</td></tr>
-<tr><td>SMA(5) level</td><td>102.20 → 111.80 (+9.40)</td><td>113.00 → 114.80 (+1.80)</td><td>Slope, not position, is the usable signal.</td></tr>
+<tr><td>SMA(5) level</td><td>102.20 → 111.80 (+9.60)</td><td>113.00 → 114.80 (+1.80)</td><td>Slope, not position, is the usable signal.</td></tr>
 <tr><td>ATR(5)</td><td>2.180 → 2.955</td><td>2.844 → 2.923</td><td>Essentially unchanged between the two regimes.</td></tr>
 <tr><td>Bollinger width</td><td>15.58% at bar 12</td><td>4.53% at bar 20</td><td>Down 71% while ATR barely moved.</td></tr>
 <tr><td>MACD(3,6) signal crosses</td><td>bearish at bar 10, bullish at bar 11</td><td>bearish at bar 13, then flat near zero</td><td>One false cross inside the leg, one that did mark the turn — indistinguishable at the time.</td></tr>
@@ -310,14 +327,14 @@ Structure-based stop for comparison: bar-17 low 112.70 − 0.10 = 112.60
   risk per share = 116.00 − 112.60 = 3.40, + 0.04 = 3.44
   size = 400.00 ÷ 3.44 = 116.28 → 116 shares
   capital committed = 116 × 116.00 = $13,456.00   actual risk = 116 × 3.44 = $399.04</div>
-<p>Both tickets risk the same $400. The wider ATR stop buys 29% less stock; the tighter structural stop buys more stock and accepts a higher chance of being tagged by noise — bar 15 alone traded 3.60 of range. That trade-off is the decision, and ATR is the tool that makes it explicit rather than accidental.</p>
+<p>Both tickets risk the same $400. The wider ATR stop buys 22% less stock; the tighter structural stop buys more stock and accepts a higher chance of being tagged by noise — bar 15 alone traded 3.60 of range. That trade-off is the decision, and ATR is the tool that makes it explicit rather than accidental.</p>
 
 <span class="label">Step 6 — management, by rule</span>
 <p>Pre-committed trail: each completed bar, stop = (highest close since entry) − 1.5 × current ATR(5), and the stop never moves down. Suppose bar 21 prints high 119.60, low 115.20, close 119.00.</p>
 <div class="formula">TR at bar 21 = max(119.60 − 115.20, |119.60 − 116.00|, |115.20 − 116.00|) = max(4.40, 3.60, 0.80) = 4.40
 ATR(5) at bar 21 = (2.923 × 4 + 4.40) ÷ 5 = 16.092 ÷ 5 = 3.218
 trail = 119.00 − (1.5 × 3.218) = 119.00 − 4.827 = 114.17
-114.17 &gt; 111.62, so the stop moves up to 114.17; open risk falls from 4.42 to (119.00 − 114.17) = 4.83 per share against a 3.00 gain already in hand.</div>
+114.17 &gt; 111.62, so the stop moves up to 114.17; risk measured from the entry falls from 4.42 to (116.00 − 114.17) = 1.83 per share, against a 3.00 gain already in hand. Measured from the new 119.00 close the stop is 4.83 away — trailing at 1.5 × ATR gives back more as ATR expands.</div>
 <p>Note what the rule does <em>not</em> do: it does not consult RSI, MACD or the bands. Invalidation stays a price question. An indicator that is allowed to overrule a price stop has stopped being a measurement and become a second opinion, which is exactly the failure the lesson warns about.</p>
 
 <span class="label">Counterfactual — the RSI short that the filter should have blocked</span>
@@ -344,7 +361,7 @@ At bar 20: SMA(5) bar 15 = 115.00 → bar 20 = 114.80
 <p>(a) TR at bar 21 &nbsp;· (b) ATR(5) at bar 21 &nbsp;· (c) SMA(5) at bar 21 &nbsp;· (d) EMA(5) at bar 21 &nbsp;· (e) ROC(5) at bar 21 &nbsp;· (f) the new ATR trail stop</p>
 <div class="table-wrap"><table class="lesson-table"><thead><tr><th>#</th><th>Answer</th><th>Working</th><th>Credit</th></tr></thead><tbody>
 <tr><td>a</td><td>4.40</td><td>max(4.40, 3.60, 0.80)</td><td>Exact. Using high − low only is the common error and happens to give the same answer here — say which of the three terms won.</td></tr>
-<tr><td>b</td><td>3.218</td><td>(2.923 × 4 + 4.40) ÷ 5</td><td>±0.002. Seeding a fresh 5-bar mean of TR instead of Wilder-smoothing gives 3.34 — no credit, wrong method.</td></tr>
+<tr><td>b</td><td>3.218</td><td>(2.923 × 4 + 4.40) ÷ 5</td><td>±0.002. Seeding a fresh 5-bar mean of TR (bars 17–21: 3.70 + 3.00 + 2.20 + 3.00 + 4.40 = 16.30, ÷ 5) instead of Wilder-smoothing gives 3.26 — no credit, wrong method.</td></tr>
 <tr><td>c</td><td>115.40</td><td>(113 + 115 + 114 + 116 + 119) ÷ 5 = 577 ÷ 5</td><td>Exact. Bars 17–21, not 16–20.</td></tr>
 <tr><td>d</td><td>116.251</td><td>119.00 × 0.333333 + 114.876 × 0.666667</td><td>±0.01. If you get 116.25 from a rounded 114.88, that is fine; more than a cent out means you rounded earlier in the chain.</td></tr>
 <tr><td>e</td><td>+2.59%</td><td>(119.00 ÷ 116.00 − 1) × 100 — bar 16's close is the reference</td><td>±0.01. Using bar 15 (114.00) gives +4.39% and is an off-by-one, the single most common ROC mistake.</td></tr>
@@ -412,11 +429,11 @@ risk per share = (63.85 − 62.90) + 0.05 buffer = 1.00
 
 ROOM      (65.00 − 63.85) ÷ 1.00 = 1.15R   &lt; 1.5R          → FAIL
 EXTENSION (63.85 − 63.05) ÷ 0.42 = 0.80 ÷ 0.42 = 1.90 ATR   → FAIL (limit 1.5)</div>
-<p>Two independent rules refuse it, and they refuse it for the same underlying reason stated two ways: the move has already happened, so the risk needed to participate has grown faster than the reward left over. Had it been taken, the ticket would have been 375 shares ($23,943.75 committed) risking $375 to make at most 375 × 1.15 = $431.25 before the round number — and a single stop-out would have erased the 1.22R already banked from Ticket 1 and then some.</p>
+<p>Two independent rules refuse it, and they refuse it for the same underlying reason stated two ways: the move has already happened, so the risk needed to participate has grown faster than the reward left over. Had it been taken, the ticket would have been 375 shares ($23,943.75 committed) risking $375 to make at most 375 × 1.15 = $431.25 before the round number — and a single stop-out would have given back $375.00 of the $456.62 banked from Ticket 1, 82% of the day's gain, for a trade the rules had already refused.</p>
 <p>The discipline point is narrow and worth stating plainly: the room and extension thresholds were written before the session opened. A threshold invented at 10:40, while looking at a chart that is going up, is not a rule.</p>
 
 <span class="label">Ticket 3 — compression break that fails (taken, then cut)</span>
-<p>Constructed instrument "BBB", a 30-minute base from 09:55 to 10:25. Base high 49.20, base low 48.60, width 0.60, midpoint 48.90.</p>
+<p>Constructed instrument "BBB", a 30-minute base from 09:55 to 10:25. Base high 49.20, base low 48.60, width 0.60, midpoint 48.90. Assume the trigger bar clears rule 2's 2× volume test; the arithmetic below is about rules 3–6.</p>
 <div class="table-wrap"><table class="lesson-table"><thead><tr><th>5-min bar</th><th>High</th><th>Low</th><th>Range</th><th>Range ÷ 0.28 (first-three mean)</th></tr></thead><tbody>
 <tr><td>09:55–10:00</td><td>49.20</td><td>48.89</td><td>0.31</td><td>111%</td></tr>
 <tr><td>10:00–10:05</td><td>49.12</td><td>48.85</td><td>0.27</td><td>96%</td></tr>
@@ -506,7 +523,7 @@ rule 6 saved between $135.49 and $167.37 on this single instance.</div>
       <div class="lock-gate">
         <div class="lock-icon">🔐</div>
         <h3>Members-only content</h3>
-        <p>Level 3 — Advanced is part of the full PJ Trades curriculum. Unlock it with your Futures or Complete membership access code.</p>
+        <p>Level 3 — Advanced is part of the full PJ Trades curriculum. Unlock it with your Complete membership access code — Complete is $129/mo and is the plan that includes this course; Futures Core does not.</p>
         <form class="lock-form"><input type="password" placeholder="Premium access code" autocomplete="off" aria-label="Premium access code"><button class="btn" type="submit">Unlock</button></form>
         <div style="margin-top:10px;"><button type="button" class="btn ghost check-status-btn">I already unlocked</button></div>
         <div class="lock-msg"></div>
@@ -676,7 +693,7 @@ round-trip in spread plus impact:
       <div class="lock-gate">
         <div class="lock-icon">🔐</div>
         <h3>Members-only content</h3>
-        <p>Level 4 — Expert/Professional is part of the full PJ Trades curriculum. Unlock it with your Futures or Complete membership access code.</p>
+        <p>Level 4 — Expert/Professional is part of the full PJ Trades curriculum. Unlock it with your Complete membership access code — Complete is $129/mo and is the plan that includes this course; Futures Core does not.</p>
         <form class="lock-form"><input type="password" placeholder="Premium access code" autocomplete="off" aria-label="Premium access code"><button class="btn" type="submit">Unlock</button></form>
         <div style="margin-top:10px;"><button type="button" class="btn ghost check-status-btn">I already unlocked</button></div>
         <div class="lock-msg"></div>
@@ -722,6 +739,7 @@ round-trip in spread plus impact:
 </footer>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <script src="assets/curriculum.js" defer></script>
+<script src="assets/funnel.js" defer></script>
 <script src="assets/chatbot.js" defer></script>
 <script src="assets/lightning-bg.js" defer></script>
 </body>

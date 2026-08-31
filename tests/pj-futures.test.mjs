@@ -11,6 +11,9 @@ const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const index = readFileSync(join(ROOT, 'index.html'), 'utf8')
   + readFileSync(join(ROOT, 'assets', 'site.css'), 'utf8');
 const premarket = readFileSync(join(ROOT, 'premarket.html'), 'utf8');
+// Markup only — HTML comments are stripped, because the owner-facing comments
+// left behind by a removal necessarily quote the copy that was removed.
+const indexMarkup = index.replace(/<!--[\s\S]*?-->/g, '');
 const guidance = readFileSync(join(ROOT, 'premium-guidance.html'), 'utf8');
 
 test('bundles: $100 futures core with 6mo/1yr options, $129 complete tier', () => {
@@ -69,19 +72,59 @@ test('video sits above bundles with a PJ video-frame poster and lazy facade', ()
   assert.doesNotMatch(index, /<video[^>]*src=/, 'no eager video src (25MB deploy limit + LCP)');
 });
 
-test('team: PJ real card + blank owner-fillable slots (no invented bios)', () => {
+// Updated 2026-08-31: this used to REQUIRE five blank "Team Member / Role
+// coming soon / Bio coming soon" cards. Placeholder identities on a page
+// selling a paid product read as an abandoned site to a first-time visitor,
+// so the blank cards were deleted. The part of the old contract that still
+// matters — PJ's real card stays, and nobody is invented to fill the grid
+// (AGENTS.md non-negotiable #2) — is asserted below, plus the new rule that
+// no placeholder identity ships at all.
+test('team: PJ real card only, no placeholder identities, no invented bios', () => {
   assert.match(index, /<h3>PJTrades<\/h3>/, 'PJ card missing');
   assert.match(index, /10 years in the markets/, 'PJ 10-year bio line missing');
-  const blanks = [...index.matchAll(/team-avatar-blank/g)].length;
-  assert.ok(blanks >= 5, 'expected at least 5 blank team slots, found ' + blanks);
+  assert.doesNotMatch(indexMarkup, /<h3>Team Member<\/h3>|Role coming soon|Bio coming soon/,
+    'placeholder team cards must not ship — restore real people from the CMS instead');
+  // (The .team-avatar-blank RULE still sits in assets/site.css, now unused —
+  // harmless, and that file belongs to another lane. What must not ship is a
+  // blank avatar element on the page.)
+  assert.doesNotMatch(indexMarkup, /class="team-avatar team-avatar-blank"/, 'blank avatar slots must not ship');
   assert.doesNotMatch(index, /<h3>Caleb<\/h3>|<h3>Gainz<\/h3>|<h3>KWT<\/h3>/, 'named cards must stay out until owner personalizes them');
+  // The CMS path that fills the section with real people must survive.
+  assert.match(index, /\/api\/content\?type=team/, 'team CMS fetch missing');
+  assert.match(index, /id="team-grid"/, 'team grid container missing');
 });
 
-test('member results wall is blank and owner-ready', () => {
+// Updated 2026-08-31 with the same reasoning: the wall used to advertise
+// itself with a "Wall coming soon" empty state. The section now ships hidden
+// and is revealed only by real CMS cards, so there is no empty promise on the
+// page — but the #wins anchor (linked from eight other pages) and the
+// results-vary disclaimer must both stay.
+test('member results wall ships hidden until real cards exist', () => {
   assert.match(index, /id="results"/);
-  assert.match(index, /results-empty/, 'placeholder state missing');
-  assert.match(index, /To add a card later, copy this template/, 'owner template comment missing');
+  assert.match(index, /<section id="results"[^>]*\shidden>/, 'results section must ship hidden');
+  assert.doesNotMatch(indexMarkup, /Wall coming soon/, 'placeholder empty state must not ship');
+  assert.doesNotMatch(indexMarkup, /id="results-empty"/, 'placeholder empty state must not ship');
+  assert.match(index, /id="wins"/, 'the #wins anchor is linked from other pages and must stay');
+  assert.match(index, /section\.hidden = false/, 'CMS results must be what reveals the section');
   assert.match(index, /Results vary and are never typical or guaranteed/);
+});
+
+// The FAQ is Whop-verbatim ("I go live 3 to 5 times a week"), so 3-5 is the
+// only supported session frequency. A "10+ times a week" claim used to sit in
+// the meta description, the JSON-LD, the hero bullet list and the futures tier
+// card while the FAQ, the proof bar and the schedule heading all said 3-5.
+test('live-session frequency is stated consistently (3-5x, per the Whop FAQ)', () => {
+  assert.doesNotMatch(index, /10\+ times/, 'contradicts the Whop-verbatim FAQ (3 to 5 times a week)');
+  assert.match(index, /3&ndash;5 times each week|3–5 times each week/, 'hero/tier frequency line missing');
+  assert.match(index, /3–5x/, 'proof-bar + schedule heading frequency missing');
+});
+
+// functions/api/_lib/backtest-core.js exists but is wired to no route and no
+// UI (its own tests call it "not-yet-wired"), so nothing on this site runs a
+// backtest for anyone. Sales copy must not imply otherwise.
+test('no backtesting engine is advertised as a shipped feature', () => {
+  assert.doesNotMatch(indexMarkup, /backtesting engine|backtester|run backtests/i,
+    'no backtesting engine ships — do not advertise one');
 });
 
 test('premium Alpaca AI trend analyst: gated endpoint + member UI', () => {
@@ -212,10 +255,13 @@ test('CMS Phase 3: schedule/team/faqs/bundles/stats/results wired with fallbacks
   assert.match(index, /\$100<span>\/mo<\/span>/, 'static bundle price fallback missing');
   assert.match(index, /id="faq-list"/);
   assert.match(index, /Do you offer live trading\?/, 'static FAQ fallback missing');
-  assert.match(index, /id="results-empty"/);
+  // The results empty state and the five blank team slots were deleted on
+  // 2026-08-31 (placeholder copy on a paid product page). The CMS now appends
+  // into the grids instead of overwriting placeholders, so what has to exist
+  // is the containers and the reveal, not the placeholders.
   assert.match(index, /id="results-grid"/);
-  const blanks = [...index.matchAll(/data-blank/g)].length;
-  assert.ok(blanks >= 5, 'expected at least 5 data-blank team slots for CMS fill-in, found ' + blanks);
+  assert.match(index, /id="team-grid"/);
+  assert.match(index, /grid\.appendChild\(card\)/, 'team CMS must append real cards');
 });
 
 test('apps-script content bridge reads the new CMS tabs', () => {

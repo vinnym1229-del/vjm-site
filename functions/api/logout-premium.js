@@ -1,12 +1,17 @@
 // Cloudflare Pages Function: POST /api/logout-premium
 // Clears the premium session cookie. Idempotent.
+//
+// Uses verifySessionCookie (signature + expiry only), NOT getSession: signing
+// out is not a gated request, and a member whose D1 record was just revoked
+// must still get a clean, audited logout rather than being treated as having
+// no session at all.
 
-import { getSession } from './_lib/session.js';
+import { verifySessionCookie } from './_lib/session.js';
 import { jsonClearedSession } from './_lib/http.js';
 
 export async function onRequestPost(context) {
   try {
-    const session = await getSession(context.request, context.env);
+    const session = await verifySessionCookie(context.request, context.env);
     if (session && (context.env.RATELIMIT_DB || context.env.RESEARCH_DB)) {
       const db = context.env.RATELIMIT_DB || context.env.RESEARCH_DB;
       try {
