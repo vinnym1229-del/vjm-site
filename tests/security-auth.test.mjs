@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   timingSafeEqual, resolveSigningSecret, signSession, verifySessionToken,
-  buildSessionCookie, buildClearCookie, readSessionCookie, getSession,
+  buildSessionCookie, buildClearCookie, readSessionCookie, getSession, sessionDays,
 } from '../functions/api/_lib/session.js';
 
 const SECRET = 'x'.repeat(48);
@@ -79,6 +79,20 @@ test('cookie reader extracts session value only', () => {
   assert.equal(readSessionCookie(req), 'tok.value');
   const none = { headers: { get: () => null } };
   assert.equal(readSessionCookie(none), null);
+});
+
+test('sessionDays defaults to 7 and hard-caps at 30 regardless of misconfiguration', () => {
+  // auth-google.js's own comment: a yearly Whop plan must not mint a
+  // year-long token, so this cap is what actually bounds session lifetime
+  // if SESSION_DAYS is ever misconfigured (or left unset) on the owner side.
+  assert.equal(sessionDays({}), 7);
+  assert.equal(sessionDays({ SESSION_DAYS: '0' }), 7);
+  assert.equal(sessionDays({ SESSION_DAYS: '-5' }), 7);
+  assert.equal(sessionDays({ SESSION_DAYS: 'not-a-number' }), 7);
+  assert.equal(sessionDays({ SESSION_DAYS: '3.2' }), 4); // rounds up, never down
+  assert.equal(sessionDays({ SESSION_DAYS: '30' }), 30);
+  assert.equal(sessionDays({ SESSION_DAYS: '31' }), 30);
+  assert.equal(sessionDays({ SESSION_DAYS: '365' }), 30);
 });
 
 test('getSession verifies request end-to-end', async () => {
