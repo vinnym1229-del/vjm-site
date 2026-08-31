@@ -77,6 +77,42 @@ The scanner compares QQQ with SPY and calculates:
 
 The selectable sample is 5, 20, or 40 trade days. Every displayed probability includes its observation count. These are descriptive historical frequencies, not a prediction or recommendation.
 
+## Timing convention (frozen)
+
+Every study in the Research Engine obeys one timing convention, defined once as
+`TIMING_CONVENTION` in `functions/api/_lib/backtest-core.js`, imported by
+`functions/api/research-engine.js`, and stamped onto every study response under
+`provenance.timingConvention`. It is versioned; a change to any clause changes
+the meaning of every published statistic.
+
+| Clause | Rule |
+| --- | --- |
+| Observable | A signal exists only at the close of the last bar required to define it. A pivot needs its confirmation bars. A grouped 5m/15m/60m bar needs its whole group — its opening timestamp is a drawing position, not an observation time. An indicator at index *i* may read indices ≤ *i* only. |
+| Actionable | No transaction before the first bar that opens at or after that instant. |
+| Fill | The entry price is one that still lay in the future when the signal completed: the close of the bar that made the signal observable, the resting fib level for a retracement touch, or the next bar's open in the daily event-study engine. |
+| Outcome | MFE, MAE, continuation, reversal and fill are scanned strictly after the entry bar. Bars that printed before the entry price existed are never scored. |
+| Ambiguity | Anything bar data cannot resolve is resolved against the study — same-bar target/stop is treated as stop-first, and intrabar order is never assumed favourable. |
+
+This convention was introduced after an audit found two look-ahead defects in
+the shipped studies: stock fib pivots were measured from the pivot bar (which
+is not identifiable until `pivot` bars later), and multi-timeframe FVG and
+displacement candles were acted on at their opening timestamp while carrying
+the completed group's values. Both let a study transact on information that did
+not exist yet, which inflates conditional hit rates, fill rates and
+continuation rates. `tests/research-engine.test.mjs` contains adversarial
+fixtures — tapes whose future is deliberately hostile to the signal — that fail
+if either behaviour returns.
+
+### What the published numbers are
+
+Every study response also carries `provenance.results = 'hypothetical-gross'`
+and a disclaimer. These are hypothetical descriptive frequencies computed from
+historical bars under the convention above. They are **gross**: no commissions,
+fees, financing, borrow, spread or slippage, no fill model, no queue position,
+no partial fills. They are not achieved results, not live-tradable performance,
+not a forecast, and not a recommendation. Any interface that displays them must
+say so.
+
 ## Data definitions and guardrails
 
 - Current spot snapshots use Alpaca IEX. The intraday model requests consolidated SIP history for 6:00–8:00 PM, 4:00 AM–4:00 PM and BOATS history for 8:00 PM–4:00 AM. The request ends 16 minutes before the current time so it stays inside the Free plan's historical-data delay.
@@ -86,7 +122,8 @@ The selectable sample is 5, 20, or 40 trade days. Every displayed probability in
 - The overnight, Asia, and London labels are QQQ/SPY ETF price-action proxies. They do not contain CME NQ/ES volume, order flow, futures-only prints, or the futures maintenance break. The interface labels this limitation everywhere the proxy is shown.
 - A sweep must cross the stored level from the expected side. An opening gap entirely beyond the level is not counted. Continuation means a 0.15% extension occurs before a 0.15% reversal. The continuation model is sweep → same-direction FVG → retest → post-sweep extreme break.
 - QQQ/SPY SMT requires one ETF to take its prior-day extreme while the paired ETF remains unmatched for at least five minutes. Outcomes begin at that confirmation time, preventing end-of-day look-ahead from qualifying the setup.
-- Fibonacci studies use the exact selected calendar lookback (one, three, or six years), visible pivot windows, and an explicit post-touch outcome horizon. Daily and weekly rows remain separate in the interface. Daily bars cannot establish the intrabar order when a retracement touch and fill happen in the same session. Rates with fewer than five observations remain visible but do not qualify as the “best” level.
+- Five, fifteen and sixty-minute bars are drawn at the group's opening timestamp but are defined by the group's completed high/low/close, so no study may react to one before the group has ended. Every grouped bar carries the instant it became observable, and multi-timeframe FVG, IFVG and displacement events are timed from that instant (records publish both `formedAt` and `observableAt`). Time-to-retest is measured from the observation instant, not from the candle's opening timestamp.
+- Fibonacci studies use the exact selected calendar lookback (one, three, or six years), visible pivot windows, and an explicit post-touch outcome horizon. A swing high is only a swing high once `pivot` further bars have closed without exceeding it, so every retracement measurement starts at that **confirmation** bar, never at the high itself, and each event publishes both `highDate` and `confirmDate`. Daily and weekly rows remain separate in the interface. Daily bars cannot establish the intrabar order when a retracement touch and fill happen in the same session, so a fill printed on the touch bar itself is not counted. Rates with fewer than five observations remain visible but do not qualify as the “best” level.
 - The option slope lab uses synthetic fixed-Greek profiles. Vega is applied per IV percentage point, theta is scaled across a 390-minute session, and the page labels the result modeled rather than observed.
 - Biotech catalyst cells stay blank until a specialized catalyst/fundamental source is connected.
 

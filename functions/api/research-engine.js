@@ -1,6 +1,7 @@
 import { checkRateLimit } from './_lib/http.js';
 import { getSession } from './_lib/session.js';
 import { authorizeResource } from './_lib/entitlements.js';
+import { TIMING_CONVENTION } from './_lib/backtest-core.js';
 
 // Cloudflare Pages Function: GET /api/research-engine?module=<health|options|intraday|stock|sectors|biotech>
 //
@@ -26,6 +27,13 @@ const EQUITY_FEED = 'iex';
 const HISTORICAL_EQUITY_FEED = 'sip';
 const OVERNIGHT_FEED = 'boats';
 const OPTION_FEED = 'indicative';
+// The timing convention every study in this file obeys is defined once, in
+// functions/api/_lib/backtest-core.js, and imported here so the engine and the
+// published numbers can never drift apart. Read the long comment beside
+// TIMING_CONVENTION there before adding or changing a study: it exists because
+// an audit found fib pivots being measured from the pivot bar (knowable only
+// `pivot` bars later) and grouped intraday bars being acted on at their opening
+// timestamp while carrying the completed group's high/low/close.
 const ET_FORMATTER = new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
 
 export async function onRequestGet(context) {
@@ -54,6 +62,7 @@ export async function onRequestGet(context) {
         'Basic options use an indicative feed; trades are delayed and quotes are modified.',
         'Alpaca historical options begin in February 2024.',
         'Asia and London are QQQ/SPY ETF price-action proxies, not actual CME NQ/ES volume or order flow.',
+        'Every study result is hypothetical and gross: no commissions, fees, spread, slippage or fill modelling. Signals are timed to the first bar at which they were observable (see provenance.timingConvention on each study response).',
       ],
       asOf: new Date().toISOString(),
     });
@@ -74,7 +83,10 @@ export async function onRequestGet(context) {
     else if (module === 'biotech') result = await biotechModule(context.env);
     else return json({ok:false,error:'Unknown research module.'}, 400);
 
-    const response = {ok:true,module,mode:result.mode || 'observed',source:result.source,asOf:new Date().toISOString(),parameters:result.parameters || {},data:result.data};
+    // provenance travels with every study result so the UI can state the
+    // timing convention and that the numbers are hypothetical/gross.
+    const response = {ok:true,module,mode:result.mode || 'observed',source:result.source,asOf:new Date().toISOString(),parameters:result.parameters || {},provenance:result.provenance,data:result.data};
+    if (!response.provenance) delete response.provenance;
     await saveSnapshot(context.env, module, canonicalKey(module, url.searchParams), response);
     return json(response);
   } catch (error) {
@@ -194,6 +206,7 @@ async function intradayModule(params, env) {
   const allEvents = events.concat(smt, model.events);
   return {
     mode:'observed ETF proxy', source:{regularAndExtended:'Alpaca SIP historical bars (15-minute delayed on Free)',overnight:'Alpaca BOATS historical bars (15-minute delayed on Free)',proxy:'QQQ/SPY—not NQ/ES'}, parameters:{symbol,paired,days},
+    provenance:studyProvenance('Intraday sweep / FVG / SMT event study'),
     data:{
       conditions:summarizeConditions(allEvents), timing:summarizeTiming(allEvents),
       eventCount:allEvents.length,
@@ -227,6 +240,7 @@ async function stockModule(params, env) {
   const best = fibStats.filter((x)=>x.touches>=5).sort((a,b)=>(b.fillRate||0)-(a.fillRate||0))[0];
   return {
     mode:'observed', source:{equities:'Alpaca adjusted daily IEX bars'}, parameters:{symbol,lookback,horizon,pivot,timeframe},
+    provenance:studyProvenance(`Fibonacci retracement event study (${timeframe})`,{signalConfirmation:`A swing high is confirmed ${pivot} bars after it prints; retracement measurement starts at that confirmation bar, never at the high itself.`}),
     data:{
       summary:{lastPrice:close,lastDate:String(last.t||'').slice(0,10),return20,atr14Pct:atrPct(daily,14),setups:allEvents.length,bestFib:best?(best.level*100).toFixed(1)+'%':'Insufficient N'},
       fibStats, latestSwing:analyses[0].result.latestSwing, timeframeBreakdown:analyses.map((x)=>({timeframe:x.name,events:x.result.events.length,stats:x.result.stats})),
@@ -307,6 +321,30 @@ async function alpaca(base, params, env) {
   return data;
 }
 
+// Provenance block attached to every study result so the UI can state what the
+// numbers are -- and what they are not -- without re-deriving it. Nothing here
+// claims a fill model or costs that this engine does not implement.
+function studyProvenance(study, extra = {}) {
+  return {
+    study,
+    engine: 'research-engine',
+    timingConvention: TIMING_CONVENTION,
+    results: 'hypothetical-gross',
+    disclaimer: 'Hypothetical, gross theoretical results computed from historical bars under the stated timing convention. No commissions, fees, spread, slippage or fill modelling are applied, so these are not achieved or live-tradable results. Educational only; not financial advice.',
+    ...extra,
+    asOf: new Date().toISOString(),
+  };
+}
+
+// Fibonacci retracement event study. See TIMING_CONVENTION.
+//
+// LOOK-AHEAD RULE (do not relax): a swing high at index `hi` is identified by
+// comparing it with the `pivot` bars on EITHER side, so it is not knowable
+// until bar hi+pivot has closed. The study's clock therefore starts at
+// hi+pivot (confirmation), and the first bar it may transact on is
+// hi+pivot+1. Measuring retracement touches from hi+1 -- as this did -- let
+// every event trade on a pivot the tape had not yet printed, which inflated
+// touch counts, fill rates and new-high rates.
 function analyseFib(bars,pivot,horizon,timeframe) {
   const fibs=[.382,.5,.618],events=[],swingHighs=[];
   for(let i=pivot;i<bars.length-pivot;i++){
@@ -317,15 +355,24 @@ function analyseFib(bars,pivot,horizon,timeframe) {
   for(let s=0;s<swingHighs.length;s++){
     const hi=swingHighs[s],lowStart=Math.max(0,hi-60),lowIndex=argMin(bars,lowStart,hi,'l');if(lowIndex===null||lowIndex>=hi)continue;
     const low=finite(bars[lowIndex].l),high=finite(bars[hi].h);if(low===null||high===null||high<=low)continue;
-    const searchEnd=Math.min(bars.length-1,hi+horizon,swingHighs[s+1]??bars.length-1);
-    for(const level of fibs){const price=high-(high-low)*level;let touch=null;for(let j=hi+1;j<=searchEnd;j++){if(finite(bars[j].l)!==null&&finite(bars[j].l)<=price){touch=j;break}}if(touch===null)continue;
+    // Confirmation bar, and the first bar the level could actually be worked.
+    const confirmIndex=hi+pivot,firstActionable=confirmIndex+1;if(firstActionable>bars.length-1)continue;
+    // The next swing high is itself unknown until ITS confirmation bar, so the
+    // window may not be truncated at the raw next-pivot index either.
+    const nextConfirm=swingHighs[s+1]===undefined?bars.length-1:swingHighs[s+1]+pivot;
+    const searchEnd=Math.min(bars.length-1,confirmIndex+horizon,nextConfirm);
+    for(const level of fibs){const price=high-(high-low)*level;let touch=null;for(let j=firstActionable;j<=searchEnd;j++){if(finite(bars[j].l)!==null&&finite(bars[j].l)<=price){touch=j;break}}if(touch===null)continue;
+      // The touch is only known once the touch bar has closed, and daily bars
+      // cannot order the intrabar path, so the outcome window opens on the
+      // NEXT bar. Counting the touch bar's own high as a fill assumed the high
+      // printed after the level was tagged, which is unknowable.
       const outcomeEnd=Math.min(bars.length-1,touch+horizon);let maxHigh=-Infinity,minLow=Infinity,fillIndex=null,newHigh=false;
-      for(let j=touch;j<=outcomeEnd;j++){const h=finite(bars[j].h),l=finite(bars[j].l);if(h!==null){maxHigh=Math.max(maxHigh,h);if(fillIndex===null&&h>=high)fillIndex=j;if(h>high*1.001)newHigh=true}if(l!==null)minLow=Math.min(minLow,l)}
-      events.push({timeframe,level,touchDate:dateOnly(bars[touch].t),filled:fillIndex!==null,newHigh,daysToFill:fillIndex===null?null:fillIndex-touch,mfe:Number.isFinite(maxHigh)?maxHigh/price-1:null,mae:Number.isFinite(minLow)?minLow/price-1:null,low,high,lowDate:dateOnly(bars[lowIndex].t),highDate:dateOnly(bars[hi].t)});
+      for(let j=touch+1;j<=outcomeEnd;j++){const h=finite(bars[j].h),l=finite(bars[j].l);if(h!==null){maxHigh=Math.max(maxHigh,h);if(fillIndex===null&&h>=high)fillIndex=j;if(h>high*1.001)newHigh=true}if(l!==null)minLow=Math.min(minLow,l)}
+      events.push({timeframe,level,touchDate:dateOnly(bars[touch].t),confirmDate:dateOnly(bars[confirmIndex].t),confirmBars:pivot,filled:fillIndex!==null,newHigh,daysToFill:fillIndex===null?null:fillIndex-touch,mfe:Number.isFinite(maxHigh)?maxHigh/price-1:null,mae:Number.isFinite(minLow)?minLow/price-1:null,low,high,lowDate:dateOnly(bars[lowIndex].t),highDate:dateOnly(bars[hi].t)});
     }
   }
   const stats=statsFromFibEvents(events);let latestSwing=null;
-  const lastHigh=swingHighs.at(-1);if(lastHigh!==undefined){const lowIndex=argMin(bars,Math.max(0,lastHigh-60),lastHigh,'l'),low=lowIndex===null?null:finite(bars[lowIndex].l),high=finite(bars[lastHigh].h);if(low!==null&&high!==null)latestSwing={lowDate:dateOnly(bars[lowIndex].t),low,highDate:dateOnly(bars[lastHigh].t),high,levels:Object.fromEntries(fibs.map((f)=>[String(f),high-(high-low)*f])),status:`${timeframe} pivot ${pivot}`}}
+  const lastHigh=swingHighs.at(-1);if(lastHigh!==undefined){const lowIndex=argMin(bars,Math.max(0,lastHigh-60),lastHigh,'l'),low=lowIndex===null?null:finite(bars[lowIndex].l),high=finite(bars[lastHigh].h),confirmIndex=Math.min(bars.length-1,lastHigh+pivot);if(low!==null&&high!==null)latestSwing={lowDate:dateOnly(bars[lowIndex].t),low,highDate:dateOnly(bars[lastHigh].t),high,confirmedDate:dateOnly(bars[confirmIndex].t),levels:Object.fromEntries(fibs.map((f)=>[String(f),high-(high-low)*f])),status:`${timeframe} pivot ${pivot} (confirmed ${pivot} bars after the high)`}}
   return {events,stats,latestSwing};
 }
 
@@ -353,7 +400,9 @@ function buildIntradayEvents(daysMap,limitDays) {
 
 function classifySweep(bars,level,direction,condition,date,vwapSeries=[]) {
   const idx=findSweepIndex(bars,level,direction);if(idx<0)return null;
-  const entry=finite(bars[idx].c)??level,window=bars.slice(idx,Math.min(bars.length,idx+91));let max=-Infinity,min=Infinity,continuationAt=null,reversalAt=null;
+  // Entry is the sweep bar's close; its own high/low printed before that close
+  // and must not be scored as post-entry excursion (see classifyDirectionalOutcome).
+  const entry=finite(bars[idx].c)??level,window=bars.slice(idx+1,Math.min(bars.length,idx+91));if(!window.length)return null;let max=-Infinity,min=Infinity,continuationAt=null,reversalAt=null;
   for(let i=0;i<window.length;i++){const h=finite(window[i].h),l=finite(window[i].l);if(h!==null)max=Math.max(max,h);if(l!==null)min=Math.min(min,l);if(direction==='high'){if(continuationAt===null&&h!==null&&h>=level*1.0015)continuationAt=i;if(reversalAt===null&&l!==null&&l<=level*.9985)reversalAt=i}else{if(continuationAt===null&&l!==null&&l<=level*.9985)continuationAt=i;if(reversalAt===null&&h!==null&&h>=level*1.0015)reversalAt=i}}
   const continuation=continuationAt!==null&&(reversalAt===null||continuationAt<reversalAt),reversal=reversalAt!==null&&(continuationAt===null||reversalAt<continuationAt),time=etParts(bars[idx].t).time;
   const model=detectContinuationModel(bars,idx,direction);
@@ -402,8 +451,12 @@ function confirmedSmtEvent(primaryBars,comparisonBars,primaryIndex,comparisonInd
   return classifyDirectionalOutcome(primaryBars,index,expectedDirection,condition,date);
 }
 
+// Entry is the CLOSE of `index` (the bar whose close first made the trigger
+// knowable), so the outcome window opens on the following bar. Including the
+// entry bar's own high/low counted excursions that had already printed before
+// the entry price existed, which manufactured continuations.
 function classifyDirectionalOutcome(bars,index,expectedDirection,condition,date){
-  const entry=finite(bars[index]?.c);if(entry===null)return null;const window=bars.slice(index,Math.min(bars.length,index+91));let max=-Infinity,min=Infinity,continuationAt=null,reversalAt=null;
+  const entry=finite(bars[index]?.c);if(entry===null)return null;const window=bars.slice(index+1,Math.min(bars.length,index+91));if(!window.length)return null;let max=-Infinity,min=Infinity,continuationAt=null,reversalAt=null;
   for(let i=0;i<window.length;i++){const h=finite(window[i].h),l=finite(window[i].l);if(h!==null)max=Math.max(max,h);if(l!==null)min=Math.min(min,l);if(expectedDirection==='up'){if(continuationAt===null&&h!==null&&h>=entry*1.0015)continuationAt=i;if(reversalAt===null&&l!==null&&l<=entry*.9985)reversalAt=i}else{if(continuationAt===null&&l!==null&&l<=entry*.9985)continuationAt=i;if(reversalAt===null&&h!==null&&h>=entry*1.0015)reversalAt=i}}
   const continuation=continuationAt!==null&&(reversalAt===null||continuationAt<reversalAt),reversal=reversalAt!==null&&(continuationAt===null||reversalAt<continuationAt),time=etParts(bars[index].t).time;
   return{date,condition,direction:expectedDirection,time,minute:timeToMinute(time),continuation,reversal,continuationModel:false,mfe:expectedDirection==='up'?(max/entry-1):(entry/min-1),mae:expectedDirection==='up'?(min/entry-1):-(max/entry-1)};
@@ -419,16 +472,25 @@ function scanFvgs(rth,date,timeframe){
   const bars=timeframe===1?rth:resampleMinutes(rth,timeframe),records=[],events=[];
   for(let i=2;i<bars.length;i++){
     const a=bars[i-2],c=bars[i],aHigh=finite(a.h),aLow=finite(a.l),cHigh=finite(c.h),cLow=finite(c.l),bull=aHigh!==null&&cLow!==null&&cLow>aHigh,bear=aLow!==null&&cHigh!==null&&cHigh<aLow;if(!bull&&!bear)continue;
-    const side=bull?'Bullish':'Bearish',zoneLow=bull?aHigh:cHigh,zoneHigh=bull?cLow:aLow,formationTime=Date.parse(c.t),start=rth.findIndex((bar)=>Date.parse(bar.t)>=formationTime);if(start<0)continue;
+    // The gap only exists once the THIRD candle has completed. On a grouped
+    // timeframe that is `_closeTime`, not `t`: a 60m FVG stamped 10:00 was not
+    // observable until 11:00, so scanning the one-minute tape from 10:01 (as
+    // this did) measured retests, fills and continuation using bars that were
+    // still forming the very candle that defines the zone.
+    const side=bull?'Bullish':'Bearish',zoneLow=bull?aHigh:cHigh,zoneHigh=bull?cLow:aLow,observableAt=barCloseTime(c,timeframe);
+    if(!Number.isFinite(observableAt))continue;
+    const start=rth.findIndex((bar)=>Date.parse(bar.t)>=observableAt);if(start<0)continue;
     const formation=bars.slice(i-2,i+1),reference=bull?maxField(formation,'h'):minField(formation,'l'),end=Math.min(rth.length-1,start+180);let retest=null,fillAt=null,inversionAt=null,continuationAt=null;
-    for(let j=start+1;j<=end;j++){
+    for(let j=start;j<=end;j++){
       const high=finite(rth[j].h),low=finite(rth[j].l),close=finite(rth[j].c);if(high===null||low===null)continue;
       if(retest===null&&low<=zoneHigh&&high>=zoneLow)retest=j;
       if(fillAt===null&&(bull?low<=zoneLow:high>=zoneHigh))fillAt=j;
       if(retest!==null){if(inversionAt===null&&close!==null&&(bull?close<zoneLow:close>zoneHigh))inversionAt=j;if(continuationAt===null&&reference!==null&&(bull?high>reference:low<reference))continuationAt=j}
     }
-    const continuation=continuationAt!==null&&(inversionAt===null||continuationAt<inversionAt),inverted=inversionAt!==null&&(continuationAt===null||inversionAt<continuationAt),retested=retest!==null,minutesToRetest=retested?Math.round((Date.parse(rth[retest].t)-formationTime)/60000):null;
-    const record={date,timeframe:`${timeframe}m`,side,formedAt:etParts(c.t).time,zoneLow,zoneHigh,retested,filled:fillAt!==null,continuation,inverted,minutesToRetest};records.push(record);
+    const continuation=continuationAt!==null&&(inversionAt===null||continuationAt<inversionAt),inverted=inversionAt!==null&&(continuationAt===null||inversionAt<continuationAt),retested=retest!==null,minutesToRetest=retested?Math.round((Date.parse(rth[retest].t)-observableAt)/60000):null;
+    // formedAt = the third candle's open (where it is drawn); observableAt =
+    // when it completed, which is when this study is allowed to react.
+    const record={date,timeframe:`${timeframe}m`,side,formedAt:etParts(c.t).time,observableAt:etParts(new Date(observableAt).toISOString()).time,zoneLow,zoneHigh,retested,filled:fillAt!==null,continuation,inverted,minutesToRetest};records.push(record);
     if(retested){const expected=bull?'up':'down',event=classifyDirectionalOutcome(rth,retest,expected,`${timeframe}m ${side} FVG`,date);if(event){event.continuation=continuation;event.reversal=inverted;event.continuationModel=continuation;events.push(event)}}
     if(inverted){const expected=bull?'down':'up',event=classifyDirectionalOutcome(rth,inversionAt,expected,`${timeframe}m ${side} IFVG`,date);if(event)events.push(event)}
   }
@@ -440,7 +502,10 @@ function scanDisplacement(rth,date){
   for(let i=20;i<bars.length;i++){
     const open=finite(bars[i].o),close=finite(bars[i].c),high=finite(bars[i].h),low=finite(bars[i].l);if([open,close,high,low].some((x)=>x===null)||high<=low)continue;
     const prior=bars.slice(i-20,i),bodyMedian=median(prior.map((bar)=>Math.abs((finite(bar.c)??0)-(finite(bar.o)??0)))),rangeMedian=median(prior.map((bar)=>{const h=finite(bar.h),l=finite(bar.l);return h===null||l===null?null:h-l})),body=Math.abs(close-open),range=high-low;if(!bodyMedian||!rangeMedian||body<bodyMedian*1.5||range<rangeMedian*1.5||i-last<3)continue;
-    const bullish=close>open&&close>=low+range*.75,bearish=close<open&&close<=low+range*.25;if(!bullish&&!bearish)continue;const index=rth.findIndex((bar)=>Date.parse(bar.t)>=Date.parse(bars[i].t));if(index<0)continue;const event=classifyDirectionalOutcome(rth,index,bullish?'up':'down',bullish?'Bullish Displacement':'Bearish Displacement',date);if(event){events.push(event);last=i}
+    // Same grouped-bar trap as scanFvgs: a five-minute displacement candle is
+    // stamped at its open but defined by its close, so the study may only act
+    // from the one-minute bar that starts after the group ends.
+    const bullish=close>open&&close>=low+range*.75,bearish=close<open&&close<=low+range*.25;if(!bullish&&!bearish)continue;const observableAt=barCloseTime(bars[i],5);if(!Number.isFinite(observableAt))continue;const index=rth.findIndex((bar)=>Date.parse(bar.t)>=observableAt);if(index<0)continue;const event=classifyDirectionalOutcome(rth,index,bullish?'up':'down',bullish?'Bullish Displacement':'Bearish Displacement',date);if(event){events.push(event);last=i}
   }
   return events;
 }
@@ -480,7 +545,15 @@ function summarizeTiming(events) {
 function groupEtDays(bars){const map=new Map();for(const bar of bars){const p=etParts(bar.t),row={...bar,_time:p.time};if(!map.has(p.date))map.set(p.date,[]);map.get(p.date).push(row)}return map}
 function groupProxyTradeDays(sipBars,overnightBars){const grouped=new Map();const add=(bars,source)=>{for(const bar of bars){const p=etParts(bar.t),minute=timeToMinute(p.time);if(source==='BOATS'&&minute>=240&&minute<1200)continue;if(source==='SIP'&&(minute>=1200||minute<240))continue;const tradeDate=minute>=1080?addIsoDays(p.date,1):p.date,row={...bar,_time:p.time,_source:source,_tradeDate:tradeDate};if(!grouped.has(tradeDate))grouped.set(tradeDate,new Map());const day=grouped.get(tradeDate),existing=day.get(String(bar.t));if(!existing||source==='BOATS')day.set(String(bar.t),row)}};add(sipBars,'SIP');add(overnightBars,'BOATS');return new Map([...grouped.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([date,rows])=>[date,[...rows.values()].sort((a,b)=>String(a.t).localeCompare(String(b.t)))]))}
 function splitSession(bars){const minute=(b)=>timeToMinute(b._time);return{evening:bars.filter((b)=>minute(b)>=1080&&minute(b)<1200),overnight:bars.filter((b)=>minute(b)>=1080||minute(b)<570),asia:bars.filter((b)=>minute(b)>=1200),london:bars.filter((b)=>minute(b)>=120&&minute(b)<300),pre:bars.filter((b)=>minute(b)>=240&&minute(b)<570),rth:bars.filter((b)=>minute(b)>=570&&minute(b)<960)}}
-function resampleMinutes(bars,minutes){if(minutes===1)return bars.slice();const groups=new Map(),size=minutes*60000,anchor=Date.parse(bars[0]?.t);if(!Number.isFinite(anchor))return[];for(const bar of bars){const time=Date.parse(bar.t);if(!Number.isFinite(time))continue;const key=anchor+Math.floor((time-anchor)/size)*size;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(bar)}return[...groups.entries()].sort((a,b)=>a[0]-b[0]).map(([time,rows])=>({t:new Date(time).toISOString(),o:finite(rows[0].o),h:maxField(rows,'h'),l:minField(rows,'l'),c:finite(rows.at(-1).c),v:rows.reduce((sum,row)=>sum+(finite(row.v)||0),0),_time:etParts(new Date(time).toISOString()).time,_source:[...new Set(rows.map((row)=>row._source).filter(Boolean))].join(' + ')}))}
+// A grouped bar keeps `t` at the group's OPEN (that is what it is drawn at),
+// but it carries the group's completed high/low/close, which nobody could see
+// until the group ended. `_closeTime` is that end -- the first instant the bar
+// is observable -- and every study must gate on it, never on `t`. See
+// TIMING_CONVENTION and barCloseTime().
+function resampleMinutes(bars,minutes){if(minutes===1)return bars.map((bar)=>({...bar,_closeTime:Date.parse(bar.t)+60000}));const groups=new Map(),size=minutes*60000,anchor=Date.parse(bars[0]?.t);if(!Number.isFinite(anchor))return[];for(const bar of bars){const time=Date.parse(bar.t);if(!Number.isFinite(time))continue;const key=anchor+Math.floor((time-anchor)/size)*size;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(bar)}return[...groups.entries()].sort((a,b)=>a[0]-b[0]).map(([time,rows])=>({t:new Date(time).toISOString(),o:finite(rows[0].o),h:maxField(rows,'h'),l:minField(rows,'l'),c:finite(rows.at(-1).c),v:rows.reduce((sum,row)=>sum+(finite(row.v)||0),0),_time:etParts(new Date(time).toISOString()).time,_closeTime:time+size,_source:[...new Set(rows.map((row)=>row._source).filter(Boolean))].join(' + ')}))}
+// The instant a bar becomes fully known: its group end for a resampled bar,
+// otherwise its own open plus one bar length.
+function barCloseTime(bar,minutes=1){const explicit=finite(bar?._closeTime);if(explicit!==null)return explicit;const open=Date.parse(bar?.t);return Number.isFinite(open)?open+minutes*60000:NaN}
 function swingLiquidityLevels(bars,pivot=2){const highs=[],lows=[];for(let i=pivot;i<bars.length-pivot;i++){const high=finite(bars[i].h),low=finite(bars[i].l);if(high!==null&&bars.slice(i-pivot,i+pivot+1).every((bar,j)=>j===pivot||finite(bar.h)===null||finite(bar.h)<high))highs.push({price:high,time:bars[i].t,source:bars[i]._source||'Observed'});if(low!==null&&bars.slice(i-pivot,i+pivot+1).every((bar,j)=>j===pivot||finite(bar.l)===null||finite(bar.l)>low))lows.push({price:low,time:bars[i].t,source:bars[i]._source||'Observed'})}return{highs,lows}}
 function priorWeekRange(daysMap,currentDate){const currentStart=weekStart(currentDate),prior=[...daysMap.keys()].filter((date)=>weekStart(date)<currentStart).sort();if(!prior.length)return null;const target=weekStart(prior.at(-1)),bars=prior.filter((date)=>weekStart(date)===target).flatMap((date)=>splitSession(daysMap.get(date)||[]).rth);if(!bars.length)return null;return{weekStart:target,high:maxField(bars,'h'),low:minField(bars,'l')}}
 function marketProfileLevels(bars,bins=50,valueArea=.70){if(!bars.length)return null;const low=minField(bars,'l'),high=maxField(bars,'h');if(low===null||high===null||high<=low)return null;const size=(high-low)/bins,volume=Array(bins).fill(0);for(const bar of bars){const h=finite(bar.h),l=finite(bar.l),c=finite(bar.c),v=finite(bar.v);if(h===null||l===null||c===null||v===null||v<=0)continue;const typical=(h+l+c)/3,index=Math.max(0,Math.min(bins-1,Math.floor((typical-low)/size)));volume[index]+=v}const total=volume.reduce((sum,v)=>sum+v,0);if(total<=0)return null;let pocIndex=volume.indexOf(Math.max(...volume)),left=pocIndex,right=pocIndex,included=volume[pocIndex];while(included<total*valueArea&&(left>0||right<bins-1)){const leftVolume=left>0?volume[left-1]:-1,rightVolume=right<bins-1?volume[right+1]:-1;if(rightVolume>leftVolume){right++;included+=volume[right]}else{left--;included+=volume[left]}}return{poc:low+(pocIndex+.5)*size,val:low+left*size,vah:low+(right+1)*size,coverage:included/total,bins}}
@@ -529,4 +602,4 @@ function dateOnly(value){return String(value||'').slice(0,10)}
 function isoDate(date){return date.toISOString().slice(0,10)}
 
 // Explicit exports allow deterministic calculation tests without exposing routes.
-export const __test = {analyseFib,statsFromFibEvents,combineFibStats,findGammaFlip,resampleWeekly,resampleMinutes,metrics,classifySweep,findSweepIndex,detectContinuationModel,groupProxyTradeDays,splitSession,scanFvgs,summarizeFvg,summarizeConditions,summarizeTiming,priorWeekRange,marketProfileLevels,cumulativeVwap,finite,median};
+export const __test = {TIMING_CONVENTION,studyProvenance,barCloseTime,scanDisplacement,classifyDirectionalOutcome,buildPriceActionModel,analyseFib,statsFromFibEvents,combineFibStats,findGammaFlip,resampleWeekly,resampleMinutes,metrics,classifySweep,findSweepIndex,detectContinuationModel,groupProxyTradeDays,splitSession,scanFvgs,summarizeFvg,summarizeConditions,summarizeTiming,priorWeekRange,marketProfileLevels,cumulativeVwap,finite,median};

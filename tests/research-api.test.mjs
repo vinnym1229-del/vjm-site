@@ -84,6 +84,21 @@ try {
   assert.ok(requested.some((url) => url.pathname === '/v2/stocks/bars' && url.searchParams.get('feed') === 'sip'), 'futures-style proxy must request consolidated SIP history');
   assert.ok(requested.some((url) => url.pathname === '/v2/stocks/bars' && url.searchParams.get('feed') === 'boats'), 'futures-style proxy must request BOATS overnight history');
   assert.equal(intradayData.source.proxy, 'QQQ/SPY—not NQ/ES');
+
+  // Provenance: a paid study result has to carry enough for the UI to say what
+  // the numbers are. They are hypothetical and gross -- no fill model, no
+  // costs -- and they are computed under one stated, versioned timing
+  // convention. Without this the page can imply live-tradable performance.
+  assert.equal(intradayData.provenance.results, 'hypothetical-gross');
+  assert.ok(intradayData.provenance.study, 'the result names the study that produced it');
+  assert.ok(intradayData.provenance.timingConvention.version, 'the timing convention travels with the result, versioned');
+  for (const key of ['observable', 'actionable', 'fill', 'outcome']) {
+    assert.ok(intradayData.provenance.timingConvention[key], `provenance must state when a signal is ${key}`);
+  }
+  assert.match(intradayData.provenance.disclaimer, /hypothetical/i);
+  assert.match(intradayData.provenance.disclaimer, /not achieved or live-tradable/i);
+  assert.match(intradayData.provenance.timingConvention.costs, /slippage/i, 'the absence of a cost model must be stated, not implied');
+  assert.ok(intradayData.provenance.asOf, 'provenance carries its own as-of stamp');
 } finally {
   globalThis.fetch = originalFetch;
 }
