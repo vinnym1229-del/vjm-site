@@ -148,21 +148,28 @@ body.light-mode footer{background:#ffffff!important;border-top-color:var(--bdr)}
     <div class="disclaimer">Educational content only. Trading options, futures, stocks, forex, and crypto involves risk. Results shown anywhere on this site are examples, not guarantees or typical outcomes. <a href="risk-disclosure.html" style="color:var(--gold-ink);">Read the full risk disclosure</a>.</div>
   </section>
 
-  <!-- Lesson Assistant: verified members only. Server-side (functions/api/assistant.js)
-       restricts every answer to the LESSON TEXT collected from #free-preview, so the
-       assistant cannot invent material outside the lesson. -->
-  <!-- TODO: owner to point lessonText() at each paid module's text as modules ship;
-       the endpoint clamps lesson text to 6000 chars per request. -->
+  <!-- Lesson Assistant: verified members only. The browser NEVER sends lesson
+       text — it names a lesson id + immutable version, and the server
+       (functions/api/assistant.js) looks the lesson up in its own corpus,
+       checks the member's tier with authorizeResource(), answers only from
+       that text, and cites the section it used. -->
+  <!-- Coverage is deliberately stated in the UI: only the lessons the server
+       has wired appear in the picker below (Foundational level of each track
+       today). TODO(owner): as LESSON_LIBRARY grows to levels 2-4, this picker
+       picks them up automatically — no page edit needed. -->
   <section class="preview" id="lesson-companion" aria-labelledby="lesson-title" hidden>
     <h2 id="lesson-title">Lesson <span class="gold">Assistant</span></h2>
-    <p>Ask questions about the guidance material. Answers come strictly from this page's foundation lessons — if something isn't covered there, the assistant says so instead of guessing.</p>
+    <p>Pick a lesson, then ask about it. The answer is built only from that lesson's text on the server and names the section it came from — if the lesson doesn't cover it, the assistant says so instead of guessing.</p>
     <div style="background:rgba(22,22,24,.72);border:1px solid var(--bdr);border-radius:14px;padding:16px;">
+      <label for="lesson-select" style="display:block;font-size:.72rem;color:var(--m2);text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:6px;">Lesson</label>
+      <select class="field" id="lesson-select" style="margin:0 0 6px;width:100%;"><option value="">Loading your lessons…</option></select>
+      <p id="lesson-coverage" style="color:var(--muted);font-size:.72rem;margin:0 0 12px;"></p>
       <div id="lesson-log" aria-live="polite" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:12px;"></div>
       <form id="lesson-form" style="display:flex;gap:8px;flex-wrap:wrap;">
         <input class="field" id="lesson-question" type="text" maxlength="500" placeholder="Ask about this lesson…" aria-label="Your lesson question" style="margin:0;flex:1;min-width:200px;">
         <button class="btn btn-gold" type="submit" id="lesson-ask">Ask</button>
       </form>
-      <p style="color:var(--muted);font-size:.72rem;margin-top:10px;">Answers are generated only from this lesson's text. Educational content — not financial advice.</p>
+      <p style="color:var(--muted);font-size:.72rem;margin-top:10px;">Answers are generated only from the selected lesson's text. Educational content — not financial advice.</p>
     </div>
   </section>
 
@@ -214,19 +221,13 @@ function showVerifiedCard(){
   msg('',true);
 }
 // ─── Lesson Assistant (verified members only) ───
-// Every answer is grounded server-side on the lesson text below; the model is
-// instructed to refuse anything the lesson does not cover.
-function lessonText(){
-  const parts=[];
-  const intro=document.querySelector('#free-preview > p');
-  if(intro) parts.push('OVERVIEW: '+intro.textContent.trim());
-  document.querySelectorAll('#free-preview .step').forEach((s,i)=>{
-    const h=s.querySelector('h3'), p=s.querySelector('p');
-    if(h) parts.push((i+1)+'. '+h.textContent.trim());
-    if(p) parts.push(p.textContent.trim());
-  });
-  return parts.join('\n').slice(0,6000);
-}
+// The browser never sends lesson text. It asks the server which lessons this
+// member is entitled to (GET /api/assistant), then sends only the chosen
+// lesson's id + immutable version with the question. The server looks the
+// lesson up itself, re-checks entitlement, answers from that text alone and
+// names the section it used — so the picker can only ever list lessons this
+// membership actually includes, and only lessons the server has wired.
+let lessonCatalogue=[];
 function lessonRow(text, kind){
   const log=document.getElementById('lesson-log');
   const d=document.createElement('div');
@@ -239,23 +240,76 @@ function lessonRow(text, kind){
   log.scrollTop=log.scrollHeight;
   return d;
 }
+function lessonCite(heading){
+  const log=document.getElementById('lesson-log');
+  const d=document.createElement('div');
+  d.style.cssText='font-size:.7rem;color:var(--muted);max-width:88%;padding:0 4px;';
+  d.textContent='From this lesson’s section: '+heading;
+  log.appendChild(d);
+  log.scrollTop=log.scrollHeight;
+}
+async function loadLessonCatalogue(){
+  const sel=document.getElementById('lesson-select');
+  const cov=document.getElementById('lesson-coverage');
+  if(!sel) return;
+  try{
+    const res=await fetch('/api/assistant',{credentials:'same-origin'});
+    const data=await res.json().catch(()=>({ok:false}));
+    if(!res.ok||!data.ok||!Array.isArray(data.lessons)||!data.lessons.length){
+      sel.innerHTML='';
+      const o=document.createElement('option');o.value='';
+      o.textContent=res.status===401?'Sign in to use the lesson assistant':'No lessons available yet';
+      sel.appendChild(o);sel.disabled=true;
+      document.getElementById('lesson-ask').disabled=true;
+      if(cov) cov.textContent=(data&&data.error)||'The lesson assistant has no lessons wired for your membership yet.';
+      return;
+    }
+    lessonCatalogue=data.lessons;
+    sel.innerHTML='';sel.disabled=false;
+    lessonCatalogue.forEach(l=>{
+      const o=document.createElement('option');
+      o.value=l.id;
+      o.textContent=l.course+' — '+l.title;
+      sel.appendChild(o);
+    });
+    // Say plainly how much of the curriculum is actually wired, so the UI
+    // never implies coverage the server does not have.
+    if(cov) cov.textContent=(data.coverage&&data.coverage.note?data.coverage.note+' ':'')
+      +lessonCatalogue.length+' lesson'+(lessonCatalogue.length===1?'':'s')+' available to your membership.';
+  }catch(err){
+    if(cov) cov.textContent='Could not load your lessons — reload the page.';
+  }
+}
 let lessonBusy=false;
 async function askLesson(event){
   event.preventDefault();
   if(lessonBusy) return;
   const input=document.getElementById('lesson-question');
+  const sel=document.getElementById('lesson-select');
   const q=(input.value||'').trim();
   if(!q) return;
+  const lesson=lessonCatalogue.find(l=>l.id===(sel&&sel.value));
+  if(!lesson){lessonRow('Pick a lesson first.','a');return;}
   lessonBusy=true;
   document.getElementById('lesson-ask').disabled=true;
   input.value='';
   lessonRow(q,'q');
   const thinking=lessonRow('Checking the lesson…','a');
   try{
-    const res=await fetch('/api/assistant',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({question:q,lessonText:lessonText()})});
+    const res=await fetch('/api/assistant',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({question:q,lessonId:lesson.id,lessonVersion:lesson.version})});
     const data=await res.json().catch(()=>({ok:false}));
     thinking.remove();
-    lessonRow(data.ok&&data.narrative ? data.narrative : (data.error||'Assistant unavailable right now — try again shortly.'),'a');
+    if(res.status===409){
+      lessonRow('That lesson was updated — reloading the lesson list. Ask again.','a');
+      await loadLessonCatalogue();
+    }else if(data.ok&&data.narrative){
+      lessonRow(data.narrative,'a');
+      if(data.citation&&data.citation.heading) lessonCite(data.citation.heading);
+    }else if(data.ok&&data.message){
+      lessonRow(data.message,'a');
+    }else{
+      lessonRow(data.error||'Assistant unavailable right now — try again shortly.','a');
+    }
   }catch(err){
     thinking.remove();
     lessonRow('Network hiccup — try again in a moment.','a');
@@ -268,6 +322,7 @@ document.getElementById('lesson-form').addEventListener('submit',askLesson);
 function showLessonCompanion(){
   const s=document.getElementById('lesson-companion');
   if(s) s.hidden=false;
+  loadLessonCatalogue();
   const a=document.getElementById('market-analyst');
   if(a) a.hidden=false;
 }
