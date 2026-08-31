@@ -234,6 +234,34 @@
     return { ctx, w, h };
   }
 
+  // ---- series colour ----
+  // Charts used to be monochrome red, which made every bar read as a warning
+  // and left the series indistinguishable without the labels. Red is now
+  // reserved for the loss/risk/alert series; everything else takes the neutral
+  // accent. Values are read from the live custom properties so both themes work
+  // (the neutral accent is near-white on dark, near-black on light).
+  function cssVar(name, fallback) {
+    const v = getComputedStyle(document.body).getPropertyValue(name);
+    return (v && v.trim()) || fallback;
+  }
+  // --emerald is the neutral accent; --gold is the accent red (see PALETTE).
+  const NEUTRAL = () => cssVar('--emerald', '#d9d9dd');
+  const RED = () => cssVar('--gold', '#d14343');
+  const RISK_RE = /loss|risk|drawdown|draw down|alert|max ?dd|worst|stop|danger/i;
+  // A series means "loss/risk" when its value is negative or its label says so.
+  // Call sites that still pass the old blanket red are normalised the same way,
+  // so a positive, non-risk series is never drawn red.
+  function isRisk(label, value) {
+    return Number(value) < 0 || RISK_RE.test(String(label || ''));
+  }
+  const ACCENT_REDS = ['#d14343', '#e26060', '#a63333', '#b3251d', '#c9342b', '#8c1a14'];
+  function seriesColor(label, value, requested) {
+    const risk = isRisk(label, value);
+    if (risk) return requested && !ACCENT_REDS.includes(String(requested).toLowerCase()) ? requested : RED();
+    if (!requested || ACCENT_REDS.includes(String(requested).toLowerCase())) return NEUTRAL();
+    return requested;
+  }
+
   // bars: [{label, value, color}]. Draws a simple horizontal bar chart.
   window.currDrawBars = function currDrawBars(canvas, bars, opts = {}) {
     const { ctx, w, h } = sizeCanvas(canvas);
@@ -242,8 +270,8 @@
     const rowH = Math.min(46, (h - 20) / bars.length);
     const labelW = 96;
     const barMaxW = w - labelW - 70;
-    const muted = getComputedStyle(document.body).getPropertyValue('--muted') || '#9b9296';
-    const text = getComputedStyle(document.body).getPropertyValue('--text') || '#eceaea';
+    const muted = getComputedStyle(document.body).getPropertyValue('--muted') || '#9a9aa0';
+    const text = getComputedStyle(document.body).getPropertyValue('--text') || '#ededee';
     bars.forEach((b, i) => {
       const y = 10 + i * rowH;
       ctx.fillStyle = muted.trim();
@@ -251,7 +279,7 @@
       ctx.textBaseline = 'middle';
       ctx.fillText(b.label, 0, y + rowH / 2 - 8);
       const bw = Math.max(2, (Math.abs(b.value) / max) * barMaxW);
-      ctx.fillStyle = b.color || '#dc2626';
+      ctx.fillStyle = seriesColor(b.label, b.value, b.color);
       const barY = y + rowH / 2;
       ctx.beginPath();
       ctx.roundRect ? ctx.roundRect(labelW, barY - 8, bw, 16, 6) : ctx.rect(labelW, barY - 8, bw, 16);
@@ -276,8 +304,8 @@
     const yMin = -yAbs, yMax = yAbs;
     const px = (x) => pad.l + ((x - xMin) / (xMax - xMin || 1)) * (w - pad.l - pad.r);
     const py = (y) => pad.t + (1 - (y - yMin) / (yMax - yMin || 1)) * (h - pad.t - pad.b);
-    const border = getComputedStyle(document.body).getPropertyValue('--border') || '#2c2528';
-    const muted = getComputedStyle(document.body).getPropertyValue('--muted') || '#9b9296';
+    const border = getComputedStyle(document.body).getPropertyValue('--border') || '#2a2a2e';
+    const muted = getComputedStyle(document.body).getPropertyValue('--muted') || '#9a9aa0';
     ctx.strokeStyle = border.trim();
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(pad.l, py(0)); ctx.lineTo(w - pad.r, py(0)); ctx.stroke();
@@ -286,16 +314,31 @@
     ctx.fillText(opts.yFmt ? opts.yFmt(0) : '0', 4, py(0) + 4);
     ctx.fillText(opts.xFmt ? opts.xFmt(xMin) : String(xMin), pad.l, h - 8);
     ctx.fillText(opts.xFmt ? opts.xFmt(xMax) : String(xMax), w - pad.r - 40, h - 8);
-    ctx.strokeStyle = opts.color || '#dc2626';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    points.forEach((p, i) => { const x = px(p.x), y = py(p.y); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
-    ctx.stroke();
-    ctx.fillStyle = (opts.color || '#dc2626') + '22';
-    ctx.lineTo(px(points[points.length - 1].x), py(0));
-    ctx.lineTo(px(points[0].x), py(0));
-    ctx.closePath();
-    ctx.fill();
+    // Primary (profit / at-or-above zero) stroke is the neutral accent; the
+    // portion of the curve below the zero axis is the loss series and stays red.
+    const primary = seriesColor('', 1, opts.color);
+    const loss = RED();
+    const zeroY = py(0);
+    const drawSegment = (clipTop, clipH, color) => {
+      if (clipH <= 0) return;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(pad.l, clipTop, w - pad.l - pad.r, clipH);
+      ctx.clip();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      points.forEach((p, i) => { const x = px(p.x), y = py(p.y); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+      ctx.stroke();
+      ctx.fillStyle = color + '22';
+      ctx.lineTo(px(points[points.length - 1].x), zeroY);
+      ctx.lineTo(px(points[0].x), zeroY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    };
+    drawSegment(pad.t, Math.max(0, zeroY - pad.t), primary);
+    drawSegment(zeroY, Math.max(0, h - pad.b - zeroY), loss);
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

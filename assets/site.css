@@ -4,49 +4,60 @@
 
 
 :root {
-  --gold: #dc2626;--gold-ink:#ef4444;
-  --gold2: #b91c1c;
-  --green: #ff4d4d;
-  --emerald: #ef4444;
-  --emerald-dark: #b91c1c;
-  --emerald-glow: rgba(220,38,38,0.12);
-  --red: #ff4444;
-  --bg: #080708;
-  --bg2: #0f0d0e;
-  --bg3: #151213;
-  --card: #171416;
-  --border: #2c2528;
-  --text: #eceaea;
-  --muted: #9b9296;
-  --accent: #1d1a1c;
+  --gold: #d14343;--gold-ink:#e26060;
+  --gold2: #a63333;
+  --green: #d9d9dd;
+  --emerald: #d9d9dd;
+  --emerald-dark: #9a9aa0;
+  --emerald-glow: rgba(255,255,255,0.07);
+  --red: #e26060;
+  --bg: #0c0c0d;
+  --bg2: #131315;
+  --bg3: #1a1a1c;
+  --card: #161618;
+  --border: #2a2a2e;
+  --text: #ededee;
+  --muted: #9a9aa0;
+  --accent: #1d1d20;
+  --red-soft: rgba(209,67,67,0.10);
+  --red-line: rgba(209,67,67,0.28);
   --mode-transition: background 0.3s, color 0.3s, border-color 0.3s;
 }
 
 /* ─── LIGHT MODE ─── */
-body.light-mode {--gold-ink:#c81e1e;
-  --bg: #f6f4f4;
-  --bg2: #edeaea;
-  --bg3: #e2dedf;
+body.light-mode {--gold-ink:#b3251d;
+  --gold: #b3251d;
+  --gold2: #8c1a14;
+  --green: #26262a;
+  --emerald: #26262a;
+  --emerald-dark: #3f3f46;
+  --emerald-glow: rgba(0,0,0,0.06);
+  --red: #b3251d;
+  --bg: #ffffff;
+  --bg2: #f6f6f7;
+  --bg3: #eeeef0;
   --card: #ffffff;
-  --border: #d5cfd1;
-  --text: #151213;
-  --muted: #6b6165;
-  --accent: #e3dee0;
+  --border: #e3e3e6;
+  --text: #141416;
+  --muted: #5f5f66;
+  --accent: #eeeef0;
+  --red-soft: rgba(179,37,29,0.07);
+  --red-line: rgba(179,37,29,0.22);
 }
 body.light-mode { background: var(--bg); color: var(--text); }
-body.light-mode nav { background: rgba(244,246,249,0.97); border-bottom-color: var(--border); }
-body.light-mode .hero { background: radial-gradient(ellipse at 50% 0%,rgba(220,38,38,0.08) 0%,transparent 65%), linear-gradient(180deg,#f6f4f4 0%,#edeaea 100%); }
+body.light-mode nav { background: rgba(255,255,255,0.97); border-bottom-color: var(--border); }
+body.light-mode .hero { background: radial-gradient(ellipse at 50% 0%,rgba(179,37,29,0.04) 0%,transparent 65%), linear-gradient(180deg,#ffffff 0%,#f6f6f7 100%); }
 body.light-mode .proof-bar { background: var(--bg2); }
-body.light-mode #big-win { background: linear-gradient(135deg,#e8f5e9,#f1f8f2); border-color: var(--emerald); }
+body.light-mode #big-win { background: linear-gradient(135deg,#f6f6f7,#fafafa); border-color: #cfcfd4; }
 body.light-mode .win-card, body.light-mode .account-card, body.light-mode .testimonial,
 body.light-mode .insight-card, body.light-mode .service-card, body.light-mode .review-card { background: var(--card); border-color: var(--border); }
-body.light-mode .premium-box { background: linear-gradient(135deg,#fffdf5,#f6f4f4); }
-body.light-mode .referral-box { background: linear-gradient(135deg,#fffdf5,#f6f4f4); }
-body.light-mode .mentor-box { background: linear-gradient(135deg,#f0faf4,#f4f9f6); }
+body.light-mode .premium-box { background: linear-gradient(135deg,#ffffff,#f6f6f7); }
+body.light-mode .referral-box { background: linear-gradient(135deg,#ffffff,#f6f6f7); }
+body.light-mode .mentor-box { background: linear-gradient(135deg,#fafafa,#f6f6f7); }
 body.light-mode .modal { background: var(--bg2); }
-body.light-mode footer { background: #e8e3e4; }
+body.light-mode footer { background: #f6f6f7; }
 body.light-mode .disclosure { background: var(--bg2); }
-body.light-mode #stream-countdown-bar { background: #151213; }
+body.light-mode #stream-countdown-bar { background: #1a1a1c; }
 
 /* ─── THEME TOGGLE BUTTON ─── */
 #theme-toggle {
@@ -57,7 +68,7 @@ body.light-mode #stream-countdown-bar { background: #151213; }
 }
 #theme-toggle:hover { border-color: var(--gold-ink); color: var(--gold-ink); }
 
-* { margin:0; padding:0; box-sizing:border-box; accent-color: #dc2626; }
+* { margin:0; padding:0; box-sizing:border-box; accent-color: #d14343; }
 html { scroll-behavior: smooth; }
 
 body {
@@ -76,8 +87,8 @@ body::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(220,38,38,.10) 0%, transparent 55%),
-              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(220,38,38,.08) 0%, transparent 55%);
+  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(255,255,255,.035) 0%, transparent 55%),
+              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(209,67,67,.04) 0%, transparent 55%);
   animation: pagePulse 9s ease-in-out infinite;
 }
 @keyframes pagePulse { 0%,100% { opacity:.55; } 50% { opacity: var(--page-pulse-peak, 1); } }
@@ -85,19 +96,19 @@ body::before {
 /* Keep the red/black atmosphere present between the hero and footer too.
    Section backgrounds were fully opaque, so they hid the page treatment. */
 body:not(.light-mode) > section:not(.hero), body:not(.light-mode) > footer {
-  background-color: rgba(5, 8, 13, .90) !important;
-  background-image: radial-gradient(ellipse 65% 55% at 92% 15%, rgba(220,38,38,.10), transparent 68%),
-                    radial-gradient(ellipse 55% 45% at 8% 85%, rgba(220,38,38,.07), transparent 70%) !important;
+  background-color: rgba(12,12,13,.92) !important;
+  background-image: radial-gradient(ellipse 65% 55% at 92% 15%, rgba(255,255,255,.03), transparent 68%),
+                    radial-gradient(ellipse 55% 45% at 8% 85%, rgba(255,255,255,.025), transparent 70%) !important;
 }
 body.light-mode > section:not(.hero), body.light-mode > footer {
-  background-color: rgba(244,246,249,.94) !important;
-  background-image: radial-gradient(ellipse 65% 55% at 92% 15%, rgba(220,38,38,.08), transparent 68%) !important;
+  background-color: rgba(255,255,255,.94) !important;
+  background-image: radial-gradient(ellipse 65% 55% at 92% 15%, rgba(0,0,0,.03), transparent 68%) !important;
 }
 
 /* ─── STREAM COUNTDOWN BAR ─── */
 #stream-countdown-bar {
-  background: #0f0d0e;
-  border-bottom: 1px solid rgba(220,38,38,0.25);
+  background: #131315;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
   padding: 9px 24px;
   display: flex; align-items: center; justify-content: center; gap: 16px;
   flex-wrap: wrap; text-align: center;
@@ -113,16 +124,16 @@ body.light-mode > section:not(.hero), body.light-mode > footer {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 1.3rem; font-weight: 900; color: var(--gold-ink);
   letter-spacing: 2px;
-  text-shadow: 0 0 14px rgba(220,38,38,0.5);
+  text-shadow: 0 0 14px rgba(209,67,67,0.28);
 }
 #stream-countdown-bar .cd-live {
   display: inline-flex; align-items: center; gap: 7px;
-  background: rgba(255,68,68,0.12); border: 1px solid rgba(255,68,68,0.4);
-  color: #ff4444; border-radius: 20px; padding: 3px 12px;
+  background: rgba(209,67,67,0.12); border: 1px solid rgba(209,67,67,0.4);
+  color: #e26060; border-radius: 20px; padding: 3px 12px;
   font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
 }
 #stream-countdown-bar .cd-live-dot {
-  width: 7px; height: 7px; border-radius: 50%; background: #ff4444;
+  width: 7px; height: 7px; border-radius: 50%; background: #e26060;
   animation: pulse 1.2s infinite;
 }
 #stream-countdown-bar .cd-weekend {
@@ -131,22 +142,22 @@ body.light-mode > section:not(.hero), body.light-mode > footer {
 
 /* ─── TICKER ─── */
 #ticker-wrap {
-  background: #020508;
-  border-bottom: 1px solid #1a2a3a;
+  background: #0c0c0d;
+  border-bottom: 1px solid var(--border);
   height: 46px;
   overflow: hidden;
 }
-#ticker-wrap iframe { background: #020508 !important; color-scheme: dark; }
+#ticker-wrap iframe { background: #0c0c0d !important; color-scheme: dark; }
 
 /* ─── NAV ─── */
 .brand-banner{position:relative;width:100%;aspect-ratio:1600/316;max-height:300px;min-height:104px;overflow:hidden;background:var(--bg);}
 .brand-banner img{width:100%;height:100%;object-fit:cover;object-position:center;display:block;}
-.brand-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,7,8,0) 62%,rgba(8,7,8,.55) 88%,var(--bg) 100%);}
-body.light-mode .brand-banner::after{background:linear-gradient(180deg,rgba(246,244,244,0) 62%,rgba(246,244,244,.55) 88%,var(--bg) 100%);}
+.brand-banner::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,12,13,0) 62%,rgba(12,12,13,.55) 88%,var(--bg) 100%);}
+body.light-mode .brand-banner::after{background:linear-gradient(180deg,rgba(255,255,255,0) 62%,rgba(255,255,255,.55) 88%,var(--bg) 100%);}
 
 nav {
   position: relative;
-  background: rgba(6,9,13,0.97);
+  background: rgba(12,12,13,0.97);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
   padding: 11px 26px;
@@ -161,7 +172,7 @@ nav {
   display: flex; align-items: center; gap: 12px; white-space: nowrap; flex: 0 0 auto;
   line-height: 1;
 }
-.nav-brand img { width: 44px; height: 44px; border-radius: 11px; object-fit: cover; background: #080708; flex-shrink: 0; }
+.nav-brand img { width: 44px; height: 44px; border-radius: 11px; object-fit: cover; background: #0c0c0d; flex-shrink: 0; }
 
 /* Sixteen flat links became four grouped menus. Desktop opens on hover;
    the same .open class is toggled on click/keyboard for accessibility. */
@@ -182,16 +193,16 @@ nav {
   transition: transform .18s, opacity .18s;
 }
 .nav-item:hover > .nav-top, .nav-item.open > .nav-top {
-  color: var(--text); background: rgba(220,38,38,0.09); border-color: rgba(220,38,38,0.28);
+  color: var(--text); background: var(--emerald-glow); border-color: var(--border);
 }
 .nav-item:hover > .nav-top .caret, .nav-item.open > .nav-top .caret { transform: rotate(225deg); margin-top: 2px; opacity: .9; }
 .nav-drop {
   position: absolute; top: calc(100% + 12px); left: 50%;
   transform: translateX(-50%) translateY(-6px);
   min-width: 216px; padding: 8px; z-index: 1001;
-  background: linear-gradient(180deg, rgba(26,22,24,0.99), rgba(13,11,12,0.99));
+  background: linear-gradient(180deg, rgba(26,26,29,0.99), rgba(19,19,21,0.99));
   border: 1px solid var(--border-strong); border-radius: 14px;
-  box-shadow: 0 20px 54px rgba(0,0,0,0.62), 0 0 0 1px rgba(220,38,38,0.10) inset;
+  box-shadow: 0 20px 54px rgba(0,0,0,0.62), 0 0 0 1px rgba(255,255,255,0.05) inset;
   display: flex; flex-direction: column; gap: 2px;
   opacity: 0; visibility: hidden; pointer-events: none;
   transition: opacity .18s ease, transform .18s ease, visibility .18s;
@@ -207,19 +218,19 @@ nav {
   font-size: 0.83rem; font-weight: 600; letter-spacing: .2px;
   transition: color .15s, background .15s;
 }
-.nav-drop a:hover { color: var(--text); background: rgba(220,38,38,0.14); }
+.nav-drop a:hover { color: var(--text); background: var(--emerald-glow); }
 .nav-actions { display: flex; align-items: center; gap: 11px; flex: 0 0 auto; }
 .nav-join {
-  background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; text-decoration: none;
+  background: linear-gradient(135deg, #d14343, #a63333); color: #fff; text-decoration: none;
   font-size: 0.74rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;
   padding: 10px 20px; border-radius: 999px; white-space: nowrap;
-  box-shadow: 0 6px 20px rgba(220,38,38,0.34);
+  box-shadow: 0 6px 20px rgba(209,67,67,0.26);
   transition: filter .18s, transform .18s;
 }
 .nav-join:hover { filter: brightness(1.1); transform: translateY(-1px); }
-body.light-mode .nav-drop { background: linear-gradient(180deg,#ffffff,#f4f1f1); }
-body.light-mode .nav-drop a { color: #4a4246; }
-body.light-mode .nav-drop a:hover { color: #151213; }
+body.light-mode .nav-drop { background: linear-gradient(180deg,#ffffff,#f6f6f7); }
+body.light-mode .nav-drop a { color: #5f5f66; }
+body.light-mode .nav-drop a:hover { color: #141416; }
 
 .nav-shell { position: sticky; top: 0; z-index: 999; }
 
@@ -230,7 +241,7 @@ body.light-mode .nav-drop a:hover { color: #151213; }
 }
 .hamburger span {
   display: block; width: 22px; height: 2px;
-  background: var(--gold); border-radius: 2px;
+  background: var(--text); border-radius: 2px;
   transition: all .3s;
 }
 .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px,5px); }
@@ -239,7 +250,7 @@ body.light-mode .nav-drop a:hover { color: #151213; }
 
 .mobile-menu {
   display: none; position: absolute; top: 100%; left: 0; right: 0;
-  background: rgba(6,9,13,0.98); backdrop-filter: blur(20px);
+  background: rgba(12,12,13,0.98); backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
   padding: 16px 20px; flex-direction: column; gap: 2px;
   max-height: calc(100vh - 100%); overflow-y: auto;
@@ -251,16 +262,16 @@ body.light-mode .nav-drop a:hover { color: #151213; }
   transition: all .2s; text-transform: uppercase; letter-spacing: .8px;
   border-bottom: 1px solid rgba(255,255,255,0.04);
 }
-.mobile-menu a:hover { color: var(--gold-ink); background: rgba(220,38,38,0.06); }
+.mobile-menu a:hover { color: var(--gold-ink); background: rgba(255,255,255,0.06); }
 .mobile-menu a:last-child { border-bottom: none; }
 .mm-group {
   font-family: 'Barlow Condensed', sans-serif; font-size: 0.74rem; font-weight: 900;
-  letter-spacing: 2.4px; text-transform: uppercase; color: var(--gold-ink);
+  letter-spacing: 2.4px; text-transform: uppercase; color: var(--muted);
   padding: 14px 14px 6px; opacity: .85;
 }
 .mobile-menu a { text-transform: none; letter-spacing: .2px; font-size: 0.9rem; padding: 10px 14px; }
 .mm-join {
-  background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff !important;
+  background: linear-gradient(135deg, #d14343, #a63333); color: #fff !important;
   text-align: center; font-weight: 900 !important; text-transform: uppercase !important;
   letter-spacing: 1px !important; border-radius: 999px !important; margin-top: 14px;
   border-bottom: none !important;
@@ -311,20 +322,20 @@ body.light-mode .nav-drop a:hover { color: #151213; }
   display: flex; align-items: center; justify-content: center;
   text-align: center;
   padding: 80px 24px 60px;
-  background: radial-gradient(ellipse at 50% 0%, rgba(220,38,38,0.045) 0%, transparent 65%),
-              linear-gradient(180deg, #030507 0%, #05080d 100%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(209,67,67,0.045) 0%, transparent 65%),
+              linear-gradient(180deg, #0c0c0d 0%, #131315 100%);
   position: relative; overflow: hidden;
 }
 .hero::before {
   content:'';
   position: absolute; inset: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23dc2626' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
 }
 .hero-inner { position: relative; max-width: 820px; }
 .hero-eyebrow {
   display: inline-block;
-  background: rgba(220,38,38,0.12); border: 1px solid rgba(220,38,38,0.35);
-  color: var(--emerald); font-size: 0.72rem; font-weight: 700;
+  background: var(--red-soft); border: 1px solid var(--red-line);
+  color: var(--gold-ink); font-size: 0.72rem; font-weight: 700;
   padding: 5px 16px; border-radius: 20px; margin-bottom: 22px;
   text-transform: uppercase; letter-spacing: 2px;
 }
@@ -334,9 +345,9 @@ body.light-mode .nav-drop a:hover { color: #151213; }
   font-weight: 900; line-height: 0.95;
   letter-spacing: -1px; margin-bottom: 24px;
 }
-.hero h1 .gold { color: var(--gold-ink); }
+.hero h1 .gold { color: var(--text); }
 .hero h1 .outline {
-  -webkit-text-stroke: 2px var(--gold);
+  -webkit-text-stroke: 2px var(--text);
   color: transparent;
 }
 .hero-sub {
@@ -368,16 +379,16 @@ body.light-mode .nav-drop a:hover { color: #151213; }
   font-family: 'IBM Plex Sans', sans-serif;
 }
 .btn-gold {
-  background: linear-gradient(135deg, #f05252 0%, #dc2626 48%, #a81a1a 100%);
+  background: linear-gradient(135deg, #d14343 0%, #bf3a3a 48%, #a63333 100%);
   color: #fff;
-  box-shadow: 0 6px 20px rgba(220,38,38,0.28), inset 0 1px 0 rgba(255,255,255,0.16);
+  box-shadow: 0 6px 20px rgba(209,67,67,0.24), inset 0 1px 0 rgba(255,255,255,0.16);
 }
-.btn-gold:hover { filter: brightness(1.09); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(220,38,38,0.4), inset 0 1px 0 rgba(255,255,255,0.2); }
+.btn-gold:hover { filter: brightness(1.09); transform: translateY(-2px); box-shadow: 0 12px 30px rgba(209,67,67,0.32), inset 0 1px 0 rgba(255,255,255,0.2); }
 .btn-outline {
-  background: linear-gradient(180deg, rgba(220,38,38,0.06), rgba(220,38,38,0.015));
-  color: #ff6b6b; border: 1.5px solid rgba(220,38,38,0.55);
+  background: var(--emerald-glow);
+  color: var(--text); border: 1.5px solid var(--border);
 }
-.btn-outline:hover { background: linear-gradient(180deg, rgba(220,38,38,0.16), rgba(220,38,38,0.06)); border-color: rgba(239,68,68,0.85); color: #ff8888; transform: translateY(-2px); }
+.btn-outline:hover { background: var(--accent); border-color: var(--muted); color: var(--text); transform: translateY(-2px); }
 .scroll-hint { margin-top: 48px; color: var(--muted); font-size: 0.75rem; animation: bounce 2s infinite; }
 @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
 
@@ -388,7 +399,7 @@ body.light-mode .nav-drop a:hover { color: #151213; }
   display: flex; align-items: center; justify-content: center; gap: 40px; flex-wrap: wrap;
 }
 .proof-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--muted); }
-.proof-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+.proof-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .proof-item strong { color: var(--text); }
 
@@ -396,8 +407,8 @@ body.light-mode .nav-drop a:hover { color: #151213; }
 section { padding: 90px 24px; }
 .section-inner { max-width: 1140px; margin: 0 auto; }
 .section-tag {
-  display: inline-block; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.3);
-  color: var(--emerald); font-size: 0.68rem; font-weight: 700;
+  display: inline-block; background: var(--red-soft); border: 1px solid var(--red-line);
+  color: var(--gold-ink); font-size: 0.68rem; font-weight: 700;
   padding: 4px 14px; border-radius: 20px; margin-bottom: 14px;
   text-transform: uppercase; letter-spacing: 2px;
 }
@@ -408,25 +419,25 @@ section { padding: 90px 24px; }
   font-size: clamp(1.5rem, 3.6vw, 2.35rem);
   font-weight: 900; letter-spacing: 4px;
   padding: 13px 40px; border-radius: 999px; margin-bottom: 0;
-  color: #fff;
-  background: linear-gradient(135deg, rgba(239,68,68,.22), rgba(185,28,28,.12));
-  border: 1px solid rgba(220,38,38,.45);
-  box-shadow: 0 0 44px rgba(220,38,38,.24), inset 0 1px 0 rgba(255,255,255,.08);
+  color: var(--text);
+  background: var(--emerald-glow);
+  border: 1px solid var(--border);
+  box-shadow: 0 0 44px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.06);
 }
 .section-title {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900; margin-bottom: 12px;
 }
-.section-title .gold { color: var(--gold-ink); }
+.section-title .gold { color: var(--text); }
 .section-sub { color: var(--muted); max-width: 580px; margin-bottom: 50px; font-size: 1rem; }
 
 /* ─── PREMIUM ─── */
 #premium { background: var(--bg2); }
 .premium-box {
-  background: linear-gradient(135deg, #141112, #0f0d0e);
-  border: 2px solid var(--gold); border-radius: 20px;
+  background: linear-gradient(135deg, #161618, #131315);
+  border: 2px solid rgba(209,67,67,0.28); border-radius: 20px;
   padding: 50px; text-align:center; max-width:680px; margin:0 auto;
-  box-shadow: 0 0 60px rgba(220,38,38,0.08);
+  box-shadow: 0 0 60px rgba(0,0,0,0.45);
 }
 /* ─── ABOUT ─── */
 #about { background:var(--bg2); }
@@ -436,13 +447,13 @@ section { padding: 90px 24px; }
 .about-quote-card img { width:100%; display:block; }
 .about-quote-caption { padding:20px; }
 .about-quote-caption blockquote { font-style:italic; font-size:0.95rem; color:var(--text); margin-bottom:8px; }
-.about-quote-caption cite { color:var(--gold-ink); font-size:0.78rem; font-weight:700; }
+.about-quote-caption cite { color:var(--muted); font-size:0.78rem; font-weight:700; }
 .about-text h2 { font-family:'Barlow Condensed',sans-serif; font-size:2.6rem; font-weight:900; margin-bottom:20px; }
 .about-text p { color:var(--muted); margin-bottom:14px; font-size:0.95rem; line-height:1.75; }
 .about-text p strong { color:var(--text); }
-.about-text p.highlight { color:var(--text); background:rgba(220,38,38,0.05); border:1px solid rgba(220,38,38,.22); padding:12px 16px; border-radius:0 8px 8px 0; }
+.about-text p.highlight { color:var(--text); background:rgba(209,67,67,0.06); border:1px solid rgba(209,67,67,.22); padding:12px 16px; border-radius:0 8px 8px 0; }
 .badges { display:flex; flex-wrap:wrap; gap:8px; margin-top:20px; }
-.badge { background:rgba(220,38,38,0.08); border:1px solid rgba(220,38,38,0.25); color:var(--emerald); border-radius:20px; padding:5px 14px; font-size:0.75rem; font-weight:600; }
+.badge { background:var(--emerald-glow); border:1px solid var(--border); color:var(--emerald); border-radius:20px; padding:5px 14px; font-size:0.75rem; font-weight:600; }
 
 /* ─── INSIGHTS ─── */
 #insights { background:var(--bg); }
@@ -450,11 +461,11 @@ section { padding: 90px 24px; }
 .insight-card { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; cursor:pointer; transition:all .2s; }
 .insight-card:hover { border-color:var(--gold-ink); transform:translateY(-4px); }
 .insight-card-body { padding:20px; }
-.insight-tag { display:inline-block; background:rgba(220,38,38,0.1); color:var(--gold-ink); font-size:0.68rem; font-weight:700; padding:3px 10px; border-radius:20px; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; }
+.insight-tag { display:inline-block; background:var(--emerald-glow); color:var(--emerald); font-size:0.68rem; font-weight:700; padding:3px 10px; border-radius:20px; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px; }
 .insight-card h3 { font-size:1.05rem; font-weight:700; margin-bottom:8px; }
 .insight-card p { font-size:0.85rem; color:var(--muted); }
 .locked-card { position:relative; }
-.locked-overlay { position:absolute; inset:0; background:rgba(6,9,13,0.9); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
+.locked-overlay { position:absolute; inset:0; background:rgba(12,12,13,0.9); border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
 .locked-overlay .lock-icon { font-size:2rem; }
 .locked-overlay p { color:var(--muted); font-size:0.82rem; }
 
@@ -470,20 +481,20 @@ section { padding: 90px 24px; }
 .service-price span { font-size:0.9rem; color:var(--muted); font-family:'IBM Plex Sans',sans-serif; }
 
 /* ─── DISCORD CTA ─── */
-#discord-cta { background: linear-gradient(135deg, #0d0f1e, #080708); text-align:center; }
-.discord-box { background: rgba(220,38,38,0.08); border:1px solid rgba(220,38,38,0.3); border-radius:20px; padding:50px 40px; max-width:680px; margin:0 auto; }
+#discord-cta { background: linear-gradient(135deg, #131315, #0c0c0d); text-align:center; }
+.discord-box { background: rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:20px; padding:50px 40px; max-width:680px; margin:0 auto; }
 .discord-logo { font-size:3rem; margin-bottom:16px; }
 .discord-box h2 { font-family:'Barlow Condensed',sans-serif; font-size:2.6rem; font-weight:900; margin-bottom:12px; }
 .discord-box p { color:var(--muted); margin-bottom:28px; }
-.discord-btn { display:inline-block; background:#dc2626; color:#fff; padding:14px 36px; border-radius:8px; font-weight:700; text-decoration:none; font-size:1rem; transition:all .2s; }
-.discord-btn:hover { background:#b91c1c; transform:translateY(-2px); }
+.discord-btn { display:inline-block; background:#d14343; color:#fff; padding:14px 36px; border-radius:8px; font-weight:700; text-decoration:none; font-size:1rem; transition:all .2s; }
+.discord-btn:hover { background:#a63333; transform:translateY(-2px); }
 
 /* ─── DISCLOSURE ─── */
 .disclosure { background:var(--bg2); border-top:1px solid var(--border); padding:30px 24px; }
 .disclosure p { font-size:0.75rem; color:var(--muted); max-width:900px; margin:0 auto; line-height:1.7; }
 
 /* ─── FOOTER ─── */
-footer { background:#020508; border-top:1px solid var(--border); padding:32px 24px; }
+footer { background:#0c0c0d; border-top:1px solid var(--border); padding:32px 24px; }
 .footer-inner { max-width:1140px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
 .footer-links { display:flex; gap:20px; flex-wrap:wrap; }
 .footer-links a { color:var(--muted); text-decoration:none; font-size:0.8rem; transition:color .2s; }
@@ -499,7 +510,7 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .modal-close:hover { color:var(--text); }
 .modal h2 { font-family:'Barlow Condensed',sans-serif; font-size:2rem; font-weight:900; margin-bottom:20px; }
 .modal p { color:var(--muted); margin-bottom:14px; line-height:1.7; }
-.modal h3 { font-size:1.1rem; font-weight:700; margin:20px 0 8px; color:var(--gold-ink); }
+.modal h3 { font-size:1.1rem; font-weight:700; margin:20px 0 8px; color:var(--text); }
 .modal ul { color:var(--muted); padding-left:20px; margin-bottom:14px; }
 .modal ul li { margin-bottom:6px; }
 .modal-back { display:inline-block; margin-bottom:20px; color:var(--gold-ink); cursor:pointer; font-weight:600; font-size:0.9rem; }
@@ -514,12 +525,12 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 
 /* ─── ENHANCED GLOW & POP EFFECTS ─── */
 @keyframes goldPulse {
-  0%,100%{text-shadow:0 0 18px rgba(220,38,38,0.6),0 0 40px rgba(220,38,38,0.3);}
-  50%{text-shadow:0 0 32px rgba(220,38,38,0.9),0 0 70px rgba(220,38,38,0.5),0 0 100px rgba(220,38,38,0.2);}
+  0%,100%{text-shadow:0 0 18px rgba(209,67,67,0.22),0 0 40px rgba(209,67,67,0.10);}
+  50%{text-shadow:0 0 32px rgba(209,67,67,0.30),0 0 70px rgba(209,67,67,0.14),0 0 100px rgba(209,67,67,0.06);}
 }
 @keyframes greenGlow {
-  0%,100%{text-shadow:0 0 14px rgba(220,38,38,0.5),0 0 30px rgba(220,38,38,0.2);}
-  50%{text-shadow:0 0 28px rgba(220,38,38,0.85),0 0 60px rgba(220,38,38,0.4);}
+  0%,100%{text-shadow:0 0 14px rgba(255,255,255,0.16),0 0 30px rgba(255,255,255,0.07);}
+  50%{text-shadow:0 0 28px rgba(255,255,255,0.24),0 0 60px rgba(255,255,255,0.12);}
 }
 @keyframes cardFloat {
   0%,100%{transform:translateY(0);}
@@ -536,9 +547,9 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   content:'';
   position:absolute;
   inset:0;
-  background:radial-gradient(ellipse at 20% 80%,rgba(220,38,38,0.04) 0%,transparent 55%),
-             radial-gradient(ellipse at 80% 20%,rgba(220,38,38,0.04) 0%,transparent 55%),
-             radial-gradient(ellipse 60% 45% at 50% 15%,rgba(220,38,38,var(--hero-pulse-peak,0.10)) 0%,transparent 70%);
+  background:radial-gradient(ellipse at 20% 80%,rgba(255,255,255,0.025) 0%,transparent 55%),
+             radial-gradient(ellipse at 80% 20%,rgba(255,255,255,0.025) 0%,transparent 55%),
+             radial-gradient(ellipse 60% 45% at 50% 15%,rgba(209,67,67,var(--hero-pulse-peak,0.028)) 0%,transparent 70%);
   pointer-events:none;
   animation: heroPulse 7s ease-in-out infinite;
 }
@@ -552,12 +563,12 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 .bolt-underline { position: absolute; left: -20%; right: -20%; bottom: -26px; height: 44px; overflow: visible; opacity: var(--bolt-glow, .8); }
 .bolt-underline path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .bolt-underline .bolt-glow { filter: url(#boltJitterGlowSmall); }
-.bolt-underline .bg-trunk { stroke: #ff1a1a; stroke-width: 7; opacity: .55; }
-.bolt-underline .bg-twig { stroke: #ff1a1a; stroke-width: 4; opacity: .4; }
+.bolt-underline .bg-trunk { stroke: #a63333; stroke-width: 7; opacity: .55; }
+.bolt-underline .bg-twig { stroke: #a63333; stroke-width: 4; opacity: .4; }
 .bolt-underline .bolt-core { filter: url(#boltJitterCoreSmall); }
 .bolt-underline .bolt-core path { stroke-linecap: butt; stroke-linejoin: miter; }
-.bolt-underline .bc-trunk { stroke: #fff2ea; stroke-width: 1.6; }
-.bolt-underline .bc-twig { stroke: #ffcbb8; stroke-width: .9; opacity: .88; }
+.bolt-underline .bc-trunk { stroke: #f2f2f4; stroke-width: 1.6; }
+.bolt-underline .bc-twig { stroke: #d9d9dd; stroke-width: .9; opacity: .88; }
 .bolt-underline .bolt-highlight {
   filter: url(#boltJitterCoreSmall);
   -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 40%, white 50%, transparent 60%, transparent 100%);
@@ -572,7 +583,7 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   100% { -webkit-mask-position: -100% 0; mask-position: -100% 0; }
 }
 .bolt-underline .bolt-highlight path { stroke: #fff; stroke-linecap: butt; stroke-linejoin: miter; }
-.bolt-underline .bh-trunk { stroke-width: 2.4; filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 9px #ff2b2b); }
+.bolt-underline .bh-trunk { stroke-width: 2.4; filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 9px #d14343); }
 .bolt-underline .bh-twig { stroke-width: 1.3; filter: drop-shadow(0 0 3px #fff); }
 
 /* ─── MEGA BOLT — large detailed background lightning, right side of hero ───
@@ -591,14 +602,14 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
    dimly visible" strike, never the part that flashes. */
 .mega-bolt .bolt-glow path { stroke-linecap: round; stroke-linejoin: round; }
 .mega-bolt .bolt-glow { filter: url(#boltJitterGlow); }
-.mega-bolt .bolt-glow .g-trunk { stroke: #ff1a1a; stroke-width: 9; opacity: .5; }
-.mega-bolt .bolt-glow .g-twig { stroke: #ff1a1a; stroke-width: 5; opacity: .32; }
+.mega-bolt .bolt-glow .g-trunk { stroke: #a63333; stroke-width: 9; opacity: .28; }
+.mega-bolt .bolt-glow .g-twig { stroke: #a63333; stroke-width: 5; opacity: .18; }
 /* Core layer: same noise displacement (smaller scale, so it stays a
    recognizable bolt shape), no blur, sharp miter joins. */
 .mega-bolt .bolt-core { filter: url(#boltJitterCore); }
 .mega-bolt .bolt-core path { stroke-linecap: butt; stroke-linejoin: miter; }
-.mega-bolt .bolt-core .c-trunk { stroke: #fff2ea; stroke-width: 1.6; }
-.mega-bolt .bolt-core .c-twig { stroke: #ffcbb8; stroke-width: .9; opacity: .85; }
+.mega-bolt .bolt-core .c-trunk { stroke: #f2f2f4; stroke-width: 1.6; }
+.mega-bolt .bolt-core .c-twig { stroke: #d9d9dd; stroke-width: .9; opacity: .85; }
 /* Highlight layer: a bright white copy of the same paths, masked by a
    traveling gradient band (see #boltSweepMask in defs) so only a portion
    of the strike is ever lit at once - it sweeps top-to-bottom then back,
@@ -619,24 +630,24 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
   100% { -webkit-mask-position: 0 -100%; mask-position: 0 -100%; }
 }
 .mega-bolt .bolt-highlight path { stroke: #fff; stroke-linecap: butt; stroke-linejoin: miter; }
-.mega-bolt .bh-trunk { stroke-width: 2.4; filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px #ff2b2b); }
+.mega-bolt .bh-trunk { stroke-width: 2.4; filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 12px #d14343); }
 .mega-bolt .bh-twig { stroke-width: 1.3; filter: drop-shadow(0 0 4px #fff); }
 @media (max-width: 768px) { .mega-bolt { width: min(66vw, 280px); opacity: calc(var(--mega-bolt-base, .5) * .85); } }
-.win-card:hover { box-shadow: 0 12px 40px rgba(220,38,38,0.18); }
-.premium-box { box-shadow: 0 0 80px rgba(220,38,38,0.12), 0 0 30px rgba(220,38,38,0.06); transition: box-shadow 0.4s; }
-.premium-box:hover { box-shadow: 0 0 120px rgba(220,38,38,0.22), 0 0 50px rgba(220,38,38,0.12); }
-.service-card:hover { box-shadow: 0 12px 40px rgba(220,38,38,0.14); }
-#big-win { box-shadow: inset 0 1px 0 rgba(220,38,38,0.1); }
+.win-card:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.45); }
+.premium-box { box-shadow: 0 0 80px rgba(0,0,0,0.5), 0 0 30px rgba(209,67,67,0.04); transition: box-shadow 0.4s; }
+.premium-box:hover { box-shadow: 0 0 120px rgba(0,0,0,0.55), 0 0 50px rgba(209,67,67,0.05); }
+.service-card:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.45); }
+#big-win { box-shadow: inset 0 1px 0 rgba(255,255,255,0.08); }
 
 /* ─── EXPAND / COLLAPSE ─── */
 .expand-btn {
   display:inline-flex;align-items:center;gap:6px;
-  background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.3);
-  color:var(--gold-ink);font-size:0.8rem;font-weight:700;padding:7px 18px;
+  background:var(--emerald-glow);border:1px solid var(--border);
+  color:var(--text);font-size:0.8rem;font-weight:700;padding:7px 18px;
   border-radius:20px;cursor:pointer;margin-top:20px;transition:all .2s;
   font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;
 }
-.expand-btn:hover { background:rgba(220,38,38,0.15); }
+.expand-btn:hover { background:var(--accent); }
 .collapsible-extra { overflow:hidden;transition:max-height .4s ease; }
 
 /* ─── ESSAY ─── */
@@ -648,9 +659,9 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 /* ─── LIQUID MOTION SYSTEM ─── */
 .liquid-bg{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1;}
 .liquid-blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;will-change:transform;}
-.lb-1{width:520px;height:520px;left:-140px;top:-120px;background:radial-gradient(circle at 30% 30%,rgba(220,38,38,.35),transparent 65%);animation:drift1 26s ease-in-out infinite alternate;}
-.lb-2{width:420px;height:420px;right:-100px;top:10%;background:radial-gradient(circle at 60% 40%,rgba(240,180,41,.16),transparent 65%);animation:drift2 32s ease-in-out infinite alternate;}
-.lb-3{width:640px;height:640px;left:30%;bottom:-320px;background:radial-gradient(circle at 50% 50%,rgba(220,38,38,.14),transparent 60%);animation:drift3 38s ease-in-out infinite alternate;}
+.lb-1{width:520px;height:520px;left:-140px;top:-120px;background:radial-gradient(circle at 30% 30%,rgba(209,67,67,.05),transparent 65%);animation:drift1 26s ease-in-out infinite alternate;}
+.lb-2{width:420px;height:420px;right:-100px;top:10%;background:radial-gradient(circle at 60% 40%,rgba(255,255,255,.05),transparent 65%);animation:drift2 32s ease-in-out infinite alternate;}
+.lb-3{width:640px;height:640px;left:30%;bottom:-320px;background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.05),transparent 60%);animation:drift3 38s ease-in-out infinite alternate;}
 @keyframes drift1{from{transform:translate(0,0) scale(1)}to{transform:translate(90px,60px) scale(1.12)}}
 @keyframes drift2{from{transform:translate(0,0) scale(1)}to{transform:translate(-70px,90px) scale(.92)}}
 @keyframes drift3{from{transform:translate(0,0) scale(1)}to{transform:translate(60px,-70px) scale(1.08)}}
@@ -663,21 +674,23 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 #premium, #about, #features, #faq { position:relative; overflow:hidden; }
 #premium .section-inner, #about .section-inner, #features .section-inner, #faq .section-inner { position:relative; z-index:2; }
 .liquid-bg.soft .liquid-blob { opacity:.26; filter:blur(75px); }
-.lb-4{width:460px;height:460px;right:-170px;top:-150px;background:radial-gradient(circle at 60% 40%,rgba(220,38,38,.30),transparent 65%);animation:drift2 34s ease-in-out infinite alternate;}
-.lb-5{width:540px;height:540px;left:-200px;bottom:-260px;background:radial-gradient(circle at 40% 55%,rgba(220,38,38,.16),transparent 62%);animation:drift3 40s ease-in-out infinite alternate;}
-.lb-6{width:500px;height:500px;left:-180px;top:-140px;background:radial-gradient(circle at 35% 35%,rgba(220,38,38,.22),transparent 65%);animation:drift1 36s ease-in-out infinite alternate;}
-.lb-7{width:430px;height:430px;right:-160px;bottom:-190px;background:radial-gradient(circle at 60% 45%,rgba(240,180,41,.13),transparent 62%);animation:drift2 42s ease-in-out infinite alternate;}
-.lb-8{width:420px;height:420px;right:-160px;bottom:-180px;background:radial-gradient(circle at 60% 40%,rgba(220,38,38,.24),transparent 65%);animation:drift1 38s ease-in-out infinite alternate;}
-.lb-9{width:480px;height:480px;left:-190px;top:-160px;background:radial-gradient(circle at 40% 50%,rgba(240,180,41,.12),transparent 62%);animation:drift2 44s ease-in-out infinite alternate;}
-.lb-10{width:460px;height:460px;right:-170px;top:-140px;background:radial-gradient(circle at 55% 45%,rgba(220,38,38,.13),transparent 62%);animation:drift3 40s ease-in-out infinite alternate;}
-.lb-11{width:500px;height:500px;left:-180px;bottom:-220px;background:radial-gradient(circle at 45% 55%,rgba(220,38,38,.20),transparent 65%);animation:drift1 42s ease-in-out infinite alternate;}
+.lb-4{width:460px;height:460px;right:-170px;top:-150px;background:radial-gradient(circle at 60% 40%,rgba(255,255,255,.05),transparent 65%);animation:drift2 34s ease-in-out infinite alternate;}
+.lb-5{width:540px;height:540px;left:-200px;bottom:-260px;background:radial-gradient(circle at 40% 55%,rgba(255,255,255,.05),transparent 62%);animation:drift3 40s ease-in-out infinite alternate;}
+.lb-6{width:500px;height:500px;left:-180px;top:-140px;background:radial-gradient(circle at 35% 35%,rgba(255,255,255,.05),transparent 65%);animation:drift1 36s ease-in-out infinite alternate;}
+.lb-7{width:430px;height:430px;right:-160px;bottom:-190px;background:radial-gradient(circle at 60% 45%,rgba(255,255,255,.05),transparent 62%);animation:drift2 42s ease-in-out infinite alternate;}
+.lb-8{width:420px;height:420px;right:-160px;bottom:-180px;background:radial-gradient(circle at 60% 40%,rgba(209,67,67,.05),transparent 65%);animation:drift1 38s ease-in-out infinite alternate;}
+.lb-9{width:480px;height:480px;left:-190px;top:-160px;background:radial-gradient(circle at 40% 50%,rgba(255,255,255,.05),transparent 62%);animation:drift2 44s ease-in-out infinite alternate;}
+.lb-10{width:460px;height:460px;right:-170px;top:-140px;background:radial-gradient(circle at 55% 45%,rgba(255,255,255,.05),transparent 62%);animation:drift3 40s ease-in-out infinite alternate;}
+.lb-11{width:500px;height:500px;left:-180px;bottom:-220px;background:radial-gradient(circle at 45% 55%,rgba(255,255,255,.05),transparent 65%);animation:drift1 42s ease-in-out infinite alternate;}
 
 /* ─── AMBIENT PREMIUM FX (all reduced-motion gated) ───
    Perf budget note: the animated gold sweep is scoped to the hero headline
    ONLY (background-position animation repaints text every frame — too costly
    across all section titles). Section titles get the static gradient. */
-.section-title .gold{background:linear-gradient(90deg,#f66 0%,var(--gold) 45%,#ff9d9d 60%,var(--gold) 80%);background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--gold-ink);}
-.hero h1 .gold{color:var(--gold-ink);}
+/* Display type is neutral; the heading keeps a thin red accent rule instead
+   of a red fill (a 3rem red phrase is a bigger red mass than every button). */
+.section-title .gold{color:var(--text);-webkit-text-fill-color:currentColor;background:none;text-decoration:underline;text-decoration-color:var(--red-line);text-decoration-thickness:3px;text-underline-offset:10px;text-decoration-skip-ink:none;}
+.hero h1 .gold{color:var(--text);}
 @keyframes goldSweep{to{background-position:200% center;}}
 .feature-card::after{content:'';position:absolute;top:0;left:-85%;width:55%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.07),transparent);transform:skewX(-18deg);pointer-events:none;}
 .feature-card:hover::after{animation:cardSheen .9s ease;}
@@ -702,39 +715,39 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 @media (prefers-reduced-motion: reduce){.reveal-init,.reveal-in{opacity:1;transform:none;transition:none;}}
 
 /* ─── FEATURE SHOWCASE (Whop carousel, recreated natively) ─── */
-.feature-card{position:relative;background:linear-gradient(145deg,#171416,#0f0d0e);border:1px solid var(--border);border-radius:18px;padding:30px 28px;overflow:hidden;transition:all .25s;}
-.feature-card:hover{border-color:var(--gold-ink);transform:translateY(-4px);box-shadow:0 14px 40px rgba(220,38,38,.12);}
-.feature-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 10%,rgba(220,38,38,.09),transparent 55%);pointer-events:none;}
-.feature-num{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:900;color:var(--gold-ink);letter-spacing:3px;margin-bottom:14px;}
+.feature-card{position:relative;background:linear-gradient(145deg,#161618,#131315);border:1px solid var(--border);border-radius:18px;padding:30px 28px;overflow:hidden;transition:all .25s;}
+.feature-card:hover{border-color:var(--gold-ink);transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,.45);}
+.feature-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 10%,rgba(255,255,255,.04),transparent 55%);pointer-events:none;}
+.feature-num{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:900;color:var(--emerald);letter-spacing:3px;margin-bottom:14px;}
 .feature-card h3{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;text-transform:uppercase;line-height:1.1;margin-bottom:10px;color:var(--text);}
 .feature-card p{color:var(--muted);font-size:.9rem;line-height:1.65;}
 
 /* ─── CURRICULUM SHOWCASE ─── */
-.course-card{position:relative;display:flex;flex-direction:column;background:linear-gradient(145deg,#171416,#0f0d0e);border:1px solid var(--border);border-radius:18px;padding:26px 24px;transition:all .25s;}
-.course-card:hover{border-color:var(--gold-ink);transform:translateY(-4px);box-shadow:0 14px 40px rgba(220,38,38,.12);}
-.course-card.free-course{border-color:rgba(74,222,128,.45);box-shadow:0 0 34px rgba(74,222,128,.08);}
-.course-card.free-course:hover{border-color:#4ade80;}
-.course-badge{align-self:flex-start;font-family:'Barlow Condensed',sans-serif;font-size:.72rem;font-weight:900;letter-spacing:1.6px;text-transform:uppercase;padding:5px 12px;border-radius:999px;margin-bottom:14px;background:rgba(220,38,38,.1);color:#ff8b8b;border:1px solid rgba(220,38,38,.3);}
-.course-badge.free{background:rgba(74,222,128,.1);color:#4ade80;border-color:rgba(74,222,128,.35);}
+.course-card{position:relative;display:flex;flex-direction:column;background:linear-gradient(145deg,#161618,#131315);border:1px solid var(--border);border-radius:18px;padding:26px 24px;transition:all .25s;}
+.course-card:hover{border-color:var(--gold-ink);transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,.45);}
+.course-card.free-course{border-color:rgba(217,217,221,.38);box-shadow:0 0 34px rgba(255,255,255,.06);}
+.course-card.free-course:hover{border-color:#d9d9dd;}
+.course-badge{align-self:flex-start;font-family:'Barlow Condensed',sans-serif;font-size:.72rem;font-weight:900;letter-spacing:1.6px;text-transform:uppercase;padding:5px 12px;border-radius:999px;margin-bottom:14px;background:rgba(255,255,255,.07);color:#d9d9dd;border:1px solid rgba(255,255,255,.2);}
+.course-badge.free{background:rgba(255,255,255,.1);color:#ffffff;border-color:rgba(255,255,255,.3);}
 .course-card h3{font-family:'Barlow Condensed',sans-serif;font-size:1.45rem;font-weight:900;text-transform:uppercase;line-height:1.1;margin-bottom:8px;color:var(--text);}
 .course-card p{color:var(--muted);font-size:.87rem;line-height:1.6;flex:1;margin-bottom:16px;}
 .course-meta{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:14px;}
 .course-cta{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:.86rem;color:var(--gold-ink);text-decoration:none;}
-.course-card.free-course .course-cta{color:#4ade80;}
+.course-card.free-course .course-cta{color:#d9d9dd;}
 .course-cta:hover{text-decoration:underline;}
 
 /* ─── VIDEO FACADE (lazy; nothing loads until clicked) ─── */
-.video-facade{position:relative;z-index:3;aspect-ratio:16/9;border-radius:20px;overflow:hidden;border:1px solid var(--border-strong);cursor:pointer;box-shadow:0 20px 60px rgba(0,0,0,.5);outline:none;background:#04060a;isolation:isolate;}
+.video-facade{position:relative;z-index:3;aspect-ratio:16/9;border-radius:20px;overflow:hidden;border:1px solid var(--border-strong);cursor:pointer;box-shadow:0 20px 60px rgba(0,0,0,.5);outline:none;background:#0c0c0d;isolation:isolate;}
 .video-facade:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
-.video-poster{position:relative;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#05070b;}
+.video-poster{position:relative;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#131315;}
 .video-poster-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
-.video-poster::before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(6,9,13,.10) 0%,rgba(6,9,13,.24) 55%,rgba(6,9,13,.86) 100%);pointer-events:none;}
+.video-poster::before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(12,12,13,.10) 0%,rgba(12,12,13,.24) 55%,rgba(12,12,13,.86) 100%);pointer-events:none;}
 .video-poster>*:not(.video-poster-img){position:relative;z-index:2;}
 /* Neutral vignette only -- the red/gold wash used to tint the poster and
    made the thumbnail look muddy. The red ambience stays on every other
    section, just not across the player. */
-.video-poster-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 45%,rgba(3,5,8,.5) 100%);}
-.video-play{position:relative;width:84px;height:84px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 10px rgba(220,38,38,.15),0 12px 40px rgba(220,38,38,.4);transition:transform .2s;}
+.video-poster-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 45%,rgba(12,12,13,.55) 100%);}
+.video-play{position:relative;width:84px;height:84px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 10px rgba(209,67,67,.12),0 12px 40px rgba(0,0,0,.4);transition:transform .2s;}
 .video-facade:hover .video-play{transform:scale(1.08);}
 .video-play span{font-size:1.7rem;color:#fff;margin-left:5px;}
 .video-poster-title{position:relative;font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--text);}
@@ -744,79 +757,79 @@ footer { background:#020508; border-top:1px solid var(--border); padding:32px 24
 /* ─── BUNDLE TIERS ─── */
 .period-tabs{display:flex;justify-content:center;gap:6px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:5px;max-width:420px;margin:0 auto 36px;}
 .period-tab{flex:1;padding:9px 6px;border:none;border-radius:999px;background:transparent;color:var(--muted);font-weight:700;font-size:.8rem;cursor:pointer;transition:all .2s;font-family:'IBM Plex Sans',sans-serif;}
-.period-tab.active{background:linear-gradient(135deg,#f05252,#c01f1f);color:#fff;box-shadow:0 4px 14px rgba(220,38,38,.32),inset 0 1px 0 rgba(255,255,255,.16);}
-.tier-was{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;color:#8b8286;text-decoration:line-through;text-decoration-color:rgba(220,38,38,.85);text-decoration-thickness:2px;margin-right:8px;vertical-align:middle;}
-.tier-off{display:inline-block;background:rgba(220,38,38,.16);border:1px solid rgba(220,38,38,.5);color:#ff8b8b;font-size:.62rem;font-weight:900;letter-spacing:.5px;border-radius:20px;padding:2px 9px;margin-left:8px;vertical-align:middle;text-transform:uppercase;}
+.period-tab.active{background:linear-gradient(135deg,#d14343,#a63333);color:#fff;box-shadow:0 4px 14px rgba(209,67,67,.26),inset 0 1px 0 rgba(255,255,255,.16);}
+.tier-was{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;color:#9a9aa0;text-decoration:line-through;text-decoration-color:rgba(209,67,67,.7);text-decoration-thickness:2px;margin-right:8px;vertical-align:middle;}
+.tier-off{display:inline-block;background:rgba(209,67,67,.12);border:1px solid rgba(209,67,67,.32);color:#e26060;font-size:.62rem;font-weight:900;letter-spacing:.5px;border-radius:20px;padding:2px 9px;margin-left:8px;vertical-align:middle;text-transform:uppercase;}
 .tier-note{font-size:.7rem;color:var(--muted);margin-top:4px;font-style:italic;}
 /* The tier cards stay dark in BOTH themes by design, so their text must not
    follow the light-mode text vars — otherwise it renders dark-on-dark and is
    effectively invisible (pre-existing bug, caught in light-mode review). */
-body.light-mode .tier-card li{color:#e4dfe1;}
-body.light-mode .tier-name{color:#b9b1b4;}
-body.light-mode .tier-sub,body.light-mode .tier-price span,body.light-mode .tier-note{color:#a49a9e;}
-body.light-mode .tier-card .btn-outline{color:#ffb0b0;border-color:rgba(220,38,38,.55);}
+body.light-mode .tier-card li{color:#ededee;}
+body.light-mode .tier-name{color:#9a9aa0;}
+body.light-mode .tier-sub,body.light-mode .tier-price span,body.light-mode .tier-note{color:#9a9aa0;}
+body.light-mode .tier-card .btn-outline{color:#d9d9dd;border-color:rgba(255,255,255,.3);}
 .tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px;max-width:1020px;margin:20px auto 0;align-items:stretch;}
-.tier-card{position:relative;background:linear-gradient(168deg,#1b1719 0%,#141113 42%,#0e0c0d 100%);border:1.5px solid var(--border);border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;box-shadow:0 18px 46px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.045);}
-.tier-card.hot{border-color:transparent;box-shadow:0 0 78px rgba(220,38,38,.20),inset 0 0 60px rgba(220,38,38,.09);transform:translateY(-16px);z-index:2;}
+.tier-card{position:relative;background:linear-gradient(168deg,#1d1d20 0%,#161618 42%,#131315 100%);border:1.5px solid var(--border);border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;box-shadow:0 18px 46px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.045);}
+.tier-card.hot{border-color:transparent;box-shadow:0 0 78px rgba(0,0,0,.5),inset 0 0 60px rgba(209,67,67,.05);transform:translateY(-16px);z-index:2;}
 @media (max-width:900px){.tier-card.hot{transform:none;}}
-.tier-card.hot::before{content:'';position:absolute;inset:-3px;border-radius:inherit;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%20300%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lg17%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fffafa%22%2F%3E%3Cstop%20offset%3D%220.18%22%20stop-color%3D%22%23ffd4d4%22%2F%3E%3Cstop%20offset%3D%220.42%22%20stop-color%3D%22%23ff7a7a%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23ef3030%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%239b1a1a%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22c17%22%20x%3D%22-18%25%22%20y%3D%22-5%25%22%20width%3D%22136%25%22%20height%3D%22110%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.06%200.14%22%20numOctaves%3D%224%22%20seed%3D%2217%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%222.6%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22g17%22%20x%3D%22-28%25%22%20y%3D%22-7%25%22%20width%3D%22156%25%22%20height%3D%22114%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.04%200.09%22%20numOctaves%3D%222%22%20seed%3D%2217%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%224.5%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22d%22%2F%3E%3CfeGaussianBlur%20in%3D%22d%22%20stdDeviation%3D%224.2%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23g17)%22%3E%3Cpath%20d%3D%22M48%2C0%20L46.8%2C4.4%20L47.8%2C8.8%20L48.1%2C13.2%20L47.3%2C17.6%20L48%2C22.1%20L47.5%2C26.5%20L48.1%2C30.9%20L47.1%2C35.3%20L45.1%2C39.7%20L44.6%2C44.1%20L44.7%2C48.5%20L44.4%2C52.9%20L43.2%2C57.4%20L41%2C61.8%20L42.1%2C66.2%20L42.8%2C70.6%20L42.6%2C75%20L43.1%2C79.4%20L43.5%2C83.8%20L45%2C88.2%20L44.8%2C92.6%20L43.2%2C97.1%20L44.1%2C101.5%20L44.6%2C105.9%20L42.8%2C110.3%20L43.6%2C114.7%20L42.7%2C119.1%20L43.3%2C123.5%20L42.7%2C127.9%20L43.3%2C132.4%20L43.1%2C136.8%20L44%2C141.2%20L45.8%2C145.6%20L47.7%2C150%20L49.6%2C154.4%20L49.6%2C158.8%20L48.1%2C163.2%20L45.7%2C167.6%20L43.7%2C172.1%20L41%2C176.5%20L40.9%2C180.9%20L40%2C185.3%20L38.4%2C189.7%20L37.2%2C194.1%20L36.7%2C198.5%20L35.5%2C202.9%20L37.3%2C207.4%20L36.8%2C211.8%20L36.7%2C216.2%20L37.5%2C220.6%20L38.1%2C225%20L40.2%2C229.4%20L42.9%2C233.8%20L45.5%2C238.2%20L47%2C242.6%20L48.2%2C247.1%20L50.3%2C251.5%20L49.2%2C255.9%20L47.4%2C260.3%20L46.4%2C264.7%20L44.5%2C269.1%20L43.2%2C273.5%20L41.2%2C277.9%20L38.9%2C282.4%20L40.6%2C286.8%20L41.7%2C291.2%20L43.2%2C295.6%20L45.1%2C300%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%229%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M42.8%2C110.3%20L50.4%2C116.5%20L56.5%2C125.6%20L61.2%2C132.4%20L66.2%2C134.7%20M40.6%2C286.8%20L47.6%2C291.6%20L54%2C298.6%20L56.4%2C301.8%20L60%2C304.4%20L61.6%2C308.3%20L64.3%2C310.2%20M42.8%2C70.6%20L38.9%2C81.7%20L36.2%2C90.1%20L31.5%2C95.6%20L29.6%2C99.9%20L25.2%2C103.2%20M44.6%2C44.1%20L48.5%2C54.1%20L54.2%2C63.1%20L57.9%2C66.6%20L60.2%2C70.6%20L63.9%2C72.8%20L67.1%2C76.2%20M44.5%2C269.1%20L36%2C278.5%20L29.9%2C283.9%20L27.1%2C288.4%20L24.9%2C290.7%20L23.5%2C292.7%20M44.5%2C269.1%20L48.2%2C277.7%20L54.3%2C283.9%20L58%2C286.6%20L63.2%2C292.4%20M38.9%2C282.4%20L30.9%2C289.3%20L28.4%2C295.3%20L21.8%2C298.8%20L16.3%2C302%20M47.1%2C35.3%20L38.7%2C43.8%20L36.1%2C52.1%20L33.9%2C57.4%20M48.1%2C163.2%20L44.8%2C172.1%20L40.7%2C181.3%20L34.3%2C185.1%20M47%2C242.6%20L52%2C252.3%20L54.9%2C258.7%20L57.8%2C265%20M45.7%2C167.6%20L48.5%2C174.3%20L53.3%2C178.4%20L55.4%2C183.2%20L60.9%2C189.3%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%224%22%20opacity%3D%220.3%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23c17)%22%3E%3Cpath%20d%3D%22M48%2C0%20L46.8%2C4.4%20L47.8%2C8.8%20L48.1%2C13.2%20L47.3%2C17.6%20L48%2C22.1%20L47.5%2C26.5%20L48.1%2C30.9%20L47.1%2C35.3%20L45.1%2C39.7%20L44.6%2C44.1%20L44.7%2C48.5%20L44.4%2C52.9%20L43.2%2C57.4%20L41%2C61.8%20L42.1%2C66.2%20L42.8%2C70.6%20L42.6%2C75%20L43.1%2C79.4%20L43.5%2C83.8%20L45%2C88.2%20L44.8%2C92.6%20L43.2%2C97.1%20L44.1%2C101.5%20L44.6%2C105.9%20L42.8%2C110.3%20L43.6%2C114.7%20L42.7%2C119.1%20L43.3%2C123.5%20L42.7%2C127.9%20L43.3%2C132.4%20L43.1%2C136.8%20L44%2C141.2%20L45.8%2C145.6%20L47.7%2C150%20L49.6%2C154.4%20L49.6%2C158.8%20L48.1%2C163.2%20L45.7%2C167.6%20L43.7%2C172.1%20L41%2C176.5%20L40.9%2C180.9%20L40%2C185.3%20L38.4%2C189.7%20L37.2%2C194.1%20L36.7%2C198.5%20L35.5%2C202.9%20L37.3%2C207.4%20L36.8%2C211.8%20L36.7%2C216.2%20L37.5%2C220.6%20L38.1%2C225%20L40.2%2C229.4%20L42.9%2C233.8%20L45.5%2C238.2%20L47%2C242.6%20L48.2%2C247.1%20L50.3%2C251.5%20L49.2%2C255.9%20L47.4%2C260.3%20L46.4%2C264.7%20L44.5%2C269.1%20L43.2%2C273.5%20L41.2%2C277.9%20L38.9%2C282.4%20L40.6%2C286.8%20L41.7%2C291.2%20L43.2%2C295.6%20L45.1%2C300%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%222.1%22%20opacity%3D%220.95%22%2F%3E%3Cpath%20d%3D%22M42.8%2C110.3%20L50.4%2C116.5%20L56.5%2C125.6%20L61.2%2C132.4%20L66.2%2C134.7%20M40.6%2C286.8%20L47.6%2C291.6%20L54%2C298.6%20L56.4%2C301.8%20L60%2C304.4%20L61.6%2C308.3%20L64.3%2C310.2%20M42.8%2C70.6%20L38.9%2C81.7%20L36.2%2C90.1%20L31.5%2C95.6%20L29.6%2C99.9%20L25.2%2C103.2%20M44.6%2C44.1%20L48.5%2C54.1%20L54.2%2C63.1%20L57.9%2C66.6%20L60.2%2C70.6%20L63.9%2C72.8%20L67.1%2C76.2%20M44.5%2C269.1%20L36%2C278.5%20L29.9%2C283.9%20L27.1%2C288.4%20L24.9%2C290.7%20L23.5%2C292.7%20M44.5%2C269.1%20L48.2%2C277.7%20L54.3%2C283.9%20L58%2C286.6%20L63.2%2C292.4%20M38.9%2C282.4%20L30.9%2C289.3%20L28.4%2C295.3%20L21.8%2C298.8%20L16.3%2C302%20M47.1%2C35.3%20L38.7%2C43.8%20L36.1%2C52.1%20L33.9%2C57.4%20M48.1%2C163.2%20L44.8%2C172.1%20L40.7%2C181.3%20L34.3%2C185.1%20M47%2C242.6%20L52%2C252.3%20L54.9%2C258.7%20L57.8%2C265%20M45.7%2C167.6%20L48.5%2C174.3%20L53.3%2C178.4%20L55.4%2C183.2%20L60.9%2C189.3%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%221.25%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M50.4%2C116.5%20L55.3%2C123.1%20L58.7%2C126.1%20L60.1%2C130.3%20L62.8%2C132.9%20M66.2%2C134.7%20L71.3%2C141.1%20L75.5%2C143.2%20L78.9%2C145%20L80.8%2C146.3%20L82.8%2C148%20L83.7%2C149.9%20M54%2C298.6%20L57.7%2C302.2%20L61.7%2C305.2%20L64.5%2C309.1%20L66.1%2C310.4%20L67.7%2C311.7%20L68.9%2C312.7%20M64.3%2C310.2%20L67%2C313.6%20L69.5%2C318.8%20L72.7%2C322.5%20L75%2C323.8%20L75.7%2C326.3%20L76.9%2C327.5%20M29.6%2C99.9%20L24.7%2C103.1%20L21.5%2C105.2%20L20.4%2C108.2%20M25.2%2C103.2%20L29.3%2C108.8%20L31.3%2C112.6%20L32.6%2C115.9%20M57.9%2C66.6%20L61.5%2C73.1%20L64.6%2C77.6%20L67.1%2C80.4%20L69.7%2C82%20L71.2%2C84.3%20L71.9%2C85.2%20M63.9%2C72.8%20L59%2C79.7%20L56.5%2C83.6%20L54.5%2C87.8%20M27.1%2C288.4%20L32.4%2C292.5%20L34.8%2C296.2%20L36.1%2C299.7%20M24.9%2C290.7%20L19.4%2C294.7%20L15.5%2C299.1%20L13.7%2C302.2%20M58%2C286.6%20L61.9%2C291.6%20L64.6%2C293.6%20L66.7%2C297.7%20L68.5%2C300.8%20L69.5%2C302.3%20M54.3%2C283.9%20L57.3%2C287.3%20L58.9%2C292.5%20L62%2C295.8%20L63.9%2C297%20L65.6%2C299%20M21.8%2C298.8%20L23.8%2C302.7%20L27.8%2C308.2%20L30.2%2C311.8%20L32.9%2C314.1%20L34.6%2C316.3%20M30.9%2C289.3%20L35.2%2C294.7%20L37%2C297.7%20L39.8%2C300%20L41.7%2C302.8%20M36.1%2C52.1%20L30.4%2C58.6%20L28.5%2C61.6%20L25.4%2C64.7%20M33.9%2C57.4%20L30.8%2C61.7%20L27.7%2C66.1%20L25.2%2C68.4%20L24.1%2C70%20L22.8%2C71%20M34.3%2C185.1%20L39.5%2C190.8%20L43.1%2C193.5%20L44.7%2C196.5%20L46.9%2C198.1%20M40.7%2C181.3%20L35.5%2C188.1%20L31.7%2C192%20L28.6%2C194%20M52%2C252.3%20L53.8%2C258.9%20L57.9%2C261.1%20L60.2%2C263%20L62.5%2C264.3%20L63.6%2C266.7%20L64.6%2C268.6%20M57.8%2C265%20L52.1%2C271.9%20L50%2C275.2%20L48.3%2C279%20L46.8%2C281.2%20M60.9%2C189.3%20L64.4%2C192.5%20L67.5%2C196.5%20L69.9%2C199.4%20L71.3%2C200.7%20L72.9%2C202.1%20M60.9%2C189.3%20L55.5%2C195.6%20L51.3%2C197.7%20L49.9%2C199.3%20L48.5%2C200.7%20L47.1%2C203%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%220.8%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M58.7%2C126.1%20L56.6%2C129.2%20L54.5%2C132%20L53.8%2C133.8%20M67.7%2C311.7%20L70.6%2C314.1%20L72.5%2C315.8%20L74.1%2C318.2%20M75.7%2C326.3%20L77.9%2C328.3%20L80.1%2C330.9%20L80.9%2C332%20M20.4%2C108.2%20L19.3%2C111%20L17.5%2C113.2%20L16.1%2C114.9%20M36.1%2C299.7%20L38.4%2C302.7%20L39.6%2C303.9%20L40.7%2C304.9%20L41.5%2C305.9%20M19.4%2C294.7%20L22.2%2C296.6%20L24.1%2C298.2%20L24.7%2C299.3%20L25.7%2C300.6%20M69.5%2C302.3%20L68.2%2C305.1%20L67.1%2C307.8%20L66%2C309.4%20L64.9%2C310.3%20L64%2C310.9%20L63.6%2C311.4%20M65.6%2C299%20L67.7%2C303%20L70%2C304.4%20L70.7%2C306.7%20M30.2%2C311.8%20L33.1%2C315.7%20L34.3%2C318.5%20L35.8%2C319.8%20L36.8%2C321%20L37.3%2C322.2%20M62.5%2C264.3%20L63.9%2C268.3%20L65.1%2C271.4%20L65.8%2C273.1%20L66.8%2C274%20L67.6%2C275.2%20M48.5%2C200.7%20L46%2C203.8%20L44.3%2C205.5%20L43.5%2C206.7%20L42.2%2C207.4%20L41.8%2C208.6%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%220.5%22%20opacity%3D%220.34%22%2F%3E%3Cpath%20d%3D%22M48%2C0%20L46.8%2C4.4%20L47.8%2C8.8%20L48.1%2C13.2%20L47.3%2C17.6%20L48%2C22.1%20L47.5%2C26.5%20L48.1%2C30.9%20L47.1%2C35.3%20L45.1%2C39.7%20L44.6%2C44.1%20L44.7%2C48.5%20L44.4%2C52.9%20L43.2%2C57.4%20L41%2C61.8%20L42.1%2C66.2%20L42.8%2C70.6%20L42.6%2C75%20L43.1%2C79.4%20L43.5%2C83.8%20L45%2C88.2%20L44.8%2C92.6%20L43.2%2C97.1%20L44.1%2C101.5%20L44.6%2C105.9%20L42.8%2C110.3%20L43.6%2C114.7%20L42.7%2C119.1%20L43.3%2C123.5%20L42.7%2C127.9%20L43.3%2C132.4%20L43.1%2C136.8%20L44%2C141.2%20L45.8%2C145.6%20L47.7%2C150%20L49.6%2C154.4%20L49.6%2C158.8%20L48.1%2C163.2%20L45.7%2C167.6%20L43.7%2C172.1%20L41%2C176.5%20L40.9%2C180.9%20L40%2C185.3%20L38.4%2C189.7%20L37.2%2C194.1%20L36.7%2C198.5%20L35.5%2C202.9%20L37.3%2C207.4%20L36.8%2C211.8%20L36.7%2C216.2%20L37.5%2C220.6%20L38.1%2C225%20L40.2%2C229.4%20L42.9%2C233.8%20L45.5%2C238.2%20L47%2C242.6%20L48.2%2C247.1%20L50.3%2C251.5%20L49.2%2C255.9%20L47.4%2C260.3%20L46.4%2C264.7%20L44.5%2C269.1%20L43.2%2C273.5%20L41.2%2C277.9%20L38.9%2C282.4%20L40.6%2C286.8%20L41.7%2C291.2%20L43.2%2C295.6%20L45.1%2C300%22%20stroke%3D%22%23fffdfd%22%20stroke-width%3D%220.7%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M42.8%2C110.3%20L50.4%2C116.5%20L56.5%2C125.6%20L61.2%2C132.4%20L66.2%2C134.7%20M40.6%2C286.8%20L47.6%2C291.6%20L54%2C298.6%20L56.4%2C301.8%20L60%2C304.4%20L61.6%2C308.3%20L64.3%2C310.2%20M42.8%2C70.6%20L38.9%2C81.7%20L36.2%2C90.1%20L31.5%2C95.6%20L29.6%2C99.9%20L25.2%2C103.2%20M44.6%2C44.1%20L48.5%2C54.1%20L54.2%2C63.1%20L57.9%2C66.6%20L60.2%2C70.6%20L63.9%2C72.8%20L67.1%2C76.2%20M44.5%2C269.1%20L36%2C278.5%20L29.9%2C283.9%20L27.1%2C288.4%20L24.9%2C290.7%20L23.5%2C292.7%20M44.5%2C269.1%20L48.2%2C277.7%20L54.3%2C283.9%20L58%2C286.6%20L63.2%2C292.4%20M38.9%2C282.4%20L30.9%2C289.3%20L28.4%2C295.3%20L21.8%2C298.8%20L16.3%2C302%20M47.1%2C35.3%20L38.7%2C43.8%20L36.1%2C52.1%20L33.9%2C57.4%20M48.1%2C163.2%20L44.8%2C172.1%20L40.7%2C181.3%20L34.3%2C185.1%20M47%2C242.6%20L52%2C252.3%20L54.9%2C258.7%20L57.8%2C265%20M45.7%2C167.6%20L48.5%2C174.3%20L53.3%2C178.4%20L55.4%2C183.2%20L60.9%2C189.3%22%20stroke%3D%22%23fff3f3%22%20stroke-width%3D%220.4%22%20opacity%3D%220.4%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%20300%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lg19%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fffafa%22%2F%3E%3Cstop%20offset%3D%220.18%22%20stop-color%3D%22%23ffd4d4%22%2F%3E%3Cstop%20offset%3D%220.42%22%20stop-color%3D%22%23ff7a7a%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23ef3030%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%239b1a1a%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22c19%22%20x%3D%22-18%25%22%20y%3D%22-5%25%22%20width%3D%22136%25%22%20height%3D%22110%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.06%200.14%22%20numOctaves%3D%224%22%20seed%3D%2219%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%222.6%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22g19%22%20x%3D%22-28%25%22%20y%3D%22-7%25%22%20width%3D%22156%25%22%20height%3D%22114%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.04%200.09%22%20numOctaves%3D%222%22%20seed%3D%2219%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%224.5%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22d%22%2F%3E%3CfeGaussianBlur%20in%3D%22d%22%20stdDeviation%3D%224.2%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23g19)%22%3E%3Cpath%20d%3D%22M48%2C0%20L46.9%2C4.4%20L44.2%2C8.8%20L44.6%2C13.2%20L44.4%2C17.6%20L42.6%2C22.1%20L43.5%2C26.5%20L44.4%2C30.9%20L43%2C35.3%20L41.2%2C39.7%20L41.5%2C44.1%20L41.7%2C48.5%20L43.3%2C52.9%20L42.9%2C57.4%20L45.2%2C61.8%20L45.7%2C66.2%20L45.5%2C70.6%20L46.1%2C75%20L47%2C79.4%20L45.5%2C83.8%20L44.9%2C88.2%20L45.5%2C92.6%20L44.8%2C97.1%20L43%2C101.5%20L42.9%2C105.9%20L42.1%2C110.3%20L42.8%2C114.7%20L42.9%2C119.1%20L41.8%2C123.5%20L43.2%2C127.9%20L45.8%2C132.4%20L47.2%2C136.8%20L50%2C141.2%20L52%2C145.6%20L54.5%2C150%20L55.4%2C154.4%20L53.9%2C158.8%20L54.5%2C163.2%20L55.7%2C167.6%20L53.7%2C172.1%20L51.8%2C176.5%20L49%2C180.9%20L49.8%2C185.3%20L48.9%2C189.7%20L47.9%2C194.1%20L47.7%2C198.5%20L46%2C202.9%20L46%2C207.4%20L46.2%2C211.8%20L48.5%2C216.2%20L48.4%2C220.6%20L49.6%2C225%20L50.1%2C229.4%20L51.8%2C233.8%20L51.4%2C238.2%20L49.3%2C242.6%20L47.8%2C247.1%20L48.3%2C251.5%20L47.2%2C255.9%20L48.3%2C260.3%20L49.9%2C264.7%20L50.3%2C269.1%20L50.2%2C273.5%20L48.4%2C277.9%20L47.1%2C282.4%20L47.2%2C286.8%20L48.5%2C291.2%20L47.3%2C295.6%20L45.2%2C300%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%229%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M49.9%2C264.7%20L57.7%2C268.8%20L65.9%2C275.1%20L71.2%2C281.6%20L75%2C284%20L78.5%2C286.9%20M44.2%2C8.8%20L50.3%2C16.5%20L56.5%2C23.3%20L62%2C28.1%20L64.5%2C33.2%20M48.5%2C216.2%20L51.7%2C227.4%20L55.9%2C234.7%20L57.9%2C240.4%20L61.9%2C244.2%20M54.5%2C163.2%20L50.9%2C171.7%20L46.9%2C179.1%20L43.9%2C182.9%20M53.9%2C158.8%20L61.6%2C165.2%20L67.3%2C171.3%20L72.7%2C177.1%20M45.5%2C92.6%20L54.7%2C101.7%20L60.2%2C109%20L66.3%2C115.4%20L71.5%2C120.1%20M48.3%2C260.3%20L44.9%2C264.8%20L40%2C272.2%20L38%2C276.5%20M54.5%2C150%20L60.4%2C156.8%20L65.6%2C160.6%20L72.3%2C163.3%20L77.8%2C168.7%20L82.1%2C173.4%20L85%2C175.9%20M50.1%2C229.4%20L53.2%2C236.1%20L56.2%2C242.2%20L58.9%2C245.6%20L61.9%2C249.4%20M48.3%2C251.5%20L39.3%2C258.4%20L35.3%2C263.5%20L28.7%2C270.5%20L26.7%2C274.3%20L24.2%2C278.6%20M41.2%2C39.7%20L34.7%2C46.4%20L29.7%2C50.9%20L24.7%2C56.7%20L21.1%2C59.4%20L16.5%2C61.6%20L13%2C65.1%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%224%22%20opacity%3D%220.3%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23c19)%22%3E%3Cpath%20d%3D%22M48%2C0%20L46.9%2C4.4%20L44.2%2C8.8%20L44.6%2C13.2%20L44.4%2C17.6%20L42.6%2C22.1%20L43.5%2C26.5%20L44.4%2C30.9%20L43%2C35.3%20L41.2%2C39.7%20L41.5%2C44.1%20L41.7%2C48.5%20L43.3%2C52.9%20L42.9%2C57.4%20L45.2%2C61.8%20L45.7%2C66.2%20L45.5%2C70.6%20L46.1%2C75%20L47%2C79.4%20L45.5%2C83.8%20L44.9%2C88.2%20L45.5%2C92.6%20L44.8%2C97.1%20L43%2C101.5%20L42.9%2C105.9%20L42.1%2C110.3%20L42.8%2C114.7%20L42.9%2C119.1%20L41.8%2C123.5%20L43.2%2C127.9%20L45.8%2C132.4%20L47.2%2C136.8%20L50%2C141.2%20L52%2C145.6%20L54.5%2C150%20L55.4%2C154.4%20L53.9%2C158.8%20L54.5%2C163.2%20L55.7%2C167.6%20L53.7%2C172.1%20L51.8%2C176.5%20L49%2C180.9%20L49.8%2C185.3%20L48.9%2C189.7%20L47.9%2C194.1%20L47.7%2C198.5%20L46%2C202.9%20L46%2C207.4%20L46.2%2C211.8%20L48.5%2C216.2%20L48.4%2C220.6%20L49.6%2C225%20L50.1%2C229.4%20L51.8%2C233.8%20L51.4%2C238.2%20L49.3%2C242.6%20L47.8%2C247.1%20L48.3%2C251.5%20L47.2%2C255.9%20L48.3%2C260.3%20L49.9%2C264.7%20L50.3%2C269.1%20L50.2%2C273.5%20L48.4%2C277.9%20L47.1%2C282.4%20L47.2%2C286.8%20L48.5%2C291.2%20L47.3%2C295.6%20L45.2%2C300%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%222.1%22%20opacity%3D%220.95%22%2F%3E%3Cpath%20d%3D%22M49.9%2C264.7%20L57.7%2C268.8%20L65.9%2C275.1%20L71.2%2C281.6%20L75%2C284%20L78.5%2C286.9%20M44.2%2C8.8%20L50.3%2C16.5%20L56.5%2C23.3%20L62%2C28.1%20L64.5%2C33.2%20M48.5%2C216.2%20L51.7%2C227.4%20L55.9%2C234.7%20L57.9%2C240.4%20L61.9%2C244.2%20M54.5%2C163.2%20L50.9%2C171.7%20L46.9%2C179.1%20L43.9%2C182.9%20M53.9%2C158.8%20L61.6%2C165.2%20L67.3%2C171.3%20L72.7%2C177.1%20M45.5%2C92.6%20L54.7%2C101.7%20L60.2%2C109%20L66.3%2C115.4%20L71.5%2C120.1%20M48.3%2C260.3%20L44.9%2C264.8%20L40%2C272.2%20L38%2C276.5%20M54.5%2C150%20L60.4%2C156.8%20L65.6%2C160.6%20L72.3%2C163.3%20L77.8%2C168.7%20L82.1%2C173.4%20L85%2C175.9%20M50.1%2C229.4%20L53.2%2C236.1%20L56.2%2C242.2%20L58.9%2C245.6%20L61.9%2C249.4%20M48.3%2C251.5%20L39.3%2C258.4%20L35.3%2C263.5%20L28.7%2C270.5%20L26.7%2C274.3%20L24.2%2C278.6%20M41.2%2C39.7%20L34.7%2C46.4%20L29.7%2C50.9%20L24.7%2C56.7%20L21.1%2C59.4%20L16.5%2C61.6%20L13%2C65.1%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%221.25%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M57.7%2C268.8%20L52.3%2C275.7%20L49.1%2C280.5%20L46.2%2C282.3%20L44.7%2C285.2%20L43.8%2C286.2%20L42.2%2C287.3%20M78.5%2C286.9%20L76.7%2C293.7%20L72.5%2C298.5%20L70.8%2C302%20M56.5%2C23.3%20L51.6%2C26.7%20L47.8%2C30%20L46.4%2C34.1%20M56.5%2C23.3%20L58.6%2C26.5%20L60.5%2C31.1%20L62%2C34.8%20L63.1%2C37.2%20M61.9%2C244.2%20L57.2%2C248.3%20L53.3%2C250.9%20L49.8%2C254.3%20M57.9%2C240.4%20L60.3%2C246.9%20L63.1%2C249.1%20L65.7%2C251%20L67.2%2C253.5%20M43.9%2C182.9%20L40.1%2C186.7%20L38.5%2C188.9%20L35.8%2C191.6%20L33.5%2C194.5%20M50.9%2C171.7%20L53.9%2C176.3%20L57.5%2C179.3%20L58.6%2C182.8%20L61.2%2C185.8%20M61.6%2C165.2%20L63.7%2C168.3%20L67.4%2C170.5%20L69.4%2C173.1%20L70.6%2C174.5%20L72.7%2C176%20M67.3%2C171.3%20L61.7%2C176.1%20L58.6%2C179%20L56.2%2C181.2%20L54.2%2C183.6%20L53.5%2C184.8%20L52.8%2C185.9%20M66.3%2C115.4%20L63.1%2C120.7%20L60.7%2C125.2%20L57.6%2C128.3%20L55.4%2C130.2%20M66.3%2C115.4%20L68.4%2C120%20L70.6%2C122.2%20L72.1%2C124.4%20L73.8%2C127.2%20M38%2C276.5%20L32.8%2C282.8%20L30.7%2C286.8%20L28.8%2C288.4%20L26.3%2C291.3%20L24.7%2C292.5%20L23.5%2C293.6%20M44.9%2C264.8%20L48.5%2C267.8%20L51%2C272.2%20L53.8%2C274.5%20L55.7%2C277.1%20L57.7%2C278.7%20L59%2C279.5%20M72.3%2C163.3%20L75.6%2C166.3%20L78%2C168.6%20L80.9%2C172.6%20L83%2C173.8%20L84.6%2C175.5%20M65.6%2C160.6%20L68.2%2C167.3%20L70.5%2C172.7%20L73.9%2C176.6%20L74.7%2C179.9%20L75.7%2C182.1%20M58.9%2C245.6%20L53.7%2C248.4%20L51.9%2C251.5%20L49.7%2C254.4%20L47.1%2C256.9%20L44.9%2C257.9%20L43.7%2C259%20M56.2%2C242.2%20L53.2%2C246.4%20L51.8%2C251%20L49.1%2C252.5%20L48.1%2C255.5%20L46.7%2C256.7%20M39.3%2C258.4%20L35.8%2C262.6%20L32%2C265.5%20L30.1%2C269.6%20M39.3%2C258.4%20L42.6%2C261.5%20L46.1%2C264.5%20L48%2C267.6%20L49.1%2C269.9%20M24.7%2C56.7%20L21.9%2C59.3%20L20%2C64.5%20L17.1%2C66.4%20L16%2C67.7%20L15%2C69.8%20L14.3%2C70.8%20M29.7%2C50.9%20L34.1%2C55.5%20L37.3%2C60.8%20L39.6%2C63.8%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%220.8%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M46.4%2C34.1%20L47.5%2C36.2%20L48.6%2C38.2%20L50.2%2C40.1%20L50.9%2C41.2%20L51.6%2C41.9%20M49.8%2C254.3%20L47.6%2C257.8%20L45.4%2C259%20L44.6%2C260.1%20L43.9%2C261.7%20L43%2C262.2%20M33.5%2C194.5%20L31.1%2C198%20L29.6%2C199.7%20L28.5%2C201.5%20M58.6%2C182.8%20L57.1%2C185.5%20L55.3%2C187.1%20L54.1%2C188%20L52.8%2C188.7%20M53.5%2C184.8%20L51%2C188.3%20L49.9%2C191.3%20L49.3%2C193.3%20L48.3%2C194.8%20L47.4%2C195.4%20L46.9%2C196%20M55.4%2C130.2%20L58.1%2C134%20L60.4%2C136.2%20L61.1%2C138.1%20M70.6%2C122.2%20L72.3%2C126%20L73.1%2C127.4%20L74.7%2C129.4%20L75.8%2C130.3%20M26.3%2C291.3%20L24.3%2C294.2%20L22.3%2C296.7%20L21.3%2C298.5%20L20.2%2C299.2%20M73.9%2C176.6%20L72.8%2C180.1%20L71.1%2C181.7%20L69.6%2C182.9%20L69%2C183.9%20L68.4%2C185%20M32%2C265.5%20L33.3%2C269.1%20L35.3%2C272%20L36.7%2C273%20L37.2%2C274.2%20L38.1%2C274.9%20M20%2C64.5%20L18.1%2C67.1%20L16.5%2C68.3%20L15.2%2C70.4%20L14.6%2C71.1%20L13.6%2C72.2%20L13%2C72.6%20M37.3%2C60.8%20L39.1%2C63.6%20L40.2%2C65.2%20L41.7%2C66.9%20L42.3%2C68.2%20L43.2%2C69.5%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%220.5%22%20opacity%3D%220.34%22%2F%3E%3Cpath%20d%3D%22M48%2C0%20L46.9%2C4.4%20L44.2%2C8.8%20L44.6%2C13.2%20L44.4%2C17.6%20L42.6%2C22.1%20L43.5%2C26.5%20L44.4%2C30.9%20L43%2C35.3%20L41.2%2C39.7%20L41.5%2C44.1%20L41.7%2C48.5%20L43.3%2C52.9%20L42.9%2C57.4%20L45.2%2C61.8%20L45.7%2C66.2%20L45.5%2C70.6%20L46.1%2C75%20L47%2C79.4%20L45.5%2C83.8%20L44.9%2C88.2%20L45.5%2C92.6%20L44.8%2C97.1%20L43%2C101.5%20L42.9%2C105.9%20L42.1%2C110.3%20L42.8%2C114.7%20L42.9%2C119.1%20L41.8%2C123.5%20L43.2%2C127.9%20L45.8%2C132.4%20L47.2%2C136.8%20L50%2C141.2%20L52%2C145.6%20L54.5%2C150%20L55.4%2C154.4%20L53.9%2C158.8%20L54.5%2C163.2%20L55.7%2C167.6%20L53.7%2C172.1%20L51.8%2C176.5%20L49%2C180.9%20L49.8%2C185.3%20L48.9%2C189.7%20L47.9%2C194.1%20L47.7%2C198.5%20L46%2C202.9%20L46%2C207.4%20L46.2%2C211.8%20L48.5%2C216.2%20L48.4%2C220.6%20L49.6%2C225%20L50.1%2C229.4%20L51.8%2C233.8%20L51.4%2C238.2%20L49.3%2C242.6%20L47.8%2C247.1%20L48.3%2C251.5%20L47.2%2C255.9%20L48.3%2C260.3%20L49.9%2C264.7%20L50.3%2C269.1%20L50.2%2C273.5%20L48.4%2C277.9%20L47.1%2C282.4%20L47.2%2C286.8%20L48.5%2C291.2%20L47.3%2C295.6%20L45.2%2C300%22%20stroke%3D%22%23fffdfd%22%20stroke-width%3D%220.7%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M49.9%2C264.7%20L57.7%2C268.8%20L65.9%2C275.1%20L71.2%2C281.6%20L75%2C284%20L78.5%2C286.9%20M44.2%2C8.8%20L50.3%2C16.5%20L56.5%2C23.3%20L62%2C28.1%20L64.5%2C33.2%20M48.5%2C216.2%20L51.7%2C227.4%20L55.9%2C234.7%20L57.9%2C240.4%20L61.9%2C244.2%20M54.5%2C163.2%20L50.9%2C171.7%20L46.9%2C179.1%20L43.9%2C182.9%20M53.9%2C158.8%20L61.6%2C165.2%20L67.3%2C171.3%20L72.7%2C177.1%20M45.5%2C92.6%20L54.7%2C101.7%20L60.2%2C109%20L66.3%2C115.4%20L71.5%2C120.1%20M48.3%2C260.3%20L44.9%2C264.8%20L40%2C272.2%20L38%2C276.5%20M54.5%2C150%20L60.4%2C156.8%20L65.6%2C160.6%20L72.3%2C163.3%20L77.8%2C168.7%20L82.1%2C173.4%20L85%2C175.9%20M50.1%2C229.4%20L53.2%2C236.1%20L56.2%2C242.2%20L58.9%2C245.6%20L61.9%2C249.4%20M48.3%2C251.5%20L39.3%2C258.4%20L35.3%2C263.5%20L28.7%2C270.5%20L26.7%2C274.3%20L24.2%2C278.6%20M41.2%2C39.7%20L34.7%2C46.4%20L29.7%2C50.9%20L24.7%2C56.7%20L21.1%2C59.4%20L16.5%2C61.6%20L13%2C65.1%22%20stroke%3D%22%23fff3f3%22%20stroke-width%3D%220.4%22%20opacity%3D%220.4%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%2096%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lg23%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fffafa%22%2F%3E%3Cstop%20offset%3D%220.18%22%20stop-color%3D%22%23ffd4d4%22%2F%3E%3Cstop%20offset%3D%220.42%22%20stop-color%3D%22%23ff7a7a%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23ef3030%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%239b1a1a%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22c23%22%20x%3D%22-18%25%22%20y%3D%22-5%25%22%20width%3D%22136%25%22%20height%3D%22110%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.14%200.06%22%20numOctaves%3D%224%22%20seed%3D%2223%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%222.6%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22g23%22%20x%3D%22-28%25%22%20y%3D%22-7%25%22%20width%3D%22156%25%22%20height%3D%22114%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.04%22%20numOctaves%3D%222%22%20seed%3D%2223%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%224.5%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22d%22%2F%3E%3CfeGaussianBlur%20in%3D%22d%22%20stdDeviation%3D%224.2%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23g23)%22%3E%3Cpath%20d%3D%22M0%2C48%20L4.4%2C46.9%20L8.8%2C45.8%20L13.2%2C45.7%20L17.6%2C45.9%20L22.1%2C47.1%20L26.5%2C49.1%20L30.9%2C48.9%20L35.3%2C49.7%20L39.7%2C48.7%20L44.1%2C50%20L48.5%2C49.3%20L52.9%2C48.8%20L57.4%2C46.6%20L61.8%2C46.9%20L66.2%2C46.1%20L70.6%2C44.6%20L75%2C42.9%20L79.4%2C43.2%20L83.8%2C42.5%20L88.2%2C40.4%20L92.6%2C39.6%20L97.1%2C39.7%20L101.5%2C41.6%20L105.9%2C44.7%20L110.3%2C47.4%20L114.7%2C48.3%20L119.1%2C50%20L123.5%2C49.5%20L127.9%2C47.3%20L132.4%2C45.6%20L136.8%2C46.5%20L141.2%2C47.4%20L145.6%2C48%20L150%2C47.5%20L154.4%2C45.7%20L158.8%2C46.5%20L163.2%2C46.1%20L167.6%2C44.2%20L172.1%2C44.1%20L176.5%2C46.3%20L180.9%2C45.5%20L185.3%2C45.5%20L189.7%2C45.5%20L194.1%2C46.2%20L198.5%2C48.8%20L202.9%2C48.3%20L207.4%2C46.9%20L211.8%2C46.2%20L216.2%2C44.5%20L220.6%2C44.6%20L225%2C45.1%20L229.4%2C47.5%20L233.8%2C46.7%20L238.2%2C46.1%20L242.6%2C44.9%20L247.1%2C42.6%20L251.5%2C42.4%20L255.9%2C42.5%20L260.3%2C40.9%20L264.7%2C39.9%20L269.1%2C37.8%20L273.5%2C38.4%20L277.9%2C37.7%20L282.4%2C35.8%20L286.8%2C37.7%20L291.2%2C38.8%20L295.6%2C42.2%20L300%2C42.2%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%229%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M8.8%2C45.8%20L15.9%2C54.1%20L22.5%2C60.1%20L28.3%2C66.8%20L30.8%2C72.4%20M277.9%2C37.7%20L288.3%2C32.5%20L293.2%2C24%20L298.5%2C18.7%20L301.3%2C16.6%20M154.4%2C45.7%20L162.3%2C55.6%20L168.7%2C63.1%20L171.7%2C68.3%20M260.3%2C40.9%20L267.8%2C37.9%20L274.7%2C31%20L280.3%2C27.1%20L283.4%2C24.9%20L285.4%2C22.3%20M154.4%2C45.7%20L163%2C53.1%20L166.2%2C60%20L171%2C66.2%20L176.4%2C69.7%20L179.7%2C72.4%20L181.4%2C75.1%20M238.2%2C46.1%20L246.2%2C55.3%20L254.8%2C61.7%20L259.4%2C66.1%20L263.8%2C69.4%20L268.1%2C73.7%20L271%2C76.8%20M22.1%2C47.1%20L29.3%2C41.8%20L33.1%2C37.5%20L36%2C32.2%20L40.9%2C29.4%20M233.8%2C46.7%20L244.2%2C56.4%20L247.7%2C59%20L250.8%2C64.1%20M110.3%2C47.4%20L115.1%2C57.7%20L123.5%2C62.3%20L126.6%2C67.8%20L132.2%2C71.9%20M70.6%2C44.6%20L80.2%2C36.5%20L88%2C31.2%20L91%2C28.5%20M123.5%2C49.5%20L133.3%2C59.4%20L137.7%2C67%20L140.7%2C72.2%20L145%2C77.1%20L147.8%2C81.1%20L150.6%2C84.1%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%224%22%20opacity%3D%220.3%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23c23)%22%3E%3Cpath%20d%3D%22M0%2C48%20L4.4%2C46.9%20L8.8%2C45.8%20L13.2%2C45.7%20L17.6%2C45.9%20L22.1%2C47.1%20L26.5%2C49.1%20L30.9%2C48.9%20L35.3%2C49.7%20L39.7%2C48.7%20L44.1%2C50%20L48.5%2C49.3%20L52.9%2C48.8%20L57.4%2C46.6%20L61.8%2C46.9%20L66.2%2C46.1%20L70.6%2C44.6%20L75%2C42.9%20L79.4%2C43.2%20L83.8%2C42.5%20L88.2%2C40.4%20L92.6%2C39.6%20L97.1%2C39.7%20L101.5%2C41.6%20L105.9%2C44.7%20L110.3%2C47.4%20L114.7%2C48.3%20L119.1%2C50%20L123.5%2C49.5%20L127.9%2C47.3%20L132.4%2C45.6%20L136.8%2C46.5%20L141.2%2C47.4%20L145.6%2C48%20L150%2C47.5%20L154.4%2C45.7%20L158.8%2C46.5%20L163.2%2C46.1%20L167.6%2C44.2%20L172.1%2C44.1%20L176.5%2C46.3%20L180.9%2C45.5%20L185.3%2C45.5%20L189.7%2C45.5%20L194.1%2C46.2%20L198.5%2C48.8%20L202.9%2C48.3%20L207.4%2C46.9%20L211.8%2C46.2%20L216.2%2C44.5%20L220.6%2C44.6%20L225%2C45.1%20L229.4%2C47.5%20L233.8%2C46.7%20L238.2%2C46.1%20L242.6%2C44.9%20L247.1%2C42.6%20L251.5%2C42.4%20L255.9%2C42.5%20L260.3%2C40.9%20L264.7%2C39.9%20L269.1%2C37.8%20L273.5%2C38.4%20L277.9%2C37.7%20L282.4%2C35.8%20L286.8%2C37.7%20L291.2%2C38.8%20L295.6%2C42.2%20L300%2C42.2%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%222.1%22%20opacity%3D%220.95%22%2F%3E%3Cpath%20d%3D%22M8.8%2C45.8%20L15.9%2C54.1%20L22.5%2C60.1%20L28.3%2C66.8%20L30.8%2C72.4%20M277.9%2C37.7%20L288.3%2C32.5%20L293.2%2C24%20L298.5%2C18.7%20L301.3%2C16.6%20M154.4%2C45.7%20L162.3%2C55.6%20L168.7%2C63.1%20L171.7%2C68.3%20M260.3%2C40.9%20L267.8%2C37.9%20L274.7%2C31%20L280.3%2C27.1%20L283.4%2C24.9%20L285.4%2C22.3%20M154.4%2C45.7%20L163%2C53.1%20L166.2%2C60%20L171%2C66.2%20L176.4%2C69.7%20L179.7%2C72.4%20L181.4%2C75.1%20M238.2%2C46.1%20L246.2%2C55.3%20L254.8%2C61.7%20L259.4%2C66.1%20L263.8%2C69.4%20L268.1%2C73.7%20L271%2C76.8%20M22.1%2C47.1%20L29.3%2C41.8%20L33.1%2C37.5%20L36%2C32.2%20L40.9%2C29.4%20M233.8%2C46.7%20L244.2%2C56.4%20L247.7%2C59%20L250.8%2C64.1%20M110.3%2C47.4%20L115.1%2C57.7%20L123.5%2C62.3%20L126.6%2C67.8%20L132.2%2C71.9%20M70.6%2C44.6%20L80.2%2C36.5%20L88%2C31.2%20L91%2C28.5%20M123.5%2C49.5%20L133.3%2C59.4%20L137.7%2C67%20L140.7%2C72.2%20L145%2C77.1%20L147.8%2C81.1%20L150.6%2C84.1%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%221.25%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M28.3%2C66.8%20L34.6%2C63.5%20L37.6%2C62%20L39.6%2C60.6%20M28.3%2C66.8%20L31.7%2C64.8%20L34.9%2C62.8%20L38%2C61.5%20M298.5%2C18.7%20L304%2C16.1%20L307.2%2C13.8%20L310.7%2C12.3%20M293.2%2C24%20L297.4%2C26.9%20L302.4%2C28.3%20L304.7%2C29.8%20L308%2C30.7%20L309.7%2C31.4%20L310.6%2C33%20M162.3%2C55.6%20L166.7%2C58.6%20L172%2C62.8%20L173.6%2C65.9%20L176.2%2C68.6%20L177.4%2C70.4%20L178.3%2C71.4%20M168.7%2C63.1%20L174.5%2C64.9%20L179%2C68.3%20L180.7%2C69.5%20L183.6%2C71.6%20M285.4%2C22.3%20L290.9%2C17.1%20L295%2C13%20L297%2C11.9%20M274.7%2C31%20L278.5%2C33.2%20L282.4%2C35.9%20L285.7%2C38.9%20L286.9%2C41.3%20L288%2C43.1%20M179.7%2C72.4%20L185.3%2C68.8%20L190.8%2C67.3%20L194.1%2C64.8%20L195.5%2C63.8%20M181.4%2C75.1%20L185.6%2C77.9%20L189.9%2C81.9%20L193.7%2C83.6%20L195.9%2C85.8%20L198.2%2C86.7%20M271%2C76.8%20L273.9%2C71.6%20L278.2%2C68.2%20L280.2%2C66%20L283.4%2C64.7%20L285.4%2C62.7%20L286.4%2C61.5%20M254.8%2C61.7%20L259.3%2C64%20L261.9%2C65.4%20L265%2C66.9%20L267.1%2C67.9%20M36%2C32.2%20L41.8%2C35.8%20L45.5%2C38.1%20L47.8%2C40.7%20M36%2C32.2%20L38.7%2C37.5%20L41.3%2C41.5%20L44.5%2C44.6%20M247.7%2C59%20L254.4%2C54.2%20L258.5%2C51.1%20L261.2%2C48.8%20L263.5%2C47.5%20M247.7%2C59%20L253%2C62.8%20L257.3%2C65.1%20L259.5%2C67.9%20L262.3%2C70.2%20L263.7%2C71.5%20M126.6%2C67.8%20L131.8%2C71.6%20L134.2%2C73.2%20L136.4%2C75.9%20M132.2%2C71.9%20L138.8%2C73.9%20L142.7%2C77.1%20L146.1%2C78.5%20M80.2%2C36.5%20L84.1%2C31.8%20L89.3%2C28.8%20L91%2C25.6%20L92.7%2C24.5%20L95%2C23.3%20M80.2%2C36.5%20L85.9%2C32.6%20L89.7%2C29.3%20L93.4%2C26.5%20M137.7%2C67%20L141.6%2C64.9%20L145.4%2C62.4%20L148.3%2C60.7%20L149.9%2C58.9%20L152.2%2C57.2%20L153.1%2C55.7%20M145%2C77.1%20L148%2C82.4%20L150.7%2C86.9%20L153.5%2C88.6%20L155%2C89.7%20L156%2C90.8%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%220.8%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M37.6%2C62%20L39.8%2C60.4%20L42.4%2C58.2%20L44.5%2C57%20L45.5%2C56.3%20M310.7%2C12.3%20L314.5%2C14.3%20L316.1%2C15.8%20L317.6%2C17.3%20L318.3%2C18.1%20L318.9%2C19%20M183.6%2C71.6%20L187.5%2C73.8%20L190%2C76%20L191.3%2C77.7%20L192.3%2C78.7%20L192.9%2C79.2%20M288%2C43.1%20L290.8%2C40.3%20L293.4%2C38.7%20L294.9%2C37.9%20L296.3%2C37.3%20L296.9%2C36.9%20L297.4%2C36.6%20M194.1%2C64.8%20L197.2%2C66%20L198.4%2C68.1%20L199.3%2C69.5%20L200.6%2C70.2%20M193.7%2C83.6%20L196.2%2C85.7%20L198.9%2C87.6%20L200.4%2C88.3%20L201.2%2C89.5%20L201.7%2C90.5%20L202.1%2C91%20M261.9%2C65.4%20L264.8%2C68.4%20L266.5%2C70.5%20L268.3%2C72.2%20M41.3%2C41.5%20L43.4%2C38.6%20L45%2C36.6%20L46.9%2C35.2%20L48.2%2C33.9%20L48.8%2C33.1%20M261.2%2C48.8%20L264.7%2C50.9%20L266.3%2C51.9%20L268.3%2C53.4%20L269.4%2C54%20L270.4%2C54.9%20L271.1%2C55.5%20M91%2C25.6%20L92.9%2C23.6%20L94.4%2C21.9%20L95.9%2C20.3%20L97.4%2C19%20L97.9%2C18.2%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%220.5%22%20opacity%3D%220.34%22%2F%3E%3Cpath%20d%3D%22M0%2C48%20L4.4%2C46.9%20L8.8%2C45.8%20L13.2%2C45.7%20L17.6%2C45.9%20L22.1%2C47.1%20L26.5%2C49.1%20L30.9%2C48.9%20L35.3%2C49.7%20L39.7%2C48.7%20L44.1%2C50%20L48.5%2C49.3%20L52.9%2C48.8%20L57.4%2C46.6%20L61.8%2C46.9%20L66.2%2C46.1%20L70.6%2C44.6%20L75%2C42.9%20L79.4%2C43.2%20L83.8%2C42.5%20L88.2%2C40.4%20L92.6%2C39.6%20L97.1%2C39.7%20L101.5%2C41.6%20L105.9%2C44.7%20L110.3%2C47.4%20L114.7%2C48.3%20L119.1%2C50%20L123.5%2C49.5%20L127.9%2C47.3%20L132.4%2C45.6%20L136.8%2C46.5%20L141.2%2C47.4%20L145.6%2C48%20L150%2C47.5%20L154.4%2C45.7%20L158.8%2C46.5%20L163.2%2C46.1%20L167.6%2C44.2%20L172.1%2C44.1%20L176.5%2C46.3%20L180.9%2C45.5%20L185.3%2C45.5%20L189.7%2C45.5%20L194.1%2C46.2%20L198.5%2C48.8%20L202.9%2C48.3%20L207.4%2C46.9%20L211.8%2C46.2%20L216.2%2C44.5%20L220.6%2C44.6%20L225%2C45.1%20L229.4%2C47.5%20L233.8%2C46.7%20L238.2%2C46.1%20L242.6%2C44.9%20L247.1%2C42.6%20L251.5%2C42.4%20L255.9%2C42.5%20L260.3%2C40.9%20L264.7%2C39.9%20L269.1%2C37.8%20L273.5%2C38.4%20L277.9%2C37.7%20L282.4%2C35.8%20L286.8%2C37.7%20L291.2%2C38.8%20L295.6%2C42.2%20L300%2C42.2%22%20stroke%3D%22%23fffdfd%22%20stroke-width%3D%220.7%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M8.8%2C45.8%20L15.9%2C54.1%20L22.5%2C60.1%20L28.3%2C66.8%20L30.8%2C72.4%20M277.9%2C37.7%20L288.3%2C32.5%20L293.2%2C24%20L298.5%2C18.7%20L301.3%2C16.6%20M154.4%2C45.7%20L162.3%2C55.6%20L168.7%2C63.1%20L171.7%2C68.3%20M260.3%2C40.9%20L267.8%2C37.9%20L274.7%2C31%20L280.3%2C27.1%20L283.4%2C24.9%20L285.4%2C22.3%20M154.4%2C45.7%20L163%2C53.1%20L166.2%2C60%20L171%2C66.2%20L176.4%2C69.7%20L179.7%2C72.4%20L181.4%2C75.1%20M238.2%2C46.1%20L246.2%2C55.3%20L254.8%2C61.7%20L259.4%2C66.1%20L263.8%2C69.4%20L268.1%2C73.7%20L271%2C76.8%20M22.1%2C47.1%20L29.3%2C41.8%20L33.1%2C37.5%20L36%2C32.2%20L40.9%2C29.4%20M233.8%2C46.7%20L244.2%2C56.4%20L247.7%2C59%20L250.8%2C64.1%20M110.3%2C47.4%20L115.1%2C57.7%20L123.5%2C62.3%20L126.6%2C67.8%20L132.2%2C71.9%20M70.6%2C44.6%20L80.2%2C36.5%20L88%2C31.2%20L91%2C28.5%20M123.5%2C49.5%20L133.3%2C59.4%20L137.7%2C67%20L140.7%2C72.2%20L145%2C77.1%20L147.8%2C81.1%20L150.6%2C84.1%22%20stroke%3D%22%23fff3f3%22%20stroke-width%3D%220.4%22%20opacity%3D%220.4%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%2096%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lg29%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23fffafa%22%2F%3E%3Cstop%20offset%3D%220.18%22%20stop-color%3D%22%23ffd4d4%22%2F%3E%3Cstop%20offset%3D%220.42%22%20stop-color%3D%22%23ff7a7a%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23ef3030%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%239b1a1a%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22c29%22%20x%3D%22-18%25%22%20y%3D%22-5%25%22%20width%3D%22136%25%22%20height%3D%22110%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.14%200.06%22%20numOctaves%3D%224%22%20seed%3D%2229%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%222.6%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22g29%22%20x%3D%22-28%25%22%20y%3D%22-7%25%22%20width%3D%22156%25%22%20height%3D%22114%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.04%22%20numOctaves%3D%222%22%20seed%3D%2229%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%224.5%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22d%22%2F%3E%3CfeGaussianBlur%20in%3D%22d%22%20stdDeviation%3D%224.2%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23g29)%22%3E%3Cpath%20d%3D%22M0%2C48%20L4.4%2C46.9%20L8.8%2C48.2%20L13.2%2C49.7%20L17.6%2C51.3%20L22.1%2C52.8%20L26.5%2C52.4%20L30.9%2C53.4%20L35.3%2C52.3%20L39.7%2C50.4%20L44.1%2C48.2%20L48.5%2C49.2%20L52.9%2C50%20L57.4%2C52.3%20L61.8%2C53%20L66.2%2C53.6%20L70.6%2C51.5%20L75%2C48.6%20L79.4%2C48.4%20L83.8%2C46.2%20L88.2%2C44.7%20L92.6%2C44.5%20L97.1%2C46.2%20L101.5%2C48.7%20L105.9%2C49%20L110.3%2C48.7%20L114.7%2C46.7%20L119.1%2C45.2%20L123.5%2C46.2%20L127.9%2C48.8%20L132.4%2C47.9%20L136.8%2C47%20L141.2%2C46.7%20L145.6%2C45.8%20L150%2C47.5%20L154.4%2C48.5%20L158.8%2C48.4%20L163.2%2C48.1%20L167.6%2C45.7%20L172.1%2C42.7%20L176.5%2C43%20L180.9%2C43.3%20L185.3%2C45.5%20L189.7%2C48.1%20L194.1%2C51.4%20L198.5%2C53.1%20L202.9%2C52%20L207.4%2C51.7%20L211.8%2C53.4%20L216.2%2C55.7%20L220.6%2C57.6%20L225%2C58.9%20L229.4%2C57%20L233.8%2C54.9%20L238.2%2C51.8%20L242.6%2C48%20L247.1%2C46.3%20L251.5%2C45.2%20L255.9%2C46.5%20L260.3%2C49%20L264.7%2C48.7%20L269.1%2C50.4%20L273.5%2C49.1%20L277.9%2C46.8%20L282.4%2C47.8%20L286.8%2C50%20L291.2%2C50.3%20L295.6%2C49.7%20L300%2C49.1%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%229%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M189.7%2C48.1%20L197.6%2C57.1%20L201.8%2C63.1%20L206.6%2C66.7%20L209.3%2C68.6%20M269.1%2C50.4%20L277.9%2C53.7%20L286.6%2C58.1%20L293.9%2C61.2%20L296.9%2C66%20L299.3%2C70.6%20L302.7%2C72.9%20M251.5%2C45.2%20L256.6%2C49.4%20L262.2%2C56.3%20L267.3%2C62.1%20L273.2%2C67.3%20M97.1%2C46.2%20L104.8%2C39.6%20L109.6%2C33.4%20L115.7%2C28.9%20M150%2C47.5%20L156%2C44.7%20L160%2C38.7%20L166%2C35.8%20M167.6%2C45.7%20L172%2C39.9%20L179.5%2C36.5%20L186.7%2C33%20L192.1%2C30.3%20M264.7%2C48.7%20L273.6%2C57.2%20L282%2C65.1%20L288.4%2C70.1%20L290.9%2C75.1%20L295.8%2C78.9%20L299.4%2C80.4%20M185.3%2C45.5%20L194%2C55.1%20L200.6%2C57.9%20L206.5%2C62.8%20L208.8%2C67.3%20L212.5%2C70.4%20M202.9%2C52%20L211.9%2C58.2%20L219.1%2C64.4%20L224.2%2C68.2%20L229.2%2C73.5%20L232.3%2C76.8%20M61.8%2C53%20L71.3%2C61%20L78.1%2C64.4%20L81.6%2C69.6%20L84.6%2C72.9%20M57.4%2C52.3%20L61.5%2C61.8%20L68.4%2C67.6%20L74%2C72.7%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%224%22%20opacity%3D%220.3%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23c29)%22%3E%3Cpath%20d%3D%22M0%2C48%20L4.4%2C46.9%20L8.8%2C48.2%20L13.2%2C49.7%20L17.6%2C51.3%20L22.1%2C52.8%20L26.5%2C52.4%20L30.9%2C53.4%20L35.3%2C52.3%20L39.7%2C50.4%20L44.1%2C48.2%20L48.5%2C49.2%20L52.9%2C50%20L57.4%2C52.3%20L61.8%2C53%20L66.2%2C53.6%20L70.6%2C51.5%20L75%2C48.6%20L79.4%2C48.4%20L83.8%2C46.2%20L88.2%2C44.7%20L92.6%2C44.5%20L97.1%2C46.2%20L101.5%2C48.7%20L105.9%2C49%20L110.3%2C48.7%20L114.7%2C46.7%20L119.1%2C45.2%20L123.5%2C46.2%20L127.9%2C48.8%20L132.4%2C47.9%20L136.8%2C47%20L141.2%2C46.7%20L145.6%2C45.8%20L150%2C47.5%20L154.4%2C48.5%20L158.8%2C48.4%20L163.2%2C48.1%20L167.6%2C45.7%20L172.1%2C42.7%20L176.5%2C43%20L180.9%2C43.3%20L185.3%2C45.5%20L189.7%2C48.1%20L194.1%2C51.4%20L198.5%2C53.1%20L202.9%2C52%20L207.4%2C51.7%20L211.8%2C53.4%20L216.2%2C55.7%20L220.6%2C57.6%20L225%2C58.9%20L229.4%2C57%20L233.8%2C54.9%20L238.2%2C51.8%20L242.6%2C48%20L247.1%2C46.3%20L251.5%2C45.2%20L255.9%2C46.5%20L260.3%2C49%20L264.7%2C48.7%20L269.1%2C50.4%20L273.5%2C49.1%20L277.9%2C46.8%20L282.4%2C47.8%20L286.8%2C50%20L291.2%2C50.3%20L295.6%2C49.7%20L300%2C49.1%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%222.1%22%20opacity%3D%220.95%22%2F%3E%3Cpath%20d%3D%22M189.7%2C48.1%20L197.6%2C57.1%20L201.8%2C63.1%20L206.6%2C66.7%20L209.3%2C68.6%20M269.1%2C50.4%20L277.9%2C53.7%20L286.6%2C58.1%20L293.9%2C61.2%20L296.9%2C66%20L299.3%2C70.6%20L302.7%2C72.9%20M251.5%2C45.2%20L256.6%2C49.4%20L262.2%2C56.3%20L267.3%2C62.1%20L273.2%2C67.3%20M97.1%2C46.2%20L104.8%2C39.6%20L109.6%2C33.4%20L115.7%2C28.9%20M150%2C47.5%20L156%2C44.7%20L160%2C38.7%20L166%2C35.8%20M167.6%2C45.7%20L172%2C39.9%20L179.5%2C36.5%20L186.7%2C33%20L192.1%2C30.3%20M264.7%2C48.7%20L273.6%2C57.2%20L282%2C65.1%20L288.4%2C70.1%20L290.9%2C75.1%20L295.8%2C78.9%20L299.4%2C80.4%20M185.3%2C45.5%20L194%2C55.1%20L200.6%2C57.9%20L206.5%2C62.8%20L208.8%2C67.3%20L212.5%2C70.4%20M202.9%2C52%20L211.9%2C58.2%20L219.1%2C64.4%20L224.2%2C68.2%20L229.2%2C73.5%20L232.3%2C76.8%20M61.8%2C53%20L71.3%2C61%20L78.1%2C64.4%20L81.6%2C69.6%20L84.6%2C72.9%20M57.4%2C52.3%20L61.5%2C61.8%20L68.4%2C67.6%20L74%2C72.7%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%221.25%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M201.8%2C63.1%20L205.9%2C58.7%20L209.3%2C57.1%20L212.5%2C53.6%20L215%2C52.3%20L216.9%2C50.8%20L218.1%2C49.9%20M206.6%2C66.7%20L209.5%2C69%20L214.1%2C72.9%20L218.3%2C74.4%20L220.9%2C77%20L223%2C78.5%20M296.9%2C66%20L300.5%2C61.1%20L303.2%2C59.6%20L305.4%2C57.7%20L308.4%2C55.1%20L310.9%2C53.9%20L311.7%2C52.3%20M296.9%2C66%20L302.6%2C70.1%20L304.8%2C74.6%20L308%2C75.9%20L311.1%2C76.8%20L312.6%2C78.6%20M267.3%2C62.1%20L270.1%2C65.7%20L275.5%2C69.9%20L279.1%2C72.1%20M267.3%2C62.1%20L273.7%2C57.4%20L278.3%2C54.5%20L279.9%2C53.2%20L282.9%2C52.3%20L284.8%2C51.2%20L286.8%2C50.2%20M109.6%2C33.4%20L114.7%2C37.7%20L119.5%2C40.8%20L122.3%2C42.1%20L124%2C43.7%20L125.8%2C44.4%20L127%2C45.3%20M109.6%2C33.4%20L114%2C29.6%20L116.9%2C27.5%20L119.1%2C24.4%20M166%2C35.8%20L169.6%2C33.8%20L173.4%2C31.6%20L176.8%2C29.7%20L178%2C28.3%20L179.4%2C27.5%20L180.1%2C26.6%20M156%2C44.7%20L160.6%2C47.9%20L162.7%2C50.4%20L165.7%2C53.8%20L168.6%2C54.7%20L170.2%2C56.4%20L171.5%2C57.5%20M172%2C39.9%20L177.9%2C44.7%20L181.2%2C46.3%20L184.1%2C48%20M186.7%2C33%20L192.7%2C35.4%20L197.2%2C36.9%20L199.5%2C39.8%20L202%2C41.6%20L204.5%2C43.7%20L206.4%2C44.3%20M282%2C65.1%20L288.9%2C68.2%20L292%2C70.3%20L295.2%2C72.3%20L297.9%2C74.6%20L299.1%2C76%20M282%2C65.1%20L286.9%2C61.4%20L291.4%2C59.5%20L293.2%2C58.2%20L296.2%2C57.3%20M200.6%2C57.9%20L206.1%2C52.3%20L209.9%2C47.9%20L214.1%2C46.3%20M206.5%2C62.8%20L213.1%2C67.1%20L215.5%2C70.3%20L219%2C73.7%20L220.6%2C74.7%20L221.7%2C75.8%20L223.6%2C76.7%20M229.2%2C73.5%20L232.4%2C78.7%20L236.3%2C80.7%20L239.3%2C84%20L242.3%2C85.9%20L243.3%2C87.2%20M211.9%2C58.2%20L218.2%2C54.4%20L222%2C52.6%20L224.1%2C50.1%20L226%2C48.6%20L228.1%2C46.7%20M81.6%2C69.6%20L84.3%2C74.6%20L86.4%2C76.7%20L90.5%2C79.1%20L92.3%2C81%20M84.6%2C72.9%20L87.2%2C75.7%20L91.7%2C77.7%20L93.7%2C80.3%20L96.9%2C82.6%20L98.7%2C84.3%20L100%2C85%20M61.5%2C61.8%20L66.2%2C65.8%20L68.2%2C69.1%20L70%2C71.3%20L71.8%2C73.8%20L72.9%2C74.9%20L74.6%2C76.4%20M74%2C72.7%20L77%2C77.6%20L79.5%2C81.8%20L82.1%2C83.6%20L83.9%2C84.6%20L85.7%2C86.5%20L87.5%2C87.7%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%220.8%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M303.2%2C59.6%20L305.3%2C60.9%20L308.2%2C62.1%20L309.3%2C63.3%20L310.1%2C63.8%20M312.6%2C78.6%20L314.4%2C81.4%20L316.7%2C83.4%20L318.3%2C84.9%20M286.8%2C50.2%20L290.8%2C53.1%20L293.1%2C55.2%20L295.1%2C56.8%20L295.9%2C58%20L296.9%2C58.8%20L297.7%2C59.2%20M119.1%2C24.4%20L122.3%2C22.5%20L124.5%2C20.9%20L126.6%2C19.5%20L127.9%2C18.5%20M162.7%2C50.4%20L164.4%2C48.1%20L166.3%2C47.3%20L167.9%2C46%20M177.9%2C44.7%20L181.5%2C41.9%20L182.8%2C40.3%20L184%2C39%20L185.2%2C37.7%20L186.2%2C36.9%20M204.5%2C43.7%20L207.3%2C45.9%20L208.4%2C47%20L210.5%2C48.5%20L212.1%2C49.6%20M291.4%2C59.5%20L293.7%2C61.6%20L295.2%2C63.7%20L296.9%2C64.8%20L298.3%2C65.9%20L298.9%2C66.8%20L299.3%2C67.1%20M209.9%2C47.9%20L212.6%2C49.5%20L215%2C50.6%20L216.7%2C51.5%20L218%2C52.5%20M236.3%2C80.7%20L237.8%2C78.1%20L240.2%2C77.2%20L241.1%2C76%20M222%2C52.6%20L224.3%2C54.2%20L226.9%2C56.2%20L228.9%2C57.1%20L229.7%2C57.6%20L230.8%2C58.2%20L231.4%2C58.9%20M90.5%2C79.1%20L92.8%2C80.6%20L94.6%2C82.5%20L96.1%2C83.2%20L96.9%2C84.4%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%220.5%22%20opacity%3D%220.34%22%2F%3E%3Cpath%20d%3D%22M0%2C48%20L4.4%2C46.9%20L8.8%2C48.2%20L13.2%2C49.7%20L17.6%2C51.3%20L22.1%2C52.8%20L26.5%2C52.4%20L30.9%2C53.4%20L35.3%2C52.3%20L39.7%2C50.4%20L44.1%2C48.2%20L48.5%2C49.2%20L52.9%2C50%20L57.4%2C52.3%20L61.8%2C53%20L66.2%2C53.6%20L70.6%2C51.5%20L75%2C48.6%20L79.4%2C48.4%20L83.8%2C46.2%20L88.2%2C44.7%20L92.6%2C44.5%20L97.1%2C46.2%20L101.5%2C48.7%20L105.9%2C49%20L110.3%2C48.7%20L114.7%2C46.7%20L119.1%2C45.2%20L123.5%2C46.2%20L127.9%2C48.8%20L132.4%2C47.9%20L136.8%2C47%20L141.2%2C46.7%20L145.6%2C45.8%20L150%2C47.5%20L154.4%2C48.5%20L158.8%2C48.4%20L163.2%2C48.1%20L167.6%2C45.7%20L172.1%2C42.7%20L176.5%2C43%20L180.9%2C43.3%20L185.3%2C45.5%20L189.7%2C48.1%20L194.1%2C51.4%20L198.5%2C53.1%20L202.9%2C52%20L207.4%2C51.7%20L211.8%2C53.4%20L216.2%2C55.7%20L220.6%2C57.6%20L225%2C58.9%20L229.4%2C57%20L233.8%2C54.9%20L238.2%2C51.8%20L242.6%2C48%20L247.1%2C46.3%20L251.5%2C45.2%20L255.9%2C46.5%20L260.3%2C49%20L264.7%2C48.7%20L269.1%2C50.4%20L273.5%2C49.1%20L277.9%2C46.8%20L282.4%2C47.8%20L286.8%2C50%20L291.2%2C50.3%20L295.6%2C49.7%20L300%2C49.1%22%20stroke%3D%22%23fffdfd%22%20stroke-width%3D%220.7%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M189.7%2C48.1%20L197.6%2C57.1%20L201.8%2C63.1%20L206.6%2C66.7%20L209.3%2C68.6%20M269.1%2C50.4%20L277.9%2C53.7%20L286.6%2C58.1%20L293.9%2C61.2%20L296.9%2C66%20L299.3%2C70.6%20L302.7%2C72.9%20M251.5%2C45.2%20L256.6%2C49.4%20L262.2%2C56.3%20L267.3%2C62.1%20L273.2%2C67.3%20M97.1%2C46.2%20L104.8%2C39.6%20L109.6%2C33.4%20L115.7%2C28.9%20M150%2C47.5%20L156%2C44.7%20L160%2C38.7%20L166%2C35.8%20M167.6%2C45.7%20L172%2C39.9%20L179.5%2C36.5%20L186.7%2C33%20L192.1%2C30.3%20M264.7%2C48.7%20L273.6%2C57.2%20L282%2C65.1%20L288.4%2C70.1%20L290.9%2C75.1%20L295.8%2C78.9%20L299.4%2C80.4%20M185.3%2C45.5%20L194%2C55.1%20L200.6%2C57.9%20L206.5%2C62.8%20L208.8%2C67.3%20L212.5%2C70.4%20M202.9%2C52%20L211.9%2C58.2%20L219.1%2C64.4%20L224.2%2C68.2%20L229.2%2C73.5%20L232.3%2C76.8%20M61.8%2C53%20L71.3%2C61%20L78.1%2C64.4%20L81.6%2C69.6%20L84.6%2C72.9%20M57.4%2C52.3%20L61.5%2C61.8%20L68.4%2C67.6%20L74%2C72.7%22%20stroke%3D%22%23fff3f3%22%20stroke-width%3D%220.4%22%20opacity%3D%220.4%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");background-repeat:repeat-y,repeat-y,repeat-x,repeat-x;background-position:right -48px top 0,left -48px top 150px,left 0 top -48px,left 160px bottom -48px;background-size:96px 300px,96px 300px,300px 96px,300px 96px;animation:cardBoltFlash 5s ease-in-out infinite;}@keyframes cardBoltFlash{0%{opacity:.52;}3%{opacity:1;}6%{opacity:.6;}9%{opacity:.95;}13%{opacity:.56;}17%{opacity:.52;}30%{opacity:.52;}33%{opacity:1;}36%{opacity:.64;}40%{opacity:.93;}44%{opacity:.56;}48%{opacity:.52;}64%{opacity:.52;}67%{opacity:1;}70%{opacity:.68;}74%{opacity:.96;}78%{opacity:.58;}82%{opacity:.52;}100%{opacity:.52;}}@media (prefers-reduced-motion: reduce){.tier-card.hot::before{animation:none;}}
+.tier-card.hot::before{content:'';position:absolute;inset:-3px;border-radius:inherit;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%20300%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lg17%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffffff%22%2F%3E%3Cstop%20offset%3D%220.18%22%20stop-color%3D%22%23ededee%22%2F%3E%3Cstop%20offset%3D%220.42%22%20stop-color%3D%22%23c8c8ce%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23d14343%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23a63333%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22c17%22%20x%3D%22-18%25%22%20y%3D%22-5%25%22%20width%3D%22136%25%22%20height%3D%22110%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.06%200.14%22%20numOctaves%3D%224%22%20seed%3D%2217%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%222.6%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22g17%22%20x%3D%22-28%25%22%20y%3D%22-7%25%22%20width%3D%22156%25%22%20height%3D%22114%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.04%200.09%22%20numOctaves%3D%222%22%20seed%3D%2217%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%224.5%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22d%22%2F%3E%3CfeGaussianBlur%20in%3D%22d%22%20stdDeviation%3D%224.2%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23g17)%22%3E%3Cpath%20d%3D%22M48%2C0%20L46.8%2C4.4%20L47.8%2C8.8%20L48.1%2C13.2%20L47.3%2C17.6%20L48%2C22.1%20L47.5%2C26.5%20L48.1%2C30.9%20L47.1%2C35.3%20L45.1%2C39.7%20L44.6%2C44.1%20L44.7%2C48.5%20L44.4%2C52.9%20L43.2%2C57.4%20L41%2C61.8%20L42.1%2C66.2%20L42.8%2C70.6%20L42.6%2C75%20L43.1%2C79.4%20L43.5%2C83.8%20L45%2C88.2%20L44.8%2C92.6%20L43.2%2C97.1%20L44.1%2C101.5%20L44.6%2C105.9%20L42.8%2C110.3%20L43.6%2C114.7%20L42.7%2C119.1%20L43.3%2C123.5%20L42.7%2C127.9%20L43.3%2C132.4%20L43.1%2C136.8%20L44%2C141.2%20L45.8%2C145.6%20L47.7%2C150%20L49.6%2C154.4%20L49.6%2C158.8%20L48.1%2C163.2%20L45.7%2C167.6%20L43.7%2C172.1%20L41%2C176.5%20L40.9%2C180.9%20L40%2C185.3%20L38.4%2C189.7%20L37.2%2C194.1%20L36.7%2C198.5%20L35.5%2C202.9%20L37.3%2C207.4%20L36.8%2C211.8%20L36.7%2C216.2%20L37.5%2C220.6%20L38.1%2C225%20L40.2%2C229.4%20L42.9%2C233.8%20L45.5%2C238.2%20L47%2C242.6%20L48.2%2C247.1%20L50.3%2C251.5%20L49.2%2C255.9%20L47.4%2C260.3%20L46.4%2C264.7%20L44.5%2C269.1%20L43.2%2C273.5%20L41.2%2C277.9%20L38.9%2C282.4%20L40.6%2C286.8%20L41.7%2C291.2%20L43.2%2C295.6%20L45.1%2C300%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%229%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M42.8%2C110.3%20L50.4%2C116.5%20L56.5%2C125.6%20L61.2%2C132.4%20L66.2%2C134.7%20M40.6%2C286.8%20L47.6%2C291.6%20L54%2C298.6%20L56.4%2C301.8%20L60%2C304.4%20L61.6%2C308.3%20L64.3%2C310.2%20M42.8%2C70.6%20L38.9%2C81.7%20L36.2%2C90.1%20L31.5%2C95.6%20L29.6%2C99.9%20L25.2%2C103.2%20M44.6%2C44.1%20L48.5%2C54.1%20L54.2%2C63.1%20L57.9%2C66.6%20L60.2%2C70.6%20L63.9%2C72.8%20L67.1%2C76.2%20M44.5%2C269.1%20L36%2C278.5%20L29.9%2C283.9%20L27.1%2C288.4%20L24.9%2C290.7%20L23.5%2C292.7%20M44.5%2C269.1%20L48.2%2C277.7%20L54.3%2C283.9%20L58%2C286.6%20L63.2%2C292.4%20M38.9%2C282.4%20L30.9%2C289.3%20L28.4%2C295.3%20L21.8%2C298.8%20L16.3%2C302%20M47.1%2C35.3%20L38.7%2C43.8%20L36.1%2C52.1%20L33.9%2C57.4%20M48.1%2C163.2%20L44.8%2C172.1%20L40.7%2C181.3%20L34.3%2C185.1%20M47%2C242.6%20L52%2C252.3%20L54.9%2C258.7%20L57.8%2C265%20M45.7%2C167.6%20L48.5%2C174.3%20L53.3%2C178.4%20L55.4%2C183.2%20L60.9%2C189.3%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%224%22%20opacity%3D%220.3%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23c17)%22%3E%3Cpath%20d%3D%22M48%2C0%20L46.8%2C4.4%20L47.8%2C8.8%20L48.1%2C13.2%20L47.3%2C17.6%20L48%2C22.1%20L47.5%2C26.5%20L48.1%2C30.9%20L47.1%2C35.3%20L45.1%2C39.7%20L44.6%2C44.1%20L44.7%2C48.5%20L44.4%2C52.9%20L43.2%2C57.4%20L41%2C61.8%20L42.1%2C66.2%20L42.8%2C70.6%20L42.6%2C75%20L43.1%2C79.4%20L43.5%2C83.8%20L45%2C88.2%20L44.8%2C92.6%20L43.2%2C97.1%20L44.1%2C101.5%20L44.6%2C105.9%20L42.8%2C110.3%20L43.6%2C114.7%20L42.7%2C119.1%20L43.3%2C123.5%20L42.7%2C127.9%20L43.3%2C132.4%20L43.1%2C136.8%20L44%2C141.2%20L45.8%2C145.6%20L47.7%2C150%20L49.6%2C154.4%20L49.6%2C158.8%20L48.1%2C163.2%20L45.7%2C167.6%20L43.7%2C172.1%20L41%2C176.5%20L40.9%2C180.9%20L40%2C185.3%20L38.4%2C189.7%20L37.2%2C194.1%20L36.7%2C198.5%20L35.5%2C202.9%20L37.3%2C207.4%20L36.8%2C211.8%20L36.7%2C216.2%20L37.5%2C220.6%20L38.1%2C225%20L40.2%2C229.4%20L42.9%2C233.8%20L45.5%2C238.2%20L47%2C242.6%20L48.2%2C247.1%20L50.3%2C251.5%20L49.2%2C255.9%20L47.4%2C260.3%20L46.4%2C264.7%20L44.5%2C269.1%20L43.2%2C273.5%20L41.2%2C277.9%20L38.9%2C282.4%20L40.6%2C286.8%20L41.7%2C291.2%20L43.2%2C295.6%20L45.1%2C300%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%222.1%22%20opacity%3D%220.95%22%2F%3E%3Cpath%20d%3D%22M42.8%2C110.3%20L50.4%2C116.5%20L56.5%2C125.6%20L61.2%2C132.4%20L66.2%2C134.7%20M40.6%2C286.8%20L47.6%2C291.6%20L54%2C298.6%20L56.4%2C301.8%20L60%2C304.4%20L61.6%2C308.3%20L64.3%2C310.2%20M42.8%2C70.6%20L38.9%2C81.7%20L36.2%2C90.1%20L31.5%2C95.6%20L29.6%2C99.9%20L25.2%2C103.2%20M44.6%2C44.1%20L48.5%2C54.1%20L54.2%2C63.1%20L57.9%2C66.6%20L60.2%2C70.6%20L63.9%2C72.8%20L67.1%2C76.2%20M44.5%2C269.1%20L36%2C278.5%20L29.9%2C283.9%20L27.1%2C288.4%20L24.9%2C290.7%20L23.5%2C292.7%20M44.5%2C269.1%20L48.2%2C277.7%20L54.3%2C283.9%20L58%2C286.6%20L63.2%2C292.4%20M38.9%2C282.4%20L30.9%2C289.3%20L28.4%2C295.3%20L21.8%2C298.8%20L16.3%2C302%20M47.1%2C35.3%20L38.7%2C43.8%20L36.1%2C52.1%20L33.9%2C57.4%20M48.1%2C163.2%20L44.8%2C172.1%20L40.7%2C181.3%20L34.3%2C185.1%20M47%2C242.6%20L52%2C252.3%20L54.9%2C258.7%20L57.8%2C265%20M45.7%2C167.6%20L48.5%2C174.3%20L53.3%2C178.4%20L55.4%2C183.2%20L60.9%2C189.3%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%221.25%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M50.4%2C116.5%20L55.3%2C123.1%20L58.7%2C126.1%20L60.1%2C130.3%20L62.8%2C132.9%20M66.2%2C134.7%20L71.3%2C141.1%20L75.5%2C143.2%20L78.9%2C145%20L80.8%2C146.3%20L82.8%2C148%20L83.7%2C149.9%20M54%2C298.6%20L57.7%2C302.2%20L61.7%2C305.2%20L64.5%2C309.1%20L66.1%2C310.4%20L67.7%2C311.7%20L68.9%2C312.7%20M64.3%2C310.2%20L67%2C313.6%20L69.5%2C318.8%20L72.7%2C322.5%20L75%2C323.8%20L75.7%2C326.3%20L76.9%2C327.5%20M29.6%2C99.9%20L24.7%2C103.1%20L21.5%2C105.2%20L20.4%2C108.2%20M25.2%2C103.2%20L29.3%2C108.8%20L31.3%2C112.6%20L32.6%2C115.9%20M57.9%2C66.6%20L61.5%2C73.1%20L64.6%2C77.6%20L67.1%2C80.4%20L69.7%2C82%20L71.2%2C84.3%20L71.9%2C85.2%20M63.9%2C72.8%20L59%2C79.7%20L56.5%2C83.6%20L54.5%2C87.8%20M27.1%2C288.4%20L32.4%2C292.5%20L34.8%2C296.2%20L36.1%2C299.7%20M24.9%2C290.7%20L19.4%2C294.7%20L15.5%2C299.1%20L13.7%2C302.2%20M58%2C286.6%20L61.9%2C291.6%20L64.6%2C293.6%20L66.7%2C297.7%20L68.5%2C300.8%20L69.5%2C302.3%20M54.3%2C283.9%20L57.3%2C287.3%20L58.9%2C292.5%20L62%2C295.8%20L63.9%2C297%20L65.6%2C299%20M21.8%2C298.8%20L23.8%2C302.7%20L27.8%2C308.2%20L30.2%2C311.8%20L32.9%2C314.1%20L34.6%2C316.3%20M30.9%2C289.3%20L35.2%2C294.7%20L37%2C297.7%20L39.8%2C300%20L41.7%2C302.8%20M36.1%2C52.1%20L30.4%2C58.6%20L28.5%2C61.6%20L25.4%2C64.7%20M33.9%2C57.4%20L30.8%2C61.7%20L27.7%2C66.1%20L25.2%2C68.4%20L24.1%2C70%20L22.8%2C71%20M34.3%2C185.1%20L39.5%2C190.8%20L43.1%2C193.5%20L44.7%2C196.5%20L46.9%2C198.1%20M40.7%2C181.3%20L35.5%2C188.1%20L31.7%2C192%20L28.6%2C194%20M52%2C252.3%20L53.8%2C258.9%20L57.9%2C261.1%20L60.2%2C263%20L62.5%2C264.3%20L63.6%2C266.7%20L64.6%2C268.6%20M57.8%2C265%20L52.1%2C271.9%20L50%2C275.2%20L48.3%2C279%20L46.8%2C281.2%20M60.9%2C189.3%20L64.4%2C192.5%20L67.5%2C196.5%20L69.9%2C199.4%20L71.3%2C200.7%20L72.9%2C202.1%20M60.9%2C189.3%20L55.5%2C195.6%20L51.3%2C197.7%20L49.9%2C199.3%20L48.5%2C200.7%20L47.1%2C203%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%220.8%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M58.7%2C126.1%20L56.6%2C129.2%20L54.5%2C132%20L53.8%2C133.8%20M67.7%2C311.7%20L70.6%2C314.1%20L72.5%2C315.8%20L74.1%2C318.2%20M75.7%2C326.3%20L77.9%2C328.3%20L80.1%2C330.9%20L80.9%2C332%20M20.4%2C108.2%20L19.3%2C111%20L17.5%2C113.2%20L16.1%2C114.9%20M36.1%2C299.7%20L38.4%2C302.7%20L39.6%2C303.9%20L40.7%2C304.9%20L41.5%2C305.9%20M19.4%2C294.7%20L22.2%2C296.6%20L24.1%2C298.2%20L24.7%2C299.3%20L25.7%2C300.6%20M69.5%2C302.3%20L68.2%2C305.1%20L67.1%2C307.8%20L66%2C309.4%20L64.9%2C310.3%20L64%2C310.9%20L63.6%2C311.4%20M65.6%2C299%20L67.7%2C303%20L70%2C304.4%20L70.7%2C306.7%20M30.2%2C311.8%20L33.1%2C315.7%20L34.3%2C318.5%20L35.8%2C319.8%20L36.8%2C321%20L37.3%2C322.2%20M62.5%2C264.3%20L63.9%2C268.3%20L65.1%2C271.4%20L65.8%2C273.1%20L66.8%2C274%20L67.6%2C275.2%20M48.5%2C200.7%20L46%2C203.8%20L44.3%2C205.5%20L43.5%2C206.7%20L42.2%2C207.4%20L41.8%2C208.6%22%20stroke%3D%22url(%23lg17)%22%20stroke-width%3D%220.5%22%20opacity%3D%220.34%22%2F%3E%3Cpath%20d%3D%22M48%2C0%20L46.8%2C4.4%20L47.8%2C8.8%20L48.1%2C13.2%20L47.3%2C17.6%20L48%2C22.1%20L47.5%2C26.5%20L48.1%2C30.9%20L47.1%2C35.3%20L45.1%2C39.7%20L44.6%2C44.1%20L44.7%2C48.5%20L44.4%2C52.9%20L43.2%2C57.4%20L41%2C61.8%20L42.1%2C66.2%20L42.8%2C70.6%20L42.6%2C75%20L43.1%2C79.4%20L43.5%2C83.8%20L45%2C88.2%20L44.8%2C92.6%20L43.2%2C97.1%20L44.1%2C101.5%20L44.6%2C105.9%20L42.8%2C110.3%20L43.6%2C114.7%20L42.7%2C119.1%20L43.3%2C123.5%20L42.7%2C127.9%20L43.3%2C132.4%20L43.1%2C136.8%20L44%2C141.2%20L45.8%2C145.6%20L47.7%2C150%20L49.6%2C154.4%20L49.6%2C158.8%20L48.1%2C163.2%20L45.7%2C167.6%20L43.7%2C172.1%20L41%2C176.5%20L40.9%2C180.9%20L40%2C185.3%20L38.4%2C189.7%20L37.2%2C194.1%20L36.7%2C198.5%20L35.5%2C202.9%20L37.3%2C207.4%20L36.8%2C211.8%20L36.7%2C216.2%20L37.5%2C220.6%20L38.1%2C225%20L40.2%2C229.4%20L42.9%2C233.8%20L45.5%2C238.2%20L47%2C242.6%20L48.2%2C247.1%20L50.3%2C251.5%20L49.2%2C255.9%20L47.4%2C260.3%20L46.4%2C264.7%20L44.5%2C269.1%20L43.2%2C273.5%20L41.2%2C277.9%20L38.9%2C282.4%20L40.6%2C286.8%20L41.7%2C291.2%20L43.2%2C295.6%20L45.1%2C300%22%20stroke%3D%22%23fffdfd%22%20stroke-width%3D%220.7%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M42.8%2C110.3%20L50.4%2C116.5%20L56.5%2C125.6%20L61.2%2C132.4%20L66.2%2C134.7%20M40.6%2C286.8%20L47.6%2C291.6%20L54%2C298.6%20L56.4%2C301.8%20L60%2C304.4%20L61.6%2C308.3%20L64.3%2C310.2%20M42.8%2C70.6%20L38.9%2C81.7%20L36.2%2C90.1%20L31.5%2C95.6%20L29.6%2C99.9%20L25.2%2C103.2%20M44.6%2C44.1%20L48.5%2C54.1%20L54.2%2C63.1%20L57.9%2C66.6%20L60.2%2C70.6%20L63.9%2C72.8%20L67.1%2C76.2%20M44.5%2C269.1%20L36%2C278.5%20L29.9%2C283.9%20L27.1%2C288.4%20L24.9%2C290.7%20L23.5%2C292.7%20M44.5%2C269.1%20L48.2%2C277.7%20L54.3%2C283.9%20L58%2C286.6%20L63.2%2C292.4%20M38.9%2C282.4%20L30.9%2C289.3%20L28.4%2C295.3%20L21.8%2C298.8%20L16.3%2C302%20M47.1%2C35.3%20L38.7%2C43.8%20L36.1%2C52.1%20L33.9%2C57.4%20M48.1%2C163.2%20L44.8%2C172.1%20L40.7%2C181.3%20L34.3%2C185.1%20M47%2C242.6%20L52%2C252.3%20L54.9%2C258.7%20L57.8%2C265%20M45.7%2C167.6%20L48.5%2C174.3%20L53.3%2C178.4%20L55.4%2C183.2%20L60.9%2C189.3%22%20stroke%3D%22%23fff3f3%22%20stroke-width%3D%220.4%22%20opacity%3D%220.4%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2096%20300%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lg19%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffffff%22%2F%3E%3Cstop%20offset%3D%220.18%22%20stop-color%3D%22%23ededee%22%2F%3E%3Cstop%20offset%3D%220.42%22%20stop-color%3D%22%23c8c8ce%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23d14343%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23a63333%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22c19%22%20x%3D%22-18%25%22%20y%3D%22-5%25%22%20width%3D%22136%25%22%20height%3D%22110%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.06%200.14%22%20numOctaves%3D%224%22%20seed%3D%2219%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%222.6%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22g19%22%20x%3D%22-28%25%22%20y%3D%22-7%25%22%20width%3D%22156%25%22%20height%3D%22114%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.04%200.09%22%20numOctaves%3D%222%22%20seed%3D%2219%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%224.5%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22d%22%2F%3E%3CfeGaussianBlur%20in%3D%22d%22%20stdDeviation%3D%224.2%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23g19)%22%3E%3Cpath%20d%3D%22M48%2C0%20L46.9%2C4.4%20L44.2%2C8.8%20L44.6%2C13.2%20L44.4%2C17.6%20L42.6%2C22.1%20L43.5%2C26.5%20L44.4%2C30.9%20L43%2C35.3%20L41.2%2C39.7%20L41.5%2C44.1%20L41.7%2C48.5%20L43.3%2C52.9%20L42.9%2C57.4%20L45.2%2C61.8%20L45.7%2C66.2%20L45.5%2C70.6%20L46.1%2C75%20L47%2C79.4%20L45.5%2C83.8%20L44.9%2C88.2%20L45.5%2C92.6%20L44.8%2C97.1%20L43%2C101.5%20L42.9%2C105.9%20L42.1%2C110.3%20L42.8%2C114.7%20L42.9%2C119.1%20L41.8%2C123.5%20L43.2%2C127.9%20L45.8%2C132.4%20L47.2%2C136.8%20L50%2C141.2%20L52%2C145.6%20L54.5%2C150%20L55.4%2C154.4%20L53.9%2C158.8%20L54.5%2C163.2%20L55.7%2C167.6%20L53.7%2C172.1%20L51.8%2C176.5%20L49%2C180.9%20L49.8%2C185.3%20L48.9%2C189.7%20L47.9%2C194.1%20L47.7%2C198.5%20L46%2C202.9%20L46%2C207.4%20L46.2%2C211.8%20L48.5%2C216.2%20L48.4%2C220.6%20L49.6%2C225%20L50.1%2C229.4%20L51.8%2C233.8%20L51.4%2C238.2%20L49.3%2C242.6%20L47.8%2C247.1%20L48.3%2C251.5%20L47.2%2C255.9%20L48.3%2C260.3%20L49.9%2C264.7%20L50.3%2C269.1%20L50.2%2C273.5%20L48.4%2C277.9%20L47.1%2C282.4%20L47.2%2C286.8%20L48.5%2C291.2%20L47.3%2C295.6%20L45.2%2C300%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%229%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M49.9%2C264.7%20L57.7%2C268.8%20L65.9%2C275.1%20L71.2%2C281.6%20L75%2C284%20L78.5%2C286.9%20M44.2%2C8.8%20L50.3%2C16.5%20L56.5%2C23.3%20L62%2C28.1%20L64.5%2C33.2%20M48.5%2C216.2%20L51.7%2C227.4%20L55.9%2C234.7%20L57.9%2C240.4%20L61.9%2C244.2%20M54.5%2C163.2%20L50.9%2C171.7%20L46.9%2C179.1%20L43.9%2C182.9%20M53.9%2C158.8%20L61.6%2C165.2%20L67.3%2C171.3%20L72.7%2C177.1%20M45.5%2C92.6%20L54.7%2C101.7%20L60.2%2C109%20L66.3%2C115.4%20L71.5%2C120.1%20M48.3%2C260.3%20L44.9%2C264.8%20L40%2C272.2%20L38%2C276.5%20M54.5%2C150%20L60.4%2C156.8%20L65.6%2C160.6%20L72.3%2C163.3%20L77.8%2C168.7%20L82.1%2C173.4%20L85%2C175.9%20M50.1%2C229.4%20L53.2%2C236.1%20L56.2%2C242.2%20L58.9%2C245.6%20L61.9%2C249.4%20M48.3%2C251.5%20L39.3%2C258.4%20L35.3%2C263.5%20L28.7%2C270.5%20L26.7%2C274.3%20L24.2%2C278.6%20M41.2%2C39.7%20L34.7%2C46.4%20L29.7%2C50.9%20L24.7%2C56.7%20L21.1%2C59.4%20L16.5%2C61.6%20L13%2C65.1%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%224%22%20opacity%3D%220.3%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23c19)%22%3E%3Cpath%20d%3D%22M48%2C0%20L46.9%2C4.4%20L44.2%2C8.8%20L44.6%2C13.2%20L44.4%2C17.6%20L42.6%2C22.1%20L43.5%2C26.5%20L44.4%2C30.9%20L43%2C35.3%20L41.2%2C39.7%20L41.5%2C44.1%20L41.7%2C48.5%20L43.3%2C52.9%20L42.9%2C57.4%20L45.2%2C61.8%20L45.7%2C66.2%20L45.5%2C70.6%20L46.1%2C75%20L47%2C79.4%20L45.5%2C83.8%20L44.9%2C88.2%20L45.5%2C92.6%20L44.8%2C97.1%20L43%2C101.5%20L42.9%2C105.9%20L42.1%2C110.3%20L42.8%2C114.7%20L42.9%2C119.1%20L41.8%2C123.5%20L43.2%2C127.9%20L45.8%2C132.4%20L47.2%2C136.8%20L50%2C141.2%20L52%2C145.6%20L54.5%2C150%20L55.4%2C154.4%20L53.9%2C158.8%20L54.5%2C163.2%20L55.7%2C167.6%20L53.7%2C172.1%20L51.8%2C176.5%20L49%2C180.9%20L49.8%2C185.3%20L48.9%2C189.7%20L47.9%2C194.1%20L47.7%2C198.5%20L46%2C202.9%20L46%2C207.4%20L46.2%2C211.8%20L48.5%2C216.2%20L48.4%2C220.6%20L49.6%2C225%20L50.1%2C229.4%20L51.8%2C233.8%20L51.4%2C238.2%20L49.3%2C242.6%20L47.8%2C247.1%20L48.3%2C251.5%20L47.2%2C255.9%20L48.3%2C260.3%20L49.9%2C264.7%20L50.3%2C269.1%20L50.2%2C273.5%20L48.4%2C277.9%20L47.1%2C282.4%20L47.2%2C286.8%20L48.5%2C291.2%20L47.3%2C295.6%20L45.2%2C300%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%222.1%22%20opacity%3D%220.95%22%2F%3E%3Cpath%20d%3D%22M49.9%2C264.7%20L57.7%2C268.8%20L65.9%2C275.1%20L71.2%2C281.6%20L75%2C284%20L78.5%2C286.9%20M44.2%2C8.8%20L50.3%2C16.5%20L56.5%2C23.3%20L62%2C28.1%20L64.5%2C33.2%20M48.5%2C216.2%20L51.7%2C227.4%20L55.9%2C234.7%20L57.9%2C240.4%20L61.9%2C244.2%20M54.5%2C163.2%20L50.9%2C171.7%20L46.9%2C179.1%20L43.9%2C182.9%20M53.9%2C158.8%20L61.6%2C165.2%20L67.3%2C171.3%20L72.7%2C177.1%20M45.5%2C92.6%20L54.7%2C101.7%20L60.2%2C109%20L66.3%2C115.4%20L71.5%2C120.1%20M48.3%2C260.3%20L44.9%2C264.8%20L40%2C272.2%20L38%2C276.5%20M54.5%2C150%20L60.4%2C156.8%20L65.6%2C160.6%20L72.3%2C163.3%20L77.8%2C168.7%20L82.1%2C173.4%20L85%2C175.9%20M50.1%2C229.4%20L53.2%2C236.1%20L56.2%2C242.2%20L58.9%2C245.6%20L61.9%2C249.4%20M48.3%2C251.5%20L39.3%2C258.4%20L35.3%2C263.5%20L28.7%2C270.5%20L26.7%2C274.3%20L24.2%2C278.6%20M41.2%2C39.7%20L34.7%2C46.4%20L29.7%2C50.9%20L24.7%2C56.7%20L21.1%2C59.4%20L16.5%2C61.6%20L13%2C65.1%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%221.25%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M57.7%2C268.8%20L52.3%2C275.7%20L49.1%2C280.5%20L46.2%2C282.3%20L44.7%2C285.2%20L43.8%2C286.2%20L42.2%2C287.3%20M78.5%2C286.9%20L76.7%2C293.7%20L72.5%2C298.5%20L70.8%2C302%20M56.5%2C23.3%20L51.6%2C26.7%20L47.8%2C30%20L46.4%2C34.1%20M56.5%2C23.3%20L58.6%2C26.5%20L60.5%2C31.1%20L62%2C34.8%20L63.1%2C37.2%20M61.9%2C244.2%20L57.2%2C248.3%20L53.3%2C250.9%20L49.8%2C254.3%20M57.9%2C240.4%20L60.3%2C246.9%20L63.1%2C249.1%20L65.7%2C251%20L67.2%2C253.5%20M43.9%2C182.9%20L40.1%2C186.7%20L38.5%2C188.9%20L35.8%2C191.6%20L33.5%2C194.5%20M50.9%2C171.7%20L53.9%2C176.3%20L57.5%2C179.3%20L58.6%2C182.8%20L61.2%2C185.8%20M61.6%2C165.2%20L63.7%2C168.3%20L67.4%2C170.5%20L69.4%2C173.1%20L70.6%2C174.5%20L72.7%2C176%20M67.3%2C171.3%20L61.7%2C176.1%20L58.6%2C179%20L56.2%2C181.2%20L54.2%2C183.6%20L53.5%2C184.8%20L52.8%2C185.9%20M66.3%2C115.4%20L63.1%2C120.7%20L60.7%2C125.2%20L57.6%2C128.3%20L55.4%2C130.2%20M66.3%2C115.4%20L68.4%2C120%20L70.6%2C122.2%20L72.1%2C124.4%20L73.8%2C127.2%20M38%2C276.5%20L32.8%2C282.8%20L30.7%2C286.8%20L28.8%2C288.4%20L26.3%2C291.3%20L24.7%2C292.5%20L23.5%2C293.6%20M44.9%2C264.8%20L48.5%2C267.8%20L51%2C272.2%20L53.8%2C274.5%20L55.7%2C277.1%20L57.7%2C278.7%20L59%2C279.5%20M72.3%2C163.3%20L75.6%2C166.3%20L78%2C168.6%20L80.9%2C172.6%20L83%2C173.8%20L84.6%2C175.5%20M65.6%2C160.6%20L68.2%2C167.3%20L70.5%2C172.7%20L73.9%2C176.6%20L74.7%2C179.9%20L75.7%2C182.1%20M58.9%2C245.6%20L53.7%2C248.4%20L51.9%2C251.5%20L49.7%2C254.4%20L47.1%2C256.9%20L44.9%2C257.9%20L43.7%2C259%20M56.2%2C242.2%20L53.2%2C246.4%20L51.8%2C251%20L49.1%2C252.5%20L48.1%2C255.5%20L46.7%2C256.7%20M39.3%2C258.4%20L35.8%2C262.6%20L32%2C265.5%20L30.1%2C269.6%20M39.3%2C258.4%20L42.6%2C261.5%20L46.1%2C264.5%20L48%2C267.6%20L49.1%2C269.9%20M24.7%2C56.7%20L21.9%2C59.3%20L20%2C64.5%20L17.1%2C66.4%20L16%2C67.7%20L15%2C69.8%20L14.3%2C70.8%20M29.7%2C50.9%20L34.1%2C55.5%20L37.3%2C60.8%20L39.6%2C63.8%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%220.8%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M46.4%2C34.1%20L47.5%2C36.2%20L48.6%2C38.2%20L50.2%2C40.1%20L50.9%2C41.2%20L51.6%2C41.9%20M49.8%2C254.3%20L47.6%2C257.8%20L45.4%2C259%20L44.6%2C260.1%20L43.9%2C261.7%20L43%2C262.2%20M33.5%2C194.5%20L31.1%2C198%20L29.6%2C199.7%20L28.5%2C201.5%20M58.6%2C182.8%20L57.1%2C185.5%20L55.3%2C187.1%20L54.1%2C188%20L52.8%2C188.7%20M53.5%2C184.8%20L51%2C188.3%20L49.9%2C191.3%20L49.3%2C193.3%20L48.3%2C194.8%20L47.4%2C195.4%20L46.9%2C196%20M55.4%2C130.2%20L58.1%2C134%20L60.4%2C136.2%20L61.1%2C138.1%20M70.6%2C122.2%20L72.3%2C126%20L73.1%2C127.4%20L74.7%2C129.4%20L75.8%2C130.3%20M26.3%2C291.3%20L24.3%2C294.2%20L22.3%2C296.7%20L21.3%2C298.5%20L20.2%2C299.2%20M73.9%2C176.6%20L72.8%2C180.1%20L71.1%2C181.7%20L69.6%2C182.9%20L69%2C183.9%20L68.4%2C185%20M32%2C265.5%20L33.3%2C269.1%20L35.3%2C272%20L36.7%2C273%20L37.2%2C274.2%20L38.1%2C274.9%20M20%2C64.5%20L18.1%2C67.1%20L16.5%2C68.3%20L15.2%2C70.4%20L14.6%2C71.1%20L13.6%2C72.2%20L13%2C72.6%20M37.3%2C60.8%20L39.1%2C63.6%20L40.2%2C65.2%20L41.7%2C66.9%20L42.3%2C68.2%20L43.2%2C69.5%22%20stroke%3D%22url(%23lg19)%22%20stroke-width%3D%220.5%22%20opacity%3D%220.34%22%2F%3E%3Cpath%20d%3D%22M48%2C0%20L46.9%2C4.4%20L44.2%2C8.8%20L44.6%2C13.2%20L44.4%2C17.6%20L42.6%2C22.1%20L43.5%2C26.5%20L44.4%2C30.9%20L43%2C35.3%20L41.2%2C39.7%20L41.5%2C44.1%20L41.7%2C48.5%20L43.3%2C52.9%20L42.9%2C57.4%20L45.2%2C61.8%20L45.7%2C66.2%20L45.5%2C70.6%20L46.1%2C75%20L47%2C79.4%20L45.5%2C83.8%20L44.9%2C88.2%20L45.5%2C92.6%20L44.8%2C97.1%20L43%2C101.5%20L42.9%2C105.9%20L42.1%2C110.3%20L42.8%2C114.7%20L42.9%2C119.1%20L41.8%2C123.5%20L43.2%2C127.9%20L45.8%2C132.4%20L47.2%2C136.8%20L50%2C141.2%20L52%2C145.6%20L54.5%2C150%20L55.4%2C154.4%20L53.9%2C158.8%20L54.5%2C163.2%20L55.7%2C167.6%20L53.7%2C172.1%20L51.8%2C176.5%20L49%2C180.9%20L49.8%2C185.3%20L48.9%2C189.7%20L47.9%2C194.1%20L47.7%2C198.5%20L46%2C202.9%20L46%2C207.4%20L46.2%2C211.8%20L48.5%2C216.2%20L48.4%2C220.6%20L49.6%2C225%20L50.1%2C229.4%20L51.8%2C233.8%20L51.4%2C238.2%20L49.3%2C242.6%20L47.8%2C247.1%20L48.3%2C251.5%20L47.2%2C255.9%20L48.3%2C260.3%20L49.9%2C264.7%20L50.3%2C269.1%20L50.2%2C273.5%20L48.4%2C277.9%20L47.1%2C282.4%20L47.2%2C286.8%20L48.5%2C291.2%20L47.3%2C295.6%20L45.2%2C300%22%20stroke%3D%22%23fffdfd%22%20stroke-width%3D%220.7%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M49.9%2C264.7%20L57.7%2C268.8%20L65.9%2C275.1%20L71.2%2C281.6%20L75%2C284%20L78.5%2C286.9%20M44.2%2C8.8%20L50.3%2C16.5%20L56.5%2C23.3%20L62%2C28.1%20L64.5%2C33.2%20M48.5%2C216.2%20L51.7%2C227.4%20L55.9%2C234.7%20L57.9%2C240.4%20L61.9%2C244.2%20M54.5%2C163.2%20L50.9%2C171.7%20L46.9%2C179.1%20L43.9%2C182.9%20M53.9%2C158.8%20L61.6%2C165.2%20L67.3%2C171.3%20L72.7%2C177.1%20M45.5%2C92.6%20L54.7%2C101.7%20L60.2%2C109%20L66.3%2C115.4%20L71.5%2C120.1%20M48.3%2C260.3%20L44.9%2C264.8%20L40%2C272.2%20L38%2C276.5%20M54.5%2C150%20L60.4%2C156.8%20L65.6%2C160.6%20L72.3%2C163.3%20L77.8%2C168.7%20L82.1%2C173.4%20L85%2C175.9%20M50.1%2C229.4%20L53.2%2C236.1%20L56.2%2C242.2%20L58.9%2C245.6%20L61.9%2C249.4%20M48.3%2C251.5%20L39.3%2C258.4%20L35.3%2C263.5%20L28.7%2C270.5%20L26.7%2C274.3%20L24.2%2C278.6%20M41.2%2C39.7%20L34.7%2C46.4%20L29.7%2C50.9%20L24.7%2C56.7%20L21.1%2C59.4%20L16.5%2C61.6%20L13%2C65.1%22%20stroke%3D%22%23fff3f3%22%20stroke-width%3D%220.4%22%20opacity%3D%220.4%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%2096%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lg23%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffffff%22%2F%3E%3Cstop%20offset%3D%220.18%22%20stop-color%3D%22%23ededee%22%2F%3E%3Cstop%20offset%3D%220.42%22%20stop-color%3D%22%23c8c8ce%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23d14343%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23a63333%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22c23%22%20x%3D%22-18%25%22%20y%3D%22-5%25%22%20width%3D%22136%25%22%20height%3D%22110%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.14%200.06%22%20numOctaves%3D%224%22%20seed%3D%2223%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%222.6%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22g23%22%20x%3D%22-28%25%22%20y%3D%22-7%25%22%20width%3D%22156%25%22%20height%3D%22114%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.04%22%20numOctaves%3D%222%22%20seed%3D%2223%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%224.5%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22d%22%2F%3E%3CfeGaussianBlur%20in%3D%22d%22%20stdDeviation%3D%224.2%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23g23)%22%3E%3Cpath%20d%3D%22M0%2C48%20L4.4%2C46.9%20L8.8%2C45.8%20L13.2%2C45.7%20L17.6%2C45.9%20L22.1%2C47.1%20L26.5%2C49.1%20L30.9%2C48.9%20L35.3%2C49.7%20L39.7%2C48.7%20L44.1%2C50%20L48.5%2C49.3%20L52.9%2C48.8%20L57.4%2C46.6%20L61.8%2C46.9%20L66.2%2C46.1%20L70.6%2C44.6%20L75%2C42.9%20L79.4%2C43.2%20L83.8%2C42.5%20L88.2%2C40.4%20L92.6%2C39.6%20L97.1%2C39.7%20L101.5%2C41.6%20L105.9%2C44.7%20L110.3%2C47.4%20L114.7%2C48.3%20L119.1%2C50%20L123.5%2C49.5%20L127.9%2C47.3%20L132.4%2C45.6%20L136.8%2C46.5%20L141.2%2C47.4%20L145.6%2C48%20L150%2C47.5%20L154.4%2C45.7%20L158.8%2C46.5%20L163.2%2C46.1%20L167.6%2C44.2%20L172.1%2C44.1%20L176.5%2C46.3%20L180.9%2C45.5%20L185.3%2C45.5%20L189.7%2C45.5%20L194.1%2C46.2%20L198.5%2C48.8%20L202.9%2C48.3%20L207.4%2C46.9%20L211.8%2C46.2%20L216.2%2C44.5%20L220.6%2C44.6%20L225%2C45.1%20L229.4%2C47.5%20L233.8%2C46.7%20L238.2%2C46.1%20L242.6%2C44.9%20L247.1%2C42.6%20L251.5%2C42.4%20L255.9%2C42.5%20L260.3%2C40.9%20L264.7%2C39.9%20L269.1%2C37.8%20L273.5%2C38.4%20L277.9%2C37.7%20L282.4%2C35.8%20L286.8%2C37.7%20L291.2%2C38.8%20L295.6%2C42.2%20L300%2C42.2%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%229%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M8.8%2C45.8%20L15.9%2C54.1%20L22.5%2C60.1%20L28.3%2C66.8%20L30.8%2C72.4%20M277.9%2C37.7%20L288.3%2C32.5%20L293.2%2C24%20L298.5%2C18.7%20L301.3%2C16.6%20M154.4%2C45.7%20L162.3%2C55.6%20L168.7%2C63.1%20L171.7%2C68.3%20M260.3%2C40.9%20L267.8%2C37.9%20L274.7%2C31%20L280.3%2C27.1%20L283.4%2C24.9%20L285.4%2C22.3%20M154.4%2C45.7%20L163%2C53.1%20L166.2%2C60%20L171%2C66.2%20L176.4%2C69.7%20L179.7%2C72.4%20L181.4%2C75.1%20M238.2%2C46.1%20L246.2%2C55.3%20L254.8%2C61.7%20L259.4%2C66.1%20L263.8%2C69.4%20L268.1%2C73.7%20L271%2C76.8%20M22.1%2C47.1%20L29.3%2C41.8%20L33.1%2C37.5%20L36%2C32.2%20L40.9%2C29.4%20M233.8%2C46.7%20L244.2%2C56.4%20L247.7%2C59%20L250.8%2C64.1%20M110.3%2C47.4%20L115.1%2C57.7%20L123.5%2C62.3%20L126.6%2C67.8%20L132.2%2C71.9%20M70.6%2C44.6%20L80.2%2C36.5%20L88%2C31.2%20L91%2C28.5%20M123.5%2C49.5%20L133.3%2C59.4%20L137.7%2C67%20L140.7%2C72.2%20L145%2C77.1%20L147.8%2C81.1%20L150.6%2C84.1%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%224%22%20opacity%3D%220.3%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23c23)%22%3E%3Cpath%20d%3D%22M0%2C48%20L4.4%2C46.9%20L8.8%2C45.8%20L13.2%2C45.7%20L17.6%2C45.9%20L22.1%2C47.1%20L26.5%2C49.1%20L30.9%2C48.9%20L35.3%2C49.7%20L39.7%2C48.7%20L44.1%2C50%20L48.5%2C49.3%20L52.9%2C48.8%20L57.4%2C46.6%20L61.8%2C46.9%20L66.2%2C46.1%20L70.6%2C44.6%20L75%2C42.9%20L79.4%2C43.2%20L83.8%2C42.5%20L88.2%2C40.4%20L92.6%2C39.6%20L97.1%2C39.7%20L101.5%2C41.6%20L105.9%2C44.7%20L110.3%2C47.4%20L114.7%2C48.3%20L119.1%2C50%20L123.5%2C49.5%20L127.9%2C47.3%20L132.4%2C45.6%20L136.8%2C46.5%20L141.2%2C47.4%20L145.6%2C48%20L150%2C47.5%20L154.4%2C45.7%20L158.8%2C46.5%20L163.2%2C46.1%20L167.6%2C44.2%20L172.1%2C44.1%20L176.5%2C46.3%20L180.9%2C45.5%20L185.3%2C45.5%20L189.7%2C45.5%20L194.1%2C46.2%20L198.5%2C48.8%20L202.9%2C48.3%20L207.4%2C46.9%20L211.8%2C46.2%20L216.2%2C44.5%20L220.6%2C44.6%20L225%2C45.1%20L229.4%2C47.5%20L233.8%2C46.7%20L238.2%2C46.1%20L242.6%2C44.9%20L247.1%2C42.6%20L251.5%2C42.4%20L255.9%2C42.5%20L260.3%2C40.9%20L264.7%2C39.9%20L269.1%2C37.8%20L273.5%2C38.4%20L277.9%2C37.7%20L282.4%2C35.8%20L286.8%2C37.7%20L291.2%2C38.8%20L295.6%2C42.2%20L300%2C42.2%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%222.1%22%20opacity%3D%220.95%22%2F%3E%3Cpath%20d%3D%22M8.8%2C45.8%20L15.9%2C54.1%20L22.5%2C60.1%20L28.3%2C66.8%20L30.8%2C72.4%20M277.9%2C37.7%20L288.3%2C32.5%20L293.2%2C24%20L298.5%2C18.7%20L301.3%2C16.6%20M154.4%2C45.7%20L162.3%2C55.6%20L168.7%2C63.1%20L171.7%2C68.3%20M260.3%2C40.9%20L267.8%2C37.9%20L274.7%2C31%20L280.3%2C27.1%20L283.4%2C24.9%20L285.4%2C22.3%20M154.4%2C45.7%20L163%2C53.1%20L166.2%2C60%20L171%2C66.2%20L176.4%2C69.7%20L179.7%2C72.4%20L181.4%2C75.1%20M238.2%2C46.1%20L246.2%2C55.3%20L254.8%2C61.7%20L259.4%2C66.1%20L263.8%2C69.4%20L268.1%2C73.7%20L271%2C76.8%20M22.1%2C47.1%20L29.3%2C41.8%20L33.1%2C37.5%20L36%2C32.2%20L40.9%2C29.4%20M233.8%2C46.7%20L244.2%2C56.4%20L247.7%2C59%20L250.8%2C64.1%20M110.3%2C47.4%20L115.1%2C57.7%20L123.5%2C62.3%20L126.6%2C67.8%20L132.2%2C71.9%20M70.6%2C44.6%20L80.2%2C36.5%20L88%2C31.2%20L91%2C28.5%20M123.5%2C49.5%20L133.3%2C59.4%20L137.7%2C67%20L140.7%2C72.2%20L145%2C77.1%20L147.8%2C81.1%20L150.6%2C84.1%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%221.25%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M28.3%2C66.8%20L34.6%2C63.5%20L37.6%2C62%20L39.6%2C60.6%20M28.3%2C66.8%20L31.7%2C64.8%20L34.9%2C62.8%20L38%2C61.5%20M298.5%2C18.7%20L304%2C16.1%20L307.2%2C13.8%20L310.7%2C12.3%20M293.2%2C24%20L297.4%2C26.9%20L302.4%2C28.3%20L304.7%2C29.8%20L308%2C30.7%20L309.7%2C31.4%20L310.6%2C33%20M162.3%2C55.6%20L166.7%2C58.6%20L172%2C62.8%20L173.6%2C65.9%20L176.2%2C68.6%20L177.4%2C70.4%20L178.3%2C71.4%20M168.7%2C63.1%20L174.5%2C64.9%20L179%2C68.3%20L180.7%2C69.5%20L183.6%2C71.6%20M285.4%2C22.3%20L290.9%2C17.1%20L295%2C13%20L297%2C11.9%20M274.7%2C31%20L278.5%2C33.2%20L282.4%2C35.9%20L285.7%2C38.9%20L286.9%2C41.3%20L288%2C43.1%20M179.7%2C72.4%20L185.3%2C68.8%20L190.8%2C67.3%20L194.1%2C64.8%20L195.5%2C63.8%20M181.4%2C75.1%20L185.6%2C77.9%20L189.9%2C81.9%20L193.7%2C83.6%20L195.9%2C85.8%20L198.2%2C86.7%20M271%2C76.8%20L273.9%2C71.6%20L278.2%2C68.2%20L280.2%2C66%20L283.4%2C64.7%20L285.4%2C62.7%20L286.4%2C61.5%20M254.8%2C61.7%20L259.3%2C64%20L261.9%2C65.4%20L265%2C66.9%20L267.1%2C67.9%20M36%2C32.2%20L41.8%2C35.8%20L45.5%2C38.1%20L47.8%2C40.7%20M36%2C32.2%20L38.7%2C37.5%20L41.3%2C41.5%20L44.5%2C44.6%20M247.7%2C59%20L254.4%2C54.2%20L258.5%2C51.1%20L261.2%2C48.8%20L263.5%2C47.5%20M247.7%2C59%20L253%2C62.8%20L257.3%2C65.1%20L259.5%2C67.9%20L262.3%2C70.2%20L263.7%2C71.5%20M126.6%2C67.8%20L131.8%2C71.6%20L134.2%2C73.2%20L136.4%2C75.9%20M132.2%2C71.9%20L138.8%2C73.9%20L142.7%2C77.1%20L146.1%2C78.5%20M80.2%2C36.5%20L84.1%2C31.8%20L89.3%2C28.8%20L91%2C25.6%20L92.7%2C24.5%20L95%2C23.3%20M80.2%2C36.5%20L85.9%2C32.6%20L89.7%2C29.3%20L93.4%2C26.5%20M137.7%2C67%20L141.6%2C64.9%20L145.4%2C62.4%20L148.3%2C60.7%20L149.9%2C58.9%20L152.2%2C57.2%20L153.1%2C55.7%20M145%2C77.1%20L148%2C82.4%20L150.7%2C86.9%20L153.5%2C88.6%20L155%2C89.7%20L156%2C90.8%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%220.8%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M37.6%2C62%20L39.8%2C60.4%20L42.4%2C58.2%20L44.5%2C57%20L45.5%2C56.3%20M310.7%2C12.3%20L314.5%2C14.3%20L316.1%2C15.8%20L317.6%2C17.3%20L318.3%2C18.1%20L318.9%2C19%20M183.6%2C71.6%20L187.5%2C73.8%20L190%2C76%20L191.3%2C77.7%20L192.3%2C78.7%20L192.9%2C79.2%20M288%2C43.1%20L290.8%2C40.3%20L293.4%2C38.7%20L294.9%2C37.9%20L296.3%2C37.3%20L296.9%2C36.9%20L297.4%2C36.6%20M194.1%2C64.8%20L197.2%2C66%20L198.4%2C68.1%20L199.3%2C69.5%20L200.6%2C70.2%20M193.7%2C83.6%20L196.2%2C85.7%20L198.9%2C87.6%20L200.4%2C88.3%20L201.2%2C89.5%20L201.7%2C90.5%20L202.1%2C91%20M261.9%2C65.4%20L264.8%2C68.4%20L266.5%2C70.5%20L268.3%2C72.2%20M41.3%2C41.5%20L43.4%2C38.6%20L45%2C36.6%20L46.9%2C35.2%20L48.2%2C33.9%20L48.8%2C33.1%20M261.2%2C48.8%20L264.7%2C50.9%20L266.3%2C51.9%20L268.3%2C53.4%20L269.4%2C54%20L270.4%2C54.9%20L271.1%2C55.5%20M91%2C25.6%20L92.9%2C23.6%20L94.4%2C21.9%20L95.9%2C20.3%20L97.4%2C19%20L97.9%2C18.2%22%20stroke%3D%22url(%23lg23)%22%20stroke-width%3D%220.5%22%20opacity%3D%220.34%22%2F%3E%3Cpath%20d%3D%22M0%2C48%20L4.4%2C46.9%20L8.8%2C45.8%20L13.2%2C45.7%20L17.6%2C45.9%20L22.1%2C47.1%20L26.5%2C49.1%20L30.9%2C48.9%20L35.3%2C49.7%20L39.7%2C48.7%20L44.1%2C50%20L48.5%2C49.3%20L52.9%2C48.8%20L57.4%2C46.6%20L61.8%2C46.9%20L66.2%2C46.1%20L70.6%2C44.6%20L75%2C42.9%20L79.4%2C43.2%20L83.8%2C42.5%20L88.2%2C40.4%20L92.6%2C39.6%20L97.1%2C39.7%20L101.5%2C41.6%20L105.9%2C44.7%20L110.3%2C47.4%20L114.7%2C48.3%20L119.1%2C50%20L123.5%2C49.5%20L127.9%2C47.3%20L132.4%2C45.6%20L136.8%2C46.5%20L141.2%2C47.4%20L145.6%2C48%20L150%2C47.5%20L154.4%2C45.7%20L158.8%2C46.5%20L163.2%2C46.1%20L167.6%2C44.2%20L172.1%2C44.1%20L176.5%2C46.3%20L180.9%2C45.5%20L185.3%2C45.5%20L189.7%2C45.5%20L194.1%2C46.2%20L198.5%2C48.8%20L202.9%2C48.3%20L207.4%2C46.9%20L211.8%2C46.2%20L216.2%2C44.5%20L220.6%2C44.6%20L225%2C45.1%20L229.4%2C47.5%20L233.8%2C46.7%20L238.2%2C46.1%20L242.6%2C44.9%20L247.1%2C42.6%20L251.5%2C42.4%20L255.9%2C42.5%20L260.3%2C40.9%20L264.7%2C39.9%20L269.1%2C37.8%20L273.5%2C38.4%20L277.9%2C37.7%20L282.4%2C35.8%20L286.8%2C37.7%20L291.2%2C38.8%20L295.6%2C42.2%20L300%2C42.2%22%20stroke%3D%22%23fffdfd%22%20stroke-width%3D%220.7%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M8.8%2C45.8%20L15.9%2C54.1%20L22.5%2C60.1%20L28.3%2C66.8%20L30.8%2C72.4%20M277.9%2C37.7%20L288.3%2C32.5%20L293.2%2C24%20L298.5%2C18.7%20L301.3%2C16.6%20M154.4%2C45.7%20L162.3%2C55.6%20L168.7%2C63.1%20L171.7%2C68.3%20M260.3%2C40.9%20L267.8%2C37.9%20L274.7%2C31%20L280.3%2C27.1%20L283.4%2C24.9%20L285.4%2C22.3%20M154.4%2C45.7%20L163%2C53.1%20L166.2%2C60%20L171%2C66.2%20L176.4%2C69.7%20L179.7%2C72.4%20L181.4%2C75.1%20M238.2%2C46.1%20L246.2%2C55.3%20L254.8%2C61.7%20L259.4%2C66.1%20L263.8%2C69.4%20L268.1%2C73.7%20L271%2C76.8%20M22.1%2C47.1%20L29.3%2C41.8%20L33.1%2C37.5%20L36%2C32.2%20L40.9%2C29.4%20M233.8%2C46.7%20L244.2%2C56.4%20L247.7%2C59%20L250.8%2C64.1%20M110.3%2C47.4%20L115.1%2C57.7%20L123.5%2C62.3%20L126.6%2C67.8%20L132.2%2C71.9%20M70.6%2C44.6%20L80.2%2C36.5%20L88%2C31.2%20L91%2C28.5%20M123.5%2C49.5%20L133.3%2C59.4%20L137.7%2C67%20L140.7%2C72.2%20L145%2C77.1%20L147.8%2C81.1%20L150.6%2C84.1%22%20stroke%3D%22%23fff3f3%22%20stroke-width%3D%220.4%22%20opacity%3D%220.4%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E"),url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20300%2096%22%20preserveAspectRatio%3D%22none%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22lg29%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffffff%22%2F%3E%3Cstop%20offset%3D%220.18%22%20stop-color%3D%22%23ededee%22%2F%3E%3Cstop%20offset%3D%220.42%22%20stop-color%3D%22%23c8c8ce%22%2F%3E%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%23d14343%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23a63333%22%2F%3E%3C%2FlinearGradient%3E%3Cfilter%20id%3D%22c29%22%20x%3D%22-18%25%22%20y%3D%22-5%25%22%20width%3D%22136%25%22%20height%3D%22110%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.14%200.06%22%20numOctaves%3D%224%22%20seed%3D%2229%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%222.6%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22g29%22%20x%3D%22-28%25%22%20y%3D%22-7%25%22%20width%3D%22156%25%22%20height%3D%22114%25%22%3E%3CfeTurbulence%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.04%22%20numOctaves%3D%222%22%20seed%3D%2229%22%20result%3D%22n%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22n%22%20scale%3D%224.5%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%20result%3D%22d%22%2F%3E%3CfeGaussianBlur%20in%3D%22d%22%20stdDeviation%3D%224.2%22%2F%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cg%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cg%20filter%3D%22url(%23g29)%22%3E%3Cpath%20d%3D%22M0%2C48%20L4.4%2C46.9%20L8.8%2C48.2%20L13.2%2C49.7%20L17.6%2C51.3%20L22.1%2C52.8%20L26.5%2C52.4%20L30.9%2C53.4%20L35.3%2C52.3%20L39.7%2C50.4%20L44.1%2C48.2%20L48.5%2C49.2%20L52.9%2C50%20L57.4%2C52.3%20L61.8%2C53%20L66.2%2C53.6%20L70.6%2C51.5%20L75%2C48.6%20L79.4%2C48.4%20L83.8%2C46.2%20L88.2%2C44.7%20L92.6%2C44.5%20L97.1%2C46.2%20L101.5%2C48.7%20L105.9%2C49%20L110.3%2C48.7%20L114.7%2C46.7%20L119.1%2C45.2%20L123.5%2C46.2%20L127.9%2C48.8%20L132.4%2C47.9%20L136.8%2C47%20L141.2%2C46.7%20L145.6%2C45.8%20L150%2C47.5%20L154.4%2C48.5%20L158.8%2C48.4%20L163.2%2C48.1%20L167.6%2C45.7%20L172.1%2C42.7%20L176.5%2C43%20L180.9%2C43.3%20L185.3%2C45.5%20L189.7%2C48.1%20L194.1%2C51.4%20L198.5%2C53.1%20L202.9%2C52%20L207.4%2C51.7%20L211.8%2C53.4%20L216.2%2C55.7%20L220.6%2C57.6%20L225%2C58.9%20L229.4%2C57%20L233.8%2C54.9%20L238.2%2C51.8%20L242.6%2C48%20L247.1%2C46.3%20L251.5%2C45.2%20L255.9%2C46.5%20L260.3%2C49%20L264.7%2C48.7%20L269.1%2C50.4%20L273.5%2C49.1%20L277.9%2C46.8%20L282.4%2C47.8%20L286.8%2C50%20L291.2%2C50.3%20L295.6%2C49.7%20L300%2C49.1%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%229%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M189.7%2C48.1%20L197.6%2C57.1%20L201.8%2C63.1%20L206.6%2C66.7%20L209.3%2C68.6%20M269.1%2C50.4%20L277.9%2C53.7%20L286.6%2C58.1%20L293.9%2C61.2%20L296.9%2C66%20L299.3%2C70.6%20L302.7%2C72.9%20M251.5%2C45.2%20L256.6%2C49.4%20L262.2%2C56.3%20L267.3%2C62.1%20L273.2%2C67.3%20M97.1%2C46.2%20L104.8%2C39.6%20L109.6%2C33.4%20L115.7%2C28.9%20M150%2C47.5%20L156%2C44.7%20L160%2C38.7%20L166%2C35.8%20M167.6%2C45.7%20L172%2C39.9%20L179.5%2C36.5%20L186.7%2C33%20L192.1%2C30.3%20M264.7%2C48.7%20L273.6%2C57.2%20L282%2C65.1%20L288.4%2C70.1%20L290.9%2C75.1%20L295.8%2C78.9%20L299.4%2C80.4%20M185.3%2C45.5%20L194%2C55.1%20L200.6%2C57.9%20L206.5%2C62.8%20L208.8%2C67.3%20L212.5%2C70.4%20M202.9%2C52%20L211.9%2C58.2%20L219.1%2C64.4%20L224.2%2C68.2%20L229.2%2C73.5%20L232.3%2C76.8%20M61.8%2C53%20L71.3%2C61%20L78.1%2C64.4%20L81.6%2C69.6%20L84.6%2C72.9%20M57.4%2C52.3%20L61.5%2C61.8%20L68.4%2C67.6%20L74%2C72.7%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%224%22%20opacity%3D%220.3%22%2F%3E%3C%2Fg%3E%3Cg%20filter%3D%22url(%23c29)%22%3E%3Cpath%20d%3D%22M0%2C48%20L4.4%2C46.9%20L8.8%2C48.2%20L13.2%2C49.7%20L17.6%2C51.3%20L22.1%2C52.8%20L26.5%2C52.4%20L30.9%2C53.4%20L35.3%2C52.3%20L39.7%2C50.4%20L44.1%2C48.2%20L48.5%2C49.2%20L52.9%2C50%20L57.4%2C52.3%20L61.8%2C53%20L66.2%2C53.6%20L70.6%2C51.5%20L75%2C48.6%20L79.4%2C48.4%20L83.8%2C46.2%20L88.2%2C44.7%20L92.6%2C44.5%20L97.1%2C46.2%20L101.5%2C48.7%20L105.9%2C49%20L110.3%2C48.7%20L114.7%2C46.7%20L119.1%2C45.2%20L123.5%2C46.2%20L127.9%2C48.8%20L132.4%2C47.9%20L136.8%2C47%20L141.2%2C46.7%20L145.6%2C45.8%20L150%2C47.5%20L154.4%2C48.5%20L158.8%2C48.4%20L163.2%2C48.1%20L167.6%2C45.7%20L172.1%2C42.7%20L176.5%2C43%20L180.9%2C43.3%20L185.3%2C45.5%20L189.7%2C48.1%20L194.1%2C51.4%20L198.5%2C53.1%20L202.9%2C52%20L207.4%2C51.7%20L211.8%2C53.4%20L216.2%2C55.7%20L220.6%2C57.6%20L225%2C58.9%20L229.4%2C57%20L233.8%2C54.9%20L238.2%2C51.8%20L242.6%2C48%20L247.1%2C46.3%20L251.5%2C45.2%20L255.9%2C46.5%20L260.3%2C49%20L264.7%2C48.7%20L269.1%2C50.4%20L273.5%2C49.1%20L277.9%2C46.8%20L282.4%2C47.8%20L286.8%2C50%20L291.2%2C50.3%20L295.6%2C49.7%20L300%2C49.1%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%222.1%22%20opacity%3D%220.95%22%2F%3E%3Cpath%20d%3D%22M189.7%2C48.1%20L197.6%2C57.1%20L201.8%2C63.1%20L206.6%2C66.7%20L209.3%2C68.6%20M269.1%2C50.4%20L277.9%2C53.7%20L286.6%2C58.1%20L293.9%2C61.2%20L296.9%2C66%20L299.3%2C70.6%20L302.7%2C72.9%20M251.5%2C45.2%20L256.6%2C49.4%20L262.2%2C56.3%20L267.3%2C62.1%20L273.2%2C67.3%20M97.1%2C46.2%20L104.8%2C39.6%20L109.6%2C33.4%20L115.7%2C28.9%20M150%2C47.5%20L156%2C44.7%20L160%2C38.7%20L166%2C35.8%20M167.6%2C45.7%20L172%2C39.9%20L179.5%2C36.5%20L186.7%2C33%20L192.1%2C30.3%20M264.7%2C48.7%20L273.6%2C57.2%20L282%2C65.1%20L288.4%2C70.1%20L290.9%2C75.1%20L295.8%2C78.9%20L299.4%2C80.4%20M185.3%2C45.5%20L194%2C55.1%20L200.6%2C57.9%20L206.5%2C62.8%20L208.8%2C67.3%20L212.5%2C70.4%20M202.9%2C52%20L211.9%2C58.2%20L219.1%2C64.4%20L224.2%2C68.2%20L229.2%2C73.5%20L232.3%2C76.8%20M61.8%2C53%20L71.3%2C61%20L78.1%2C64.4%20L81.6%2C69.6%20L84.6%2C72.9%20M57.4%2C52.3%20L61.5%2C61.8%20L68.4%2C67.6%20L74%2C72.7%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%221.25%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M201.8%2C63.1%20L205.9%2C58.7%20L209.3%2C57.1%20L212.5%2C53.6%20L215%2C52.3%20L216.9%2C50.8%20L218.1%2C49.9%20M206.6%2C66.7%20L209.5%2C69%20L214.1%2C72.9%20L218.3%2C74.4%20L220.9%2C77%20L223%2C78.5%20M296.9%2C66%20L300.5%2C61.1%20L303.2%2C59.6%20L305.4%2C57.7%20L308.4%2C55.1%20L310.9%2C53.9%20L311.7%2C52.3%20M296.9%2C66%20L302.6%2C70.1%20L304.8%2C74.6%20L308%2C75.9%20L311.1%2C76.8%20L312.6%2C78.6%20M267.3%2C62.1%20L270.1%2C65.7%20L275.5%2C69.9%20L279.1%2C72.1%20M267.3%2C62.1%20L273.7%2C57.4%20L278.3%2C54.5%20L279.9%2C53.2%20L282.9%2C52.3%20L284.8%2C51.2%20L286.8%2C50.2%20M109.6%2C33.4%20L114.7%2C37.7%20L119.5%2C40.8%20L122.3%2C42.1%20L124%2C43.7%20L125.8%2C44.4%20L127%2C45.3%20M109.6%2C33.4%20L114%2C29.6%20L116.9%2C27.5%20L119.1%2C24.4%20M166%2C35.8%20L169.6%2C33.8%20L173.4%2C31.6%20L176.8%2C29.7%20L178%2C28.3%20L179.4%2C27.5%20L180.1%2C26.6%20M156%2C44.7%20L160.6%2C47.9%20L162.7%2C50.4%20L165.7%2C53.8%20L168.6%2C54.7%20L170.2%2C56.4%20L171.5%2C57.5%20M172%2C39.9%20L177.9%2C44.7%20L181.2%2C46.3%20L184.1%2C48%20M186.7%2C33%20L192.7%2C35.4%20L197.2%2C36.9%20L199.5%2C39.8%20L202%2C41.6%20L204.5%2C43.7%20L206.4%2C44.3%20M282%2C65.1%20L288.9%2C68.2%20L292%2C70.3%20L295.2%2C72.3%20L297.9%2C74.6%20L299.1%2C76%20M282%2C65.1%20L286.9%2C61.4%20L291.4%2C59.5%20L293.2%2C58.2%20L296.2%2C57.3%20M200.6%2C57.9%20L206.1%2C52.3%20L209.9%2C47.9%20L214.1%2C46.3%20M206.5%2C62.8%20L213.1%2C67.1%20L215.5%2C70.3%20L219%2C73.7%20L220.6%2C74.7%20L221.7%2C75.8%20L223.6%2C76.7%20M229.2%2C73.5%20L232.4%2C78.7%20L236.3%2C80.7%20L239.3%2C84%20L242.3%2C85.9%20L243.3%2C87.2%20M211.9%2C58.2%20L218.2%2C54.4%20L222%2C52.6%20L224.1%2C50.1%20L226%2C48.6%20L228.1%2C46.7%20M81.6%2C69.6%20L84.3%2C74.6%20L86.4%2C76.7%20L90.5%2C79.1%20L92.3%2C81%20M84.6%2C72.9%20L87.2%2C75.7%20L91.7%2C77.7%20L93.7%2C80.3%20L96.9%2C82.6%20L98.7%2C84.3%20L100%2C85%20M61.5%2C61.8%20L66.2%2C65.8%20L68.2%2C69.1%20L70%2C71.3%20L71.8%2C73.8%20L72.9%2C74.9%20L74.6%2C76.4%20M74%2C72.7%20L77%2C77.6%20L79.5%2C81.8%20L82.1%2C83.6%20L83.9%2C84.6%20L85.7%2C86.5%20L87.5%2C87.7%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%220.8%22%20opacity%3D%220.5%22%2F%3E%3Cpath%20d%3D%22M303.2%2C59.6%20L305.3%2C60.9%20L308.2%2C62.1%20L309.3%2C63.3%20L310.1%2C63.8%20M312.6%2C78.6%20L314.4%2C81.4%20L316.7%2C83.4%20L318.3%2C84.9%20M286.8%2C50.2%20L290.8%2C53.1%20L293.1%2C55.2%20L295.1%2C56.8%20L295.9%2C58%20L296.9%2C58.8%20L297.7%2C59.2%20M119.1%2C24.4%20L122.3%2C22.5%20L124.5%2C20.9%20L126.6%2C19.5%20L127.9%2C18.5%20M162.7%2C50.4%20L164.4%2C48.1%20L166.3%2C47.3%20L167.9%2C46%20M177.9%2C44.7%20L181.5%2C41.9%20L182.8%2C40.3%20L184%2C39%20L185.2%2C37.7%20L186.2%2C36.9%20M204.5%2C43.7%20L207.3%2C45.9%20L208.4%2C47%20L210.5%2C48.5%20L212.1%2C49.6%20M291.4%2C59.5%20L293.7%2C61.6%20L295.2%2C63.7%20L296.9%2C64.8%20L298.3%2C65.9%20L298.9%2C66.8%20L299.3%2C67.1%20M209.9%2C47.9%20L212.6%2C49.5%20L215%2C50.6%20L216.7%2C51.5%20L218%2C52.5%20M236.3%2C80.7%20L237.8%2C78.1%20L240.2%2C77.2%20L241.1%2C76%20M222%2C52.6%20L224.3%2C54.2%20L226.9%2C56.2%20L228.9%2C57.1%20L229.7%2C57.6%20L230.8%2C58.2%20L231.4%2C58.9%20M90.5%2C79.1%20L92.8%2C80.6%20L94.6%2C82.5%20L96.1%2C83.2%20L96.9%2C84.4%22%20stroke%3D%22url(%23lg29)%22%20stroke-width%3D%220.5%22%20opacity%3D%220.34%22%2F%3E%3Cpath%20d%3D%22M0%2C48%20L4.4%2C46.9%20L8.8%2C48.2%20L13.2%2C49.7%20L17.6%2C51.3%20L22.1%2C52.8%20L26.5%2C52.4%20L30.9%2C53.4%20L35.3%2C52.3%20L39.7%2C50.4%20L44.1%2C48.2%20L48.5%2C49.2%20L52.9%2C50%20L57.4%2C52.3%20L61.8%2C53%20L66.2%2C53.6%20L70.6%2C51.5%20L75%2C48.6%20L79.4%2C48.4%20L83.8%2C46.2%20L88.2%2C44.7%20L92.6%2C44.5%20L97.1%2C46.2%20L101.5%2C48.7%20L105.9%2C49%20L110.3%2C48.7%20L114.7%2C46.7%20L119.1%2C45.2%20L123.5%2C46.2%20L127.9%2C48.8%20L132.4%2C47.9%20L136.8%2C47%20L141.2%2C46.7%20L145.6%2C45.8%20L150%2C47.5%20L154.4%2C48.5%20L158.8%2C48.4%20L163.2%2C48.1%20L167.6%2C45.7%20L172.1%2C42.7%20L176.5%2C43%20L180.9%2C43.3%20L185.3%2C45.5%20L189.7%2C48.1%20L194.1%2C51.4%20L198.5%2C53.1%20L202.9%2C52%20L207.4%2C51.7%20L211.8%2C53.4%20L216.2%2C55.7%20L220.6%2C57.6%20L225%2C58.9%20L229.4%2C57%20L233.8%2C54.9%20L238.2%2C51.8%20L242.6%2C48%20L247.1%2C46.3%20L251.5%2C45.2%20L255.9%2C46.5%20L260.3%2C49%20L264.7%2C48.7%20L269.1%2C50.4%20L273.5%2C49.1%20L277.9%2C46.8%20L282.4%2C47.8%20L286.8%2C50%20L291.2%2C50.3%20L295.6%2C49.7%20L300%2C49.1%22%20stroke%3D%22%23fffdfd%22%20stroke-width%3D%220.7%22%20opacity%3D%220.72%22%2F%3E%3Cpath%20d%3D%22M189.7%2C48.1%20L197.6%2C57.1%20L201.8%2C63.1%20L206.6%2C66.7%20L209.3%2C68.6%20M269.1%2C50.4%20L277.9%2C53.7%20L286.6%2C58.1%20L293.9%2C61.2%20L296.9%2C66%20L299.3%2C70.6%20L302.7%2C72.9%20M251.5%2C45.2%20L256.6%2C49.4%20L262.2%2C56.3%20L267.3%2C62.1%20L273.2%2C67.3%20M97.1%2C46.2%20L104.8%2C39.6%20L109.6%2C33.4%20L115.7%2C28.9%20M150%2C47.5%20L156%2C44.7%20L160%2C38.7%20L166%2C35.8%20M167.6%2C45.7%20L172%2C39.9%20L179.5%2C36.5%20L186.7%2C33%20L192.1%2C30.3%20M264.7%2C48.7%20L273.6%2C57.2%20L282%2C65.1%20L288.4%2C70.1%20L290.9%2C75.1%20L295.8%2C78.9%20L299.4%2C80.4%20M185.3%2C45.5%20L194%2C55.1%20L200.6%2C57.9%20L206.5%2C62.8%20L208.8%2C67.3%20L212.5%2C70.4%20M202.9%2C52%20L211.9%2C58.2%20L219.1%2C64.4%20L224.2%2C68.2%20L229.2%2C73.5%20L232.3%2C76.8%20M61.8%2C53%20L71.3%2C61%20L78.1%2C64.4%20L81.6%2C69.6%20L84.6%2C72.9%20M57.4%2C52.3%20L61.5%2C61.8%20L68.4%2C67.6%20L74%2C72.7%22%20stroke%3D%22%23fff3f3%22%20stroke-width%3D%220.4%22%20opacity%3D%220.4%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");background-repeat:repeat-y,repeat-y,repeat-x,repeat-x;background-position:right -48px top 0,left -48px top 150px,left 0 top -48px,left 160px bottom -48px;background-size:96px 300px,96px 300px,300px 96px,300px 96px;animation:cardBoltFlash 5s ease-in-out infinite;}@keyframes cardBoltFlash{0%{opacity:.52;}3%{opacity:1;}6%{opacity:.6;}9%{opacity:.95;}13%{opacity:.56;}17%{opacity:.52;}30%{opacity:.52;}33%{opacity:1;}36%{opacity:.64;}40%{opacity:.93;}44%{opacity:.56;}48%{opacity:.52;}64%{opacity:.52;}67%{opacity:1;}70%{opacity:.68;}74%{opacity:.96;}78%{opacity:.58;}82%{opacity:.52;}100%{opacity:.52;}}@media (prefers-reduced-motion: reduce){.tier-card.hot::before{animation:none;}}
 /* The badge is absolutely positioned and centred with translateX(-50%);
    lifting it here too would override that and render it as a full-width
    block, which is exactly what happened to the Complete card. */
 .tier-card.hot>*:not(.tier-badge){position:relative;z-index:1;}
 .tier-card.hot>.tier-badge{z-index:3;}
-.tier-badge{position:absolute;top:-18px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#544b50 0%,#3a3338 55%,#2b2528 100%);color:#efeaec;border:1px solid #605660;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:.98rem;letter-spacing:2px;text-transform:uppercase;padding:9px 26px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.11);}
-.tier-badge.alt{background:linear-gradient(180deg,#4a4247,#332d31);}
-.tier-badge.red{background:linear-gradient(180deg,#ff6363 0%,#e02626 52%,#9d1616 100%);color:#fff;border-color:rgba(255,140,140,.75);box-shadow:0 0 26px rgba(220,38,38,.6),0 5px 16px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.22);}
+.tier-badge{position:absolute;top:-18px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#3a3a40 0%,#2a2a2e 55%,#1d1d20 100%);color:#ededee;border:1px solid #3a3a40;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:.98rem;letter-spacing:2px;text-transform:uppercase;padding:9px 26px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.11);}
+.tier-badge.alt{background:linear-gradient(180deg,#33333a,#26262a);}
+.tier-badge.red{background:linear-gradient(180deg,#d14343 0%,#b83636 52%,#8f2a2a 100%);color:#fff;border-color:rgba(226,96,96,.55);box-shadow:0 0 26px rgba(209,67,67,.3),0 5px 16px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.22);}
 .tier-name{font-family:'Barlow Condensed',sans-serif;font-size:1.08rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
 .tier-price,.lt-price,.lt-pct,.stat-num,.cd-time,.review-score .big{font-variant-numeric:tabular-nums lining-nums;font-feature-settings:'tnum' 1,'lnum' 1;}
 .tier-price{font-family:'Barlow Condensed',sans-serif;font-size:2.6rem;font-weight:900;color:var(--gold-ink);line-height:1;}
 .tier-price span{font-size:1.1rem;color:var(--muted);font-family:'IBM Plex Sans',sans-serif;font-weight:600;}
 .tier-sub{font-size:.78rem;color:var(--muted);margin:7px 0 16px;}
-.tier-save{display:inline-block;background:rgba(220,38,38,.12);border:1px solid rgba(220,38,38,.35);color:var(--emerald);font-size:.72rem;font-weight:800;border-radius:20px;padding:3px 12px;margin-left:8px;vertical-align:middle;}
+.tier-save{display:inline-block;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);color:var(--emerald);font-size:.72rem;font-weight:800;border-radius:20px;padding:3px 12px;margin-left:8px;vertical-align:middle;}
 .tier-card ul{list-style:none;padding:0;margin:0 0 22px;display:grid;gap:10px;flex:1;}
 .tier-card li{font-size:.84rem;color:var(--text);display:flex;gap:8px;line-height:1.4;}
 .tier-card li b{color:var(--gold-ink);font-weight:900;}
-.tier-card li .tick{color:var(--green);font-weight:900;}
+.tier-card li .tick{color:var(--emerald);font-weight:900;}
 .tier-plus{font-family:'Barlow Condensed',sans-serif;font-size:.8rem;font-weight:900;letter-spacing:2px;color:var(--emerald);text-transform:uppercase;margin:-8px 0 10px;}
 
 /* ─── REVIEW SUMMARY (from Whop listing) ─── */
 .review-summary{max-width:960px;margin:34px auto 0;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;display:flex;gap:30px;align-items:center;flex-wrap:wrap;}
 .review-score{text-align:center;min-width:130px;}
 .review-score .big{font-family:'Barlow Condensed',sans-serif;font-size:3.2rem;font-weight:900;color:var(--text);line-height:1;}
-.review-score .stars{color:#f5b301;font-size:1.1rem;letter-spacing:2px;}
+.review-score .stars{color:var(--text);font-size:1.1rem;letter-spacing:2px;}
 .review-score .count{font-size:.75rem;color:var(--muted);margin-top:4px;}
 .review-bars{flex:1;min-width:240px;display:grid;gap:7px;}
 .review-bar{display:grid;grid-template-columns:34px 1fr 92px;gap:10px;align-items:center;font-size:.78rem;color:var(--muted);}
 .review-bar .track{height:9px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden;}
-.review-bar .fill{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#dc2626,#ff4d4d);}
+.review-bar .fill{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#5a5a62,#9a9aa0);}
 
 /* ─── FAQ (native details/summary — no JS, accessible) ─── */
 .faq-list{max-width:760px;margin:0 auto;display:grid;gap:12px;}
 .faq-list details{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:0;overflow:hidden;}
 .faq-list summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 22px;font-weight:700;font-size:.95rem;color:var(--text);}
 .faq-list summary::-webkit-details-marker{display:none;}
-.faq-list summary::after{content:'+';font-size:1.4rem;font-weight:400;color:var(--gold-ink);line-height:1;transition:transform .2s;}
+.faq-list summary::after{content:'+';font-size:1.4rem;font-weight:400;color:var(--muted);line-height:1;transition:transform .2s;}
 .faq-list details[open] summary::after{transform:rotate(45deg);}
 .faq-list details p{padding:0 22px 20px;color:var(--muted);font-size:.9rem;line-height:1.7;}
 
 /* ─── SCHEDULE WEEK GRID ─── */
 .week-grid{display:grid;gap:18px;max-width:860px;margin:0 auto;}
 .day-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px;}
-.day-card h3{font-family:'Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:900;text-transform:uppercase;letter-spacing:1.5px;color:var(--gold-ink);margin-bottom:12px;}
+.day-card h3{font-family:'Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:900;text-transform:uppercase;letter-spacing:1.5px;color:var(--text);margin-bottom:12px;}
 .session-row{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);flex-wrap:wrap;font-size:.88rem;}
 .session-row:last-child{border-bottom:none;}
 .session-row .sess-name{font-weight:800;color:var(--text);white-space:nowrap;}
 .session-row .sess-time{color:var(--muted);font-weight:600;white-space:nowrap;}
 .host{font-weight:800;}
-.host-pj{color:#f0b429;}.host-caleb{color:#ff6b6b;}.host-fin{color:#ef4444;}.host-gainz{color:#ff8c42;}.host-kwt{color:#ef4444;}
+.host-pj{color:var(--gold-ink);}.host-caleb{color:var(--text);}.host-fin{color:var(--muted);}.host-gainz{color:var(--text);}.host-kwt{color:var(--muted);}
 
 /* ─── TEAM CARDS ─── */
 .team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:18px;max-width:960px;margin:0 auto;}
 .team-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 18px;text-align:center;transition:all .2s;}
 .team-card:hover{border-color:var(--gold-ink);transform:translateY(-3px);}
-.team-avatar{width:76px;height:76px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:#fff;background:linear-gradient(135deg,#dc2626,#7f1d1d);box-shadow:0 8px 24px rgba(220,38,38,.3);}
-.team-avatar-blank{background:linear-gradient(135deg,#1b2534,#2a3648);box-shadow:none;color:var(--muted);font-size:2rem;font-weight:400;}
+.team-avatar{width:76px;height:76px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:#fff;background:linear-gradient(135deg,#3a3a40,#26262a);box-shadow:0 8px 24px rgba(0,0,0,.35);}
+.team-avatar-blank{background:linear-gradient(135deg,#1d1d20,#2a2a2e);box-shadow:none;color:var(--muted);font-size:2rem;font-weight:400;}
 .results-empty{max-width:640px;margin:0 auto;text-align:center;padding:52px 24px;border:1px dashed var(--border-strong);border-radius:20px;background:rgba(255,255,255,0.02);}
 .results-empty h3{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
 .results-empty p{color:var(--muted);font-size:.88rem;max-width:420px;margin:0 auto;line-height:1.65;}
@@ -835,8 +848,8 @@ body.light-mode .tier-card .btn-outline{color:#ffb0b0;border-color:rgba(220,38,3
 .social-btn svg{width:16px;height:16px;fill:currentColor;}
 
 /* ─── LATEST FROM THE DESK ─── */
-.lean-chip{display:inline-flex;align-items:center;gap:8px;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.35);color:var(--emerald);border-radius:999px;padding:8px 20px;font-size:.84rem;font-weight:800;}
-.ann-card{background:var(--card);border:1px solid var(--border);border:1px solid rgba(220,38,38,.22);border-radius:12px;padding:16px 20px;text-align:left;}
+.lean-chip{display:inline-flex;align-items:center;gap:8px;background:var(--emerald-glow);border:1px solid var(--border);color:var(--emerald);border-radius:999px;padding:8px 20px;font-size:.84rem;font-weight:800;}
+.ann-card{background:var(--card);border:1px solid var(--border);border:1px solid var(--border);border-radius:12px;padding:16px 20px;text-align:left;}
 .ann-card h3{font-size:.95rem;font-weight:800;margin-bottom:4px;}
 .ann-card p{color:var(--muted);font-size:.85rem;line-height:1.6;}
 .ann-card .ann-date{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
@@ -844,18 +857,18 @@ body.light-mode .tier-card .btn-outline{color:#ffb0b0;border-color:rgba(220,38,3
 .review-card .rv-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;}
 .review-card .rv-ticker{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:900;}
 .rv-dir{font-size:.66rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;border-radius:20px;padding:3px 10px;}
-.rv-long{background:rgba(220,38,38,.12);color:var(--green);}
-.rv-short{background:rgba(255,68,68,.12);color:var(--red);}
+.rv-long{background:rgba(255,255,255,.07);color:var(--green);}
+.rv-short{background:rgba(209,67,67,.12);color:var(--red);}
 .rv-r{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.15rem;}
 .rv-win{color:var(--green);}.rv-loss{color:var(--red);}.rv-scratch,.rv-be,.rv-unclassified{color:var(--muted);}
 .review-card p{color:var(--muted);font-size:.82rem;line-height:1.55;}
 .review-card .rv-date{font-size:.7rem;color:var(--muted);margin-top:8px;text-transform:uppercase;letter-spacing:1px;}
 
 /* ─── SESSION CLOCK ─── */
-#session-clock .sc-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulseDot 2s infinite;}
+#session-clock .sc-dot{width:8px;height:8px;border-radius:50%;background:var(--emerald);animation:pulseDot 2s infinite;}
 
 /* ─── MOBILE STICKY CTA ─── */
-#mobile-cta{display:none;position:fixed;left:0;right:0;bottom:0;z-index:9985;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(6,9,13,.97);backdrop-filter:blur(14px);border-top:1px solid rgba(220,38,38,.35);}
+#mobile-cta{display:none;position:fixed;left:0;right:0;bottom:0;z-index:9985;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(12,12,13,.97);backdrop-filter:blur(14px);border-top:1px solid var(--border);}
 #mobile-cta .mc-info{display:flex;flex-direction:column;line-height:1.2;}
 #mobile-cta .mc-price{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:900;color:var(--gold-ink);}
 #mobile-cta .mc-label{font-size:.66rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
@@ -870,19 +883,19 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
 }
 
 /* ─── HERO EXTRAS ─── */
-.hero-badge{display:inline-flex;align-items:center;gap:9px;background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.4);border-radius:999px;padding:7px 16px;font-size:.8rem;font-weight:800;color:var(--gold-ink);margin-bottom:22px;}
-.pulse-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(220,38,38,.5);animation:pulseDot 2s infinite;}
-@keyframes pulseDot{0%{box-shadow:0 0 0 0 rgba(220,38,38,.45)}70%{box-shadow:0 0 0 12px rgba(220,38,38,0)}100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}}
+.hero-badge{display:inline-flex;align-items:center;gap:9px;background:var(--red-soft);border:1px solid var(--red-line);border-radius:999px;padding:7px 16px;font-size:.8rem;font-weight:800;color:var(--gold-ink);margin-bottom:22px;}
+.pulse-dot{width:9px;height:9px;border-radius:50%;background:var(--emerald);box-shadow:0 0 0 0 rgba(255,255,255,.25);animation:pulseDot 2s infinite;}
+@keyframes pulseDot{0%{box-shadow:0 0 0 0 rgba(255,255,255,.22)}70%{box-shadow:0 0 0 12px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
 @media (prefers-reduced-motion: reduce){.pulse-dot{animation:none}}
 .hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:30px;}
 .hero-trust{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:26px;color:var(--muted);font-size:.82rem;}
 
 /* ─── BUFFETT QUOTE CARD ─── */
-.buffett-card{position:relative;margin:0;background:linear-gradient(145deg,#1d1a1c,#151213);border:1px solid var(--border-strong);border-radius:22px;padding:34px 30px 26px;overflow:hidden;box-shadow:0 16px 50px rgba(0,0,0,.4);}
-.buffett-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(240,180,41,.12),transparent 55%);pointer-events:none;}
+.buffett-card{position:relative;margin:0;background:linear-gradient(145deg,#1d1d20,#161618);border:1px solid var(--border-strong);border-radius:22px;padding:34px 30px 26px;overflow:hidden;box-shadow:0 16px 50px rgba(0,0,0,.4);}
+.buffett-card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 85% 15%,rgba(255,255,255,.05),transparent 55%);pointer-events:none;}
 .buffett-card::after{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--gold),var(--red));border-radius:4px 0 0 4px;}
-.buffett-mark{position:absolute;top:2px;right:18px;font-family:Georgia,serif;font-size:7rem;line-height:1;color:rgba(240,180,41,.14);font-weight:900;pointer-events:none;}
-.buffett-card blockquote{position:relative;margin:0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:1.28rem;line-height:1.55;color:#f2e8d5;}
+.buffett-mark{position:absolute;top:2px;right:18px;font-family:Georgia,serif;font-size:7rem;line-height:1;color:rgba(255,255,255,.10);font-weight:900;pointer-events:none;}
+.buffett-card blockquote{position:relative;margin:0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:1.28rem;line-height:1.55;color:#ededee;}
 .buffett-card figcaption{position:relative;margin-top:16px;font-size:.82rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold-ink);}
 /* ─── RESPONSIVE ─── */
 @media(max-width:640px) {
@@ -903,9 +916,9 @@ html { font-size: 1.02rem; }
    WCAG 2.4.7 and 1.4.11. :focus-visible keeps mouse clicks ring-free. */
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,
 textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
-  outline:2px solid var(--gold-ink,#ef4444);outline-offset:3px;border-radius:4px;}
+  outline:2px solid var(--gold-ink,#e26060);outline-offset:3px;border-radius:4px;}
 
 /* These inputs set outline:0 for their resting state, which also killed the
    sitewide focus ring; restate it at matching specificity. */
 .field:focus-visible,.control:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
-  outline:2px solid var(--gold-ink,#ef4444);outline-offset:2px;}
+  outline:2px solid var(--gold-ink,#e26060);outline-offset:2px;}

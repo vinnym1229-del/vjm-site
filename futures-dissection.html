@@ -176,9 +176,9 @@
       var canvas=document.getElementById('fu-chart');
       if(canvas&&window.currDrawBars){
         var bars=specs.filter(function(s){return s[0].replace('M','')===sym.replace('M','');}).map(function(s){
-          return {label:s[0], value:points*s[2]*contracts, color: s[0]===sym?'#dc2626':'#9b9296'};
+          return {label:s[0], value:points*s[2]*contracts, color: s[0]===sym?'#d14343':'#9a9aa0'};
         });
-        if(!bars.length) bars=[{label:sym,value:pnl,color:'#dc2626'}];
+        if(!bars.length) bars=[{label:sym,value:pnl,color:'#d14343'}];
         window.currDrawBars(canvas,bars,{fmt:fmtUsd});
       }
     }

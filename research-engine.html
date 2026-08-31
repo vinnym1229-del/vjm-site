@@ -16,16 +16,27 @@
   .links{display:flex;align-items:center;justify-content:center;gap:2px;flex:1;min-width:0}
   .nav .nav-item{position:relative}
   .nav .nav-top{display:flex;align-items:center;gap:7px;background:none;border:1px solid transparent;cursor:pointer;color:var(--muted);font-family:inherit;font-size:.73rem;font-weight:900;letter-spacing:.7px;text-transform:uppercase;padding:9px 11px;border-radius:999px;white-space:nowrap;transition:color .18s,background .18s,border-color .18s}
-  .nav .nav-item:hover>.nav-top,.nav .nav-item.open>.nav-top{color:var(--red);background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.28)}
+  .nav .nav-item:hover>.nav-top,.nav .nav-item.open>.nav-top{color:var(--red);background:rgba(209,67,67,.10);border-color:rgba(209,67,67,.28)}
   .nav .nav-top .caret{width:6px;height:6px;margin-top:-3px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;border-radius:1px;opacity:.55;transform:rotate(45deg);transition:transform .18s,opacity .18s}
   .nav .nav-item:hover>.nav-top .caret,.nav .nav-item.open>.nav-top .caret{transform:rotate(225deg);margin-top:2px;opacity:.9}
-  .nav .nav-drop{position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-50%) translateY(-6px);min-width:214px;padding:8px;z-index:1001;background:rgba(5,7,11,.99);border:1px solid var(--line2);border-radius:14px;box-shadow:0 20px 54px rgba(0,0,0,.62);display:flex;flex-direction:column;gap:2px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s,transform .18s,visibility .18s}
+  .nav .nav-drop{position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-50%) translateY(-6px);min-width:214px;padding:8px;z-index:1001;background:rgba(12,12,13,.99);border:1px solid var(--line2);border-radius:14px;box-shadow:0 20px 54px rgba(0,0,0,.62);display:flex;flex-direction:column;gap:2px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .18s,transform .18s,visibility .18s}
   .nav .nav-drop::before{content:'';position:absolute;left:0;right:0;top:-14px;height:14px}
   .nav .nav-item:hover>.nav-drop,.nav .nav-item.open>.nav-drop{opacity:1;visibility:visible;pointer-events:auto;transform:translateX(-50%) translateY(0)}
   .nav .nav-drop a{display:block;padding:10px 13px;border-radius:9px;color:var(--muted);text-decoration:none;white-space:nowrap;font-size:.82rem;font-weight:700;letter-spacing:.2px;text-transform:none}
-  .nav .nav-drop a:hover,.nav .nav-drop a.on{color:var(--red);background:rgba(220,38,38,.12)}
+  .nav .nav-drop a:hover,.nav .nav-drop a.on{color:var(--red);background:rgba(209,67,67,.10)}
   @media(max-width:1120px){.links{flex-wrap:wrap;justify-content:center;row-gap:4px}
     nav{flex-wrap:wrap;justify-content:center;padding:10px 12px;gap:8px}}
+
+  /* Light theme for the rules defined locally on this page only — the rest of
+     the engine's palette lives in assets/research-engine.css. The dropdown
+     panel and its hover tints are dark literals, so they are restated for a
+     white page with the spec's light values. */
+  body.light-mode .nav .nav-item:hover>.nav-top,
+  body.light-mode .nav .nav-item.open>.nav-top{color:var(--red,#b3251d);background:rgba(179,37,29,.07);border-color:rgba(179,37,29,.22)}
+  body.light-mode .nav .nav-drop{background:rgba(255,255,255,.99);border-color:var(--line2,#cfcfd4);box-shadow:0 20px 54px rgba(20,20,22,.16)}
+  body.light-mode .nav .nav-drop a{color:var(--muted,#5f5f66)}
+  body.light-mode .nav .nav-drop a:hover,
+  body.light-mode .nav .nav-drop a.on{color:var(--red,#b3251d);background:rgba(179,37,29,.07)}
   </style>
 </head>
 <body>

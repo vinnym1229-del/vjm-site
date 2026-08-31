@@ -9,13 +9,13 @@
 <meta name="robots" content="noindex, follow">
 <meta name="description" content="This page does not exist. Head back to PJ Trades x St for live futures trading, the free starter course, and the full curriculum.">
 <style>
-body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px; background:#080708; color:#eceaea; font-family:'IBM Plex Sans',system-ui,sans-serif; text-align:center; padding:24px; }
-h1 { font-family:'Barlow Condensed',sans-serif; font-size:clamp(2.5rem,8vw,5rem); font-weight:900; color:#ef4444; margin:0; letter-spacing:2px; }
-h1 span { color:#eceaea; }
-p { color:#9b9296; margin:0; max-width:420px; line-height:1.6; }
+body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px; background:#0c0c0d; color:#ededee; font-family:'IBM Plex Sans',system-ui,sans-serif; text-align:center; padding:24px; }
+h1 { font-family:'Barlow Condensed',sans-serif; font-size:clamp(2.5rem,8vw,5rem); font-weight:900; color:#ededee; margin:0; letter-spacing:2px; }
+h1 span { color:#ededee; }
+p { color:#9a9aa0; margin:0; max-width:420px; line-height:1.6; }
 .links { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
-a { color:#ef4444; font-weight:700; text-decoration:none; border:1px solid #dc2626; padding:10px 24px; border-radius:8px; display:inline-block; transition:all .2s; }
-a:hover { background:#dc2626; color:#fff; }
+a { color:#e26060; font-weight:700; text-decoration:none; border:1px solid rgba(209,67,67,0.28); padding:10px 24px; border-radius:8px; display:inline-block; transition:all .2s; }
+a:hover { background:#d14343; color:#fff; }
 
 /* Page-wide ambient red pulse (mirrors index.html), so the lightning/black-
    red theme is consistent site-wide rather than home-page-only. */
@@ -25,12 +25,25 @@ body::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(220,38,38,.05) 0%, transparent 55%),
-              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(220,38,38,.04) 0%, transparent 55%);
+  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(209,67,67,.05) 0%, transparent 55%),
+              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(209,67,67,.04) 0%, transparent 55%);
   animation: pagePulse 9s ease-in-out infinite;
 }
 @keyframes pagePulse { 0%,100% { opacity:.55; } 50% { opacity: var(--page-pulse-peak, 1); } }
 @media (prefers-reduced-motion: reduce) { body::before { animation: none; opacity: .75; } }
+
+/* ---- Light theme (body.light-mode, set from localStorage['st-theme']) ----
+   Every surface on this page is a hard-coded dark literal, so each one is
+   restated against white with near-black text and the restrained deep red. */
+body.light-mode { background:#ffffff; color:#141416; }
+body.light-mode h1, body.light-mode h1 span { color:#141416; }
+body.light-mode p { color:#5f5f66; }
+body.light-mode a { color:#b3251d; border-color:rgba(179,37,29,0.22); }
+body.light-mode a:hover { background:#b3251d; color:#fff; }
+body.light-mode::before {
+  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(179,37,29,.04) 0%, transparent 55%),
+              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(20,20,22,.04) 0%, transparent 55%);
+}
 </style>
 </head>
 <body>

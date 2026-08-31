@@ -56,7 +56,7 @@
 <link rel="icon" type="image/jpeg" href="assets/pj-logo.jpg">
 <link rel="apple-touch-icon" href="assets/pj-logo.jpg">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#080708">
+<meta name="theme-color" content="#0c0c0d">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://s3.tradingview.com">
@@ -276,9 +276,9 @@
         <feGaussianBlur in="disp" stdDeviation="3"/>
       </filter>
       <radialGradient id="boltCoreGlow" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stop-color="#fff0e6" stop-opacity=".95"/>
-        <stop offset="35%" stop-color="#ff4d3d" stop-opacity=".55"/>
-        <stop offset="100%" stop-color="#ff1a1a" stop-opacity="0"/>
+        <stop offset="0%" stop-color="#ffffff" stop-opacity=".95"/>
+        <stop offset="35%" stop-color="#d9d9dd" stop-opacity=".45"/>
+        <stop offset="100%" stop-color="#d14343" stop-opacity="0"/>
       </radialGradient>
     </defs>
     <!-- Glowing strike origin, matching the reference photo's bright core. -->
@@ -388,7 +388,7 @@
     <div class="hero-ctas">
       <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=hero-cta" target="_blank" rel="noopener" class="btn btn-gold" style="font-size:1rem;padding:15px 30px;">⭐ Join Complete — $129/mo</a>
       <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;">💬 Join the Free Discord</a>
-      <a href="futures-dissection.html" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;border-color:rgba(74,222,128,.5);color:#4ade80;">📚 Free Futures Starter Course</a>
+      <a href="futures-dissection.html" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;border-color:var(--border);color:var(--text);">📚 Free Futures Starter Course</a>
     </div>
     <div class="hero-trust">
       <span>✅ Live futures trading 10+ times each week</span>
@@ -631,7 +631,7 @@
           <input id="sim-prop-days" type="number" value="30" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;" aria-label="sim prop days">
           <button onclick="runPropPayout()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE PAYOUT</button>
           <div id="sim-prop-result" style="margin-top:16px;display:none;">
-            <div style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:14px;text-align:center;">
+            <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
               <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Payout Schedule</div>
               <div id="sim-prop-end-val" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
               <div id="sim-prop-weekly" style="font-size:0.9rem;color:var(--emerald);margin-top:4px;">~$X per week / ~$Y per month</div>
@@ -640,9 +640,9 @@
         </div>
 
         <div id="sim-result" style="margin-top:16px;display:none;">
-          <div style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:14px;text-align:center;">
+          <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
             <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Projected Payout</div>
-            <div id="sim-end-val" style="font-family:'Barlow Condensed',sans-serif;font-size:2.5rem;font-weight:900;color:var(--green);text-shadow:0 0 16px rgba(220,38,38,0.4);"></div>
+            <div id="sim-end-val" style="font-family:'Barlow Condensed',sans-serif;font-size:2.5rem;font-weight:900;color:var(--green);text-shadow:0 0 16px rgba(255,255,255,0.16);"></div>
             <div id="sim-gain-val" style="font-size:0.82rem;color:var(--emerald);margin-top:4px;"></div>
             <div id="sim-extra-val" style="font-size:0.78rem;color:var(--muted);margin-top:4px;"></div>
           </div>
@@ -673,7 +673,7 @@
         </div>
         <button onclick="calcTickSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
         <div id="tick-result" style="margin-top:16px;display:none;">
-          <div style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:14px;text-align:center;">
+          <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
             <div id="tick-output" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
             <div id="tick-interpret" style="font-size:0.82rem;color:var(--muted);margin-top:4px;"></div>
           </div>
@@ -705,7 +705,7 @@
         <input id="size-target" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="size target">
         <button onclick="calcSizingSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
         <div id="size-result" style="margin-top:16px;display:none;">
-          <div style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:14px;text-align:center;">
+          <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
             <div id="size-output" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
             <div id="size-interpret" style="font-size:0.82rem;color:var(--muted);margin-top:4px;"></div>
           </div>
@@ -726,7 +726,7 @@
         <input id="fc-contracts" type="number" value="2" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="fc contracts">
         <button onclick="calcFutures()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
         <div id="fc-result" style="margin-top:16px;display:none;">
-          <div style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:14px;text-align:center;">
+          <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
             <div id="fc-pnl" style="font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;"></div>
             <div id="fc-details" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></div>
           </div>
@@ -745,7 +745,7 @@
         <input id="pr-risk" type="number" value="0.5" step="0.1" min="0.1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="pr risk">
         <button onclick="calcPropRisk()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
         <div id="pr-result" style="margin-top:16px;display:none;">
-          <div style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:10px;padding:14px;text-align:center;">
+          <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
             <div id="pr-trades" style="font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;color:var(--green);"></div>
             <div id="pr-details" style="font-size:0.78rem;color:var(--muted);margin-top:6px;line-height:1.6;"></div>
           </div>
@@ -753,7 +753,7 @@
       </div>
 
       <!-- Options Lab CTA -->
-      <div style="grid-column:1/-1;background:linear-gradient(135deg,rgba(220,38,38,0.1),rgba(185,28,28,0.04));border:1px solid rgba(220,38,38,0.3);border-radius:16px;padding:28px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;" data-reveal>
+      <div style="grid-column:1/-1;background:linear-gradient(135deg,rgba(209,67,67,0.10),rgba(166,51,51,0.04));border:1px solid rgba(209,67,67,0.28);border-radius:16px;padding:28px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;" data-reveal>
         <div>
           <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;margin-bottom:4px;">📊 Options Lab</h3>
           <p style="font-size:0.85rem;color:var(--muted);max-width:520px;">From options basics — calls, puts, strikes, expiration — up through advanced gamma exposure (GEX): worked scenarios, where to get real-time GEX data, and how to translate it into QQQ/NQ and SPY/ES intraday.</p>
@@ -888,7 +888,7 @@
       </div>
       <div id="dash-content" style="display:none;">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;">
-          <div style="background:var(--card);border:1px solid rgba(220,38,38,0.3);border-radius:14px;padding:20px;text-align:center;">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;">
             <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Status</div>
             <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--green);">✅ ACTIVE</div>
           </div>
@@ -904,12 +904,12 @@
         </div>
         <button onclick="signOutPremium()" class="btn btn-outline" style="width:100%;max-width:220px;margin:0 auto 20px;display:block;font-size:0.85rem;">Sign Out</button>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
-          <a href="https://discord.gg/pjtrades" target="_blank" style="background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:12px;padding:16px;text-align:center;text-decoration:none;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#dc2626'" onmouseout="this.style.borderColor='rgba(220,38,38,0.3)'">
+          <a href="https://discord.gg/pjtrades" target="_blank" style="background:rgba(209,67,67,0.10);border:1px solid rgba(209,67,67,0.28);border-radius:12px;padding:16px;text-align:center;text-decoration:none;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='#d14343'" onmouseout="this.style.borderColor='rgba(209,67,67,0.28)'">
             <div style="font-size:1.5rem;margin-bottom:6px;">💬</div>
             <div style="font-weight:700;font-size:0.88rem;">Join Discord</div>
             <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Get your Premium role</div>
           </a>
-          <a href="https://discord.com/users/St1101" target="_blank" style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.25);border-radius:12px;padding:16px;text-align:center;text-decoration:none;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='rgba(220,38,38,0.25)'">
+          <a href="https://discord.com/users/St1101" target="_blank" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;text-decoration:none;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
             <div style="font-size:1.5rem;margin-bottom:6px;">📩</div>
             <div style="font-weight:700;font-size:0.88rem;">DM Support</div>
             <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Direct message St1101</div>
@@ -1207,9 +1207,9 @@
     <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;" data-reveal>
 
       <!-- Pull quote hero -->
-      <div style="background:linear-gradient(135deg,#0a0800,#120e00);padding:36px 40px;border-bottom:1px solid rgba(220,38,38,0.2);text-align:center;position:relative;overflow:hidden;">
-        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(220,38,38,0.07) 0%,transparent 65%);pointer-events:none;"></div>
-        <p style="font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.3rem,3vw,1.9rem);font-weight:800;color:var(--gold-ink);text-shadow:0 0 24px rgba(220,38,38,0.4);line-height:1.35;position:relative;">"Discipline is not a personality trait or a motivational slogan. It is the ability to follow rules despite pressure — in both markets and all other aspects of life."</p>
+      <div style="background:linear-gradient(135deg,#131315,#1a1a1c);padding:36px 40px;border-bottom:1px solid var(--border);text-align:center;position:relative;overflow:hidden;">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(209,67,67,0.05) 0%,transparent 65%);pointer-events:none;"></div>
+        <p style="font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.3rem,3vw,1.9rem);font-weight:800;color:var(--gold-ink);text-shadow:0 0 24px rgba(255,255,255,0.10);line-height:1.35;position:relative;">"Discipline is not a personality trait or a motivational slogan. It is the ability to follow rules despite pressure — in both markets and all other aspects of life."</p>
         <p style="color:var(--muted);font-size:0.78rem;margin-top:14px;text-transform:uppercase;letter-spacing:2px;position:relative;">— St</p>
       </div>
 
@@ -1222,7 +1222,7 @@
 
         <p style="margin-top:1.4em;">The problem is that discipline is often treated as a fluctuating mood rather than a measurable, structured process. While this paper analyzes discipline through a trading lens, the same disciplinary failures are apparent in fitness, school, work, health, relationships, and any area where people know the right action but struggle to commit to it.</p>
 
-        <div style="background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,.22);border-radius:12px;padding:18px 24px;margin:28px 0;">
+        <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:18px 24px;margin:28px 0;">
           <p style="margin:0;font-style:italic;color:var(--text);">Across fields such as athletics, academics, entrepreneurship, and personal finance, the same pattern appears: people rarely fail because they lack information. They fail because they cannot apply what they already know consistently.</p>
         </div>
 
@@ -1242,7 +1242,7 @@
 
         <p style="margin-top:1.4em;">Gollwitzer strengthens this point by demonstrating that intentions alone are weak predictors of behavior — accounting for only about 20% to 30% of behavioral variance. He argues that this problem improves when people form specific <em>implementation intentions</em> that connect a future situation to a predetermined response. Together, these sources reinforce the argument: discipline matters more than raw knowledge. This shows the knowledge-execution gap at its simplest level.</p>
 
-        <div style="background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,.22);border-radius:12px;padding:18px 24px;margin:28px 0;">
+        <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:18px 24px;margin:28px 0;">
           <p style="margin:0;color:var(--text);"><strong style="color:var(--emerald);">Key insight:</strong> Intentions alone account for only 20–30% of actual behavior. The gap between what you plan to do and what you actually do under pressure is where discipline lives.</p>
         </div>
 
@@ -1264,7 +1264,7 @@
 
         <p style="margin-top:1.4em;">This is where the position-size paradox becomes especially important. A setup that appears rational and manageable at a small size can feel entirely different once the exposure becomes large enough to threaten comfort, confidence, or control. The setup remains unchanged, but the trader does not. As size increases, each price movement feels more intense, and adhering to the plan becomes even harder. Discipline, therefore, cannot depend on feeling calm. It must be strong enough to withstand changes in internal state — especially when position size amplifies the emotional weight of the trade.</p>
 
-        <div style="background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,.22);border-radius:12px;padding:18px 24px;margin:28px 0;">
+        <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:18px 24px;margin:28px 0;">
           <p style="margin:0;font-style:italic;color:var(--text);">Experience by itself does not solve this problem. 80% of all day traders quit within two years, yet traders with a history of losses still account for over half of day-trading volume. Without honest feedback loops, experience can reinforce ego just as easily as it reinforces skill.</p>
         </div>
 
@@ -1296,7 +1296,7 @@
         <p>This kind of planning makes the response more automatic, so the trader does not have to rely on willpower in the heat of the moment. Checklists, hard daily loss limits, position-size caps, and honest journaling systems all work by making it harder to violate the plan than it is to follow it. At that point, discipline becomes measurable. It becomes visible in whether a trader executes the system when pressure arises or succumbs to short-term temptation.</p>
 
         <!-- Final takeaway -->
-        <div style="background:linear-gradient(135deg,#0a0800,#120e00);border:1px solid rgba(220,38,38,0.3);border-radius:14px;padding:28px 32px;margin:36px 0 0;">
+        <div style="background:linear-gradient(135deg,#131315,#1a1a1c);border:1px solid var(--border);border-radius:14px;padding:28px 32px;margin:36px 0 0;">
           <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--gold-ink);margin-bottom:12px;">The Bottom Line</h3>
           <p style="margin:0;line-height:1.85;color:var(--text);">Ultimately, trading is a useful case study not because it is the only place where discipline matters, but because it exposes the problem more quickly than ordinary life does. In fitness, school, work, or budgeting, weak discipline can hide behind a delay. Trading eliminates that delay. It shows that modern failure is often caused not by lack of access, knowledge, or tools — but by the inability to follow a structured process once emotion begins to compete with judgment. <strong style="color:var(--gold-ink);">Discipline is the foundation that every other skill depends on. That consistency determines survival long before it determines success.</strong></p>
         </div>
@@ -1414,7 +1414,7 @@
     <p>Trading = short-term, technical analysis, buying &amp; selling for profit. Investing = long-term, fundamental analysis, buying &amp; holding for growth. Day trading futures/options is highest risk but highest potential. Swing trading is moderate. Long-term investing is the safest and most reliable wealth builder.</p>
     <h3>Summary</h3>
     <p>Markets are just places where buyers and sellers trade assets. All markets move from supply/demand, economic data, and sentiment. Discipline and risk management separate winning traders from losing ones. Start simple. Stay patient. Learn from every trade.</p>
-    <p style="margin-top:24px;padding:16px;background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,.22);border-radius:0 8px 8px 0;font-size:0.85rem;color:var(--muted);">⚠️ This is not financial advice. All content is educational only.</p>
+    <p style="margin-top:24px;padding:16px;background:rgba(209,67,67,0.10);border:1px solid rgba(209,67,67,0.28);border-radius:0 8px 8px 0;font-size:0.85rem;color:var(--muted);">⚠️ This is not financial advice. All content is educational only.</p>
     <button onclick="closePost()" class="btn btn-gold" style="margin-top:24px;">← Back to Insights</button>
   </div>
 </div>
@@ -1575,7 +1575,7 @@ function tickCountdown() {
   if (next.live) {
     display.innerHTML = '';
     status.innerHTML  = '<span class="cd-live"><span class="cd-live-dot"></span>🔴 LIVE NOW — ' + next.session.name + ' session</span>';
-    bar.style.borderBottomColor = 'rgba(255,68,68,0.4)';
+    bar.style.borderBottomColor = 'rgba(209,67,67,0.45)';
     return;
   }
 
@@ -1598,7 +1598,7 @@ function tickCountdown() {
     display.textContent = hh + ':' + mm + ':' + ss;
     status.innerHTML = '<span style="color:var(--muted);font-size:0.78rem;">Next: ' + s.name + ' — ' + when + ' ' + pjFmtClock(s.start) + ' ET</span>';
   }
-  bar.style.borderBottomColor = 'rgba(220,38,38,0.25)';
+  bar.style.borderBottomColor = 'var(--border)';
 }
 
 tickCountdown();
@@ -1707,7 +1707,7 @@ async function checkStatus() {
   if (!input) return;
 
   result.style.display = 'block';
-  result.style.background = 'rgba(124,143,163,0.08)';
+  result.style.background = 'rgba(255,255,255,0.04)';
   result.style.border = '1px solid var(--border)';
   icon.textContent = '⏳';
   text.style.color = 'var(--muted)';
@@ -1727,7 +1727,7 @@ async function checkStatus() {
 
   if (!live) {
     // Honest failure state: never guess membership from a local list.
-    result.style.background = 'rgba(124,143,163,0.08)';
+    result.style.background = 'rgba(255,255,255,0.04)';
     result.style.border = '1px solid var(--border)';
     icon.textContent = '⚠️';
     text.style.color = 'var(--muted)';
@@ -1738,16 +1738,16 @@ async function checkStatus() {
   }
 
   if (isActive) {
-    result.style.background = 'rgba(220,38,38,0.07)';
-    result.style.border = '1px solid rgba(220,38,38,0.3)';
+    result.style.background = 'rgba(255,255,255,0.04)';
+    result.style.border = '1px solid var(--border)';
     icon.textContent = '✅';
     text.style.color = 'var(--green)';
     text.textContent = 'ACTIVE';
     sub.style.color = 'var(--muted)';
     sub.textContent = 'Your premium is active. You should have your Discord role.';
   } else {
-    result.style.background = 'rgba(255,68,68,0.06)';
-    result.style.border = '1px solid rgba(255,68,68,0.3)';
+    result.style.background = 'rgba(209,67,67,0.10)';
+    result.style.border = '1px solid rgba(209,67,67,0.28)';
     icon.textContent = '❌';
     text.style.color = 'var(--red)';
     text.textContent = 'NOT ACTIVE';
@@ -2008,7 +2008,7 @@ function calcPropRisk() {
   const trades = Math.floor(drawdown / riskDollars);
   const tradesEl = document.getElementById('pr-trades');
   tradesEl.textContent = trades.toLocaleString() + ' trades';
-  tradesEl.style.color = trades >= 10 ? 'var(--green)' : trades >= 5 ? '#f0b429' : 'var(--red)';
+  tradesEl.style.color = trades >= 10 ? 'var(--green)' : trades >= 5 ? 'var(--muted)' : 'var(--red)';
   document.getElementById('pr-details').innerHTML =
     'Risking $' + riskDollars.toFixed(0) + ' per trade (' + riskPct + '% of $' + account.toLocaleString() + ')' +
     ' against a $' + drawdown.toLocaleString() + ' drawdown.' +

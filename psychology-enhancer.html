@@ -209,10 +209,10 @@
       var canvas=document.getElementById('py-chart');
       if(canvas&&window.currDrawBars){
         window.currDrawBars(canvas,[
-          {label:'Win contribution',value:wr*avgW,color:'#4ade80'},
-          {label:'Loss contribution',value:-(lr*avgL),color:'#dc2626'},
-          {label:'Friction',value:-fric,color:'#9b9296'},
-          {label:'Net expectancy',value:er,color:'#f0b429'}
+          {label:'Win contribution',value:wr*avgW,color:'#cfcfd4'},
+          {label:'Loss contribution',value:-(lr*avgL),color:'#d14343'},
+          {label:'Friction',value:-fric,color:'#6f6f76'},
+          {label:'Net expectancy',value:er,color:'#ededee'}
         ],{fmt:function(v){return v.toFixed(2)+'R';}});
       }
     }

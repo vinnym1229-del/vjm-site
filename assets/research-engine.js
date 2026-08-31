@@ -3,7 +3,7 @@
 
   const $ = (id) => document.getElementById(id);
   const state = { module: 'options', data: {}, loading: false };
-  const COLORS = { red:'#dc2626', green:'#00e676', amber:'#f59e0b', blue:'#60a5fa', muted:'#8ea1b8', text:'#edf3fb', line:'#30445e' };
+  const COLORS = { red:'#d14343', green:'#cfcfd4', amber:'#6f6f76', blue:'#8e8e95', muted:'#9a9aa0', text:'#ededee', line:'#3a3a40' };
 
   function esc(value) {
     return String(value ?? '').replace(/[&<>'"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -156,7 +156,7 @@
   }
   function showModuleError(statusId, err) {
     const node = $(statusId);
-    if (node) { node.textContent = err.message; node.style.color = '#ff8a8a'; }
+    if (node) { node.textContent = err.message; node.style.color = '#e26060'; }
   }
 
   async function loadOptions() {
