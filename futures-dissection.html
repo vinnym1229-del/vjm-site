@@ -278,7 +278,7 @@ value area width  = 5015.00 − 5009.00 = 6.00 points</div>
 <div class="formula">test (a)  12,400 ÷ 16,000 = 77.5% ≥ 60%          → pass
 test (b)  developing POC 5017.00 ≥ VAH 5015.00   → pass
 → classify as ACCEPTANCE above prior value</div>
-<p><b>5 · The order.</b> Buy limit <b>5015.50</b> — the retest of the prior VAH, which if acceptance is genuine is now the floor of the new range rather than its ceiling. Stop <b>5011.75</b>, one tick below the 5012.00 shelf: 6,600 contracts changed hands there, so trading beneath it says the market has returned into the old value and the reason for the trade no longer exists. Target <b>5021.00</b> = VAH + one value-area width (6.00 points), which also sits inside the thin 5018–5020 pocket where the prior session found no business.</p>
+<p><b>5 · The order.</b> Buy limit <b>5015.50</b> — the retest of the prior VAH, which if acceptance is genuine is now the floor of the new range rather than its ceiling. Stop <b>5011.75</b>, one tick below the 5012.00 shelf: 6,600 contracts changed hands there, so trading beneath it says the market has returned into the old value and the reason for the trade no longer exists. Target <b>5021.00</b> = VAH + one value-area width (6.00 points), which sits just above the thin 5018–5020 pocket where the prior session found no business.</p>
 <div class="formula">stop distance    = 5015.50 − 5011.75 = 3.75 points = 15 ticks
 risk per ES      = 15 × $12.50 = $187.50
 target distance  = 5021.00 − 5015.50 = 5.50 points = 22 ticks = $275.00
@@ -472,12 +472,13 @@ size            = floor($500 risk budget ÷ $265.00) = 1 ES
 planned worst case = $265.00 = 0.53% of a hypothetical $50,000 account</div>
 <p>The $500 budget is 1.0% of the hypothetical account — a policy stated up front, not a result.</p>
 <p><b>5 · Management.</b> The target is anchored to a <em>cash</em> level, so it moves when the model's inputs move, not when the ES chart looks tired. <em>Rules:</em> (a) re-derive the ES-equivalent target if the dividend estimate changes — dividends going ex reduce D and mechanically raise fair basis; (b) if realised basis diverges from fair basis by more than 1.50 points with no change in the rate or dividend inputs, treat it as a liquidity or data condition rather than an edge, and cut the position to flat rather than reasoning about it live; (c) at +5.00 points (5,031.00, one R) move the stop to 5,036.00, since from there the only remaining cost is the assumed $15.00 of commission and slippage.</p>
-<p><b>6 · The counterfactual — a "premium blow-out" that means nothing.</b> Next morning, cash opens at 5,000.90 and ES at 5,038.50, so the observed basis is +37.60 rather than yesterday's +34.51. On a basis chart that is a three-point premium expansion and it reads as aggressive futures buying. It is not:</p>
-<div class="formula">overnight, 3.10 index points of dividends went ex
+<p><b>6 · The counterfactual — a "premium blow-out" that means nothing.</b> Next morning, cash opens at 5,000.90 and ES at 5,037.80, so the observed basis is +36.90 rather than yesterday's +34.51. On a basis chart that is a 2.4-point premium expansion and it reads as aggressive futures buying. It is not:</p>
+<div class="formula">overnight, 3.10 index points of dividends went ex — and one day of carry rolled off
 new D            = 14.20 − 3.10 = 11.10
-new fair basis   = carry − D = (5,000.90 × 0.00973333) − 11.10 ≈ 48.68 − 11.10 = +37.58
-observed basis   = +37.60
-difference       = 0.02 points → the entire move is explained by the dividend drop</div>
+new t            = 72 ÷ 360, so r × t = 0.0480 × 0.200000 = 0.00960000
+new fair basis   = carry − D = (5,000.90 × 0.00960000) − 11.10 ≈ 48.01 − 11.10 = +36.91
+observed basis   = +36.90
+difference       = 0.01 points → the whole move is the dividend drop net of one day's carry</div>
 <p>The test you can run <em>in advance</em>: before calling any basis change a signal, compute the change fair value predicts. Δfair basis = −ΔD (plus any change from the rate or from days remaining). If the observed change matches within your tolerance — 0.50 points is a workable starting figure — nothing happened, and there is no trade in it. The dividend calendar is the cheapest filter in this lesson, and it is the one most people skip.</p>
 <p><b>7 · Performance task.</b> New constructed inputs: cash index S = 4,800.00; r = 5.20% annualised; 45 days to expiration (ACT/360); expected dividends D = 7.50 index points; ES trading 4,830.00; prior cash close 4,790.00. Produce seven numbers: (a) carry, (b) fair value F, (c) fair basis, (d) actual basis, (e) premium or discount of ES to fair value, (f) implied cash level and implied cash gap, (g) the ES price equivalent to cash returning to 4,790.00.</p>
 <div class="correct"><span class="label">Worked answer &amp; rubric</span><div class="formula">r × t   = 0.0520 × (45 ÷ 360) = 0.0065
