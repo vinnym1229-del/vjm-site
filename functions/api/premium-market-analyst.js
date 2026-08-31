@@ -7,14 +7,23 @@
 // metrics. No advice, no predictions — educational trend readout.
 //
 // Auth: HttpOnly premium session cookie (issued by /api/verify-premium),
-// verified with the shared session lib. This endpoint is served to the
-// members' hub (premium-guidance.html), which always uses cookie sessions.
+// verified with the shared session lib, then checked against RESOURCE_TIERS —
+// this tool is part of the Complete membership. No session at all is a 401;
+// an authenticated member below the required tier is a 403 so the UI can say
+// "your plan does not include this" instead of asking them to sign in again.
+// This endpoint is served to the members' hub (premium-guidance.html) and to
+// the research engine, both of which use cookie sessions.
 
 import {
   resolveSigningSecret, verifySessionToken, readSessionCookie,
 } from './_lib/session.js';
 import { json, fetchJsonWithTimeout, checkRateLimit } from './_lib/http.js';
 import { complete } from './_lib/ai.js';
+import { authorizeResource } from './_lib/entitlements.js';
+
+const RESOURCE_PATH = '/api/premium-market-analyst';
+const ALLOW = { allowed: true };
+const DENY_401 = { allowed: false, status: 401, body: { ok: false, error: 'A premium session is required.' } };
 
 const SYMBOL = 'QQQ';
 const FEED = 'iex';
@@ -25,8 +34,8 @@ export async function onRequestGet(context) {
   const url = new URL(request.url);
   const years = Number(url.searchParams.get('years') || 3);
 
-  const authorized = await isAuthorized(request, env);
-  if (!authorized) return json({ ok: false, error: 'A premium session is required.' }, 401);
+  const decision = await isAuthorized(request, env);
+  if (!decision.allowed) return json(decision.body, decision.status);
 
   if (!YEARS_ALLOWED.has(years)) {
     return json({ ok: false, error: 'years must be 1, 3, or 5.' }, 400);
@@ -187,11 +196,26 @@ function buildDataBlock(symbol, years, m) {
 
 // ─── Auth (premium session cookie only) ────────────────────────────────────
 
+// Returns {allowed:true} or {allowed:false,status,body}. Missing signing
+// secret, missing cookie and a bad signature all fail closed as 401.
 async function isAuthorized(request, env) {
   const secret = resolveSigningSecret(env);
-  if (!secret) return false;
+  if (!secret) return DENY_401;
   const token = readSessionCookie(request);
-  if (!token) return false;
+  if (!token) return DENY_401;
   const payload = await verifySessionToken(token, secret);
-  return Boolean(payload);
+  if (!payload) return DENY_401;
+  const entitlement = authorizeResource(payload, RESOURCE_PATH, env);
+  if (entitlement.allowed) return ALLOW;
+  return {
+    allowed: false,
+    status: 403,
+    body: {
+      ok: false,
+      code: 'upgrade_required',
+      error: 'Your plan does not include the premium market analyst. It is part of the Complete membership.',
+      requiredTier: entitlement.required,
+      heldTier: entitlement.held,
+    },
+  };
 }

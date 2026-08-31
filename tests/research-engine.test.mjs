@@ -225,4 +225,40 @@ assert.equal(bullishSummary.n, 2);
 assert.equal(bullishSummary.retestRate, 0.5);
 assert.equal(bullishSummary.medianMinutesToRetest, 10, 'the untested row\'s null minutesToRetest must not pull the median down');
 
+// ---------------------------------------------------------------------------
+// Client contract for the cookie session and the 403 "plan" state.
+//
+// The browser authenticates with the HttpOnly session cookie and nothing else,
+// so a fetch that omits credentials silently sends no session at all -- the
+// exact shape of the bug where the page showed itself unlocked while every
+// data request 401'd. And a 403 is an entitlement answer, not a transient
+// failure: it must not render as the generic retryable error.
+// ---------------------------------------------------------------------------
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const clientJs = readFileSync(resolve(projectRoot, 'assets/research-engine.js'), 'utf8');
+const clientHtml = readFileSync(resolve(projectRoot, 'research-engine.html'), 'utf8');
+
+for (const match of clientJs.matchAll(/fetch\(([^)]*)\)/g)) {
+  assert.ok(
+    match[0].includes("credentials:'same-origin'") || match[0].includes("credentials: 'same-origin'"),
+    `every fetch must send the session cookie: ${match[0]}`,
+  );
+}
+
+assert.match(clientJs, /planLocked\s*=\s*res\.status === 403/, 'a 403 must be recognised as a plan/entitlement state');
+assert.ok(clientJs.includes('showPlanNotice'), 'a 403 must render a dedicated plan notice, not the generic error');
+assert.match(clientHtml, /id="planNotice"[^>]*hidden/, 'the plan notice must ship hidden and be revealed only on a 403');
+
+// The site is mid-rebrand to white/black with red as a restrained accent: the
+// new state must borrow existing tokens rather than introduce a colour.
+const planBranchStart = clientJs.indexOf('if (err && err.planLocked)');
+assert.ok(planBranchStart > 0, 'showModuleError must branch on the plan-locked state');
+const planBranch = clientJs.slice(planBranchStart, clientJs.indexOf('return;', planBranchStart));
+assert.doesNotMatch(planBranch, /#[0-9a-fA-F]{3,8}/, 'the plan state must not add a new colour literal');
+assert.ok(planBranch.includes('var(--amber)'), 'the plan state reuses an existing palette token');
+
 console.log('VJM research-engine calculation tests passed.');

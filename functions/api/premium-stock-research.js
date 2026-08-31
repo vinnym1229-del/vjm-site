@@ -2,7 +2,9 @@
 //
 // PREMIUM-GATED quote snapshot. Authorization is enforced server-side via
 // either the HttpOnly session cookie or a valid Bearer token (used by the
-// research engine during its migration window).
+// research engine during its migration window). A verified session is then
+// checked against RESOURCE_TIERS: an under-tier member gets 403 (upgrade),
+// an unauthenticated caller gets 401 (sign in).
 //
 // Returns live Alpaca IEX snapshot + tradingViewSymbol. Owner memos stay
 // client-side; this endpoint only serves sourced market data.
@@ -10,7 +12,12 @@
 import {
   resolveSigningSecret, verifySessionToken, readSessionCookie,
 } from './_lib/session.js';
+import { authorizeResource } from './_lib/entitlements.js';
 import { json, cleanSymbol, fetchJsonWithTimeout, checkRateLimit } from './_lib/http.js';
+
+const RESOURCE_PATH = '/api/premium-stock-research';
+const ALLOW = { allowed: true };
+const DENY_401 = { allowed: false, status: 401, body: { ok: false, error: 'A premium session is required.' } };
 
 export async function onRequestGet(context) {
   const { request, env } = context;
@@ -19,8 +26,8 @@ export async function onRequestGet(context) {
 
   if (!symbol) return json({ ok: false, error: 'Provide a valid ticker symbol.' }, 400);
 
-  const authorized = await isAuthorized(request, env);
-  if (!authorized) return json({ ok: false, error: 'A premium session is required.' }, 401);
+  const decision = await isAuthorized(request, env);
+  if (!decision.allowed) return json(decision.body, decision.status);
 
   if (!env.ALPACA_API_KEY || !env.ALPACA_SECRET_KEY) {
     return json({ ok: false, error: 'Live quotes are not configured on the server.' }, 503);
@@ -84,14 +91,31 @@ export async function onRequestGet(context) {
   }
 }
 
+// Returns {allowed:true} or {allowed:false,status,body}.
 async function isAuthorized(request, env) {
-  // 1) Session cookie (primary).
+  // 1) Session cookie (primary). A verified session's signed tier claim
+  // decides: under-tier is 403 (upgrade), never 401 (sign in), and the legacy
+  // Bearer path below must not be able to override that decision.
   const secret = resolveSigningSecret(env);
   if (secret) {
     const token = readSessionCookie(request);
     if (token) {
       const payload = await verifySessionToken(token, secret);
-      if (payload) return true;
+      if (payload) {
+        const entitlement = authorizeResource(payload, RESOURCE_PATH, env);
+        if (entitlement.allowed) return ALLOW;
+        return {
+          allowed: false,
+          status: 403,
+          body: {
+            ok: false,
+            code: 'upgrade_required',
+            error: 'Your plan does not include premium stock research. It is part of the Complete membership.',
+            requiredTier: entitlement.required,
+            heldTier: entitlement.held,
+          },
+        };
+      }
     }
   }
   // 2) Legacy Bearer token (research-engine compatibility until migrated).
@@ -116,13 +140,13 @@ async function isAuthorized(request, env) {
           try {
             const json = atob(parts[0].replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((parts[0].length + 3) % 4));
             const payload = JSON.parse(json);
-            if (Number(payload.exp) > Date.now()) return true;
+            if (Number(payload.exp) > Date.now()) return ALLOW;
           } catch { /* fallthrough */ }
         }
       }
     }
   }
-  return false;
+  return DENY_401;
 }
 
 function encoderBytes(str) {

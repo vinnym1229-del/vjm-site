@@ -1,10 +1,20 @@
 import { checkRateLimit } from './_lib/http.js';
+import { getSession } from './_lib/session.js';
+import { authorizeResource } from './_lib/entitlements.js';
 
 // Cloudflare Pages Function: GET /api/research-engine?module=<health|options|intraday|stock|sectors|biotech>
 //
 // Security:
 // - ALPACA_API_KEY and ALPACA_SECRET_KEY exist only as Pages environment secrets.
-// - All data modules require a valid premium bearer token or X-Research-Cron.
+// - All data modules require one of three credentials:
+//     1. the HttpOnly member session cookie (what a signed-in browser sends —
+//        this is the only one the Research Engine UI can actually produce),
+//     2. the X-Research-Cron shared secret (the scheduled refresh job),
+//     3. a legacy PREMIUM_ACCESS_CODES Bearer token (migration window only).
+//   Before this route read the cookie, the page could show itself "unlocked"
+//   while every data request 401'd, because the browser has no bearer token.
+// - Tier is checked with the signed session claim via authorizeResource, so a
+//   Futures Core member gets an explicit 403 (upgrade) rather than a 401.
 // - Health reveals configuration booleans only, never secret values.
 //
 // Optional persistence:
@@ -49,8 +59,8 @@ export async function onRequestGet(context) {
     });
   }
 
-  const authorized = await authorize(request, context.env);
-  if (!authorized) return json({ok:false,error:'A valid premium session is required.'}, 401);
+  const decision = await authorize(request, context.env);
+  if (!decision.allowed) return json(decision.body, decision.status);
   if (!context.env.ALPACA_API_KEY || !context.env.ALPACA_SECRET_KEY) {
     return json({ok:false,error:'Alpaca is not configured on the server. Add ALPACA_API_KEY and ALPACA_SECRET_KEY to Cloudflare Pages secrets.'}, 503);
   }
@@ -77,14 +87,49 @@ export async function onRequestGet(context) {
   }
 }
 
+const RESOURCE_PATH = '/api/research-engine';
+const ALLOW = {allowed:true};
+const DENY_401 = {allowed:false,status:401,body:{ok:false,error:'A valid premium session is required.'}};
+
+// Returns {allowed:true} or {allowed:false,status,body}. Three credentials are
+// accepted; every failure path is fail-closed and costs no upstream call.
 async function authorize(request, env) {
+  // 1) Scheduled refresh job. Unchanged: the cron secret still authorizes.
   const cron = request.headers.get('X-Research-Cron') || '';
-  if (cron && env.RESEARCH_CRON_SECRET && timingSafeEqual(cron, env.RESEARCH_CRON_SECRET)) return true;
+  if (cron && env.RESEARCH_CRON_SECRET && timingSafeEqual(cron, env.RESEARCH_CRON_SECRET)) return ALLOW;
+
+  // 2) Member session cookie — the browser's only credential. A verification
+  // failure (missing signing secret, tampered or expired cookie) throws or
+  // returns null, and both are treated as "no session".
+  let session = null;
+  try { session = await getSession(request, env); } catch { session = null; }
+  if (session) {
+    const entitlement = authorizeResource(session, RESOURCE_PATH, env);
+    if (entitlement.allowed) return ALLOW;
+    // Authenticated but under-tier: 403, never 401, so the UI can say "your
+    // plan does not include this" instead of asking them to sign in again.
+    // A legacy Bearer token must NOT be able to undo this decision, or the
+    // tier gate would have a bypass — so we stop here rather than falling
+    // through to the migration path below.
+    return {
+      allowed: false,
+      status: 403,
+      body: {
+        ok: false,
+        code: 'upgrade_required',
+        error: 'Your plan does not include the Research Engine. It is part of the Complete membership.',
+        requiredTier: entitlement.required,
+        heldTier: entitlement.held,
+      },
+    };
+  }
+
+  // 3) Legacy PREMIUM_ACCESS_CODES Bearer token (migration window).
   const auth = request.headers.get('Authorization') || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-  if (!token || !env.PREMIUM_ACCESS_CODES) return false;
+  if (!token || !env.PREMIUM_ACCESS_CODES) return DENY_401;
   const payload = await verifyToken(token, env.PREMIUM_ACCESS_CODES);
-  return Boolean(payload && Number(payload.exp) > Date.now());
+  return payload && Number(payload.exp) > Date.now() ? ALLOW : DENY_401;
 }
 
 async function optionsModule(params, env) {

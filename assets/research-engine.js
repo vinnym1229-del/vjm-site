@@ -81,12 +81,18 @@
   }
 
   async function jsonFetch(url, options = {}) {
-    // Session travels via HttpOnly cookie; no Authorization header needed.
+    // Session travels via HttpOnly cookie; no Authorization header needed —
+    // but the cookie only rides along when credentials are requested, which is
+    // why every call here goes through this helper.
     const res = await fetch(url, {...options, credentials:'same-origin', cache:'no-store'});
     const payload = await res.json().catch(() => ({ok:false,error:'The server returned a non-JSON response.'}));
     if (!res.ok || payload.ok === false) {
       const err = new Error(payload.error || payload.message || `Request failed (${res.status})`);
-      err.status = res.status; err.payload = payload; throw err;
+      err.status = res.status; err.payload = payload;
+      // 403 = signed in, but the tier does not cover this tool. That is an
+      // entitlement state, not a transient failure to retry.
+      err.planLocked = res.status === 403 || payload.code === 'upgrade_required';
+      throw err;
     }
     return payload;
   }
@@ -131,6 +137,7 @@
     finally { $('restoreButton').disabled = false; }
   }
   function activateEngine() {
+    hidePlanNotice();
     $('researchGate').style.display = 'none';
     $('engine').classList.add('unlocked');
     requestAnimationFrame(() => $('engine').scrollIntoView({behavior:'smooth',block:'start'}));
@@ -166,8 +173,27 @@
     $('globalAsOf').textContent = dateText(response.asOf);
     $('globalMode').textContent = String(response.mode || 'Observed').toUpperCase();
   }
+  const PLAN_LOCKED_TEXT = 'Your plan does not include the Research Engine. It is part of the Complete membership.';
+  function showPlanNotice(message) {
+    const node = $('planNotice');
+    if (!node) return;
+    node.textContent = message || PLAN_LOCKED_TEXT;
+    node.hidden = false;
+  }
+  function hidePlanNotice() {
+    const node = $('planNotice');
+    if (node) node.hidden = true;
+  }
   function showModuleError(statusId, err) {
     const node = $(statusId);
+    // A 403 means the member is signed in and the server verified them — their
+    // plan simply does not cover this tool. Rendering the generic red error
+    // here would tell them to retry something that can never succeed.
+    if (err && err.planLocked) {
+      showPlanNotice(err.message);
+      if (node) { node.textContent = 'Locked on your current plan.'; node.style.color = 'var(--amber)'; }
+      return;
+    }
     if (node) { node.textContent = err.message; node.style.color = 'var(--red-ink, #e26060)'; }
   }
 
