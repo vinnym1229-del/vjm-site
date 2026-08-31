@@ -15,7 +15,7 @@
 // the research engine, both of which use cookie sessions.
 
 import {
-  resolveSigningSecret, verifySessionToken, readSessionCookie,
+  resolveSigningSecret, verifySessionToken, readSessionCookie, sessionEntitlementCheck,
 } from './_lib/session.js';
 import { json, fetchJsonWithTimeout, checkRateLimit } from './_lib/http.js';
 import { complete } from './_lib/ai.js';
@@ -205,6 +205,11 @@ async function isAuthorized(request, env) {
   if (!token) return DENY_401;
   const payload = await verifySessionToken(token, secret);
   if (!payload) return DENY_401;
+  // A valid signature only proves the cookie was ours when minted, not that
+  // the membership still exists — without this, a canceled member keeps this
+  // paid endpoint until the cookie expires.
+  const live = await sessionEntitlementCheck(payload, env);
+  if (!live.ok) return DENY_401;
   const entitlement = authorizeResource(payload, RESOURCE_PATH, env);
   if (entitlement.allowed) return ALLOW;
   return {

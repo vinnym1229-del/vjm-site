@@ -245,3 +245,45 @@ async function tierCookie(tier) {
 }
 
 console.log('VJM premium-stock-research API tests passed.');
+
+// ---------------------------------------------------------------------------
+// Mid-session revocation on the paid endpoint itself.
+//
+// A valid HMAC signature only proves the cookie was ours when it was minted.
+// This route verified the signature and the signed tier claim but never asked
+// whether the membership still existed, so a canceled member kept the paid
+// endpoint for the remaining life of the cookie (up to 30 days) -- the exact
+// leak migration 0006's session_epoch/status check closes, which this route
+// bypassed by calling verifySessionToken directly instead of getSession.
+// ---------------------------------------------------------------------------
+
+const REVOKE_MR = 'c'.repeat(16);
+
+async function liveMemberCookie() {
+  const token = await signSession(
+    { v: SESSION_VERSION, mr: REVOKE_MR, t: TIERS.COMPLETE, sv: 1, src: 'd1', exp: Date.now() + 60000 },
+    SIGNING_SECRET,
+  );
+  return { Cookie: `__Host-vjm_session=${token}` };
+}
+
+const rowDb = (row) => ({
+  RESEARCH_DB: { prepare() { return { bind() { return { async first() { return row; } }; } }; } },
+});
+
+{
+  const noUpstream = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('must not call upstream for a revoked member'); };
+  try {
+    for (const [label, row] of [
+      ['revoked', { status: 'revoked', expires_at: null, session_epoch: 1 }],
+      ['expired', { status: 'active', expires_at: new Date(Date.now() - 86400000).toISOString(), session_epoch: 1 }],
+      ['epoch bumped by a cancellation', { status: 'active', expires_at: null, session_epoch: 2 }],
+    ]) {
+      const { status } = await lookup(baseEnv(rowDb(row)), 'AAPL', await liveMemberCookie());
+      assert.equal(status, 401, `a ${label} member must lose this paid endpoint before the cookie expires`);
+    }
+  } finally {
+    globalThis.fetch = noUpstream;
+  }
+}

@@ -16,19 +16,37 @@
 //   MEMBERS_BRIDGE_URL       new authenticated single-record bridge URL
 //   MEMBERS_BRIDGE_SECRET    shared secret for the authenticated bridge
 //   SESSION_DAYS             optional session lifetime (default 7, max 30)
-//   RESEARCH_DB              optional D1; holds whop_codes.tier (migration 0005)
+//   RESEARCH_DB              D1; holds whop_codes (migrations 0003-0006)
+//
+// SOURCE OF TRUTH (migration 0006). D1 is checked FIRST and its answer is
+// final — including its refusals. Only when D1 has nothing to say about a
+// code (no row, no binding, or an outage) does the owner's Google Sheet
+// bridge get consulted, and then only to say "yes". That ordering is the
+// whole point: a code the Whop webhook has revoked must stay dead even while
+// the Sheet still lists the member as Active, and a code the webhook just
+// minted must work immediately without anyone copying it into the Sheet.
 //
 // The issued session carries a signed tier claim (`t`) so the middleware and
-// the paid APIs can tell a $100 Futures member from a $129 Complete member.
+// the paid APIs can tell a $100 Futures member from a $129 Complete member,
+// plus `sv` (the member's session epoch) and `src` (which authority granted
+// it) so the entitlement check in _lib/session.js can kill it mid-flight.
 
 import {
   resolveSigningSecret, signSession, getSession, sessionDays,
+  loadEntitlementByCodeHash, entitlementRowState, memberRefFromCodeHash,
+  SESSION_SOURCE,
 } from './_lib/session.js';
 import { json, jsonWithSession, checkRateLimit } from './_lib/http.js';
 import { turnstileConfigured, verifyTurnstile } from './_lib/turnstile.js';
 import { SESSION_VERSION, isTier, resolveTier } from './_lib/entitlements.js';
 
 const GENERIC_BAD_CODE = 'We could not activate this code. Check it and try again, or DM St1101 on Discord.';
+
+// A distinct message is safe here and only here: to see it you must already
+// possess a code we issued, so it reveals nothing an attacker could enumerate
+// — and telling a lapsed customer "renew" instead of "check your code" is the
+// difference between a renewal and a support ticket.
+const MEMBERSHIP_ENDED = 'That membership is no longer active. Renew on Whop, or DM St1101 on Discord if you think this is wrong.';
 
 export async function onRequestPost(context) {
   try { return await handlePost(context); }
@@ -78,6 +96,48 @@ async function handlePost(context) {
     }
   }
 
+  const codeHash = await sha256Hex(code);
+  const memberRef = memberRefFromCodeHash(codeHash);
+  const days = sessionDays(env);
+  const cap = Date.now() + days * 24 * 60 * 60 * 1000;
+
+  // ── 1. D1 first, and its refusals are final ─────────────────────────────
+  const d1 = await loadEntitlementByCodeHash(env, codeHash);
+  if (d1.ok && d1.row) {
+    const state = entitlementRowState(d1.row);
+    if (!state.live) {
+      // Revoked, expired, or never delivered. Do NOT fall through to the
+      // Sheet: the Sheet is a human-maintained mirror that lags behind
+      // cancellations, and consulting it here is precisely how a canceled
+      // customer used to keep their access.
+      await auditEvent(env, 'verify_code', 'denied_' + state.reason, code);
+      const expiredish = state.reason === 'expired' || state.reason === 'revoked';
+      return json({ ok: false, error: expiredish ? MEMBERSHIP_ENDED : GENERIC_BAD_CODE }, expiredish ? 403 : 401);
+    }
+    // Honour the plan's own expiry, but never mint a token that outlives the
+    // session cap (a yearly plan must not become a year-long bearer token).
+    const expiresAt = state.expiresAt === null ? cap : Math.min(state.expiresAt, cap);
+    const token = await signSession(
+      {
+        v: SESSION_VERSION,
+        mr: memberRef,
+        dn: d1.row.discord || '',
+        t: isTier(d1.row.tier) ? d1.row.tier : unconfiguredDefaultTier(env),
+        sv: state.epoch,
+        src: SESSION_SOURCE.D1,
+        exp: expiresAt,
+      },
+      secret
+    );
+    await auditEvent(env, 'verify_code', 'granted_d1', code);
+    return jsonWithSession(
+      { ok: true, expiresAt: new Date(expiresAt).toISOString(), discord: d1.row.discord || null },
+      token,
+      Math.max(60, Math.floor((expiresAt - Date.now()) / 1000))
+    );
+  }
+
+  // ── 2. Sheet bridge fallback (migration path only — see RETIRING THE SHEET) ──
   const record = await lookupByCode(env, code);
   if (!record) {
     // One generic message for unknown code AND inactive member: prevents
@@ -86,15 +146,20 @@ async function handlePost(context) {
     return json({ ok: false, error: GENERIC_BAD_CODE }, 401);
   }
 
-  const days = sessionDays(env);
-  const expiresAt = Date.now() + days * 24 * 60 * 60 * 1000;
-  const memberRef = await memberRefFor(code);
-  const tier = await tierForCode(env, code);
+  const expiresAt = cap;
   const token = await signSession(
-    { v: SESSION_VERSION, mr: memberRef, dn: record.discord || '', t: tier, exp: expiresAt },
+    {
+      v: SESSION_VERSION,
+      mr: memberRef,
+      dn: record.discord || '',
+      t: unconfiguredDefaultTier(env),
+      sv: 0,
+      src: SESSION_SOURCE.SHEET,
+      exp: expiresAt,
+    },
     secret
   );
-  await auditEvent(env, 'verify_code', 'granted', code);
+  await auditEvent(env, 'verify_code', 'granted_sheet', code);
 
   return jsonWithSession(
     { ok: true, expiresAt: new Date(expiresAt).toISOString(), discord: record.discord || null },
@@ -118,37 +183,53 @@ async function handleGet(context) {
 }
 
 // ---------------------------------------------------------------------------
-// Tier resolution for a code
+// Tier resolution for a Sheet-only member
 // ---------------------------------------------------------------------------
 
-// The whop-webhook records the tier it resolved on the whop_codes row keyed
-// by SHA-256 of the code (migration 0005), so a code minted by a Whop
-// purchase carries its real product's tier.
+// A code with a whop_codes row carries the tier the webhook resolved at
+// purchase time; that is read inline above.
 //
-// A code that has no D1 row is a legacy member: the owner's Google Sheet
-// predates whop_codes entirely, and the member bridge above just confirmed
-// they are active and paying. Locking them out because we cannot name their
-// product would break live customers, so they get resolveTier's
-// *unconfigured default* — the same tier this site granted everyone before
-// tiers existed (WHOP_DEFAULT_TIER, else 'complete'). Passing an env with no
-// allowlists forces that branch deliberately: the allowlists are for
-// classifying Whop products, and a Sheet-only member has no product id to
-// classify, so 'not_allowlisted' would be the wrong answer, not a safer one.
-async function tierForCode(env, code) {
-  const fallback = resolveTier({ WHOP_DEFAULT_TIER: env && env.WHOP_DEFAULT_TIER }, {}).tier;
-  if (!env || !env.RESEARCH_DB) return fallback;
-  try {
-    const hash = await sha256Hex(code);
-    const row = await env.RESEARCH_DB
-      .prepare('SELECT tier FROM whop_codes WHERE code_hash = ?1 LIMIT 1')
-      .bind(hash).first();
-    if (row && isTier(row.tier)) return row.tier;
-  } catch {
-    // Tier lookup is best-effort: a D1 outage must not lock out a member the
-    // bridge already verified. Fall back rather than fail the sign-in.
-  }
-  return fallback;
+// A code with NO D1 row is a legacy member: the owner's Google Sheet predates
+// whop_codes entirely, and the member bridge has just confirmed they are
+// active and paying. Locking them out because we cannot name their product
+// would break live customers, so they get resolveTier's *unconfigured
+// default* — the same tier this site granted everyone before tiers existed
+// (WHOP_DEFAULT_TIER, else 'complete'). Passing an env with no allowlists
+// forces that branch deliberately: the allowlists classify Whop products, and
+// a Sheet-only member has no product id to classify, so 'not_allowlisted'
+// would be the wrong answer, not a safer one.
+function unconfiguredDefaultTier(env) {
+  return resolveTier({ WHOP_DEFAULT_TIER: env && env.WHOP_DEFAULT_TIER }, {}).tier;
 }
+
+// ---------------------------------------------------------------------------
+// RETIRING THE SHEET — what is actually left
+// ---------------------------------------------------------------------------
+//
+// The Sheet is now a fallback that D1 overrides and never the reverse: a
+// revoked or expired D1 row is refused above without the bridge being asked,
+// and a code the webhook minted works before any human touches the Sheet.
+// What still has to happen before MEMBERS_STATUS_URL / MEMBERS_BRIDGE_URL and
+// the branch below can be deleted:
+//
+//   1. Backfill. Every member who exists only as a Sheet row needs a
+//      whop_codes row (member_ref, status, tier, expires_at). We hold only
+//      hashes of codes we minted, so codes issued by hand before the webhook
+//      existed CANNOT be reconstructed from D1 — the owner must either
+//      re-issue those members a code through Whop or export the Sheet and
+//      import sha256(code) rows. This is the one step nobody can automate
+//      from inside this repo.
+//   2. Verify the backfill: for a sampled set of Sheet-active members,
+//      sign-in must succeed with MEMBERS_STATUS_URL unset.
+//   3. Flip STRICT_D1_ENTITLEMENTS=true. Until then a cookie minted from the
+//      Sheet is allowed to survive when D1 has no row for it (see
+//      _lib/session.js sessionEntitlementCheck) — that is the last remaining
+//      way a Sheet-era member outlives a D1 decision, and it closes the day
+//      step 1 is done.
+//   4. Only then delete the bridge branch here, in check-member-status.js,
+//      and the Apps Script endpoint.
+//
+// Until step 1 is done this bridge is load-bearing. Do not delete it early.
 
 async function sha256Hex(s) {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
@@ -235,11 +316,6 @@ async function lookupViaLegacyBridge(env, pick) {
   return pick(data);
 }
 
-async function memberRefFor(code) {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('vjm-member:' + code));
-  return [...new Uint8Array(digest)].slice(0, 8).map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
 async function auditEvent(env, type, outcome, subject) {
   if (!env.RATELIMIT_DB && !env.RESEARCH_DB) return;
   const db = env.RATELIMIT_DB || env.RESEARCH_DB;
@@ -255,4 +331,4 @@ async function auditEvent(env, type, outcome, subject) {
 }
 
 // Exported for contract tests.
-export { GENERIC_BAD_CODE };
+export { GENERIC_BAD_CODE, MEMBERSHIP_ENDED };

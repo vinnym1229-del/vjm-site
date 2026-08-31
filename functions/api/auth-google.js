@@ -17,8 +17,18 @@
 //                             Cloud Console (public value, not a secret)
 //   SESSION_SIGNING_SECRET    required, shared with verify-premium.js
 //   RESEARCH_DB               required — holds whop_codes
+//
+// D1 is the sole authority on this path — there is no Sheet fallback here at
+// all. The row's status and expires_at are evaluated by the same shared rule
+// (_lib/session.js entitlementRowState) that the mid-session revocation check
+// uses, so "may sign in" and "may stay signed in" can never drift apart. The
+// session carries `sv` (the row's session epoch) so a later cancellation
+// kills the cookie without waiting it out.
 
-import { resolveSigningSecret, signSession, sessionDays } from './_lib/session.js';
+import {
+  resolveSigningSecret, signSession, sessionDays,
+  entitlementRowState, memberRefFromCodeHash, SESSION_SOURCE,
+} from './_lib/session.js';
 import { json, jsonWithSession, checkRateLimit } from './_lib/http.js';
 import { SESSION_VERSION, isTier, resolveTier } from './_lib/entitlements.js';
 
@@ -68,39 +78,51 @@ async function handle(context) {
   const email = String(claims.email).trim().toLowerCase();
   const emailHash = await sha256Hex(email);
 
-  const row = await env.RESEARCH_DB.prepare(
-    `SELECT code_hash, discord, plan_name, expires_at, whop_product, tier FROM whop_codes
-     WHERE email_hash = ?1 AND status != 'revoked'
-     ORDER BY created_at DESC LIMIT 1`
-  ).bind(emailHash).first();
+  // `status != 'revoked'` is not the same as "entitled": a 'pending' row (a
+  // code that was minted but never delivered) is not a membership either, and
+  // ordering by created_at could hand back a newer dead row while an older
+  // live one exists. Select the candidates and let the shared entitlement
+  // rule — the same one the mid-session revocation check applies — decide.
+  const rows = await env.RESEARCH_DB.prepare(
+    `SELECT code_hash, discord, plan_name, expires_at, whop_product, tier, status, session_epoch
+     FROM whop_codes
+     WHERE email_hash = ?1
+     ORDER BY created_at DESC LIMIT 10`
+  ).bind(emailHash).all().catch(() => null);
 
-  if (!row) {
+  const candidates = rows && Array.isArray(rows.results) ? rows.results : [];
+  if (candidates.length === 0) {
     return json({ ok: false, error: NO_MATCH }, 404);
   }
 
-  const days = sessionDays(env);
-  const fallbackExpiry = Date.now() + days * 24 * 60 * 60 * 1000;
-  const storedExpiry = row.expires_at ? Date.parse(row.expires_at) : NaN;
-  // An expired membership must be REJECTED, not quietly re-issued. The old
-  // code only used the stored expiry when it was still in the future and
-  // otherwise fell through to `fallbackExpiry` — so a lapsed member whose
-  // row had not yet been revoked got a fresh full-length session, which is
-  // strictly more access than their own plan said they had.
-  if (Number.isFinite(storedExpiry) && storedExpiry <= Date.now()) {
-    return json({ ok: false, error: EXPIRED }, 403);
+  const now = Date.now();
+  const evaluated = candidates.map((r) => ({ row: r, state: entitlementRowState(r, now) }));
+  const winner = evaluated.find((e) => e.state.live);
+
+  if (!winner) {
+    // Every record on file for this account is dead. An expired or revoked
+    // membership must be REFUSED here — the old code fell through to a fresh
+    // default-length session, i.e. handed a lapsed member strictly more
+    // access than their own plan said they had.
+    const anyExpired = evaluated.some((e) => e.state.reason === 'expired');
+    return json({ ok: false, error: anyExpired ? EXPIRED : NO_MATCH }, anyExpired ? 403 : 404);
   }
+
+  const { row, state } = winner;
+  const days = sessionDays(env);
   // A yearly Whop plan must not mint a year-long irrevocable token: honor
   // the plan expiry but never exceed the session-length cap.
-  const capped = Date.now() + days * 24 * 60 * 60 * 1000;
-  const expiresAt = Number.isFinite(storedExpiry) && storedExpiry > Date.now()
-    ? Math.min(storedExpiry, capped) : fallbackExpiry;
+  const capped = now + days * 24 * 60 * 60 * 1000;
+  const expiresAt = state.expiresAt === null ? capped : Math.min(state.expiresAt, capped);
 
   const token = await signSession(
     {
       v: SESSION_VERSION,
-      mr: String(row.code_hash).slice(0, 16),
+      mr: memberRefFromCodeHash(row.code_hash),
       dn: row.discord || '',
       t: tierForRow(env, row),
+      sv: state.epoch,
+      src: SESSION_SOURCE.D1,
       exp: expiresAt,
     },
     secret

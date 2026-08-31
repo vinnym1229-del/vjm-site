@@ -4,13 +4,21 @@
 //   1. Verifies HMAC-SHA256 signature over the RAW body (x-whop-signature)
 //      and freshness of x-whop-timestamp (5-minute window).
 //   2. Idempotent per event id (webhook_events table).
-//   3. On grant: generates VJM-XXXX-XXXX access code, stores ONLY its SHA-256
-//      hash + last4, marks pending delivery.
-//   4. Delivery: posts the code to the private DISCORD_WHOP_CODES webhook
-//      (owner-only channel) when configured; otherwise stays pending for the
-//      owner to send manually. Raw codes are never persisted or emailed.
-//   5. On revoke: flips matching member's code status to 'revoked' by
-//      whop_member_id so the next bridge sync can deactivate it.
+//   3. On grant: PROVISIONS ACCESS IMMEDIATELY. It generates a VJM-XXXX-XXXX
+//      access code, stores ONLY its SHA-256 hash + last4, and writes the row
+//      as status='active' with its member_ref, tier and expiry (migration
+//      0006). Access is live the moment this row lands — it does not wait for
+//      anybody to copy a code into the owner's Google Sheet. Sign-in reads
+//      this row directly (verify-premium.js by code hash, auth-google.js by
+//      email hash).
+//   4. Delivery: posts the plaintext code to the private DISCORD_WHOP_CODES
+//      webhook (owner-only channel). This is now a NOTIFICATION, not the gate
+//      on entitlement — see the delivery block below for the one case where a
+//      failed post still has to roll the grant back.
+//   5. On revoke: flips matching member's rows to 'revoked' AND bumps their
+//      session_epoch, which invalidates every cookie already issued to them.
+//      Before migration 0006 a revoke only touched the row, so a signed-in
+//      member kept full access for up to 30 more days.
 //   6. Tier: the grant's product/plan is resolved to an entitlement tier
 //      (see _lib/entitlements.js) and persisted on the row (migration 0005),
 //      so the session minted later carries what was actually bought. A
@@ -23,6 +31,7 @@ import { json } from './_lib/http.js';
 import { normalizeWhopEvent, generateAccessCodeShape, isValidGeneratedCode, timingSafeHexEqual } from './_lib/integrations-core.js';
 import { postEmbed } from './_lib/discord.js';
 import { resolveTier } from './_lib/entitlements.js';
+import { memberRefFromCodeHash } from './_lib/session.js';
 
 const TIMESTAMP_TOLERANCE_MS = 5 * 60 * 1000;
 
@@ -104,57 +113,72 @@ export async function onRequestPost(context) {
     const hash = await sha256Hex(code);
     const emailHash = evt.email ? await sha256Hex(evt.email) : null;
 
+    // Provision in ONE transactional write: status, tier, expiry, member_ref
+    // and session epoch all land together, so there is no window in which the
+    // site knows a member exists but not what they bought or until when.
+    // status='active' from the start — the customer paid; access is theirs
+    // now, not once a human has done something.
     await env.RESEARCH_DB.prepare(
-      `INSERT INTO whop_codes (code_hash, code_last4, whop_event_id, whop_member_id, whop_product, status, email_hash, plan_name, expires_at, amount_paid_cents, currency, tier)
-       VALUES (?1, ?2, ?3, ?4, ?5, 'pending', ?6, ?7, ?8, ?9, ?10, ?11)
+      `INSERT INTO whop_codes (code_hash, code_last4, whop_event_id, whop_member_id, whop_product, status, email_hash, plan_name, expires_at, amount_paid_cents, currency, tier, member_ref, session_epoch, provisioned_at, source)
+       VALUES (?1, ?2, ?3, ?4, ?5, 'active', ?6, ?7, ?8, ?9, ?10, ?11, ?12, 1, ?13, 'whop')
        ON CONFLICT(code_hash) DO NOTHING`
     ).bind(
       hash, code.slice(-4), evt.eventId, evt.memberId, evt.productId,
-      emailHash, evt.planName, evt.expiresAt, evt.amountPaidCents, evt.currency, tier
+      emailHash, evt.planName, evt.expiresAt, evt.amountPaidCents, evt.currency, tier,
+      memberRefFromCodeHash(hash), new Date().toISOString()
     ).run();
 
+    // The row above is what grants access. The Discord post below only
+    // carries the PLAINTEXT code, which exists solely in this local variable
+    // (the table holds a hash), and it is one of two ways a member can get
+    // in — the other is Google sign-in, which matches on email_hash and needs
+    // no code at all.
+    //
+    // So an undelivered code is fatal ONLY when we have no email on file: in
+    // that case the code is the member's single route in and it is now
+    // unrecoverable, so roll the whole grant back and release the claim, and
+    // Whop's retry mints a fresh, deliverable one. When we DO have an email,
+    // the member can already sign in with Google, so destroying their live
+    // entitlement over a failed Discord post would be the worse outcome —
+    // keep the row, ack, and flag the delivery on the event note.
     const hook = env.DISCORD_WHOP_CODES_WEBHOOK;
-    // Only the plaintext `code` in this local variable can reach the owner —
-    // the table stores a hash. So the event must NOT be marked processed
-    // until delivery actually succeeds, or a failed post silently destroys a
-    // paying customer's access with no way to recover it.
-    if (!hook) {
-      await env.RESEARCH_DB.prepare('DELETE FROM whop_codes WHERE code_hash=?1').bind(hash).run().catch(() => {});
-      await releaseClaim();
-      console.error('whop-webhook: DISCORD_WHOP_CODES_WEBHOOK unset; cannot deliver code for ' + evt.eventId);
-      return json({ ok: false, error: 'Code delivery channel is not configured.' }, 503);
-    }
     let delivered = false;
-    {
+    if (hook) {
       delivered = await postEmbed(hook, {
-        title: 'New Whop purchase → premium code ready',
+        title: 'New Whop purchase → access provisioned',
         description:
           `Member: \`${evt.memberId || 'unknown'}\`\n` +
           `Product: \`${evt.productId || 'unknown'}\`\n` +
           `Code: \`${code}\`\n\n` +
-          `Deliver to the customer, then they sign in at /premium-guidance. ` +
-          `Add the same code+status=Active to the Member sheet so the bridge recognizes it.`,
+          `Access is ALREADY live in the database — send this code to the ` +
+          `customer so they can sign in at /premium-guidance. No Google Sheet ` +
+          `edit is required; the sheet is a legacy fallback only.`,
         fields: [{ name: 'Type', value: evt.type }, { name: 'Tier', value: tier }],
       });
-      if (delivered) {
-        await env.RESEARCH_DB.prepare(
-          "UPDATE whop_codes SET status='delivered' WHERE code_hash=?1"
-        ).bind(hash).run();
-        await env.RESEARCH_DB.prepare(
-          "UPDATE webhook_events SET note=?2 WHERE provider='whop' AND event_id=?1"
-        ).bind(evt.eventId, 'grant:' + tier + ':' + (evt.memberId || '?')).run().catch(() => {});
-      }
+    } else {
+      console.error('whop-webhook: DISCORD_WHOP_CODES_WEBHOOK unset; cannot deliver code for ' + evt.eventId);
     }
-    if (!delivered) {
-      // Undeliverable code is unrecoverable (only its hash is stored), so drop
-      // the row and release the claim: Whop's retry mints and delivers a fresh
-      // one rather than the customer being left with nothing.
+
+    if (!delivered && !emailHash) {
       await env.RESEARCH_DB.prepare('DELETE FROM whop_codes WHERE code_hash=?1').bind(hash).run().catch(() => {});
       await releaseClaim();
-      console.error('whop-webhook: delivery failed for ' + evt.eventId + '; released for retry');
-      return json({ ok: false, error: 'Code delivery failed; will retry.' }, 503);
+      console.error('whop-webhook: undeliverable grant for ' + evt.eventId + ' with no email fallback; released for retry');
+      return json({
+        ok: false,
+        error: hook ? 'Code delivery failed; will retry.' : 'Code delivery channel is not configured.',
+      }, 503);
     }
-    return json({ ok: true, action: 'grant', delivered, tier });
+
+    await env.RESEARCH_DB.prepare(
+      "UPDATE webhook_events SET note=?2 WHERE provider='whop' AND event_id=?1"
+    ).bind(
+      evt.eventId,
+      'grant:' + tier + ':' + (evt.memberId || '?') + (delivered ? ':delivered' : ':undelivered_email_fallback')
+    ).run().catch(() => {});
+    if (!delivered) {
+      console.error('whop-webhook: code for ' + evt.eventId + ' undelivered; member must use Google sign-in');
+    }
+    return json({ ok: true, action: 'grant', delivered, provisioned: true, tier });
   }
 
   if (evt.action === 'revoke') {
@@ -165,9 +189,18 @@ export async function onRequestPost(context) {
       console.error('whop-webhook: revoke event ' + evt.eventId + ' carried no member id');
       return json({ ok: false, error: 'Revoke event missing member id.' }, 422);
     }
+    // Bumping session_epoch is what makes this revocation reach a member who
+    // is ALREADY signed in: every cookie they hold was signed with the old
+    // epoch, and _lib/session.js refuses any session whose `sv` is behind the
+    // row. Without it the status flip only affected the NEXT sign-in, leaving
+    // a canceled customer with up to 30 days of paid access.
     const res = await env.RESEARCH_DB.prepare(
-      "UPDATE whop_codes SET status='revoked' WHERE whop_member_id=?1 AND status!='revoked'"
-    ).bind(evt.memberId).run();
+      `UPDATE whop_codes
+          SET status='revoked',
+              revoked_at=?2,
+              session_epoch = session_epoch + 1
+        WHERE whop_member_id=?1 AND status!='revoked'`
+    ).bind(evt.memberId, new Date().toISOString()).run();
     await env.RESEARCH_DB.prepare(
       "UPDATE webhook_events SET note='revoke' WHERE provider='whop' AND event_id=?1"
     ).bind(evt.eventId).run().catch(() => {});

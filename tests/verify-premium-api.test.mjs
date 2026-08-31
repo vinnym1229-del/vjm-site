@@ -12,7 +12,7 @@
 // fail open), the code format gate, the signing-secret fail-closed 503, and
 // that a granted session never puts the token in the response body.
 import assert from 'node:assert/strict';
-import { onRequestPost, onRequestGet, GENERIC_BAD_CODE } from '../functions/api/verify-premium.js';
+import { onRequestPost, onRequestGet, GENERIC_BAD_CODE, MEMBERSHIP_ENDED } from '../functions/api/verify-premium.js';
 import { TIERS, SESSION_VERSION } from '../functions/api/_lib/entitlements.js';
 
 // The tier is a SIGNED claim, so the issued cookie is the only place it can
@@ -23,10 +23,12 @@ function sessionClaims(res) {
   return JSON.parse(Buffer.from(token.split('.')[0], 'base64url').toString());
 }
 
-// D1 fake for the whop_codes tier lookup only. `row` is what the SELECT
-// returns; null models a legacy Sheet-only member with no D1 row at all.
+// D1 fake for the whop_codes lookup. `row` is what the SELECT returns; null
+// models a legacy Sheet-only member with no D1 row at all. Rows default to a
+// live entitlement so a test only has to state the field it is about.
 function makeDb(row) {
-  return { prepare() { return { bind() { return { async first() { return row; }, async run() { return { meta: { changes: 1 } }; } }; } }; } };
+  const full = row === null ? null : { status: 'active', expires_at: null, session_epoch: 1, ...row };
+  return { prepare() { return { bind() { return { async first() { return full; }, async run() { return { meta: { changes: 1 } }; } }; } }; } };
 }
 
 // The legacy status bridge, plus Turnstile, for the full success path.
@@ -223,6 +225,105 @@ try {
     const env = { ...BRIDGE_ENV, RESEARCH_DB: makeDb({ tier: 'superuser' }) };
     const { res } = await callVerify(env, { code: 'ABCD-1234', turnstileToken: 'tok' });
     assert.equal(sessionClaims(res).t, TIERS.COMPLETE, 'an unrecognized stored tier must not become a signed claim');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // D1 is the authority; the Sheet is only a fallback (migration 0006).
+  // ─────────────────────────────────────────────────────────────────────
+
+  // THE CORE FIX. The owner's Sheet still lists this code as Active — a
+  // human-maintained mirror always lags behind a cancellation — but the Whop
+  // webhook has already revoked the D1 row. D1 wins outright and the bridge
+  // is never allowed to resurrect the membership.
+  {
+    globalThis.fetch = bridgeFetch('ABCD-1234');
+    const env = { ...BRIDGE_ENV, RESEARCH_DB: makeDb({ status: 'revoked', tier: TIERS.COMPLETE }) };
+    const { status, data, res } = await callVerify(env, { code: 'ABCD-1234', turnstileToken: 'tok' });
+    assert.equal(status, 403);
+    assert.equal(data.ok, false);
+    assert.equal(data.error, MEMBERSHIP_ENDED);
+    assert.equal(res.headers.get('Set-Cookie'), null,
+      'a revoked D1 record must beat an active Sheet row and mint no session');
+  }
+
+  // Same for expiry: a lapsed record must be REFUSED, never fall through to
+  // a fresh default-length session (the bug the Google path already fixed).
+  {
+    globalThis.fetch = bridgeFetch('ABCD-1234');
+    const expired = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const env = { ...BRIDGE_ENV, RESEARCH_DB: makeDb({ status: 'active', expires_at: expired, tier: TIERS.COMPLETE }) };
+    const { status, data, res } = await callVerify(env, { code: 'ABCD-1234', turnstileToken: 'tok' });
+    assert.equal(status, 403);
+    assert.equal(data.error, MEMBERSHIP_ENDED);
+    assert.equal(res.headers.get('Set-Cookie'), null,
+      'an expired record must not mint a session on the code path either');
+  }
+
+  // A status nobody recognized — a typo, a half-applied migration, a value
+  // some future tool wrote — is not an entitlement. Fail closed, and do not
+  // let the Sheet paper over it.
+  {
+    globalThis.fetch = bridgeFetch('ABCD-1234');
+    const env = { ...BRIDGE_ENV, RESEARCH_DB: makeDb({ status: 'suspended?', tier: TIERS.COMPLETE }) };
+    const { status, res } = await callVerify(env, { code: 'ABCD-1234', turnstileToken: 'tok' });
+    assert.equal(status, 401);
+    assert.equal(res.headers.get('Set-Cookie'), null);
+  }
+  // ...including 'pending': a code that was minted but never delivered.
+  {
+    globalThis.fetch = bridgeFetch('ABCD-1234');
+    const env = { ...BRIDGE_ENV, RESEARCH_DB: makeDb({ status: 'pending', tier: TIERS.COMPLETE }) };
+    assert.equal((await callVerify(env, { code: 'ABCD-1234', turnstileToken: 'tok' })).status, 401);
+  }
+
+  // A valid purchase provisions WITHOUT manual intervention: no Sheet bridge
+  // is configured at all here, and the code the webhook just wrote to D1
+  // signs in on its own. This is what removes the copy-into-a-Google-Sheet
+  // step from the critical path of a paying customer.
+  {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+      throw new Error('no member bridge may be contacted when D1 has the answer');
+    };
+    const env = {
+      ...baseEnv(),
+      TURNSTILE_SECRET_KEY: 'secret',
+      RESEARCH_DB: makeDb({ status: 'active', tier: TIERS.FUTURES_CORE, discord: 'newbuyer', session_epoch: 3 }),
+    };
+    const { status, data, res } = await callVerify(env, { code: 'VJM-ABCD-2345', turnstileToken: 'tok' });
+    assert.equal(status, 200);
+    assert.equal(data.discord, 'newbuyer');
+    const claims = sessionClaims(res);
+    assert.equal(claims.t, TIERS.FUTURES_CORE);
+    assert.equal(claims.src, 'd1', 'a D1-provisioned session must record its authority');
+    assert.equal(claims.sv, 3, 'the session must carry the row\u2019s current epoch so a bump can kill it');
+  }
+
+  // A plan whose stored expiry is sooner than the session cap shortens the
+  // cookie — the token can never outlive the entitlement it represents.
+  {
+    globalThis.fetch = async () => Response.json({ success: true });
+    const soon = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+    const env = {
+      ...baseEnv(),
+      TURNSTILE_SECRET_KEY: 'secret',
+      RESEARCH_DB: makeDb({ status: 'active', expires_at: soon, tier: TIERS.COMPLETE }),
+    };
+    const { status, data } = await callVerify(env, { code: 'VJM-ABCD-2345', turnstileToken: 'tok' });
+    assert.equal(status, 200);
+    assert.ok(new Date(data.expiresAt).getTime() <= Date.parse(soon) + 1000,
+      'the session must not outlive the record it was minted from');
+  }
+
+  // A Sheet-only member (no D1 row) still signs in — the bridge is a working
+  // fallback during migration — but the session is labelled as such so the
+  // revocation check knows it has no D1 record to consult.
+  {
+    globalThis.fetch = bridgeFetch('ABCD-1234');
+    const env = { ...BRIDGE_ENV, RESEARCH_DB: makeDb(null) };
+    const { status, res } = await callVerify(env, { code: 'ABCD-1234', turnstileToken: 'tok' });
+    assert.equal(status, 200);
+    assert.equal(sessionClaims(res).src, 'sheet');
   }
 
   // A D1 outage during the tier lookup must not fail a sign-in the member

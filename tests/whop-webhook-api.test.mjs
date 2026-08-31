@@ -61,9 +61,21 @@ function makeDb({ claimedEvents = new Set(), codes = new Map(), notes = new Map(
               }
               if (sql.includes('INSERT INTO whop_codes')) {
                 const [hash, last4, eventId, memberId, product] = args;
-                const tier = args[10]; // ?11 — migration 0005
+                const emailHash = args[5];   // ?6
+                const tier = args[10];       // ?11 — migration 0005
+                const memberRef = args[11];  // ?12 — migration 0006
+                const provisionedAt = args[12]; // ?13
+                // status is a literal 'active' in the SQL (migration 0006):
+                // provisioning is transactional, not a later UPDATE.
+                assert.match(sql, /VALUES \(\?1, \?2, \?3, \?4, \?5, 'active'/,
+                  'the grant insert must provision as active in one write');
                 if (!codes.has(hash)) {
-                  codes.set(hash, { code_last4: last4, whop_event_id: eventId, whop_member_id: memberId, whop_product: product, tier, status: 'pending' });
+                  codes.set(hash, {
+                    code_hash: hash, code_last4: last4, whop_event_id: eventId,
+                    whop_member_id: memberId, whop_product: product, email_hash: emailHash,
+                    tier, member_ref: memberRef, provisioned_at: provisionedAt,
+                    session_epoch: 1, status: 'active',
+                  });
                 }
                 return { meta: { changes: 1 } };
               }
@@ -72,17 +84,21 @@ function makeDb({ claimedEvents = new Set(), codes = new Map(), notes = new Map(
                 const existed = codes.delete(hash);
                 return { meta: { changes: existed ? 1 : 0 } };
               }
-              if (sql.includes("UPDATE whop_codes SET status='delivered'")) {
-                const [hash] = args;
-                const row = codes.get(hash);
-                if (row) row.status = 'delivered';
-                return { meta: { changes: row ? 1 : 0 } };
-              }
-              if (sql.includes("UPDATE whop_codes SET status='revoked'")) {
-                const [memberId] = args;
+              if (sql.includes("SET status='revoked'")) {
+                // Apply only what the statement actually says. The epoch bump
+                // is the part that reaches an already-signed-in member, so the
+                // fake must not perform it out of politeness — drop it from
+                // the SQL and this test has to go red.
+                const bumpsEpoch = /session_epoch\s*=\s*session_epoch\s*\+\s*1/.test(sql);
+                const [memberId, revokedAt] = args;
                 let changes = 0;
                 for (const row of codes.values()) {
-                  if (row.whop_member_id === memberId && row.status !== 'revoked') { row.status = 'revoked'; changes++; }
+                  if (row.whop_member_id === memberId && row.status !== 'revoked') {
+                    row.status = 'revoked';
+                    row.revoked_at = revokedAt;
+                    if (bumpsEpoch) row.session_epoch = (Number(row.session_epoch) || 1) + 1;
+                    changes++;
+                  }
                 }
                 return { meta: { changes } };
               }
@@ -119,9 +135,10 @@ async function postWebhook(env, bodyObj, { ts = Math.floor(Date.now() / 1000), s
   return { status: res.status, data: await res.json() };
 }
 
-function grantBody(eventId, memberId = 'user_1', productId = 'prod_1', planId = null) {
+function grantBody(eventId, memberId = 'user_1', productId = 'prod_1', planId = null, email = null) {
   const membership = { user_id: memberId, product_id: productId };
   if (planId) membership.plan_id = planId;
+  if (email) membership.user = { email };
   return { type: 'membership.went_valid', id: eventId, data: { membership } };
 }
 function revokeBody(eventId, memberId) {
@@ -211,7 +228,16 @@ try {
     assert.equal(first.data.action, 'grant');
     assert.equal(first.data.delivered, true);
     assert.equal(db.codes.size, 1);
-    assert.equal([...db.codes.values()][0].status, 'delivered');
+    // Provisioned, not "pending until a human copies the code into a sheet":
+    // the row is live the instant the webhook lands, and it carries the
+    // member_ref the session's revocation check looks a member up by.
+    const row = [...db.codes.values()][0];
+    assert.equal(row.status, 'active');
+    assert.equal(first.data.provisioned, true);
+    assert.equal(row.member_ref, row.code_hash.slice(0, 16),
+      'member_ref must be the prefix the session mr claim carries (migration 0006)');
+    assert.equal(row.session_epoch, 1);
+    assert.ok(row.provisioned_at, 'provisioning time must be recorded transactionally with the grant');
 
     const dupe = await postWebhook(env, grantBody('grant-1', 'member-A'));
     assert.equal(dupe.status, 200);
@@ -265,13 +291,38 @@ try {
     const env = { ...baseEnv(db), DISCORD_WHOP_CODES_WEBHOOK: HOOK };
     globalThis.fetch = async () => new Response(null, { status: 204 });
     await postWebhook(env, grantBody('grant-4', 'member-D'));
-    assert.equal([...db.codes.values()][0].status, 'delivered');
+    assert.equal([...db.codes.values()][0].status, 'active');
 
     const { status, data } = await postWebhook(env, revokeBody('revoke-2', 'member-D'));
     assert.equal(status, 200);
     assert.equal(data.action, 'revoke');
     assert.equal(data.revoked, 1);
-    assert.equal([...db.codes.values()][0].status, 'revoked');
+    const revoked = [...db.codes.values()][0];
+    assert.equal(revoked.status, 'revoked');
+    // The epoch bump is what reaches a member who is ALREADY signed in: the
+    // cookie they hold was signed with epoch 1, the row now says 2, so
+    // _lib/session.js refuses it long before the cookie's own expiry.
+    assert.equal(revoked.session_epoch, 2, 'a revoke must bump the session epoch, not only the status');
+    assert.ok(revoked.revoked_at);
+  }
+
+  // A grant that cannot deliver its code but DOES carry an email is still a
+  // provisioned membership: the customer can sign in with Google (which
+  // matches on email_hash and never needs a code), so tearing down their live
+  // entitlement over a failed Discord post would be the worse outcome.
+  {
+    const db = makeDb();
+    const env = { ...baseEnv(db), DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    globalThis.fetch = async () => new Response(null, { status: 500 });
+    const { status, data } = await postWebhook(
+      env, grantBody('grant-email', 'member-E', 'prod_1', null, 'buyer@example.com')
+    );
+    assert.equal(status, 200);
+    assert.equal(data.delivered, false);
+    assert.equal(data.provisioned, true);
+    assert.equal(db.codes.size, 1, 'an email-backed grant survives a failed code delivery');
+    assert.equal([...db.codes.values()][0].status, 'active');
+    assert.match(db.notes.get('grant-email'), /undelivered_email_fallback/);
   }
   // ─────────────────────────────────────────────────────────────────────
   // Entitlement tier (functions/api/_lib/entitlements.js + migration 0005).

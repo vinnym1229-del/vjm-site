@@ -10,7 +10,7 @@
 // client-side; this endpoint only serves sourced market data.
 
 import {
-  resolveSigningSecret, verifySessionToken, readSessionCookie,
+  resolveSigningSecret, verifySessionToken, readSessionCookie, sessionEntitlementCheck,
 } from './_lib/session.js';
 import { authorizeResource } from './_lib/entitlements.js';
 import { json, cleanSymbol, fetchJsonWithTimeout, checkRateLimit } from './_lib/http.js';
@@ -102,6 +102,12 @@ async function isAuthorized(request, env) {
     if (token) {
       const payload = await verifySessionToken(token, secret);
       if (payload) {
+        // A valid signature only proves the cookie was ours when minted. It
+        // says nothing about whether the membership still exists, so a
+        // canceled member would keep this paid endpoint for the rest of the
+        // cookie's life (up to 30 days) without this check.
+        const live = await sessionEntitlementCheck(payload, env);
+        if (!live.ok) return DENY_401;
         const entitlement = authorizeResource(payload, RESOURCE_PATH, env);
         if (entitlement.allowed) return ALLOW;
         return {
