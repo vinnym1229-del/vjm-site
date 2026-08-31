@@ -83,9 +83,15 @@ export async function computedMovers(env, universe) {
       .map((s) => summarizeSnapshot(s, snaps[s]))
       .filter((r) => r && r.changePct !== null)
       .sort((a, b) => b.changePct - a.changePct);
+    // Gainers and losers must not overlap. An unconditional top-8/bottom-8
+    // slice looked fine for a large market-wide list, but this fallback runs
+    // over the site's small fixed universe (8-10 symbols) -- with 8 or fewer
+    // valid rows, slice(0,8) and slice(-8) both returned the *entire* array,
+    // so a flat day put every symbol in both panels, just reordered.
+    // Filtering by sign first keeps each panel to only actual movers.
     return {
-      gainers: rows.slice(0, 8),
-      losers: rows.slice(-8).reverse(),
+      gainers: rows.filter((r) => r.changePct > 0).slice(0, 8),
+      losers: rows.filter((r) => r.changePct < 0).slice(-8).reverse(),
       source: `computed from ${universe.length}-symbol IEX snapshot universe`,
     };
   } catch {
