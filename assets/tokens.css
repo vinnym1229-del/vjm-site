@@ -2,27 +2,30 @@
    Import alongside page-specific styles; dark-first with light-mode hooks. */
 
 :root {
-  accent-color: #dc2626;
-  --vjm-bg: #080708;
-  --vjm-bg2: #0f0d0e;
-  --vjm-card: #171416;
-  --vjm-card2: #1d1a1c;
-  --vjm-border: #2c2528;
-  --vjm-border-strong: #3a3438;
-  --vjm-text: #eceaea;
-  --vjm-muted: #9b9296;
-  --vjm-red: #dc2626;
-  --vjm-red-soft: rgba(220, 38, 38, 0.12);
-  --vjm-gold: #f0b429;
-  --vjm-green: #ff4d4d;
-  --vjm-amber: #f59e0b;
-  --vjm-blue: #ff6b6b;
+  accent-color: #d14343;
+  --vjm-bg: #0c0c0d;
+  --vjm-bg2: #131315;
+  --vjm-card: #161618;
+  --vjm-card2: #1d1d20;
+  --vjm-border: #2a2a2e;
+  --vjm-border-strong: #3a3a40;
+  --vjm-text: #ededee;
+  --vjm-muted: #9a9aa0;
+  --vjm-red: #d14343;
+  --vjm-red-bright: #e26060;
+  --vjm-red-deep: #a63333;
+  --vjm-red-soft: rgba(209, 67, 67, 0.10);
+  --vjm-red-line: rgba(209, 67, 67, 0.28);
+  --vjm-gold: #d9d9dd;
+  --vjm-green: #cfcfd4;
+  --vjm-amber: #d9d9dd;
+  --vjm-blue: #d9d9dd;
 
   --vjm-radius-s: 10px;
   --vjm-radius-m: 16px;
   --vjm-radius-l: 22px;
   --vjm-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-  --vjm-glow-red: 0 0 24px rgba(220, 38, 38, 0.18);
+  --vjm-glow-red: 0 0 24px rgba(209, 67, 67, 0.05);
 
   --vjm-font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
   --vjm-font-body: 'DM Sans', system-ui, sans-serif;
@@ -35,7 +38,7 @@
 .vjm-page {
   min-height: 100vh;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(220, 38, 38, 0.09), transparent),
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(209, 67, 67, 0.05), transparent),
     var(--vjm-bg);
   color: var(--vjm-text);
   font-family: var(--vjm-font-body);
@@ -73,10 +76,10 @@
   border: 1px solid var(--vjm-border); color: var(--vjm-muted);
   background: rgba(255,255,255,0.03);
 }
-.vjm-chip.red   { border-color: rgba(220,38,38,.5); color: #ff9a9a; background: var(--vjm-red-soft); }
-.vjm-chip.green { border-color: rgba(220,38,38,.35); color: var(--vjm-green); background: rgba(220,38,38,.08); }
-.vjm-chip.amber { border-color: rgba(245,158,11,.4); color: var(--vjm-amber); background: rgba(245,158,11,.08); }
-.vjm-chip.blue  { border-color: rgba(220,38,38,.4); color: var(--vjm-blue); background: rgba(220,38,38,.08); }
+.vjm-chip.red   { border-color: var(--vjm-red-line); color: var(--vjm-red-bright); background: var(--vjm-red-soft); }
+.vjm-chip.green { border-color: var(--vjm-border-strong); color: var(--vjm-green); background: rgba(255,255,255,.05); }
+.vjm-chip.amber { border-color: var(--vjm-border-strong); color: var(--vjm-amber); background: rgba(255,255,255,.05); }
+.vjm-chip.blue  { border-color: var(--vjm-border-strong); color: var(--vjm-blue); background: rgba(255,255,255,.05); }
 
 .vjm-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -89,7 +92,7 @@
 .vjm-btn:hover { filter: brightness(1.12); }
 .vjm-btn:active { transform: translateY(1px); }
 .vjm-btn:focus-visible { outline: 2px solid var(--vjm-gold); outline-offset: 2px; }
-.vjm-btn-primary { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+.vjm-btn-primary { background: linear-gradient(135deg, var(--vjm-red), var(--vjm-red-deep)); color: #fff; }
 .vjm-btn-ghost { background: rgba(255,255,255,0.04); border-color: var(--vjm-border); color: var(--vjm-text); }
 
 .vjm-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
@@ -101,15 +104,59 @@
 .vjm-table td { padding: 10px 12px; border-bottom: 1px solid var(--vjm-border); }
 .vjm-table tr:last-child td { border-bottom: none; }
 .num { font-family: var(--vjm-font-mono); }
-.pos { color: var(--vjm-green); } .neg { color: #ff7a7a; }
+.pos { color: var(--vjm-green); } .neg { color: var(--vjm-red-bright); }
 
 .vjm-note {
   font-size: 0.78rem; color: var(--vjm-muted);
-  border:1px solid rgba(220,38,38,.22);
-  padding: 10px 14px; background: rgba(240, 180, 41, 0.05);
+  border:1px solid var(--vjm-border);
+  padding: 10px 14px; background: rgba(255, 255, 255, 0.03);
   border-radius: 12px;
 }
 
 /* Status cues always pair color with an icon/word (never color alone) */
 .status-pill { display:inline-flex; gap:6px; align-items:center; font-size:0.75rem; font-weight:800; }
 .status-pill::before { content:''; width:8px; height:8px; border-radius:50%; background: currentColor; }
+
+/* ─── LIGHT MODE ───
+   Same variable names, light values. Scoped to body.light-mode to match the
+   convention already used by site.css and curriculum.css (the repo has no
+   [data-theme] hook). Rules that hard-code a white overlay for the dark
+   surfaces are restated with a black overlay so they stay visible. */
+body.light-mode {
+  accent-color: #b3251d;
+  --vjm-bg: #ffffff;
+  --vjm-bg2: #f6f6f7;
+  --vjm-card: #ffffff;
+  --vjm-card2: #fafafa;
+  --vjm-border: #e3e3e6;
+  --vjm-border-strong: #cfcfd4;
+  --vjm-text: #141416;
+  --vjm-muted: #5f5f66;
+  --vjm-red: #b3251d;
+  --vjm-red-bright: #c9342b;
+  --vjm-red-deep: #8c1a14;
+  --vjm-red-soft: rgba(179, 37, 29, 0.07);
+  --vjm-red-line: rgba(179, 37, 29, 0.22);
+  --vjm-gold: #26262a;
+  --vjm-green: #3f3f46;
+  --vjm-amber: #26262a;
+  --vjm-blue: #26262a;
+
+  --vjm-shadow: 0 12px 40px rgba(0, 0, 0, 0.10);
+  --vjm-glow-red: 0 0 24px rgba(179, 37, 29, 0.04);
+}
+body.light-mode .vjm-page {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(179, 67, 67, 0.04), transparent),
+    var(--vjm-bg);
+}
+body.light-mode .vjm-card {
+  background: linear-gradient(180deg, rgba(0,0,0,0.015), transparent), var(--vjm-card);
+}
+body.light-mode .vjm-chip { background: rgba(0,0,0,0.03); }
+body.light-mode .vjm-chip.red { background: var(--vjm-red-soft); }
+body.light-mode .vjm-chip.green,
+body.light-mode .vjm-chip.amber,
+body.light-mode .vjm-chip.blue { background: rgba(0,0,0,0.04); }
+body.light-mode .vjm-btn-ghost { background: rgba(0,0,0,0.04); }
+body.light-mode .vjm-note { background: rgba(0,0,0,0.025); }

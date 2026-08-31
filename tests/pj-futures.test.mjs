@@ -168,10 +168,10 @@ test('session clock lives in the schedule section', () => {
 
 test('PWA manifest + theme color + PJ 404', () => {
   const manifest = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
-  assert.equal(manifest.theme_color, '#080708');
+  assert.equal(manifest.theme_color, '#0c0c0d');
   assert.ok(existsSync(join(ROOT, 'assets', 'icon.svg')), 'manifest icon missing');
   assert.match(index, /<link rel="manifest" href="manifest\.json">/);
-  assert.match(index, /<meta name="theme-color" content="#080708">/);
+  assert.match(index, /<meta name="theme-color" content="#0c0c0d">/);
   // These drifted apart once when the palette changed: index.html was swept,
   // manifest.json was not. Assert they agree rather than just their values.
   const metaTheme = index.match(/<meta name="theme-color" content="(#[0-9a-f]{6})">/i);

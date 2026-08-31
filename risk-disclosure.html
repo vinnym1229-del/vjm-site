@@ -10,7 +10,7 @@
 <meta property="og:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
-<style>:root{--gold:#dc2626;--gold-ink:#ef4444;--bg:#080708;--bg2:#0f0d0e;--card:#171416;--border:#2c2528;--text:#eceaea;--muted:#8fa1b5;--green:#ff4d4d}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,sans-serif;background:radial-gradient(ellipse at 50% 0%,rgba(220,38,38,.08),transparent 55%),var(--bg);color:var(--text);line-height:1.75}.nav{position:sticky;top:0;background:rgba(6,9,13,.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 24px}.brand{font-family:Arial Black,Impact,sans-serif;color:var(--gold-ink);letter-spacing:1.5px;text-decoration:none}.nav a{color:var(--muted);text-decoration:none;margin-left:12px;font-weight:800;font-size:.82rem}.nav a:hover{color:var(--gold-ink)}main{max-width:900px;margin:0 auto;padding:58px 24px 88px}.eyebrow{display:inline-block;color:var(--green);border:1px solid rgba(220,38,38,.25);background:rgba(220,38,38,.08);border-radius:999px;padding:4px 12px;font-size:.7rem;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;margin-bottom:14px}h1{font-size:clamp(2.5rem,7vw,5rem);line-height:.92;text-transform:uppercase;margin-bottom:16px;font-family:Impact,Arial Black,sans-serif}h1 span,h2{color:var(--gold-ink)}p,li{color:var(--muted);font-size:.95rem}section{background:rgba(17,24,39,.72);border:1px solid var(--border);border-radius:18px;padding:22px;margin-top:18px}h2{font-size:1.25rem;margin-bottom:8px}ul{padding-left:20px}.footer{border-top:1px solid var(--border);padding:24px;text-align:center;color:var(--muted);font-size:.8rem}.footer a{color:var(--gold-ink)}@media(max-width:640px){.nav{align-items:flex-start;flex-direction:column;gap:10px;}.nav>div{flex-wrap:wrap;}}
+<style>:root{--gold:#d14343;--gold-ink:#d9d9dd;--bg:#0c0c0d;--bg2:#131315;--card:#161618;--border:#2a2a2e;--text:#ededee;--muted:#9a9aa0;--green:#cfcfd4}*{box-sizing:border-box;margin:0;padding:0}body{font-family:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,sans-serif;background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.035),transparent 55%),var(--bg);color:var(--text);line-height:1.75}.nav{position:sticky;top:0;background:rgba(12,12,13,.94);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 24px}.brand{font-family:Arial Black,Impact,sans-serif;color:var(--gold);letter-spacing:1.5px;text-decoration:none}.nav a{color:var(--muted);text-decoration:none;margin-left:12px;font-weight:800;font-size:.82rem}.nav a:hover{color:var(--gold)}main{max-width:900px;margin:0 auto;padding:58px 24px 88px}.eyebrow{display:inline-block;color:var(--gold);border:1px solid rgba(209,67,67,.28);background:rgba(209,67,67,.10);border-radius:999px;padding:4px 12px;font-size:.7rem;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;margin-bottom:14px}h1{font-size:clamp(2.5rem,7vw,5rem);line-height:.92;text-transform:uppercase;margin-bottom:16px;font-family:Impact,Arial Black,sans-serif}h1 span,h2{color:var(--gold-ink)}p,li{color:var(--muted);font-size:.95rem}section{background:rgba(22,22,24,.72);border:1px solid var(--border);border-radius:18px;padding:22px;margin-top:18px}h2{font-size:1.25rem;margin-bottom:8px}ul{padding-left:20px}.footer{border-top:1px solid var(--border);padding:24px;text-align:center;color:var(--muted);font-size:.8rem}.footer a{color:var(--gold-ink)}@media(max-width:640px){.nav{align-items:flex-start;flex-direction:column;gap:10px;}.nav>div{flex-wrap:wrap;}}
 /* Page-wide ambient red pulse (mirrors index.html), so the lightning/black-
    red theme is consistent site-wide rather than home-page-only. */
 body::before {
@@ -19,23 +19,45 @@ body::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(220,38,38,.05) 0%, transparent 55%),
-              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(220,38,38,.04) 0%, transparent 55%);
+  background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(209,67,67,.05) 0%, transparent 55%),
+              radial-gradient(ellipse 60% 40% at 10% 100%, rgba(209,67,67,.04) 0%, transparent 55%);
   animation: pagePulse 9s ease-in-out infinite;
 }
 @keyframes pagePulse { 0%,100% { opacity:.55; } 50% { opacity: var(--page-pulse-peak, 1); } }
 @media (prefers-reduced-motion: reduce) { body::before { animation: none; opacity: .75; } }
+
+/* ── Light mode ─────────────────────────────────────────────────────────────
+   Applied by adding `light-mode` to <body> (preference: localStorage['st-theme']).
+   Restates every hard-coded dark surface / white-alpha fill for a white page. */
+body.light-mode{
+  --gold:#b3251d;--gold-ink:#26262a;--bg:#ffffff;--bg2:#f6f6f7;--card:#ffffff;
+  --border:#e3e3e6;--text:#141416;--muted:#5f5f66;--green:#3f3f46;
+  background:radial-gradient(ellipse at 50% 0%,rgba(0,0,0,.035),transparent 55%),var(--bg);
+}
+/* ambient wash: red stays under the light cap (0.04) */
+body.light-mode::before{
+  background:radial-gradient(ellipse 80% 50% at 85% 0%,rgba(179,37,29,.04) 0%,transparent 55%),
+             radial-gradient(ellipse 60% 40% at 10% 100%,rgba(179,37,29,.03) 0%,transparent 55%);
+}
+body.light-mode .nav{background:rgba(255,255,255,.94);}
+/* the nav pills carry inline dark fills in the markup — restate for white */
+body.light-mode .nav>div>a{background:var(--bg2)!important;color:var(--muted)!important;border-color:var(--border)!important;}
+body.light-mode .nav>div>a:hover{color:var(--gold)!important;border-color:rgba(179,37,29,.22)!important;}
+body.light-mode section{background:#fafafa;}
+/* the risk kicker is an earned alert — it keeps red in both themes */
+body.light-mode .eyebrow{color:var(--gold);background:rgba(179,37,29,.07);border-color:rgba(179,37,29,.22);}
 </style>
+<script src="assets/theme.js"></script>
 </head>
 <body>
 <nav class="nav" aria-label="Main navigation">
   <a class="brand" href="index.html">PJ TRADES</a>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-    <a href="index.html" style="color:var(--muted);text-decoration:none;border:1px solid var(--border);background:rgba(17,24,39,.72);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;">Home</a>
-    <a href="premium-guidance.html" style="color:var(--muted);text-decoration:none;border:1px solid var(--border);background:rgba(17,24,39,.72);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;">Guidance</a>
-    <a href="stock-lab.html" style="color:var(--muted);text-decoration:none;border:1px solid var(--border);background:rgba(17,24,39,.72);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;">Stock Tracker</a>
-    <a href="forex-calendar.html" style="color:var(--muted);text-decoration:none;border:1px solid var(--border);background:rgba(17,24,39,.72);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;">Forex Calendar</a>
-    <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;border:1px solid var(--border);background:rgba(17,24,39,.72);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;">Discord</a>
+    <a href="index.html" style="color:var(--muted);text-decoration:none;border:1px solid var(--border);background:rgba(22,22,24,.72);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;">Home</a>
+    <a href="premium-guidance.html" style="color:var(--muted);text-decoration:none;border:1px solid var(--border);background:rgba(22,22,24,.72);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;">Guidance</a>
+    <a href="stock-lab.html" style="color:var(--muted);text-decoration:none;border:1px solid var(--border);background:rgba(22,22,24,.72);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;">Stock Tracker</a>
+    <a href="forex-calendar.html" style="color:var(--muted);text-decoration:none;border:1px solid var(--border);background:rgba(22,22,24,.72);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;">Forex Calendar</a>
+    <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;border:1px solid var(--border);background:rgba(22,22,24,.72);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;">Discord</a>
   </div>
 </nav>
 <main>

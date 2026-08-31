@@ -46,6 +46,7 @@
 <meta name="description" content="PJ Trades x St — the complete stock trading curriculum, from beyond-beginner market mechanics through professional edge validation, position sizing, and trading-desk governance.">
 <meta name="robots" content="index, follow">
 <link rel="stylesheet" href="assets/curriculum.css">
+<script src="assets/theme.js"></script>
 </head>
 <body class="curr">
 <a class="skip" href="#curriculum">Skip to curriculum</a>
@@ -176,9 +177,9 @@
       var canvas=document.getElementById('st-chart');
       if(canvas&&window.currDrawBars){
         window.currDrawBars(canvas,[
-          {label:'Account equity',value:acct,color:'#3a3438'},
-          {label:'Position cost',value:cost,color:'#9b9296'},
-          {label:'$ at risk (1R)',value:budget,color:'#dc2626'}
+          {label:'Account equity',value:acct,color:'#3a3a40'},
+          {label:'Position cost',value:cost,color:'#9a9aa0'},
+          {label:'$ at risk (1R)',value:budget,color:'#d14343'}
         ],{fmt:fmtUsd});
       }
     }

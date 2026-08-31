@@ -3,7 +3,19 @@
 
   const $ = (id) => document.getElementById(id);
   const state = { module: 'options', data: {}, loading: false };
-  const COLORS = { red:'#dc2626', green:'#00e676', amber:'#f59e0b', blue:'#60a5fa', muted:'#8ea1b8', text:'#edf3fb', line:'#30445e' };
+  // Chart colours follow the stylesheet's own tokens instead of freezing the
+  // dark values: these are SVG attribute values, not CSS, so a literal here
+  // would keep painting near-white lines onto the light theme's white canvas.
+  // Read at draw time so a theme switch re-themes the charts with the page.
+  const COLOR_TOKEN = { red:'--red', green:'--green', amber:'--amber', blue:'--blue', muted:'--muted', text:'--text', line:'--line2' };
+  const COLOR_FALLBACK = { red:'#d14343', green:'#cfcfd4', amber:'#6f6f76', blue:'#8e8e95', muted:'#9a9aa0', text:'#ededee', line:'#3a3a40' };
+  const COLORS = {};
+  for (const key of Object.keys(COLOR_FALLBACK)) {
+    Object.defineProperty(COLORS, key, { enumerable: true, get() {
+      const v = getComputedStyle(document.body).getPropertyValue(COLOR_TOKEN[key]).trim();
+      return v || COLOR_FALLBACK[key];
+    } });
+  }
 
   function esc(value) {
     return String(value ?? '').replace(/[&<>'"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -156,7 +168,7 @@
   }
   function showModuleError(statusId, err) {
     const node = $(statusId);
-    if (node) { node.textContent = err.message; node.style.color = '#ff8a8a'; }
+    if (node) { node.textContent = err.message; node.style.color = 'var(--red-ink, #e26060)'; }
   }
 
   async function loadOptions() {

@@ -234,6 +234,60 @@
     return { ctx, w, h };
   }
 
+  // ---- series colour ----
+  // Charts used to be monochrome red, which made every bar read as a warning
+  // and left the series indistinguishable without the labels. Red is now
+  // reserved for the loss/risk/alert series; everything else takes the neutral
+  // accent. Values are read from the live custom properties so both themes work
+  // (the neutral accent is near-white on dark, near-black on light).
+  function cssVar(name, fallback) {
+    const v = getComputedStyle(document.body).getPropertyValue(name);
+    return (v && v.trim()) || fallback;
+  }
+  const isLight = () => document.body.classList.contains('light-mode');
+  // --emerald is the neutral accent; --gold is the accent red (see PALETTE).
+  const NEUTRAL = () => cssVar('--emerald', isLight() ? '#26262a' : '#d9d9dd');
+  const SECONDARY = () => cssVar('--muted', isLight() ? '#5f5f66' : '#9a9aa0');
+  const DIM = () => (isLight() ? '#a5a5ab' : '#5a5a60');
+  const RED = () => cssVar('--gold', isLight() ? '#b3251d' : '#d14343');
+  const RISK_RE = /loss|risk|drawdown|draw down|alert|max ?dd|worst|stop|danger/i;
+  // A series means "loss/risk" when its value is negative or its label says so.
+  function isRisk(label, value) {
+    return Number(value) < 0 || RISK_RE.test(String(label || ''));
+  }
+  // Call sites still hand us fixed hex values from the palette. Those literals
+  // are dark-theme tones, so on the light page a "neutral" bar came out
+  // near-white on white. Map every known palette literal back onto the live
+  // token for its tier, and normalise the old blanket red so a positive,
+  // non-risk series is never drawn red. Unknown colours pass through.
+  const TIERS = {
+    red: ['#d14343', '#e26060', '#a63333', '#b3251d', '#c9342b', '#8c1a14'],
+    neutral: ['#ededee', '#d9d9dd', '#cfcfd4', '#141416', '#26262a'],
+    secondary: ['#9a9aa0', '#8e8e95', '#5f5f66', '#c4c4c9'],
+    dim: ['#6f6f76', '#3a3a40', '#2a2a2e', '#e3e3e6'],
+  };
+  function tierOf(color) {
+    const c = String(color || '').trim().toLowerCase();
+    if (!c) return null;
+    if (TIERS.red.includes(c)) return 'red';
+    if (TIERS.neutral.includes(c)) return 'neutral';
+    if (TIERS.secondary.includes(c)) return 'secondary';
+    if (TIERS.dim.includes(c)) return 'dim';
+    return null;
+  }
+  function seriesColor(label, value, requested) {
+    if (!requested) return isRisk(label, value) ? RED() : NEUTRAL();
+    switch (tierOf(requested)) {
+      // A red request is honoured only for a series that actually means
+      // loss/risk; otherwise it was the old monochrome default and goes neutral.
+      case 'red': return isRisk(label, value) ? RED() : NEUTRAL();
+      case 'neutral': return NEUTRAL();
+      case 'secondary': return SECONDARY();
+      case 'dim': return DIM();
+      default: return requested;
+    }
+  }
+
   // bars: [{label, value, color}]. Draws a simple horizontal bar chart.
   window.currDrawBars = function currDrawBars(canvas, bars, opts = {}) {
     const { ctx, w, h } = sizeCanvas(canvas);
@@ -242,8 +296,8 @@
     const rowH = Math.min(46, (h - 20) / bars.length);
     const labelW = 96;
     const barMaxW = w - labelW - 70;
-    const muted = getComputedStyle(document.body).getPropertyValue('--muted') || '#9b9296';
-    const text = getComputedStyle(document.body).getPropertyValue('--text') || '#eceaea';
+    const muted = getComputedStyle(document.body).getPropertyValue('--muted') || '#9a9aa0';
+    const text = getComputedStyle(document.body).getPropertyValue('--text') || '#ededee';
     bars.forEach((b, i) => {
       const y = 10 + i * rowH;
       ctx.fillStyle = muted.trim();
@@ -251,7 +305,7 @@
       ctx.textBaseline = 'middle';
       ctx.fillText(b.label, 0, y + rowH / 2 - 8);
       const bw = Math.max(2, (Math.abs(b.value) / max) * barMaxW);
-      ctx.fillStyle = b.color || '#dc2626';
+      ctx.fillStyle = seriesColor(b.label, b.value, b.color);
       const barY = y + rowH / 2;
       ctx.beginPath();
       ctx.roundRect ? ctx.roundRect(labelW, barY - 8, bw, 16, 6) : ctx.rect(labelW, barY - 8, bw, 16);
@@ -276,8 +330,8 @@
     const yMin = -yAbs, yMax = yAbs;
     const px = (x) => pad.l + ((x - xMin) / (xMax - xMin || 1)) * (w - pad.l - pad.r);
     const py = (y) => pad.t + (1 - (y - yMin) / (yMax - yMin || 1)) * (h - pad.t - pad.b);
-    const border = getComputedStyle(document.body).getPropertyValue('--border') || '#2c2528';
-    const muted = getComputedStyle(document.body).getPropertyValue('--muted') || '#9b9296';
+    const border = getComputedStyle(document.body).getPropertyValue('--border') || '#2a2a2e';
+    const muted = getComputedStyle(document.body).getPropertyValue('--muted') || '#9a9aa0';
     ctx.strokeStyle = border.trim();
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(pad.l, py(0)); ctx.lineTo(w - pad.r, py(0)); ctx.stroke();
@@ -286,16 +340,31 @@
     ctx.fillText(opts.yFmt ? opts.yFmt(0) : '0', 4, py(0) + 4);
     ctx.fillText(opts.xFmt ? opts.xFmt(xMin) : String(xMin), pad.l, h - 8);
     ctx.fillText(opts.xFmt ? opts.xFmt(xMax) : String(xMax), w - pad.r - 40, h - 8);
-    ctx.strokeStyle = opts.color || '#dc2626';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    points.forEach((p, i) => { const x = px(p.x), y = py(p.y); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
-    ctx.stroke();
-    ctx.fillStyle = (opts.color || '#dc2626') + '22';
-    ctx.lineTo(px(points[points.length - 1].x), py(0));
-    ctx.lineTo(px(points[0].x), py(0));
-    ctx.closePath();
-    ctx.fill();
+    // Primary (profit / at-or-above zero) stroke is the neutral accent; the
+    // portion of the curve below the zero axis is the loss series and stays red.
+    const primary = seriesColor('', 1, opts.color);
+    const loss = RED();
+    const zeroY = py(0);
+    const drawSegment = (clipTop, clipH, color) => {
+      if (clipH <= 0) return;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(pad.l, clipTop, w - pad.l - pad.r, clipH);
+      ctx.clip();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      points.forEach((p, i) => { const x = px(p.x), y = py(p.y); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+      ctx.stroke();
+      ctx.fillStyle = color + '22';
+      ctx.lineTo(px(points[points.length - 1].x), zeroY);
+      ctx.lineTo(px(points[0].x), zeroY);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    };
+    drawSegment(pad.t, Math.max(0, zeroY - pad.t), primary);
+    drawSegment(zeroY, Math.max(0, h - pad.b - zeroY), loss);
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
