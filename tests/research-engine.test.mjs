@@ -4,12 +4,14 @@ import { __test } from '../functions/api/research-engine.js';
 const {
   analyseFib,
   classifySweep,
+  combineFibStats,
   cumulativeVwap,
   detectContinuationModel,
   findSweepIndex,
   groupProxyTradeDays,
   findGammaFlip,
   finite,
+  median,
   metrics,
   marketProfileLevels,
   priorWeekRange,
@@ -17,7 +19,9 @@ const {
   resampleWeekly,
   scanFvgs,
   splitSession,
+  statsFromFibEvents,
   summarizeConditions,
+  summarizeFvg,
   summarizeTiming,
 } = __test;
 
@@ -171,5 +175,54 @@ const timing = summarizeTiming([
 const pdhTiming = timing.find((row) => row.label === 'PDH/PDL sweep');
 assert.equal(pdhTiming.before1000, 1);
 assert.equal(pdhTiming.before1100, 0.5);
+
+// median() backs every premium research stat below it (fill rates, MFE/MAE) --
+// its empty/single/even-length/non-finite-input branches had no direct coverage.
+assert.equal(median([]), null, 'no observations must stay unavailable, not 0');
+assert.equal(median([5]), 5);
+assert.equal(median([1, 3]), 2, 'even-length must average the two middle values');
+assert.equal(median([3, 1, 2]), 2, 'must sort before picking the middle, not use input order');
+assert.equal(median(['4', null, 6]), 5, 'non-finite entries are dropped, not treated as 0');
+assert.equal(median([NaN, 'abc']), null, 'an all-non-finite input must stay unavailable');
+
+// statsFromFibEvents feeds the premium fib-retracement stats table directly;
+// it always reports all three tracked levels, even ones with zero touches.
+const fibEvents = [
+  { level: 0.382, filled: true, newHigh: true, daysToFill: 2, mfe: 0.02, mae: -0.01 },
+  { level: 0.382, filled: true, newHigh: false, daysToFill: 4, mfe: 0.01, mae: -0.03 },
+  { level: 0.382, filled: false, newHigh: false, daysToFill: null, mfe: 0.005, mae: -0.02 },
+  { level: 0.5, filled: false, newHigh: false, daysToFill: null, mfe: -0.01, mae: -0.04 },
+];
+const fibStats = statsFromFibEvents(fibEvents);
+assert.equal(fibStats.length, 3, 'all three tracked fib levels must always be present');
+const stats382 = fibStats.find((row) => row.level === 0.382);
+assert.equal(stats382.touches, 3);
+assert.ok(Math.abs(stats382.fillRate - 2 / 3) < 1e-12);
+assert.ok(Math.abs(stats382.newHighRate - 1 / 3) < 1e-12);
+assert.equal(stats382.medianDays, 3, 'medianDays is computed over filled touches only');
+const stats618 = fibStats.find((row) => row.level === 0.618);
+assert.deepEqual(
+  { touches: stats618.touches, fillRate: stats618.fillRate, newHighRate: stats618.newHighRate, medianDays: stats618.medianDays },
+  { touches: 0, fillRate: null, newHighRate: null, medianDays: null },
+  'a level with zero touches must report null rates, not 0 or NaN',
+);
+
+// combineFibStats merges events across multiple timeframe results before
+// re-aggregating -- confirm it actually pools them rather than only using one.
+const combined = combineFibStats([{ events: [fibEvents[0]] }, { events: [fibEvents[1], fibEvents[2]] }]);
+assert.equal(combined.find((row) => row.level === 0.382).touches, 3, 'must pool events from every result, not just the first');
+
+// summarizeFvg groups by "timeframe side" and drives the premium FVG stats table.
+const fvgRecords = [
+  { timeframe: '5m', side: 'Bullish', retested: true, filled: true, continuation: true, inverted: false, minutesToRetest: 10 },
+  { timeframe: '5m', side: 'Bullish', retested: false, filled: false, continuation: false, inverted: false, minutesToRetest: null },
+  { timeframe: '5m', side: 'Bearish', retested: true, filled: false, continuation: false, inverted: true, minutesToRetest: 20 },
+];
+const fvgSummary = summarizeFvg(fvgRecords);
+assert.equal(fvgSummary.length, 2, 'Bullish and Bearish must not be merged even at the same timeframe');
+const bullishSummary = fvgSummary.find((row) => row.condition === '5m Bullish');
+assert.equal(bullishSummary.n, 2);
+assert.equal(bullishSummary.retestRate, 0.5);
+assert.equal(bullishSummary.medianMinutesToRetest, 10, 'the untested row\'s null minutesToRetest must not pull the median down');
 
 console.log('VJM research-engine calculation tests passed.');
