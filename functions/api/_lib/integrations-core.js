@@ -71,7 +71,9 @@ export function generateAccessCodeShape(randomBytes) {
 }
 
 export function isValidGeneratedCode(code) {
-  return /^VJM-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/.test(String(code || ''));
+  // Must mirror generateAccessCodeShape's alphabet exactly: J-N as a range
+  // would let L (excluded above for its I/1 lookalike) slip back in.
+  return /^VJM-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/.test(String(code || ''));
 }
 
 // ─── Futures-proxy lean (explicit heuristic, labeled LOW confidence) ───────
