@@ -8,7 +8,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
 <title>PJ Trades x St | Live Futures Trading & Education — NQ, ES, Futures Courses</title>
-<meta name="description" content="Trade futures alongside a 10-year pro. Live futures trading 10+ times a week, daily callouts, the IFVG Starter Crash Course, group classes 2x/month, and prop firm giveaways up to $50,000. 5.0★ on Whop. Educational only — not financial advice.">
+<meta name="description" content="Trade futures alongside a 10-year pro. Live futures trading 3 to 5 times a week, daily callouts, the IFVG Starter Crash Course, group classes 2x/month, and prop firm giveaways up to $50,000. 5.0★ on Whop. Educational only — not financial advice.">
 <meta property="og:title" content="PJ Trades x St — Futures, Made Simple.">
 <meta property="og:description" content="Live futures trading & analysis, exclusive education, group classes 2x/month, the Starter Crash Course (IFVG model), and exclusive prop firm giveaways. Educational content only — not financial advice.">
 <script type="application/ld+json">
@@ -17,7 +17,7 @@
   "@type": "Organization",
   "name": "PJ Trades x St",
   "url": "https://not-financial-advice-vjm.com/",
-  "description": "Futures-first trading education: live futures trading 10+ times each week, the IFVG Starter Crash Course, group classes, and prop firm giveaways. Educational only — not financial advice.",
+  "description": "Futures-first trading education: live futures trading 3 to 5 times each week, the IFVG Starter Crash Course, group classes, and prop firm giveaways. Educational only — not financial advice.",
   "founder": { "@type": "Person", "name": "PJ Trades", "jobTitle": "Futures Day Trader" },
   "sameAs": [
     "https://www.youtube.com/@PJTrades_NQ",
@@ -392,7 +392,7 @@
       <a href="futures-dissection.html" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;border-color:var(--border);color:var(--text);">📚 Free Futures Starter Course</a>
     </div>
     <div class="hero-trust">
-      <span>✅ Live futures trading 10+ times each week</span>
+      <span>✅ Live futures trading 3&ndash;5 times each week</span>
       <span>✅ Entries &amp; exits shared in Discord</span>
       <span>✅ Prop firm giveaways up to $50,000</span>
     </div>
@@ -402,7 +402,10 @@
 <!-- PROOF BAR -->
 <div class="proof-bar">
   <!-- Source: owner's Whop listing screenshots, 2026-08-24 (a snapshot, not a
-       live count; overwritten by /api/live-stats when connected).
+       live count). "Joined on Whop" is a LIFETIME total and its only writer is
+       the Sheet CMS stats tab (key: joined) — the Whop API's member_count is a
+       *current members* figure and belongs to the members chip further down,
+       never to this element. See the SocialStats table in the script below.
        TODO: owner to confirm these are still accurate, or connect the live feed.
        None of these are performance figures and none may be presented as one. -->
   <div class="proof-item"><strong id="pb-joined">49,136</strong><span>joined on Whop</span></div>
@@ -473,7 +476,11 @@
       <div class="course-card" data-reveal>
         <div class="course-badge">🔒 Members</div>
         <h3>Stock Breakdown</h3>
-        <p>Tradability metrics through institutional order flow, backtesting, and professional risk governance across four levels.</p>
+        <!-- No backtesting engine ships on this site: functions/api/_lib/backtest-core.js
+             exists but is wired to no route and no UI. This line describes the course
+             curriculum (how professional backtests are designed and validated), not a
+             tool members get. Do not restate it as a product feature until one ships. -->
+        <p>Tradability metrics through institutional order flow, how professional backtests are designed and validated, and risk governance across four levels.</p>
         <div class="course-meta">46 lessons · 4 levels</div>
         <a class="course-cta" href="stock-breakdown.html">See what's inside →</a>
       </div>
@@ -804,7 +811,7 @@
         <div class="tier-price" id="price-futures">$100<span>/mo</span></div>
         <div class="tier-sub" id="sub-futures"></div>
         <ul>
-          <li><span class="tick">✓</span><span><b>Live futures trading</b> 10+ times each week</span></li>
+          <li><span class="tick">✓</span><span><b>Live futures trading</b> 3&ndash;5 times each week</span></li>
           <li><span class="tick">✓</span><span><b>2 futures night classes</b> with Caleb</span></li>
           <li><span class="tick">✓</span><span><b>Entries &amp; exits shared</b> via Discord live trading</span></li>
           <li><span class="tick">✓</span><span><b>1HR+ Starter Crash Course</b> — chart setup + the IFVG model</span></li>
@@ -855,8 +862,10 @@
     <p style="text-align:center;color:var(--muted);font-size:.78rem;margin:22px auto 0;max-width:640px;">Memberships auto-renew each billing period until you cancel in your Whop account. Cancelling stops the next renewal; it does not end the period you already paid for. There are no refunds for any period, used or unused. See the <a href="terms.html" style="color:var(--gold-ink);">Terms</a> for the full billing terms. Educational content only — profits are never guaranteed.</p>
 
     <!-- Review summary — mirrors the owner's Whop listing (5.0 · 2,240 ratings)
-         snapshotted 2026-08-24; the live values are overwritten by /api/live-stats
-         and /api/content?type=stats when either is connected.
+         snapshotted 2026-08-24. The review count and the members chip are
+         updated by /api/live-stats when connected, otherwise by the Sheet CMS;
+         either way each number has exactly one writer (see SocialStats below),
+         so the two feeds can no longer land a value under the wrong label.
          TODO: owner to substantiate — these are Whop platform ratings and member
          counts, not trading performance. If they are shown as current, they need a
          dated Whop listing export; if any number is ever restated as a result, it
@@ -1008,62 +1017,42 @@
         <div class="role">Founder · Futures — NQ &amp; ES</div>
         <p class="bio">10 years in the markets. Disciplined futures day trading, technical analysis, and risk management. <!-- TODO: owner to supply full bio --></p>
       </div>
-      <div class="team-card" data-blank>
-        <div class="team-avatar team-avatar-blank">+</div>
-        <h3>Team Member</h3>
-        <div class="role">Role coming soon</div>
-        <p class="bio">Bio coming soon.</p>
-      </div>
-      <div class="team-card" data-blank>
-        <div class="team-avatar team-avatar-blank">+</div>
-        <h3>Team Member</h3>
-        <div class="role">Role coming soon</div>
-        <p class="bio">Bio coming soon.</p>
-      </div>
-      <div class="team-card" data-blank>
-        <div class="team-avatar team-avatar-blank">+</div>
-        <h3>Team Member</h3>
-        <div class="role">Role coming soon</div>
-        <p class="bio">Bio coming soon.</p>
-      </div>
-      <div class="team-card" data-blank>
-        <div class="team-avatar team-avatar-blank">+</div>
-        <h3>Team Member</h3>
-        <div class="role">Role coming soon</div>
-        <p class="bio">Bio coming soon.</p>
-      </div>
-      <div class="team-card" data-blank>
-        <div class="team-avatar team-avatar-blank">+</div>
-        <h3>Team Member</h3>
-        <div class="role">Role coming soon</div>
-        <p class="bio">Bio coming soon.</p>
-      </div>
+      <!-- OWNER: the five "Team Member / Role coming soon / Bio coming soon"
+           placeholder cards that used to sit here were removed on 2026-08-31 --
+           placeholder identities on a page selling a paid product read as an
+           abandoned site. Restore them with REAL people only: publish rows in
+           the Sheet CMS "team" tab (name / role / bio / photoUrl) and they are
+           appended after PJ's card automatically, or hand-write a
+           <div class="team-card"> here in the same shape as PJ's above.
+           Never invent a name, role, or bio (AGENTS.md non-negotiable #2). -->
     </div>
   </div>
 </section>
 
-<!-- MEMBER RESULTS WALL — intentionally BLANK for the owner to fill (2026-08-24).
-     To add a card later, copy this template into .results-grid below and drop
-     the image into assets/results/ (create the folder):
-       <figure class="result-card">
-         <img src="assets/results/YOUR_IMAGE.jpg" alt="Member milestone" loading="lazy">
-         <figcaption>TODO: short factual caption (e.g., "Passed 50K — funded")</figcaption>
-       </figure>
-     Keep captions factual; results always vary — never guarantee outcomes. -->
+<!-- MEMBER RESULTS WALL — the whole section is HIDDEN until there is
+     something real to show. The "Wall coming soon / watch the Discord for the
+     first drops" empty state was removed on 2026-08-31: an advertised wall with
+     nothing on it reads as an abandoned site to a first-time visitor.
+     OWNER — to bring it back, either:
+       a) publish rows in the Sheet CMS "results" tab (imageUrl + caption); the
+          script below fills the grid and unhides this section automatically, or
+       b) drop images into assets/results/ (create the folder), paste cards into
+          .results-grid, and delete the hidden attribute on this section:
+            <figure class="result-card">
+              <img src="assets/results/YOUR_IMAGE.jpg" alt="Member milestone" loading="lazy">
+              <figcaption>Short factual caption (e.g., "Passed 50K — funded")</figcaption>
+            </figure>
+     Keep captions factual; results always vary — never guarantee outcomes.
+     The #wins anchor stays put either way: eight other pages link to it. -->
 <span id="wins" aria-hidden="true" style="display:block;height:0;scroll-margin-top:90px;"></span>
-<section id="results" style="background:var(--bg2);">
+<section id="results" style="background:var(--bg2);" hidden>
   <div class="section-inner">
     <div style="text-align:center;margin-bottom:36px;" data-reveal>
       <div class="section-tag">Member Results</div>
       <h2 class="section-title">The <span class="gold">Results Wall</span></h2>
       <p class="section-sub" style="margin:0 auto;">Real member milestones — payouts, passes, and funded accounts. Results vary and are never typical or guaranteed.</p>
     </div>
-    <div class="results-empty" id="results-empty" data-reveal>
-      <div style="font-size:2.2rem;margin-bottom:10px;">🏆</div>
-      <h3>Wall coming soon</h3>
-      <p>Member payout passes and funded-account milestones will be featured right here. Watch the Discord for the first drops.</p>
-    </div>
-    <div class="results-grid" id="results-grid" style="display:none;" data-reveal></div>
+    <div class="results-grid" id="results-grid" data-reveal></div>
     <p style="text-align:center;color:var(--muted);font-size:.78rem;margin-top:22px;">Results vary and are never typical or guaranteed. Individual outcomes depend on skill, risk management, and market conditions.</p>
   </div>
 </section>
@@ -1473,7 +1462,50 @@ document.addEventListener('DOMContentLoaded', async function () {
   if (session) unlockDashAndReviews(session);
 });
 
-// ─── LIVE STATS (Discord + Whop) — replaces hand-typed numbers when available ───
+// ─── SOCIAL STATS — ONE writer per number, whichever feed answers first ───
+//
+// Two async feeds used to write the same hero elements: /api/live-stats
+// (Whop REST) and /api/content?type=stats (the owner's Sheet CMS). Whichever
+// resolved last won, so a Whop *product member count* could land inside the
+// "joined" element and be displayed under the lifetime "joined on Whop"
+// label — a number under the wrong noun.
+//
+// Fix: every element belongs to exactly one STAT key, each STAT renders its
+// own label text, and each source has a rank. A lower-ranked source can never
+// overwrite a value a higher-ranked one already wrote, so the result is the
+// same regardless of which fetch lands first, and re-applying the same source
+// is idempotent.
+//
+// The distinction that caused the bug, stated once: `joined` is the lifetime
+// count of people who have ever joined on Whop; `members` is how many are
+// members right now. Whop's API member_count is the second one. They are not
+// interchangeable and must never share an element.
+const SocialStats = (function () {
+  const RANK = { live: 2, cms: 1 };
+  const STATS = {
+    joined:  [['hb-joined', (v) => v], ['pb-joined', (v) => v]],
+    members: [['hb-joined-chip', (v) => v + ' members']],
+    reviews: [['hb-reviews', (v) => v], ['pb-reviews-label', (v) => v + ' reviews']],
+    rating:  [['hb-rating', (v) => v], ['pb-rating', (v) => v + ' ★']],
+  };
+  const writtenRank = {};
+  return function applyStats(source, values) {
+    const rank = RANK[source] || 0;
+    Object.keys(values || {}).forEach((key) => {
+      const value = values[key];
+      const targets = STATS[key];
+      if (!targets || value == null || value === '') return;
+      if ((writtenRank[key] || 0) > rank) return; // a better source already wrote this
+      writtenRank[key] = rank;
+      targets.forEach(function (t) {
+        const el = document.getElementById(t[0]);
+        if (el) el.textContent = t[1](value);
+      });
+    });
+  };
+})();
+
+// ─── LIVE STATS (Whop) — replaces hand-typed numbers when the feed is on ───
 (async function loadLiveStats() {
   let data;
   try {
@@ -1484,23 +1516,15 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   const fmt = (n) => n == null ? null : n.toLocaleString('en-US');
 
-  if (data.discord && data.discord.memberCount != null) {
-    const el = document.getElementById('discord-count');
-    if (el) el.textContent = fmt(data.discord.memberCount) + '+';
-  }
+  // data.discord.memberCount is deliberately not rendered: the page has no
+  // element for it (the old code wrote to a #discord-count that has never
+  // existed on this page). If the owner wants it, add an element and give it
+  // its own STAT key above — do not hang it off a Whop number.
   if (data.whop) {
-    const joined = fmt(data.whop.memberCount);
-    const reviews = fmt(data.whop.reviewCount);
-    if (joined) {
-      const j = document.getElementById('hb-joined');
-      if (j) j.textContent = joined;
-      const chip = document.getElementById('hb-joined-chip');
-      if (chip) chip.textContent = joined + ' members';
-    }
-    if (reviews) {
-      const r = document.getElementById('hb-reviews');
-      if (r) r.textContent = reviews;
-    }
+    SocialStats('live', {
+      members: fmt(data.whop.memberCount),
+      reviews: fmt(data.whop.reviewCount),
+    });
   }
 })();
 
@@ -2184,24 +2208,29 @@ setInterval(tickSessionClock, 30000);
     })
     .catch(() => {});
 
-  // 2) Team — fills the blank slots; PJ's card is never touched.
+  // 2) Team — appends the owner's published members after PJ's card. The page
+  //    no longer ships blank "Team Member" slots to fill, so a member only
+  //    ever appears once the owner has published a real name for them; an
+  //    unnamed row is skipped rather than rendered as a placeholder.
   fetch('/api/content?type=team', { cache: 'no-store' })
     .then((r) => r.json().catch(() => ({})))
     .then((d) => {
       if (!d.ok || !Array.isArray(d.items) || !d.items.length) return;
-      const blanks = document.querySelectorAll('#team-grid .team-card[data-blank]');
-      d.items.slice(0, blanks.length).forEach((m, i) => {
-        const card = blanks[i];
-        const avatar = card.querySelector('.team-avatar');
-        if (m.photoUrl) {
-          avatar.outerHTML = '<img class="team-avatar" src="' + esc(m.photoUrl) + '" alt="">';
-        } else {
-          avatar.classList.remove('team-avatar-blank');
-          avatar.textContent = String(m.name || '?').trim().slice(0, 2).toUpperCase();
-        }
-        card.querySelector('h3').textContent = m.name || 'Team Member';
-        card.querySelector('.role').textContent = m.role || '';
-        card.querySelector('.bio').textContent = m.bio || '';
+      const grid = document.getElementById('team-grid');
+      if (!grid) return;
+      d.items.forEach((m) => {
+        const name = String(m.name || '').trim();
+        if (!name) return;
+        const card = document.createElement('div');
+        card.className = 'team-card';
+        card.innerHTML =
+          (m.photoUrl
+            ? '<img class="team-avatar" src="' + esc(m.photoUrl) + '" alt="">'
+            : '<div class="team-avatar">' + esc(name.slice(0, 2).toUpperCase()) + '</div>') +
+          '<h3>' + esc(name) + '</h3>' +
+          (m.role ? '<div class="role">' + esc(m.role) + '</div>' : '') +
+          (m.bio ? '<p class="bio">' + esc(m.bio) + '</p>' : '');
+        grid.appendChild(card);
       });
     })
     .catch(() => {});
@@ -2244,17 +2273,16 @@ setInterval(tickSessionClock, 30000);
       if (!d.ok || !Array.isArray(d.items) || !d.items.length) return;
       const byKey = {};
       d.items.forEach((s) => { if (s.key) byKey[s.key] = s.value; });
-      if (byKey.joined) {
-        ['hb-joined', 'pb-joined'].forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = byKey.joined; });
-      }
-      if (byKey.reviews) {
-        const hb = document.getElementById('hb-reviews'); if (hb) hb.textContent = byKey.reviews;
-        const pb = document.getElementById('pb-reviews-label'); if (pb) pb.textContent = byKey.reviews + ' reviews';
-      }
-      if (byKey.rating) {
-        const hb = document.getElementById('hb-rating'); if (hb) hb.textContent = byKey.rating;
-        const pb = document.getElementById('pb-rating'); if (pb) pb.textContent = byKey.rating + ' ★';
-      }
+      // Goes through the same single-writer table as /api/live-stats, so
+      // arrival order cannot decide which number ends up under which label.
+      // 'members' is accepted here too — the Sheet is the only source for it
+      // when the Whop feed is unconfigured.
+      SocialStats('cms', {
+        joined: byKey.joined,
+        members: byKey.members,
+        reviews: byKey.reviews,
+        rating: byKey.rating,
+      });
     })
     .catch(() => {});
 
@@ -2263,14 +2291,17 @@ setInterval(tickSessionClock, 30000);
     .then((r) => r.json().catch(() => ({})))
     .then((d) => {
       if (!d.ok || !Array.isArray(d.items) || !d.items.length) return;
-      const empty = document.getElementById('results-empty');
+      const section = document.getElementById('results');
       const grid = document.getElementById('results-grid');
-      grid.innerHTML = d.items.map((item) =>
+      if (!section || !grid) return;
+      const cards = d.items.filter((item) => item && item.imageUrl).map((item) =>
         '<figure class="result-card"><img src="' + esc(item.imageUrl) + '" alt="Member milestone" loading="lazy"><figcaption>' +
         esc(item.caption || '') + '</figcaption></figure>'
-      ).join('');
-      empty.style.display = 'none';
-      grid.style.display = 'grid';
+      );
+      if (!cards.length) return;
+      grid.innerHTML = cards.join('');
+      // The section ships hidden; real cards are the only thing that reveals it.
+      section.hidden = false;
     })
     .catch(() => {});
 })();

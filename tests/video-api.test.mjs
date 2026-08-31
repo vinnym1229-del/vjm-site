@@ -12,31 +12,60 @@
 // fetch a trailing moov atom (or to scrub to the end of the file), and would
 // have silently gotten the wrong slice back as a "successful" 206 — no error,
 // just corrupt playback. Fixed in the same commit as this test.
+//
+// Second incident, 2026-08-31 (the read-amplification tests at the bottom):
+// every hit used to pull the ENTIRE object out of KV as an ArrayBuffer — the
+// player's opening HEAD read the whole video just to report Content-Length,
+// the GET that followed read it all over again, and each seek read it all
+// again before slicing. The handler now takes the size from KV metadata and
+// streams, so a HEAD transfers no body at all and a Range GET stops pulling
+// once it has the bytes it was asked for. The mock KV below fails the test if
+// the handler ever reaches for get(..., {type:'arrayBuffer'}) again, and
+// counts bytes actually pulled through the stream.
 import assert from 'node:assert/strict';
 import { onRequestGet, onRequestHead } from '../functions/video/pj-intro.mp4.js';
-
-function bufOf(bytes) {
-  const arr = new Uint8Array(bytes.length);
-  for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i) % 256;
-  return arr.buffer;
-}
 
 // 1000 bytes, each byte i has value i % 256, so a slice's contents can be
 // checked without needing meaningful "video" data.
 const TOTAL = 1000;
+const CHUNK = 100; // KV hands the body over in chunks; small enough to observe
 function makeVideoBuf() {
   const arr = new Uint8Array(TOTAL);
   for (let i = 0; i < TOTAL; i++) arr[i] = i % 256;
   return arr.buffer;
 }
 
-function kvEnv(buf = makeVideoBuf()) {
+// A lazily-pulled stream that records how many bytes the handler actually
+// consumed — the whole point of the read-amplification fix.
+function streamOf(buf, stats) {
+  const all = new Uint8Array(buf);
+  let offset = 0;
+  return new ReadableStream({
+    pull(controller) {
+      if (offset >= all.length) { controller.close(); return; }
+      const next = all.slice(offset, Math.min(all.length, offset + CHUNK));
+      offset += next.length;
+      stats.bytesPulled += next.length;
+      controller.enqueue(next);
+    },
+  }, { highWaterMark: 0 }); // no read-ahead, so bytesPulled reflects the handler alone
+}
+
+// withSize=false simulates an object uploaded before the size metadata
+// existed: the handler must still work, with a single full read.
+function kvEnv(buf = makeVideoBuf(), { withSize = true } = {}) {
+  const stats = { reads: 0, bytesPulled: 0 };
   return {
+    stats,
     vjm_video: {
-      async get(key, opts) {
-        if (key !== 'pj-intro.mp4') return null;
-        assert.equal(opts?.type, 'arrayBuffer');
-        return buf;
+      async getWithMetadata(key, opts) {
+        assert.equal(opts?.type, 'stream', 'KV must be read as a stream, not buffered whole');
+        if (key !== 'pj-intro.mp4') return { value: null, metadata: null };
+        stats.reads += 1;
+        return { value: streamOf(buf, stats), metadata: withSize ? { size: new Uint8Array(buf).length } : null };
+      },
+      async get() {
+        throw new Error('regression: the whole object must not be read via get()');
       },
     },
   };
@@ -64,9 +93,11 @@ async function bodyBytes(res) {
 
 // KV has no object under the key yet (not uploaded) -> 404, not a crash.
 {
-  const emptyEnv = { vjm_video: { async get() { return null; } } };
+  const emptyEnv = { vjm_video: { async getWithMetadata() { return { value: null, metadata: null }; } } };
   const res = await onRequestGet({ env: emptyEnv, request: req() });
   assert.equal(res.status, 404);
+  const head = await onRequestHead({ env: emptyEnv });
+  assert.equal(head.status, 404);
 }
 
 // No Range header at all -> full 200 with the whole buffer.
@@ -77,6 +108,8 @@ async function bodyBytes(res) {
   assert.equal(res.headers.get('Accept-Ranges'), 'bytes');
   const bytes = await bodyBytes(res);
   assert.equal(bytes.length, TOTAL);
+  assert.equal(bytes[0], 0);
+  assert.equal(bytes[999], 999 % 256);
 }
 
 // HEAD reports size/Accept-Ranges without a body, so the player knows
@@ -107,6 +140,7 @@ async function bodyBytes(res) {
   assert.equal(res.headers.get('Content-Range'), 'bytes 900-999/1000');
   const bytes = await bodyBytes(res);
   assert.equal(bytes.length, 100);
+  assert.equal(bytes[0], 900 % 256);
 }
 
 // A "bytes=end-" range past the end of the file clamps rather than
@@ -160,6 +194,69 @@ async function bodyBytes(res) {
   // start > end.
   const res = await onRequestGet({ env: kvEnv(), request: req('bytes=200-100') });
   assert.equal(res.status, 416);
+}
+
+// ---------------------------------------------------------------------------
+// Read amplification (2026-08-31 incident).
+
+// A HEAD answers from KV metadata alone: one lookup, zero body bytes.
+{
+  const env = kvEnv();
+  const res = await onRequestHead({ env });
+  assert.equal(res.status, 200);
+  assert.equal(env.stats.reads, 1, 'HEAD must read the key once');
+  assert.equal(env.stats.bytesPulled, 0, 'HEAD must not pull the video body out of KV');
+}
+
+// A Range GET stops pulling once the requested bytes are in hand — the tail
+// of the object is never transferred. (One chunk of read-ahead is inherent to
+// a queued ReadableStream, hence the CHUNK slack.)
+{
+  const env = kvEnv();
+  const res = await onRequestGet({ env, request: req('bytes=0-99') });
+  assert.equal(res.status, 206);
+  assert.equal(env.stats.reads, 1, 'one KV lookup per request');
+  assert.ok(env.stats.bytesPulled <= 100 + CHUNK,
+    `a 100-byte range pulled ${env.stats.bytesPulled} bytes; the rest of the object must not be read`);
+}
+{
+  const env = kvEnv();
+  await onRequestGet({ env, request: req('bytes=400-499') });
+  assert.ok(env.stats.bytesPulled <= 500 + CHUNK,
+    `a mid-file range pulled ${env.stats.bytesPulled} bytes; nothing past the range end should be read`);
+}
+
+// A 416 gives up without pulling the body at all.
+{
+  const env = kvEnv();
+  const res = await onRequestGet({ env, request: req('bytes=5000-6000') });
+  assert.equal(res.status, 416);
+  assert.equal(env.stats.bytesPulled, 0, 'an unsatisfiable range must not read the body');
+}
+
+// Objects stored before the size metadata existed still work: one full read,
+// correct size, correct slice — degraded, never broken.
+{
+  const env = kvEnv(makeVideoBuf(), { withSize: false });
+  const res = await onRequestGet({ env, request: req('bytes=-500') });
+  assert.equal(res.status, 206);
+  assert.equal(res.headers.get('Content-Range'), 'bytes 500-999/1000');
+  const bytes = await bodyBytes(res);
+  assert.equal(bytes[0], 500 % 256);
+  assert.equal(env.stats.reads, 1, 'the metadata-less fallback must still read the object only once');
+}
+{
+  const env = kvEnv(makeVideoBuf(), { withSize: false });
+  const res = await onRequestHead({ env });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('Content-Length'), String(TOTAL));
+}
+{
+  const env = kvEnv(makeVideoBuf(), { withSize: false });
+  const res = await onRequestGet({ env, request: req() });
+  assert.equal(res.status, 200);
+  const bytes = await bodyBytes(res);
+  assert.equal(bytes.length, TOTAL);
 }
 
 console.log('VJM video Range-request tests passed.');
