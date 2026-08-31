@@ -229,3 +229,25 @@ test('gated course content is stripped server-side, not just hidden client-side'
   // serving the unstripped page (that would silently reopen the leak).
   assert.match(mw, /catch\s*\{[^}]*authorized\s*=\s*false/, 'session-check errors must default to unauthorized');
 });
+
+// ---------------------------------------------------------------------------
+// Incident: the testimonials collage on index.html was `loading="lazy"` with
+// only `style="width:100%;height:auto"` and no width/height attributes, so
+// the browser had no intrinsic size to reserve — the page jumped when the
+// 2000x1125 image finally loaded in, right above the "Already a Member?"
+// CTA. Every other static lazy image already carried explicit dimensions;
+// this pins that every one of them keeps doing so. CMS-driven <img> tags
+// built in JS from owner-uploaded photos (unknown dimensions at render time)
+// are exempt — this only checks literal <img> tags in the HTML source.
+test('every lazy-loaded image reserves its layout space with width/height', () => {
+  const offenders = [];
+  for (const p of PAGES) {
+    const live = read(p).replace(/<script[\s\S]*?<\/script>/g, '').replace(/<!--[\s\S]*?-->/g, '');
+    for (const m of live.matchAll(/<img\b[^>]*>/g)) {
+      const tag = m[0];
+      if (!/loading="lazy"/.test(tag)) continue;
+      if (!/\bwidth="\d+"/.test(tag) || !/\bheight="\d+"/.test(tag)) offenders.push(`${p}: ${tag}`);
+    }
+  }
+  assert.deepEqual(offenders, [], `lazy images missing width/height:\n  ${offenders.join('\n  ')}`);
+});
