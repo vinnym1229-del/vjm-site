@@ -152,7 +152,73 @@
   // Each .quiz block carries its question data as a JSON <script> sibling
   // (type="application/json") so no extra network fetch is needed and the
   // same static page still works offline. Grading is entirely client-side.
-  function initQuizzes() {
+  //
+  // Answer position is NOT trustworthy in the source HTML: the authored pages
+  // put the correct option second almost every time, so "always click the
+  // second choice" would score ~96% without reading a word. The fix that does
+  // not require editing a hundred hand-written questions is to shuffle the
+  // DISPLAYED order once per page load and key everything — grading and the
+  // correct/incorrect highlight — to each choice's ORIGINAL index, which is
+  // carried on the radio's value and mirrored onto the choice as data-oi.
+
+  // Pure: given N choices, return them paired with their original index in a
+  // shuffled order (Fisher-Yates). Exported for tests via window.__quizInternals.
+  // Never drops, duplicates or rewrites a choice — it only reorders.
+  function orderChoices(choices, rand) {
+    const random = typeof rand === 'function' ? rand : Math.random;
+    const out = Array.from(choices, (choice, oi) => ({ oi, choice }));
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      const tmp = out[i]; out[i] = out[j]; out[j] = tmp;
+    }
+    return out;
+  }
+
+  // Pure: grade one answer. `picked` is an ORIGINAL choice index (never a
+  // rendered position), so shuffling the DOM can never change a score.
+  function isCorrectPick(picked, question) {
+    return Number.isInteger(question && question.correct) && picked === question.correct;
+  }
+
+  // Read the original index a choice element was stamped with at render time,
+  // falling back to its radio value (which the authored HTML already sets to
+  // the original index) and finally to its current DOM position.
+  function originalIndexOf(choiceEl, fallback) {
+    const stamped = choiceEl.getAttribute('data-oi');
+    if (stamped !== null && stamped !== '' && Number.isInteger(Number(stamped))) return Number(stamped);
+    const input = choiceEl.querySelector('input[type="radio"]');
+    const raw = input ? input.value : '';
+    if (raw !== '' && raw !== null && raw !== undefined && Number.isInteger(Number(raw))) return Number(raw);
+    return fallback;
+  }
+
+  // Shuffle the rendered order of one question's choices. The whole
+  // .quiz-choice node moves, so a label keeps whatever input it wraps or
+  // points at (`for`/`id` pairs travel together) and the radio group `name`
+  // is untouched; tab order follows DOM order, so keyboard and screen-reader
+  // order match what is on screen.
+  function shuffleQuestionChoices(block, rand) {
+    const choices = [...block.querySelectorAll('.quiz-choice')];
+    if (choices.length < 2) return;
+    choices.forEach((el, i) => {
+      const oi = originalIndexOf(el, i);
+      el.setAttribute('data-oi', String(oi));
+      const input = el.querySelector('input[type="radio"]');
+      // The radio value IS the original index; keep the two in sync so a
+      // grader reading either one gets the same answer.
+      if (input) input.value = String(oi);
+      // Keep an explicit label/input association intact when one is used.
+      if (input && el.tagName === 'LABEL' && el.hasAttribute('for') && input.id) {
+        el.setAttribute('for', input.id);
+      }
+    });
+    const parent = choices[0].parentNode;
+    if (!parent) return;
+    const anchor = choices[choices.length - 1].nextSibling;
+    for (const { choice } of orderChoices(choices, rand)) parent.insertBefore(choice, anchor);
+  }
+
+  function initQuizzes(rand) {
     document.querySelectorAll('.quiz').forEach((quiz) => {
       const dataNode = quiz.querySelector('script[type="application/json"]');
       if (!dataNode) return;
@@ -161,20 +227,28 @@
       const submitBtn = quiz.querySelector('.quiz-submit');
       const scoreEl = quiz.querySelector('.quiz-score');
       if (!submitBtn) return;
+      // Shuffle once, at render time — not on submit — so a member's already
+      // selected radio never jumps to a different answer under them.
+      questions.forEach((q, qi) => {
+        const block = quiz.querySelector(`.quiz-q[data-qi="${qi}"]`);
+        if (block) shuffleQuestionChoices(block, rand);
+      });
       submitBtn.addEventListener('click', () => {
         let correct = 0;
         questions.forEach((q, qi) => {
           const block = quiz.querySelector(`.quiz-q[data-qi="${qi}"]`);
           if (!block) return;
           const checked = block.querySelector('input[type="radio"]:checked');
+          const picked = checked ? Number(checked.value) : null;
           const explain = block.querySelector('.quiz-explain');
           block.querySelectorAll('.quiz-choice').forEach((choiceEl, ci) => {
+            const oi = originalIndexOf(choiceEl, ci);
             choiceEl.classList.remove('correct', 'incorrect');
-            if (ci === q.correct) choiceEl.classList.add('correct');
-            else if (checked && Number(checked.value) === ci) choiceEl.classList.add('incorrect');
+            if (isCorrectPick(oi, q)) choiceEl.classList.add('correct');
+            else if (checked && picked === oi) choiceEl.classList.add('incorrect');
           });
           if (explain) explain.classList.add('show');
-          if (checked && Number(checked.value) === q.correct) correct++;
+          if (checked && isCorrectPick(picked, q)) correct++;
         });
         if (scoreEl) {
           scoreEl.textContent = `Score: ${correct} / ${questions.length}`;
@@ -183,6 +257,10 @@
       });
     });
   }
+
+  // Test seam: the shuffle and grading rules are pure and unit-tested from
+  // node (tests/quiz-integrity.test.mjs) without a browser.
+  window.__quizInternals = { orderChoices, isCorrectPick };
 
   // Grouped nav dropdowns (same behavior as the homepage): hover opens via
   // CSS; this adds click + keyboard control and outside-click/Escape close.
