@@ -71,6 +71,12 @@
 <link rel="stylesheet" href="assets/tokens.css">
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/theme.js"></script>
+<!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
+     the moment the page starts parsing: anything fired before assets/funnel.js
+     loads is queued on window.vjmTrackQueue and drained by it. No third-party
+     analytics script is loaded and no request is made — see assets/funnel.js
+     for the single place a provider gets wired in. -->
+<script>window.vjmTrackQueue=window.vjmTrackQueue||[];window.vjmTrack=window.vjmTrack||function(n,p){try{window.vjmTrackQueue.push([n,p||{}]);}catch(e){}};</script>
 </head>
 <body>
 
@@ -393,9 +399,9 @@
     <span class="gold">Futures, Made Simple.</span></h1>
     <p class="hero-sub">With ten years of hands-on experience navigating the fast-paced world of financial markets, PJ Trades is a seasoned day trader specializing in <strong style="color:var(--text);">NQ &amp; ES futures</strong>. His approach combines technical analysis, market research, and risk management. <!-- TODO: owner to substantiate before any performance or win-rate claim is restored here: broker or prop-firm statements covering every account traded, the exact start and end dates, all deposits and withdrawals, every losing period in the same range, and the method used to compute any figure quoted. --></p>
     <div class="hero-ctas">
-      <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=hero-cta" target="_blank" rel="noopener" class="btn btn-gold" style="font-size:1rem;padding:15px 30px;">⭐ Join Complete — $129/mo</a>
+      <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=hero-cta" target="_blank" rel="noopener" class="btn btn-gold" data-vjm-event="plan_cta" data-vjm-plan="complete" data-vjm-location="hero" data-vjm-props='{"price":"$129/mo"}' style="font-size:1rem;padding:15px 30px;">⭐ Join Complete — $129/mo</a>
       <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;">💬 Join the Free Discord</a>
-      <a href="futures-dissection.html" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;border-color:var(--border);color:var(--text);">📚 Free Futures Starter Course</a>
+      <a href="futures-dissection.html" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;border-color:var(--border);color:var(--text);" data-vjm-event="free_course_start" data-vjm-course="futures-dissection" data-vjm-location="hero">📚 Free Futures Starter Course</a>
     </div>
     <div class="hero-trust">
       <span>✅ Live futures trading 3&ndash;5 times each week</span>
@@ -477,9 +483,9 @@
         <h3>Futures Dissection</h3>
         <p>Contract economics, the product map, tick math, margin reality, and the Globex clock — the foundation every futures trade sits on.</p>
         <div class="course-meta">50 lessons · Level 1 free with quiz</div>
-        <a class="course-cta" href="futures-dissection.html">Start the free course →</a>
+        <a class="course-cta" href="futures-dissection.html" data-vjm-event="free_course_start" data-vjm-course="futures-dissection" data-vjm-location="curriculum">Start the free course →</a>
       </div>
-      <div class="course-card" data-reveal>
+      <div class="course-card" data-reveal data-vjm-view="lock_view" data-vjm-course="stock-breakdown" data-vjm-tier="complete" data-vjm-props='{"intent":"view"}'>
         <div class="course-badge">🔒 Members</div>
         <h3>Stock Breakdown</h3>
         <!-- No backtesting engine ships on this site: functions/api/_lib/backtest-core.js
@@ -488,21 +494,21 @@
              tool members get. Do not restate it as a product feature until one ships. -->
         <p>Tradability metrics through institutional order flow, how professional backtests are designed and validated, and risk governance across four levels.</p>
         <div class="course-meta">46 lessons · 4 levels</div>
-        <a class="course-cta" href="stock-breakdown.html">See what's inside →</a>
+        <a class="course-cta" href="stock-breakdown.html" data-vjm-event="lock_view" data-vjm-course="stock-breakdown" data-vjm-tier="complete" data-vjm-props='{"intent":"click"}'>See what's inside →</a>
       </div>
-      <div class="course-card" data-reveal>
+      <div class="course-card" data-reveal data-vjm-view="lock_view" data-vjm-course="options-lab" data-vjm-tier="complete" data-vjm-props='{"intent":"view"}'>
         <div class="course-badge">🔒 Members</div>
         <h3>Options Lab</h3>
         <p>All five Greeks, IV and expected move, spreads and income structures — plus live calculators for payoffs and position risk.</p>
         <div class="course-meta">51 lessons · 4 levels + calculators</div>
-        <a class="course-cta" href="options-lab.html">See what's inside →</a>
+        <a class="course-cta" href="options-lab.html" data-vjm-event="lock_view" data-vjm-course="options-lab" data-vjm-tier="complete" data-vjm-props='{"intent":"click"}'>See what's inside →</a>
       </div>
-      <div class="course-card" data-reveal>
+      <div class="course-card" data-reveal data-vjm-view="lock_view" data-vjm-course="psychology-enhancer" data-vjm-tier="futures_core" data-vjm-props='{"intent":"view"}'>
         <div class="course-badge">🔒 Members</div>
         <h3>Psychology Enhancer</h3>
         <p>Behavioral control, universal risk math, journaling systems, and tax structure. St's discipline essay is free to read.</p>
         <div class="course-meta">59 lessons · 4 modules + free essay</div>
-        <a class="course-cta" href="psychology-enhancer.html">Read the essay →</a>
+        <a class="course-cta" href="psychology-enhancer.html" data-vjm-event="lock_view" data-vjm-course="psychology-enhancer" data-vjm-tier="futures_core" data-vjm-props='{"intent":"click"}'>Read the essay →</a>
       </div>
     </div>
   </div>
@@ -563,7 +569,7 @@
       <div id="quiz-box" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:30px;" data-reveal>
         <div id="quiz-content">
           <div id="q1" class="quiz-q">
-            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">1 of 3 — You lose two trades in a row. Are you taking a third?</p>
+            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">1 of 4 — You lose two trades in a row. Are you taking a third?</p>
             <div style="display:flex;flex-direction:column;gap:10px;">
               <button class="quiz-btn" onclick="quizAnswer(1,'a')">🛑 No — I hit my daily loss limit and step away</button>
               <button class="quiz-btn" onclick="quizAnswer(1,'b')">🎰 Yes — I need to win it back right now</button>
@@ -571,7 +577,7 @@
             </div>
           </div>
           <div id="q2" class="quiz-q" style="display:none;">
-            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">2 of 3 — How do you calculate your risk per trade/day, and when do you do it?</p>
+            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">2 of 4 — How do you calculate your risk per trade/day, and when do you do it?</p>
             <div style="display:flex;flex-direction:column;gap:10px;">
               <button class="quiz-btn" onclick="quizAnswer(2,'a')">💱 Fixed % of my account, set before the session starts</button>
               <button class="quiz-btn" onclick="quizAnswer(2,'b')">🚀 I don't calculate it — I just watch the P&amp;L</button>
@@ -579,18 +585,48 @@
             </div>
           </div>
           <div id="q3" class="quiz-q" style="display:none;">
-            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">3 of 3 — What is your primary goal when trading futures?</p>
+            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">3 of 4 — What is your primary goal when trading futures?</p>
             <div style="display:flex;flex-direction:column;gap:10px;">
               <button class="quiz-btn" onclick="quizAnswer(3,'a')">📈 Consistent execution of my edge over many trades — payouts follow</button>
               <button class="quiz-btn" onclick="quizAnswer(3,'b')">⚡ Make as much money as possible this month, regardless of risk</button>
               <button class="quiz-btn" onclick="quizAnswer(3,'c')">🧠 Still figuring out my edge, learning each session</button>
             </div>
           </div>
+          <div id="q4" class="quiz-q" style="display:none;">
+            <p style="font-weight:700;font-size:1rem;margin-bottom:16px;color:var(--text);">4 of 4 — Which market do you actually want to get good at first?</p>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <button class="quiz-btn" onclick="quizAnswer(4,'futures')">📊 Futures — NQ, ES, contracts and tick math</button>
+              <button class="quiz-btn" onclick="quizAnswer(4,'stocks')">🏦 Stocks — order flow, tradability, position risk</button>
+              <button class="quiz-btn" onclick="quizAnswer(4,'options')">🧮 Options — Greeks, IV, spreads and income structures</button>
+              <button class="quiz-btn" onclick="quizAnswer(4,'process')">🧘 None of them yet — my process is what needs fixing</button>
+            </div>
+          </div>
           <div id="quiz-result" style="display:none;text-align:center;">
             <div id="quiz-result-icon" style="font-size:3rem;margin-bottom:12px;"></div>
             <div id="quiz-result-title" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--text);margin-bottom:10px;"></div>
             <div id="quiz-result-text" style="color:var(--text);line-height:1.7;margin-bottom:20px;font-size:0.92rem;"></div>
-            <button onclick="resetQuiz()" style="background:var(--accent);border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;cursor:pointer;font-size:0.82rem;">Retake Quiz</button>
+
+            <!-- ROUTED NEXT STEP — the quiz knows what this visitor wants; it
+                 used to end at a Retake button and throw that away. Every link
+                 here goes to a real page in this repo; nothing is promised
+                 that the site does not already have. -->
+            <div id="quiz-track" style="border-top:1px solid var(--border);padding-top:20px;text-align:left;">
+              <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Where to start</div>
+              <div id="quiz-track-name" style="font-family:'Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:900;color:var(--text);"></div>
+              <p id="quiz-track-why" style="color:var(--muted);font-size:0.86rem;line-height:1.6;margin:6px 0 14px;"></p>
+              <a id="quiz-track-cta" class="btn btn-gold" href="futures-dissection.html" style="display:inline-block;font-size:0.95rem;padding:12px 22px;"></a>
+              <p id="quiz-track-note" style="font-size:0.74rem;color:var(--muted);margin-top:10px;"></p>
+            </div>
+
+            <!-- OWNED LEAD — the free tier captures no way to reach a visitor
+                 who is not ready to buy today. The form only renders when a
+                 collector is configured (assets/funnel.js: LEAD_ENDPOINT);
+                 with none configured this slot shows the honest alternative
+                 instead of a form that would silently drop the address.
+                 TODO: owner to connect an email collector. -->
+            <div id="quiz-lead" style="border-top:1px solid var(--border);margin-top:18px;padding-top:16px;text-align:left;"></div>
+
+            <button onclick="resetQuiz()" style="background:var(--accent);border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;cursor:pointer;font-size:0.82rem;margin-top:18px;">Retake Quiz</button>
           </div>
         </div>
       </div>
@@ -810,6 +846,15 @@
     </div>
 
     <div class="tier-grid" id="tier-grid" data-reveal>
+      <!-- Per-plan checkout. The backend now distinguishes the two products
+           (functions/api/_lib/entitlements.js: futures_core vs complete), but
+           both CTAs below still resolve to the one public listing URL, so a
+           buyer cannot pick the tier they are paying for at checkout.
+           TODO: owner to confirm the real per-plan Whop checkout URLs and put
+           them in WHOP_PLAN_URLS (see the bundles script near the bottom of
+           this file). Until they are filled in, the CTAs keep the known-good
+           listing URL and are told apart by utm_content + the plan_cta event —
+           no URL is invented here. -->
       <!-- FUTURES — the core $100 product (matches the Whop listing exactly) -->
       <div class="tier-card">
         <div class="tier-badge">Core</div>
@@ -826,11 +871,10 @@
           <li><span class="tick">✓</span><span><b>Prop firm giveaways</b> — win up to $50,000 in funding</span></li>
           <li><span class="tick">✓</span><span><b>Daily futures callouts</b> in Discord</span></li>
         </ul>
-        <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=futures-tier" target="_blank" rel="noopener" class="btn btn-outline" style="width:100%;font-size:1.02rem;padding:15px;">Join Futures on Whop ⭐</a>
+        <a id="cta-futures-core" href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=futures-tier" target="_blank" rel="noopener" class="btn btn-outline" style="width:100%;font-size:1.02rem;padding:15px;" data-vjm-event="plan_cta" data-vjm-plan="futures_core" data-vjm-location="bundles" data-vjm-props='{"price":"$100/mo"}'>Join Futures Core — $100/mo ⭐</a>
       </div>
 
       <!-- COMPLETE — futures + options + stocks with live callouts and full educational materials -->
-      <!-- TODO: owner to confirm the Whop product URL for this tier if it is a separate listing -->
       <div class="tier-card hot">
         <div class="tier-badge red">Complete Bundle</div>
         <div class="tier-name">Futures + Options + Stocks</div>
@@ -843,7 +887,7 @@
           <li><span class="tick">✓</span><span><b>Live callouts</b> across futures, options &amp; stocks</span></li>
           <li><span class="tick">✓</span><span><b>Complete educational materials</b> — every market, one membership</span></li>
         </ul>
-        <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=complete-tier" target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;font-size:1.02rem;padding:15px;">Get Complete on Whop ⭐</a>
+        <a id="cta-complete" href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=complete-tier" target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;font-size:1.02rem;padding:15px;" data-vjm-event="plan_cta" data-vjm-plan="complete" data-vjm-location="bundles" data-vjm-props='{"price":"$129/mo"}'>Get Complete — $129/mo ⭐</a>
       </div>
 
       <!-- IFVG INDICATOR — TradingView indicator, sold separately via fluxcharts -->
@@ -916,7 +960,7 @@
       <div id="dash-gate" style="text-align:center;">
         <p style="color:var(--muted);margin-bottom:20px;">Sign in to see your dashboard, or grab premium to get started.</p>
         <a href="#premium" class="btn btn-gold" style="width:100%;max-width:360px;display:inline-block;">Buy Premium Subscription Now</a>
-        <p style="margin-top:16px;font-size:0.85rem;">Already a member? <a href="premium-guidance.html#signin" style="color:var(--gold-ink);font-weight:700;">Sign in here</a></p>
+        <p style="margin-top:16px;font-size:0.85rem;">Already a member? <a href="premium-guidance.html#signin" style="color:var(--gold-ink);font-weight:700;" data-vjm-event="google_link" data-vjm-location="member-tools" data-vjm-props='{"destination":"premium-guidance#signin"}'>Sign in here</a></p>
       </div>
       <div id="dash-content" style="display:none;">
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;">
@@ -1346,7 +1390,7 @@
     <p class="section-sub" style="max-width:560px;margin:0 auto 30px;">Free members get daily education, market discussion, and a front-row seat to the community. Premium members unlock live futures trading, the Starter Crash Course, and daily callouts — or go Complete for options and stocks too. Start free — upgrade when you're ready.</p>
     <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;">
       <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-gold" style="font-size:1rem;padding:15px 30px;">30,000+ members, one discord. Join now for free</a>
-      <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=site" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:1rem;padding:15px 30px;">⭐ Bundles from $100/mo</a>
+      <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=site" target="_blank" rel="noopener" class="btn btn-outline" data-vjm-event="plan_cta" data-vjm-location="final-cta" style="font-size:1rem;padding:15px 30px;">⭐ Bundles from $100/mo</a>
     </div>
   </div>
 </section>
@@ -1671,10 +1715,58 @@ const quizResults = {
   }
 };
 
+// Tracks the quiz can route to. Every one is a page that exists in this repo;
+// the access note on each is the same rule the server enforces in
+// functions/api/_lib/entitlements.js — futures is the free starter course,
+// psychology sits in the Futures Core tier, stocks and options in Complete.
+const quizTracks = {
+  futures: {
+    name: 'Futures Dissection',
+    href: 'futures-dissection.html',
+    cta: 'Start the free Futures course →',
+    note: 'Free for everyone — no code, no signup.',
+    why: 'Contract economics, tick math, margin reality and the Globex clock — the foundation every futures trade sits on.'
+  },
+  stocks: {
+    name: 'Stock Breakdown',
+    href: 'stock-breakdown.html',
+    cta: "See what's inside Stock Breakdown →",
+    note: 'Members-only course — included in the Complete bundle.',
+    why: 'Tradability metrics through institutional order flow and risk governance across four levels.'
+  },
+  options: {
+    name: 'Options Lab',
+    href: 'options-lab.html',
+    cta: "See what's inside the Options Lab →",
+    note: 'Members-only course — included in the Complete bundle.',
+    why: 'All five Greeks, IV and expected move, spreads and income structures, plus the payoff calculators.'
+  },
+  psychology: {
+    name: 'Psychology Enhancer',
+    href: 'psychology-enhancer.html',
+    cta: 'Read the free discipline essay →',
+    note: "St's discipline essay is free to read; the full module is included from the Futures bundle up.",
+    why: 'Behavioral control, universal risk math and journaling systems — the part that decides whether an edge survives.'
+  }
+};
+
+// Which track the answers imply. Q4 is the market; Q1–Q3 are the process. A
+// "casino trader" result overrides the market choice, because sending someone
+// who just told us they have no loss limit into a new market first is the
+// wrong advice — their market is still offered as a second link.
+function recommendTrack(persona, answers) {
+  const market = answers[4] === 'stocks' || answers[4] === 'options' || answers[4] === 'futures'
+    ? answers[4]
+    : 'psychology';
+  if (persona === 'gambler') return { track: 'psychology', market: market, overridden: market !== 'psychology' };
+  return { track: market, market: market, overridden: false };
+}
+
 function quizAnswer(q, ans) {
+  if (!Object.keys(quizAnswers).length) vjmTrack('quiz_start', { location: 'homepage-quiz' });
   quizAnswers[q] = ans;
   document.getElementById('q'+q).style.display='none';
-  if(q < 3) {
+  if(q < 4) {
     document.getElementById('q'+(q+1)).style.display='block';
   } else {
     showQuizResult();
@@ -1691,15 +1783,105 @@ function showQuizResult() {
   document.getElementById('quiz-result-icon').textContent=r.icon;
   document.getElementById('quiz-result-title').textContent=r.title;
   document.getElementById('quiz-result-text').textContent=r.text;
+
+  const rec = recommendTrack(type, a);
+  const t = quizTracks[rec.track];
+  document.getElementById('quiz-track-name').textContent = t.name;
+  const why = document.getElementById('quiz-track-why');
+  why.textContent = t.why;
+  if (rec.overridden) {
+    const alt = quizTracks[rec.market];
+    why.appendChild(document.createTextNode(' Your answers point at ' + alt.name + ' too — start there once the risk rules are in place: '));
+    const altLink = document.createElement('a');
+    altLink.href = alt.href;
+    altLink.textContent = alt.name + ' →';
+    altLink.style.color = 'var(--gold-ink)';
+    altLink.style.fontWeight = '700';
+    altLink.setAttribute('data-vjm-event', 'quiz_track_alt');
+    altLink.setAttribute('data-vjm-course', alt.href.replace('.html', ''));
+    why.appendChild(altLink);
+  }
+  const cta = document.getElementById('quiz-track-cta');
+  cta.href = t.href;
+  cta.textContent = t.cta;
+  cta.setAttribute('data-vjm-course', t.href.replace('.html', ''));
+  cta.setAttribute('data-vjm-location', 'quiz-result');
+  // The free starter course is the free-tier entry point; the gated tracks are
+  // a lock the visitor is being shown, so they are counted as different stages.
+  cta.setAttribute('data-vjm-event', rec.track === 'futures' ? 'free_course_start' : 'lock_view');
+  document.getElementById('quiz-track-note').textContent = t.note;
+
+  renderQuizLead(rec.track);
   document.getElementById('quiz-result').style.display='block';
+  vjmTrack('quiz_complete', { persona: type, track: rec.track, market: rec.market, overridden: rec.overridden });
+}
+
+// Email capture, honest about what it can and cannot do. When no collector is
+// configured (the default — see assets/funnel.js) no form is shown at all: a
+// form that drops what it is given is worse than no form. Nothing here ever
+// reports a signup that did not happen.
+function renderQuizLead(track) {
+  const box = document.getElementById('quiz-lead');
+  if (!box) return;
+  const configured = !!(window.vjmLead && window.vjmLead.configured());
+  if (!configured) {
+    box.innerHTML =
+      '<p style="font-size:0.82rem;color:var(--muted);line-height:1.6;margin:0;">' +
+      'There is no email list to join yet — nothing to sign up for today. ' +
+      'The Futures starter course is open right now, and the Discord is free.' +
+      '</p>';
+    return;
+  }
+  box.innerHTML =
+    '<p style="font-size:0.86rem;color:var(--text);line-height:1.6;margin:0 0 10px;">Want your recommended track and the free starter lessons by email?</p>' +
+    '<form id="quiz-lead-form" style="display:flex;gap:8px;flex-wrap:wrap;">' +
+      '<label for="quiz-lead-email" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);">Email address</label>' +
+      '<input id="quiz-lead-email" type="email" required autocomplete="email" placeholder="you@example.com" ' +
+        'style="flex:1;min-width:200px;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--accent);color:var(--text);font-size:0.9rem;">' +
+      '<button type="submit" class="btn btn-gold" style="font-size:0.9rem;padding:11px 20px;">Send it</button>' +
+    '</form>' +
+    '<p style="font-size:0.72rem;color:var(--muted);line-height:1.6;margin:10px 0 0;">' +
+      'Used only to send you PJ Trades course and membership emails. No selling, no sharing, unsubscribe in every email. ' +
+      'See the <a href="privacy.html" style="color:var(--gold-ink);">Privacy Policy</a>.' +
+    '</p>' +
+    '<p id="quiz-lead-msg" role="status" aria-live="polite" style="font-size:0.8rem;color:var(--muted);margin:10px 0 0;"></p>';
+
+  const form = document.getElementById('quiz-lead-form');
+  const msg = document.getElementById('quiz-lead-msg');
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    const input = document.getElementById('quiz-lead-email');
+    const button = form.querySelector('button');
+    msg.textContent = 'Sending…';
+    button.disabled = true;
+    window.vjmLead.submit(input.value, { track: track, source: 'homepage-quiz' }).then(function (res) {
+      button.disabled = false;
+      if (res.ok) {
+        msg.textContent = 'Sent — check your inbox.';
+        form.style.display = 'none';
+      } else if (res.reason === 'invalid_email') {
+        msg.textContent = 'That does not look like an email address — check it and try again.';
+      } else if (res.reason === 'not_configured') {
+        // Reachable only if the endpoint is unset out from under us. Never
+        // claim the address was stored when it was not.
+        msg.textContent = 'Email signup is not connected yet — your address was not saved.';
+      } else {
+        msg.textContent = 'That did not go through — your address was not saved. Please try again.';
+      }
+      vjmTrack('lead_submit', { ok: !!res.ok, reason: res.reason || 'ok', track: track, source: 'homepage-quiz' });
+    });
+  });
 }
 
 function resetQuiz() {
-  quizAnswers[1]=quizAnswers[2]=quizAnswers[3]=null;
+  // Cleared, not nulled: quizAnswer() uses "no answers yet" to fire quiz_start,
+  // so a retake must look like a fresh start.
+  Object.keys(quizAnswers).forEach((k) => { delete quizAnswers[k]; });
   document.getElementById('quiz-result').style.display='none';
   document.getElementById('q1').style.display='block';
   document.getElementById('q2').style.display='none';
   document.getElementById('q3').style.display='none';
+  document.getElementById('q4').style.display='none';
 }
 
 // ─── HAMBURGER MENU ───
@@ -1963,7 +2145,47 @@ function setBundlePeriod(period) {
       (p.off ? '<span class="tier-off">' + p.off + '</span>' : '');
     subEl.innerHTML = (p.sub || '') + note;
   });
+  applyPlanCtas(period);
 }
+
+// ─── PER-PLAN CHECKOUT ───
+// The site sells two distinct products and the backend authorises them
+// separately (functions/api/_lib/entitlements.js: futures_core = $100/mo,
+// complete = $129/mo), but both CTAs point at the same public listing, so the
+// buyer picks the tier after they leave — and we never learn which tier the
+// click was for.
+//
+// TODO: owner to confirm the real per-plan Whop checkout URLs. Leave these
+// empty until you have them: an invented checkout link is worse than one that
+// works. When a URL is filled in, the matching CTA switches to it; the plan is
+// carried in the plan_cta event either way, so the two tiers are already
+// distinguishable in the funnel today.
+const WHOP_PLAN_URLS = {
+  futures_core: '', // TODO: owner to confirm — Futures Only ($100/mo) checkout
+  complete: ''      // TODO: owner to confirm — Complete ($129/mo) checkout
+};
+
+function applyPlanCtas(period) {
+  const ctas = [
+    { id: 'cta-futures-core', plan: 'futures_core', tier: 'futures' },
+    { id: 'cta-complete', plan: 'complete', tier: 'allmarkets' }
+  ];
+  ctas.forEach((c) => {
+    const el = document.getElementById(c.id);
+    if (!el) return;
+    const url = WHOP_PLAN_URLS[c.plan];
+    if (url) el.setAttribute('href', url);
+    // Keep the analytics props honest about which price was on screen when
+    // the visitor clicked — the period tabs change the price, not the link.
+    const priced = BUNDLE_PERIODS[c.tier] && (BUNDLE_PERIODS[c.tier][period] || BUNDLE_PERIODS[c.tier][BUNDLE_FALLBACK[c.tier]]);
+    el.setAttribute('data-vjm-props', JSON.stringify({
+      price: priced ? priced.amt + priced.per : '',
+      period: period,
+      plan_url_configured: !!url
+    }));
+  });
+}
+
 setBundlePeriod('monthly');
 
 // ─── INTRO VIDEO FACADE ───
@@ -2406,6 +2628,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
+<script src="assets/funnel.js" defer></script>
 <script src="assets/live-ticker.js" defer></script>
 <script src="assets/lightning-bg.js" defer></script>
 </body>
