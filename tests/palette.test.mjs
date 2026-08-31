@@ -45,7 +45,11 @@ test('the palette stays white / black / red — no foreign hues', () => {
       if (!isRed(c)) strays.push(`${p}: ${c.raw}`);
     }
   }
-  assert.ok(strays.length <= 4, `non-red hues found (max 4 tolerated):\n${strays.join('\n')}`);
+  // Zero, not a tolerance: the system is white/black/red by design, so any
+  // chromatic non-red literal is either a leftover from the old palette or a
+  // new hue someone added without deciding to. Adding one deliberately means
+  // editing this test on purpose.
+  assert.deepEqual(strays, [], `non-red hues found:\n${strays.join('\n')}`);
 });
 
 test('every page ships a light theme', () => {
