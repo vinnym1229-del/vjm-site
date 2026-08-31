@@ -38,7 +38,7 @@ import {
 } from './_lib/session.js';
 import { json, jsonWithSession, checkRateLimit } from './_lib/http.js';
 import { turnstileConfigured, verifyTurnstile } from './_lib/turnstile.js';
-import { SESSION_VERSION, isTier, resolveTier } from './_lib/entitlements.js';
+import { SESSION_VERSION, isTier, resolveTier, sessionTier } from './_lib/entitlements.js';
 
 const GENERIC_BAD_CODE = 'We could not activate this code. Check it and try again, or DM St1101 on Discord.';
 
@@ -174,9 +174,15 @@ async function handleGet(context) {
   if (!session) {
     return json({ ok: true, active: false }, 200);
   }
+  // The tier is part of the answer, not an implementation detail. Without it
+  // the client can only INFER "signed in but under-tier" from the middleware's
+  // data-locked stamp on the stripped content — which conflates a member who
+  // needs to upgrade with one whose page simply failed to load. Returning the
+  // signed claim makes the upgrade prompt a fact rather than a deduction.
   return json({
     ok: true,
     active: true,
+    tier: sessionTier(session, env),
     discord: session.dn || null,
     expiresAt: new Date(Number(session.exp)).toISOString(),
   });

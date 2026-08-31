@@ -92,6 +92,8 @@ body.light-mode #analyst-metrics>div{background:#ffffff!important;border-color:v
 body.light-mode footer{background:#ffffff!important;border-top-color:var(--bdr)}
 </style>
 <script src="assets/theme.js"></script>
+<script>window.vjmTrackQueue = window.vjmTrackQueue || [];
+window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueue.push([n, p || {}, Date.now()]); } catch (e) {} };</script>
 </head>
 <body>
 <a class="skip-link" href="#signin">Skip to sign in</a>
@@ -225,7 +227,7 @@ function showVerifiedCard(){
   if(card){
     card.removeAttribute('aria-labelledby');
     card.setAttribute('aria-label','Premium verified');
-    card.innerHTML='<h2>✅ Premium Verified</h2><p>Your membership is active. Everything below is unlocked with this session — the same code works on every course and lab.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;"><a class="btn btn-gold" href="futures-dissection.html" style="width:100%;">Futures Dissection</a><a class="btn btn-gold" href="stock-breakdown.html" style="width:100%;">Stock Breakdown</a><a class="btn btn-gold" href="options-lab.html" style="width:100%;">Options Lab</a><a class="btn btn-gold" href="psychology-enhancer.html" style="width:100%;">Psychology</a><a class="btn btn-ghost" href="stock-lab.html" style="width:100%;">Stock Lab</a><a class="btn btn-ghost" href="research-engine.html" style="width:100%;">Research Engine</a></div><p style="font-size:.82rem;color:var(--m2);">Live callouts and daily insights run in Discord — questions to <strong>St1101</strong>.</p><button class="btn btn-ghost" type="button" onclick="signOutGuidance()">Sign Out</button>';
+    card.innerHTML='<h2>✅ Premium Verified</h2><p>Your membership is active. What it opens depends on your plan: <b>Futures Core ($100/mo)</b> covers Futures Dissection and Psychology Enhancer, and <b>Complete ($129/mo)</b> adds Stock Breakdown, Options Lab and the premium research tools. A course below that still shows a lock is one your plan does not include.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;"><a class="btn btn-gold" href="futures-dissection.html" style="width:100%;">Futures Dissection</a><a class="btn btn-gold" href="stock-breakdown.html" style="width:100%;">Stock Breakdown</a><a class="btn btn-gold" href="options-lab.html" style="width:100%;">Options Lab</a><a class="btn btn-gold" href="psychology-enhancer.html" style="width:100%;">Psychology</a><a class="btn btn-ghost" href="stock-lab.html" style="width:100%;">Stock Lab</a><a class="btn btn-ghost" href="research-engine.html" style="width:100%;">Research Engine</a></div><p style="font-size:.82rem;color:var(--m2);">On Futures Core and want Stock Breakdown, Options Lab and the research tools? Complete is $129/mo, $29/mo more than Futures Core — <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&amp;utm_medium=site&amp;utm_content=guidance-core-to-complete" target="_blank" rel="noopener" data-vjm-event="plan_cta" data-vjm-plan="complete" data-vjm-location="premium_guidance_verified" style="color:var(--gold-ink);">upgrade on Whop</a>.</p><p style="font-size:.82rem;color:var(--m2);">Live callouts and daily insights run in Discord — questions to <strong>St1101</strong>.</p><button class="btn btn-ghost" type="button" onclick="signOutGuidance()">Sign Out</button>';
   }
   showLessonCompanion();
   msg('',true);
@@ -473,6 +475,7 @@ async function handleGoogleCredential(response){
 }
 </script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<script src="assets/funnel.js" defer></script>
 <script src="assets/chatbot.js" defer></script>
 <script src="assets/lightning-bg.js" defer></script>
 </body>

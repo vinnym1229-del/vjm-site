@@ -14,6 +14,7 @@
 import assert from 'node:assert/strict';
 import { onRequestPost, onRequestGet, GENERIC_BAD_CODE, MEMBERSHIP_ENDED } from '../functions/api/verify-premium.js';
 import { TIERS, SESSION_VERSION } from '../functions/api/_lib/entitlements.js';
+import { signSession } from '../functions/api/_lib/session.js';
 
 // The tier is a SIGNED claim, so the issued cookie is the only place it can
 // be read back from — nothing about it is exposed in the JSON body.
@@ -372,3 +373,38 @@ try {
 }
 
 console.log('VJM verify-premium API tests passed.');
+
+// ---------------------------------------------------------------------------
+// GET /api/verify-premium reports the tier, not just "active".
+//
+// Without it the client can only infer "signed in but under-tier" from the
+// middleware's data-locked stamp, which conflates a member who needs to
+// upgrade with one whose page failed to load. The upgrade prompt is the
+// highest-intent moment on the site; it should rest on a fact.
+// ---------------------------------------------------------------------------
+{
+  const secret = 'x'.repeat(40);
+  const env = { SESSION_SIGNING_SECRET: secret };
+  for (const tier of [TIERS.FUTURES_CORE, TIERS.COMPLETE]) {
+    const token = await signSession(
+      { v: SESSION_VERSION, mr: 'd'.repeat(16), t: tier, sv: 1, src: 'd1', exp: Date.now() + 60000 },
+      secret,
+    );
+    const res = await onRequestGet({
+      request: new Request('https://x/api/verify-premium', {
+        headers: { Cookie: `__Host-vjm_session=${token}` },
+      }),
+      env,
+    });
+    const body = await res.json();
+    assert.equal(body.active, true);
+    assert.equal(body.tier, tier, 'the signed tier claim must be reported back');
+  }
+  // Signed out: no tier, and definitely not a default one.
+  const out = await onRequestGet({ request: new Request('https://x/api/verify-premium'), env });
+  const outBody = await out.json();
+  assert.equal(outBody.active, false);
+  assert.equal(outBody.tier, undefined, 'a signed-out visitor must not be handed a tier');
+}
+
+console.log('VJM verify-premium tier-reporting test passed.');
