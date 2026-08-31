@@ -89,6 +89,35 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
   <p style="color:var(--vjm-muted);max-width:640px">The prop firms our community uses, with current codes.
   This directory is informational; evaluate payout rules and risk yourself.</p>
 
+  <!-- ── MATERIAL-CONNECTION DISCLOSURE ────────────────────────────────────
+       Required by the FTC Endorsement Guides whenever a link or code carries a
+       material connection. The links below are already marked rel="sponsored",
+       so the relationship must also be stated in plain language where a reader
+       actually sees it. The exact relationship per firm is NOT known from this
+       repository, so the copy below states the possibility honestly and does
+       not assert that payment is or is not received.
+       TODO: owner to confirm, per firm, and then replace this wording with the
+       specific truth: (a) whether the link or code pays a commission, revenue
+       share, flat fee, free evaluation, or nothing at all; (b) whether the code
+       gives the reader a discount; (c) whether any firm paid for placement or
+       for the promo image; (d) whether any firm reviewed or approved this copy.
+       If a firm pays nothing, say so for that firm rather than leaving the
+       generic wording in place. -->
+  <aside style="max-width:680px;margin-top:18px;border:1px solid var(--vjm-border-strong);border-radius:14px;padding:14px 16px">
+    <p style="margin:0;color:var(--vjm-muted);font-size:.86rem;line-height:1.65">
+      <strong style="color:var(--vjm-red)">Advertising disclosure.</strong>
+      The outbound links and promo codes on this page are affiliate or partner
+      links. PJ Trades x St may be paid a commission, a share of what you spend,
+      or another benefit when you sign up or buy through one of them, at no extra
+      cost to you. That is a financial reason to list a firm, so treat this page
+      as advertising rather than an impartial ranking &mdash; no firm here has been
+      independently vetted or audited by us, and inclusion is not a recommendation.
+      Read each firm&rsquo;s own rules, fees, and payout terms before you pay for
+      anything. <em>The exact compensation arrangement for each firm has not been
+      confirmed for publication yet &mdash; owner to confirm.</em>
+    </p>
+  </aside>
+
   <!-- ── DATA PROVENANCE (accuracy pass 2026-08-24) ─────────────────────────
        Every firm name, link, discount %, promo code, promo image, and any
        payout/pricing/evaluation claim on this page comes from the owner's
@@ -149,6 +178,16 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
               '<button type="button" class="vjm-btn vjm-btn-ghost copy-btn">Copy</button></div>';
     }
     html += '<a class="vjm-btn vjm-btn-primary" style="width:100%;margin-top:12px" target="_blank" rel="noopener noreferrer sponsored" href="' + esc(f.url) + '">Visit ' + esc(f.name) + ' ↗</a>';
+    // Material connection restated on every card, so a reader who lands on a
+    // single firm still sees it next to the code and the link they will use.
+    // TODO: owner to confirm the per-firm arrangement and replace this generic
+    // sentence with the specific one for that firm (paid commission / revenue
+    // share / free evaluation / paid placement / no compensation at all).
+    html += '<p style="margin:8px 0 0;color:var(--vjm-muted);font-size:.74rem;line-height:1.55">' +
+            '<strong>Ad.</strong> Affiliate link and code &mdash; PJ Trades x St may earn a ' +
+            'commission if you sign up or buy through it, at no extra cost to you. ' +
+            'Not a recommendation; not independently vetted. Exact arrangement to be ' +
+            'confirmed by the owner.</p>';
     div.innerHTML = html;
     const btn = div.querySelector('.copy-btn');
     if (btn) btn.addEventListener('click', async () => {

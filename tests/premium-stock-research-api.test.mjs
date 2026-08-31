@@ -12,6 +12,7 @@
 import assert from 'node:assert/strict';
 import { onRequestGet } from '../functions/api/premium-stock-research.js';
 import { signSession, base64UrlEncodeBytes } from '../functions/api/_lib/session.js';
+import { TIERS, SESSION_VERSION } from '../functions/api/_lib/entitlements.js';
 
 const SIGNING_SECRET = 'x'.repeat(32);
 const LEGACY_CODES = 'legacy-codes-secret';
@@ -184,6 +185,63 @@ try {
   }
 } finally {
   globalThis.fetch = originalFetch;
+}
+
+// ---------------------------------------------------------------------------
+// Tier entitlement on the session-cookie path.
+//
+// /api/premium-stock-research is declared COMPLETE in RESOURCE_TIERS. A signed
+// session is now checked against that table, so the $100 Futures Core member
+// -- authenticated, paying, but not entitled -- gets a 403 that the UI can
+// render as "your plan does not include this", distinct from the 401 an
+// unauthenticated visitor gets.
+// ---------------------------------------------------------------------------
+
+async function tierCookie(tier) {
+  const token = await signSession(
+    { v: SESSION_VERSION, mr: 'member-1', t: tier, exp: Date.now() + 60000 },
+    SIGNING_SECRET,
+  );
+  return { Cookie: `__Host-vjm_session=${token}` };
+}
+
+{
+  const noUpstream = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('must not call Alpaca before authorizing'); };
+  try {
+    // Futures Core: authenticated, under-tier -> 403 before any upstream call.
+    const { status, data } = await lookup(baseEnv(), 'AAPL', await tierCookie(TIERS.FUTURES_CORE));
+    assert.equal(status, 403, 'an under-tier member must get 403, not 401');
+    assert.equal(data.code, 'upgrade_required');
+    assert.equal(data.requiredTier, TIERS.COMPLETE);
+    assert.equal(data.heldTier, TIERS.FUTURES_CORE);
+
+    // A valid legacy Bearer token alongside the under-tier session must not
+    // upgrade it, or the migration path would be a tier bypass.
+    const legacy = await signLegacyToken({ exp: Date.now() + 60000 }, LEGACY_CODES);
+    const withBearer = await lookup(
+      baseEnv({ PREMIUM_ACCESS_CODES: LEGACY_CODES }), 'AAPL',
+      { ...(await tierCookie(TIERS.FUTURES_CORE)), Authorization: `Bearer ${legacy}` },
+    );
+    assert.equal(withBearer.status, 403, 'a legacy Bearer token must not override a verified session tier');
+  } finally {
+    globalThis.fetch = noUpstream;
+  }
+}
+
+{
+  // A Complete member's cookie is served exactly as before.
+  const previous = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({
+    AAPL: { latestTrade: { p: 150.5 }, prevDailyBar: { c: 148 } },
+  });
+  try {
+    const { status, data } = await lookup(baseEnv(), 'AAPL', await tierCookie(TIERS.COMPLETE));
+    assert.equal(status, 200);
+    assert.equal(data.quote.price, 150.5);
+  } finally {
+    globalThis.fetch = previous;
+  }
 }
 
 console.log('VJM premium-stock-research API tests passed.');

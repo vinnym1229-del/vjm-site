@@ -10,10 +10,19 @@
 // before the response leaves the edge, exactly the way the JSON APIs
 // already gate themselves (see api/_lib/session.js).
 //
+// Having a session is NOT the same as being entitled to the page: the site
+// sells $100 Futures Only and $129 Complete, so the check is
+// authorizeResource(session, path, env) — the signed tier claim against the
+// tier that path requires (see api/_lib/entitlements.js). An under-tier
+// member takes exactly the same stripped path an anonymous visitor does, so
+// a Futures buyer opening /options-lab sees the locked page rather than the
+// Complete library they did not buy.
+//
 // Fail-closed: any error while reading the session is treated as
 // unauthenticated, consistent with the rest of the auth code in this repo.
 
 import { getSession } from './api/_lib/session.js';
+import { authorizeResource } from './api/_lib/entitlements.js';
 
 const GATED_PAGES = new Set([
   '/stock-breakdown', '/stock-breakdown.html',
@@ -45,7 +54,8 @@ export async function onRequest(context) {
 
   let authorized = false;
   try {
-    authorized = !!(await getSession(request, env));
+    const session = await getSession(request, env);
+    authorized = authorizeResource(session, url.pathname, env).allowed;
   } catch {
     authorized = false;
   }

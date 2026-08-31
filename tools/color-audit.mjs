@@ -39,7 +39,11 @@ const RETIRED_RGBA = [
   /rgba?\(\s*185\s*,\s*28\s*,\s*28\s*[,)]/i,
 ];
 
-const HEX = /#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})\b/gi;
+// Lookbehind for `&` so HTML numeric entities are not read as colours:
+// `&#127769;` (a moon emoji) and `&#770;` both match a bare hex pattern,
+// which silently inflated the non-red hue count and would have masked a
+// genuine stray colour.
+const HEX = /(?<![&\w])#([0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})\b/gi;
 const FUNC = /\brgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:[,/]\s*([\d.]+%?)\s*)?\)/gi;
 
 export function hexToRgb(hex) {

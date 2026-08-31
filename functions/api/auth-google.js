@@ -20,6 +20,9 @@
 
 import { resolveSigningSecret, signSession, sessionDays } from './_lib/session.js';
 import { json, jsonWithSession, checkRateLimit } from './_lib/http.js';
+import { SESSION_VERSION, isTier, resolveTier } from './_lib/entitlements.js';
+
+const EXPIRED = 'That membership has expired. Renew on Whop, or DM St1101 on Discord if you think this is wrong.';
 
 const NO_MATCH = 'That Google account isn’t linked to an active membership yet. Sign in with your access code once to link it, or DM St1101 on Discord.';
 
@@ -66,7 +69,7 @@ async function handle(context) {
   const emailHash = await sha256Hex(email);
 
   const row = await env.RESEARCH_DB.prepare(
-    `SELECT code_hash, discord, plan_name, expires_at FROM whop_codes
+    `SELECT code_hash, discord, plan_name, expires_at, whop_product, tier FROM whop_codes
      WHERE email_hash = ?1 AND status != 'revoked'
      ORDER BY created_at DESC LIMIT 1`
   ).bind(emailHash).first();
@@ -78,6 +81,14 @@ async function handle(context) {
   const days = sessionDays(env);
   const fallbackExpiry = Date.now() + days * 24 * 60 * 60 * 1000;
   const storedExpiry = row.expires_at ? Date.parse(row.expires_at) : NaN;
+  // An expired membership must be REJECTED, not quietly re-issued. The old
+  // code only used the stored expiry when it was still in the future and
+  // otherwise fell through to `fallbackExpiry` — so a lapsed member whose
+  // row had not yet been revoked got a fresh full-length session, which is
+  // strictly more access than their own plan said they had.
+  if (Number.isFinite(storedExpiry) && storedExpiry <= Date.now()) {
+    return json({ ok: false, error: EXPIRED }, 403);
+  }
   // A yearly Whop plan must not mint a year-long irrevocable token: honor
   // the plan expiry but never exceed the session-length cap.
   const capped = Date.now() + days * 24 * 60 * 60 * 1000;
@@ -85,7 +96,13 @@ async function handle(context) {
     ? Math.min(storedExpiry, capped) : fallbackExpiry;
 
   const token = await signSession(
-    { v: 1, mr: String(row.code_hash).slice(0, 16), dn: row.discord || '', exp: expiresAt },
+    {
+      v: SESSION_VERSION,
+      mr: String(row.code_hash).slice(0, 16),
+      dn: row.discord || '',
+      t: tierForRow(env, row),
+      exp: expiresAt,
+    },
     secret
   );
 
@@ -99,6 +116,22 @@ async function handle(context) {
     token,
     Math.max(60, Math.floor((expiresAt - Date.now()) / 1000))
   );
+}
+
+// The tier this purchase actually bought. Preference order:
+//   1. whop_codes.tier — what the webhook resolved at purchase time
+//      (migration 0005); authoritative and already validated.
+//   2. Re-resolve from the stored product/plan against the env allowlists,
+//      for rows written before 0005 shipped.
+//   3. resolveTier's unconfigured default. Rows this old predate any product
+//      classification, and this account has just proven it matches a real,
+//      non-revoked, unexpired purchase — locking those members out to make
+//      the model tidy would break live customers.
+function tierForRow(env, row) {
+  if (isTier(row.tier)) return row.tier;
+  const resolved = resolveTier(env, { product: row.whop_product || '', plan: row.plan_name || '' });
+  if (isTier(resolved.tier)) return resolved.tier;
+  return resolveTier({ WHOP_DEFAULT_TIER: env && env.WHOP_DEFAULT_TIER }, {}).tier;
 }
 
 async function verifyGoogleIdToken(idToken, expectedAudience) {

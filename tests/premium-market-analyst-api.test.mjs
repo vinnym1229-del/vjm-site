@@ -11,6 +11,7 @@
 import assert from 'node:assert/strict';
 import { onRequestGet } from '../functions/api/premium-market-analyst.js';
 import { signSession } from '../functions/api/_lib/session.js';
+import { TIERS, SESSION_VERSION } from '../functions/api/_lib/entitlements.js';
 
 const SIGNING_SECRET = 'x'.repeat(32);
 
@@ -138,6 +139,48 @@ try {
   }
 } finally {
   globalThis.fetch = originalFetch;
+}
+
+// ---------------------------------------------------------------------------
+// Tier entitlement. /api/premium-market-analyst is declared COMPLETE in
+// RESOURCE_TIERS, so a Futures Core member is authenticated but not entitled.
+// ---------------------------------------------------------------------------
+
+async function tierCookie(tier) {
+  const token = await signSession(
+    { v: SESSION_VERSION, mr: 'member-1', t: tier, exp: Date.now() + 60000 },
+    SIGNING_SECRET,
+  );
+  return { Cookie: `__Host-vjm_session=${token}` };
+}
+
+{
+  const noUpstream = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('must not call Alpaca before authorizing'); };
+  try {
+    // Under-tier: 403 (upgrade), distinguishable from the 401 an unauthenticated
+    // visitor gets, and returned before any upstream call or AI spend.
+    const { status, data } = await analyze(baseEnv(), 3, await tierCookie(TIERS.FUTURES_CORE));
+    assert.equal(status, 403, 'an under-tier member must get 403, not 401');
+    assert.equal(data.code, 'upgrade_required');
+    assert.equal(data.requiredTier, TIERS.COMPLETE);
+    assert.equal(data.heldTier, TIERS.FUTURES_CORE);
+  } finally {
+    globalThis.fetch = noUpstream;
+  }
+}
+
+{
+  // A Complete member is served exactly as before.
+  const previous = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({ bars: { QQQ: makeBars(260) } });
+  try {
+    const { status, data } = await analyze(baseEnv(), 1, await tierCookie(TIERS.COMPLETE));
+    assert.equal(status, 200);
+    assert.equal(data.ok, true);
+  } finally {
+    globalThis.fetch = previous;
+  }
 }
 
 console.log('VJM premium-market-analyst API tests passed.');
