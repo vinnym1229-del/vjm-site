@@ -251,3 +251,22 @@ test('every lazy-loaded image reserves its layout space with width/height', () =
   }
   assert.deepEqual(offenders, [], `lazy images missing width/height:\n  ${offenders.join('\n  ')}`);
 });
+
+// ---------------------------------------------------------------------------
+// Incident: three target="_blank" links on index.html (the members-dashboard
+// "Join Discord" / "DM Support" cards and the psychology-essay Discord CTA)
+// had no rel="noopener", unlike every other external link on the site. A
+// target="_blank" page without it keeps a window.opener handle back to this
+// tab, so the destination — Discord itself in these cases, but the pattern
+// generalizes — could reverse-tabnab a signed-in member. Checked raw source
+// (not script-stripped) since some links are JS template strings that render
+// HTML anchors too.
+test('every target="_blank" link carries rel="noopener"', () => {
+  const offenders = [];
+  for (const p of PAGES) {
+    for (const m of read(p).matchAll(/<a\s[^>]*target="_blank"[^>]*>/g)) {
+      if (!/rel="[^"]*noopener/.test(m[0])) offenders.push(`${p}: ${m[0]}`);
+    }
+  }
+  assert.deepEqual(offenders, [], `target="_blank" missing rel="noopener":\n  ${offenders.join('\n  ')}`);
+});
