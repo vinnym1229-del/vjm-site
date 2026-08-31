@@ -142,3 +142,32 @@ body.light-mode .formula{background:#f6f6f7}
 body.light-mode .loader{border-color:rgba(0,0,0,.14);border-top-color:var(--red)}
 body.light-mode .skeleton{background:#e8e8ea!important}
 body.light-mode .skeleton:after{background:linear-gradient(90deg,transparent,rgba(0,0,0,.06),transparent)}
+
+/* ─── RESULT PROVENANCE ────────────────────────────────────────────────────
+   Study numbers are hypothetical and gross, and they only mean anything with
+   the timing convention that produced them. This strip sits directly above
+   the numbers it qualifies (never in the footer): a short tag plus a one-line
+   statement, with the full frozen convention one click away in the expander.
+   `.missing` is the pre-fix cached-snapshot state and borrows the existing red
+   accent token — no new colour literal. */
+.provenance{display:grid;gap:8px;margin-bottom:15px;padding:11px 13px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.03)}
+.provenance-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.provenance-tag{flex:none;padding:5px 10px;border:1px solid var(--line2);border-radius:999px;color:var(--text);font-size:.64rem;font-weight:900;letter-spacing:1px;text-transform:uppercase}
+.provenance-line{color:var(--muted);font-size:.75rem}
+.provenance-detail{margin-top:2px}
+.provenance-detail summary{color:var(--soft);font-size:.66rem;font-weight:900;letter-spacing:1px;text-transform:uppercase}
+.provenance-detail[open] summary{margin-bottom:9px}
+.provenance-list{display:grid;grid-template-columns:minmax(140px,190px) minmax(0,1fr);gap:7px 14px}
+.provenance-list dt{color:var(--muted);font-size:.64rem;font-weight:900;letter-spacing:.9px;text-transform:uppercase}
+.provenance-list dd{color:var(--soft);font-size:.75rem}
+.provenance.missing{border-color:var(--red-ink);background:rgba(255,255,255,.045)}
+.provenance.missing .provenance-tag{color:var(--red-ink);border-color:var(--red-ink)}
+.provenance.missing .provenance-line{color:var(--red-ink)}
+/* Short form repeated beside each study table, so a hit rate is never read
+   without the basis it was computed on. */
+.result-basis{margin:0 0 8px;color:var(--muted);font-size:.65rem;font-weight:900;letter-spacing:.9px;text-transform:uppercase}
+.result-basis.missing{color:var(--red-ink)}
+.basis-pill.missing strong{color:var(--red-ink)}
+@media(max-width:760px){.provenance-list{grid-template-columns:1fr;gap:3px 0}.provenance-list dd{margin-bottom:6px}}
+body.light-mode .provenance{background:rgba(0,0,0,.025)}
+body.light-mode .provenance.missing{background:rgba(0,0,0,.035)}

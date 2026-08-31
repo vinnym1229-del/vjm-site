@@ -1,6 +1,28 @@
-# PJ Trades x St
+# ─── CANONICAL ORIGIN — SINGLE SOURCE OF TRUTH ───────────────────────────────
+# canonical-origin: https://not-financial-advice-vjm.com
+#
+# Every canonical, og:url, twitter:url, JSON-LD url/@id and sitemap <loc> in
+# this repo uses exactly this origin at the ROOT path shape (no /pj/ prefix,
+# no .html suffix — Cloudflare Pages serves terms.html at /terms and redirects
+# /terms.html to it, so the .html form is a redirect and never a canonical).
+#
+# Switching hosts is a ONE-LINE change here. These are static files with no
+# template step, so each use site carries the comment "canonical origin: see
+# robots.txt" and tests/site-contract.test.mjs reads the canonical-origin line
+# above and fails if any page or sitemap entry disagrees with it. Change this
+# line, run `npm test`, and the failures list every place left to update.
+#
+# WARNING — CNAME DISAGREES: CNAME currently says `not-financial-advice.com`,
+# which is NOT this origin. The live DNS/host decision belongs to the owner, so
+# CNAME is deliberately left untouched here. The owner must reconcile CNAME and
+# this origin BEFORE indexing is enabled, or the indexed host will differ from
+# the canonical one and link equity will split across two hosts.
+#
+# Crawling is allowed so that crawlers can SEE the noindex. Indexing itself is
+# held off site-wide by the X-Robots-Tag in `_headers` (see the switch there).
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /video/
 
-Sitemap: https://not-financial-advice-vjm.com/pj/sitemap.xml
+Sitemap: https://not-financial-advice-vjm.com/sitemap.xml

@@ -4,6 +4,14 @@
 # Inline script/style are still required by the current pages (documented
 # debt in docs/SECURITY.md §CSP); no wildcard sources are used.
 
+# ── INDEXING SWITCH (site-wide hold) ──
+# Indexing is deliberately OFF for the whole site, not just /pj/*. Deleting the
+# `X-Robots-Tag: noindex` line in the /* block below is what enables indexing —
+# do that only after CNAME and the canonical origin declared in robots.txt have
+# been reconciled. Pages that must stay out of the index regardless carry their
+# own noindex meta plus the per-path blocks at the bottom of this file, so
+# lifting that line does not expose them.
+
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
@@ -11,6 +19,7 @@
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   Cross-Origin-Opener-Policy: same-origin-allow-popups
+  X-Robots-Tag: noindex
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://s3.tradingview.com https://www.tradingview.com https://accounts.google.com https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.tradingview.com wss://*.tradingview.com https://*.alpaca.markets https://accounts.google.com https://challenges.cloudflare.com https://cloudflareinsights.com; frame-src https://www.tradingview.com https://s3.tradingview.com https://www.tradingview-widget.com https://s.tradingview.com https://accounts.google.com https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'
 
 /*.html
@@ -19,5 +28,34 @@
 /assets/*
   Cache-Control: public, max-age=300, must-revalidate
 
+# ── PERMANENT noindex — survives lifting the switch above ──
+# Member/app tools, the research engine, premium guidance, API and video
+# routes, and the /pj/* static preview copies must never be indexed at any
+# path they are served from. Listed in both the extensionless and .html forms
+# because Cloudflare Pages serves and redirects both.
 /pj/*
-  X-Robots-Tag: noindex
+  X-Robots-Tag: noindex, nofollow
+
+/api/*
+  X-Robots-Tag: noindex, nofollow
+
+/video/*
+  X-Robots-Tag: noindex, nofollow
+
+/stock-lab
+  X-Robots-Tag: noindex, nofollow
+
+/stock-lab.html
+  X-Robots-Tag: noindex, nofollow
+
+/research-engine
+  X-Robots-Tag: noindex, nofollow
+
+/research-engine.html
+  X-Robots-Tag: noindex, nofollow
+
+/premium-guidance
+  X-Robots-Tag: noindex, nofollow
+
+/premium-guidance.html
+  X-Robots-Tag: noindex, nofollow

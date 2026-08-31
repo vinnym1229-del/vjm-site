@@ -518,3 +518,140 @@ assert.throws(
 );
 
 console.log('VJM research-engine calculation tests passed.');
+
+// ---------------------------------------------------------------------------
+// PROVENANCE IN THE UI
+//
+// The API stamps every study response with what the numbers are (hypothetical,
+// gross) and the timing convention that produced them. Until this was
+// rendered, a member read a hit rate with nothing on screen saying it was
+// gross of every cost and computed under a specific look-ahead-free timing
+// rule -- the exact claim posture the compliance audit flagged.
+//
+// These tests actually run the shipped client module against a stub DOM and
+// assert on what it writes, so a silent regression (a renamed hook, a dropped
+// call site) fails here rather than in front of a paying member.
+// ---------------------------------------------------------------------------
+assert.match(clientHtml, /id="optionsProvenance"/, 'the options study must ship a provenance region');
+assert.match(clientHtml, /id="stocksProvenance"/, 'the fib study must ship a provenance region');
+assert.equal(
+  (clientHtml.match(/data-provenance-short=/g) || []).length,
+  4,
+  'every study table/heatmap carries the short form beside its numbers',
+);
+assert.match(clientHtml, /<details class="provenance-detail">/, 'the full timing convention is reachable in an expander');
+// Not a footer: the audit criticised burying the basis at the bottom of the
+// page. The provenance regions must sit inside the study modules themselves.
+const footerStart = clientHtml.indexOf('<footer');
+assert.ok(footerStart > 0);
+assert.ok(clientHtml.indexOf('id="optionsProvenance"') < footerStart, 'provenance must not live in the footer');
+assert.ok(clientHtml.indexOf('id="stocksProvenance"') < footerStart, 'provenance must not live in the footer');
+assert.ok(
+  clientJs.includes("renderProvenance('options', intradayResponse.provenance)"),
+  "the options tab's rate tables are the intraday study, so its provenance governs them",
+);
+assert.ok(clientJs.includes("renderProvenance('stocks', response.provenance)"), 'the fib study renders its own provenance');
+
+// --- run the real client module against a stub DOM ---------------------------
+function stubNode() {
+  const n = { textContent: '', innerHTML: '', classes: new Set() };
+  n.classList = { toggle: (c, on) => { if (on) n.classes.add(c); else n.classes.delete(c); }, contains: (c) => n.classes.has(c) };
+  return n;
+}
+function renderProvenanceWith(provenance) {
+  const tag = stubNode(), line = stubNode(), body = stubNode();
+  const basis = stubNode(), pill = stubNode(), shortA = stubNode(), shortB = stubNode();
+  const root = stubNode();
+  root.querySelector = (sel) => ({ '[data-provenance-tag]': tag, '[data-provenance-line]': line, '[data-provenance-body]': body }[sel] || null);
+  const byId = { optionsProvenance: root, globalBasis: basis, globalBasisPill: pill };
+  const priorDocument = globalThis.document, priorStyle = globalThis.getComputedStyle;
+  globalThis.document = {
+    body: {},
+    getElementById: (id) => byId[id] || null,
+    querySelectorAll: (sel) => (sel.includes('data-provenance-short') ? [shortA, shortB] : []),
+    addEventListener() {},
+  };
+  globalThis.getComputedStyle = () => ({ getPropertyValue: () => '' });
+  try {
+    // Swap only the boot line so nothing else in the module changes.
+    const bootable = clientJs.replace(
+      "document.addEventListener('DOMContentLoaded',wire);",
+      'globalThis.__researchEngineTestHooks = { renderProvenance };',
+    );
+    assert.ok(bootable !== clientJs, 'the client module must still boot from DOMContentLoaded');
+    new Function(bootable)();
+    globalThis.__researchEngineTestHooks.renderProvenance('options', provenance);
+  } finally {
+    globalThis.document = priorDocument;
+    globalThis.getComputedStyle = priorStyle;
+  }
+  return { root, tag, line, body, basis, pill, shorts: [shortA, shortB] };
+}
+
+const liveProvenance = studyProvenance('Intraday sweep / FVG / SMT event study');
+const rendered = renderProvenanceWith(liveProvenance);
+assert.match(rendered.tag.textContent, /hypothetical/i, 'the short tag states the numbers are hypothetical');
+assert.match(rendered.tag.textContent, /gross/i, 'the short tag states the numbers are gross');
+assert.match(rendered.line.textContent, /Intraday sweep/, 'the strip names the study');
+assert.match(rendered.line.textContent, /no commissions, fees, spread, slippage/i, 'the absent cost model is stated, not implied');
+assert.ok(rendered.line.textContent.includes(TIMING_CONVENTION.version), 'the frozen convention version is on screen');
+assert.match(rendered.basis.textContent, /hypothetical/i, 'the toolbar basis pill states the result basis');
+for (const short of rendered.shorts) {
+  assert.match(short.textContent, /Hypothetical/i, 'every study table carries the short form beside its numbers');
+  assert.equal(short.classes.has('missing'), false);
+}
+for (const key of ['observable', 'actionable', 'fill', 'outcome', 'costs', 'nature']) {
+  assert.ok(rendered.body.innerHTML.includes(TIMING_CONVENTION[key].slice(0, 40)), `the expander must state the convention's "${key}" rule verbatim`);
+}
+assert.ok(rendered.body.innerHTML.includes(liveProvenance.disclaimer.slice(0, 50)), 'the full disclaimer is reachable');
+assert.equal(rendered.root.classes.has('missing'), false);
+
+// A snapshot cached in D1 before the look-ahead fix has no provenance block.
+// It must NOT be given an invented one -- an assumed convention would be a
+// stronger claim than the missing one. It is labelled as suspect instead.
+for (const preFix of [undefined, null, {}, { study: 'Old study' }, { study: 'Old', results: 'hypothetical-gross' }]) {
+  const stale = renderProvenanceWith(preFix);
+  assert.match(stale.line.textContent, /predates the timing-convention fix/i, 'the pre-fix state must say so explicitly');
+  assert.match(stale.line.textContent, /may be overstated/i, 'the pre-fix state must warn the numbers can be inflated');
+  assert.match(stale.tag.textContent, /missing/i);
+  assert.equal(stale.root.classes.has('missing'), true, 'the pre-fix state is styled as a warning, not as a normal result');
+  assert.match(stale.body.innerHTML, /predates the timing-convention fix/i);
+  assert.doesNotMatch(stale.line.textContent, /timing convention 20/, 'a missing convention must never be invented');
+  assert.doesNotMatch(stale.body.innerHTML, new RegExp(TIMING_CONVENTION.version), 'a missing convention must never be invented');
+  for (const short of stale.shorts) {
+    assert.match(short.textContent, /pre-fix|missing/i, 'the short form beside the numbers also flags the pre-fix result');
+    assert.equal(short.classes.has('missing'), true);
+  }
+}
+
+// --- palette: the new state must not introduce a colour --------------------
+// The site is white/black with red as a restrained accent and
+// tests/palette.test.mjs asserts zero non-red chromatic hues site-wide. The
+// provenance UI must therefore be built from existing tokens only.
+const clientCss = readFileSync(resolve(projectRoot, 'assets/research-engine.css'), 'utf8');
+const provenanceCss = clientCss.slice(clientCss.indexOf('/* ─── RESULT PROVENANCE'));
+assert.ok(provenanceCss.length > 200, 'the provenance styles must be present');
+assert.doesNotMatch(provenanceCss, /#[0-9a-fA-F]{3,8}\b/, 'the provenance styles must not add a colour literal');
+assert.doesNotMatch(provenanceCss, /\brgba?\(\s*(?!0\s*,\s*0\s*,\s*0|255\s*,\s*255\s*,\s*255)/, 'only neutral black/white washes are allowed; hues come from tokens');
+assert.ok(provenanceCss.includes('var(--red-ink)'), 'the warning state reuses the existing red accent token');
+assert.ok(provenanceCss.includes('body.light-mode .provenance'), 'the provenance UI must be readable in the light theme too');
+const provenanceJs = clientJs.slice(clientJs.indexOf('  function setBasis('), clientJs.indexOf('const PLAN_LOCKED_TEXT'));
+assert.doesNotMatch(provenanceJs, /#[0-9a-fA-F]{3,8}\b/, 'the provenance renderer must not inline a colour');
+assert.doesNotMatch(provenanceJs, /\brgba?\(/, 'the provenance renderer must not inline a colour');
+
+// --- canonical / OG / JSON-LD ----------------------------------------------
+// Single origin, root path shape, no /pj/ prefix, no .html alias -- and the
+// page stays noindexed: it is a member tool, not a public document.
+const CANONICAL = 'https://not-financial-advice-vjm.com/research-engine';
+assert.ok(clientHtml.includes(`<link rel="canonical" href="${CANONICAL}">`), 'canonical uses the shared origin and root path');
+assert.ok(clientHtml.includes(`<meta property="og:url" content="${CANONICAL}">`), 'og:url must not contradict the canonical');
+assert.ok(clientHtml.includes(`<meta name="twitter:url" content="${CANONICAL}">`), 'twitter:url must not contradict the canonical');
+assert.doesNotMatch(clientHtml, /not-financial-advice-vjm\.com\/pj\//, 'no absolute link may keep the retired /pj/ path shape');
+const ldMatch = clientHtml.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+assert.ok(ldMatch, 'the page ships structured data');
+const ld = JSON.parse(ldMatch[1]);
+assert.equal(ld.url, CANONICAL, 'JSON-LD url must equal the canonical');
+assert.equal(ld['@id'], CANONICAL + '#app');
+assert.equal(ld.isAccessibleForFree, false, 'the research engine is not free — do not mark a paid tool free');
+assert.match(ld.disclaimer, /not achieved or live-tradable/i, 'structured data must not claim more than the page does');
+assert.match(clientHtml, /<meta name="robots" content="noindex/i, 'the research engine stays noindexed');

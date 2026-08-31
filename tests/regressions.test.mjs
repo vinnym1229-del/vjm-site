@@ -189,20 +189,61 @@ test('quizzes do not leak their answers through option length', async () => {
 // Course pages carry Course structured data so they are eligible for rich
 // results; isAccessibleForFree must track the real gating.
 test('course pages ship Course JSON-LD matching the free-tier rule', () => {
-  const expected = {
-    'futures-dissection.html': true,   // the one free starter course
-    'stock-breakdown.html': false,
-    'options-lab.html': false,
-    'psychology-enhancer.html': false,
-  };
-  for (const [page, free] of Object.entries(expected)) {
+  // Every course page is a PAID course: futures-dissection used to claim
+  // isAccessibleForFree:true for the whole four-level course when only Level 1
+  // is ungated, which advertises three paid levels as free. The free unit is
+  // now modelled where it actually is — a hasPart Course that is itself free —
+  // so the parent course is correctly false on all four pages.
+  for (const page of ['futures-dissection.html', 'stock-breakdown.html', 'options-lab.html', 'psychology-enhancer.html']) {
     const m = /<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(read(page));
     assert.ok(m, `${page}: no JSON-LD block`);
     const ld = JSON.parse(m[1]);
     assert.equal(ld['@type'], 'Course', `${page}: JSON-LD is not a Course`);
-    assert.equal(ld.isAccessibleForFree, free, `${page}: isAccessibleForFree should be ${free}`);
+    assert.equal(ld.isAccessibleForFree, false, `${page}: a paid course must not be marked free`);
     assert.ok(ld.name && ld.description && ld.url, `${page}: Course missing name/description/url`);
+    // Unsupported claims: numberOfCredits was a lesson count (not credit
+    // hours) and courseWorkload was never-measured seat time.
+    assert.equal(ld.numberOfCredits, undefined, `${page}: numberOfCredits is not a lesson count`);
+    assert.equal(ld.hasCourseInstance?.courseWorkload, undefined, `${page}: unmeasured courseWorkload must stay removed`);
+    // Offers must be purchasable: Futures Core is $100/mo and covers futures
+    // + psychology; Complete is $129/mo and adds stocks and options
+    // (functions/api/_lib/entitlements.js is the authority on that split).
+    const expectedPrice = ['futures-dissection.html', 'psychology-enhancer.html'].includes(page) ? '100.00' : '129.00';
+    assert.equal(ld.offers?.price, expectedPrice, `${page}: offer must match the tier that unlocks it`);
   }
+  // Futures Level 1 is genuinely ungated, and only that unit.
+  const futuresLd = JSON.parse(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(read('futures-dissection.html'))[1]);
+  assert.equal(futuresLd.hasPart?.isAccessibleForFree, true, 'futures Level 1 is the free starter unit and must be modelled as such');
+});
+
+// Canonical/social URLs use one origin at the root path shape (no /pj/), so
+// search engines are not asked to choose between two URLs for one page.
+test('course and member pages agree on one canonical origin and path shape', () => {
+  const ORIGIN = 'https://not-financial-advice-vjm.com';
+  const pages = {
+    'futures-dissection.html': '/futures-dissection',
+    'stock-breakdown.html': '/stock-breakdown',
+    'options-lab.html': '/options-lab',
+    'psychology-enhancer.html': '/psychology-enhancer',
+    'premium-guidance.html': '/premium-guidance',
+  };
+  for (const [page, path] of Object.entries(pages)) {
+    const src = read(page);
+    const url = ORIGIN + path;
+    for (const [label, re] of [
+      ['canonical', /<link rel="canonical" href="([^"]+)"/],
+      ['og:url', /<meta property="og:url" content="([^"]+)"/],
+      ['twitter:url', /<meta name="twitter:url" content="([^"]+)"/],
+    ]) {
+      const m = re.exec(src);
+      assert.ok(m, `${page}: missing ${label}`);
+      assert.equal(m[1], url, `${page}: ${label} must be ${url}`);
+    }
+    assert.doesNotMatch(src.replace(/<!--[\s\S]*?-->/g, ''), /not-financial-advice-vjm\.com\/pj\//,
+      `${page}: /pj/ path prefix must be gone`);
+  }
+  // The member sign-in page stays out of the index whatever the site decides.
+  assert.match(read('premium-guidance.html'), /<meta name="robots" content="noindex,nofollow">/);
 });
 
 // ---------------------------------------------------------------------------

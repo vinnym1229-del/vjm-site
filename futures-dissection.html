@@ -3,27 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<link rel="canonical" href="https://not-financial-advice-vjm.com/pj/futures-dissection.html">
+<!-- Canonical origin: https://not-financial-advice-vjm.com, at the ROOT (no /pj/
+     prefix). Canonical, og:url, twitter:url and the JSON-LD url/@id below all
+     use this one origin and path shape so search engines see a single URL.
+     NOTE: CNAME currently says not-financial-advice.com, which disagrees with
+     this origin. The owner must reconcile DNS/host with these tags BEFORE
+     indexing is enabled; this page stays out of the index until then. -->
+<link rel="canonical" href="https://not-financial-advice-vjm.com/futures-dissection">
 <script type="application/ld+json">
 {
  "@context": "https://schema.org",
  "@type": "Course",
+ "@id": "https://not-financial-advice-vjm.com/futures-dissection",
  "name": "Futures Dissection",
  "description": "Four-level futures curriculum: contract economics, the index product map, tick and margin math, the Globex session clock, auction structure, order flow, and professional risk governance.",
- "url": "https://not-financial-advice-vjm.com/pj/futures-dissection.html",
+ "url": "https://not-financial-advice-vjm.com/futures-dissection",
  "provider": {
   "@type": "Organization",
   "name": "PJ Trades x St",
-  "url": "https://not-financial-advice-vjm.com/pj/"
+  "url": "https://not-financial-advice-vjm.com/"
  },
  "educationalLevel": "Beginner to Professional",
  "teaches": "Futures Dissection",
- "numberOfCredits": 50,
- "isAccessibleForFree": true,
+ "isAccessibleForFree": false,
+ "hasPart": {
+  "@type": "Course",
+  "name": "Futures Dissection — Level 1: Foundational",
+  "description": "The free starter unit of Futures Dissection: contract economics, the index-futures product map, tick/point/notional and P&L math, performance bonds and mark-to-market, contract codes and expiration, and the Globex session clock. Levels 2-4 require an active membership, so only this unit is free.",
+  "provider": {
+   "@type": "Organization",
+   "name": "PJ Trades x St",
+   "url": "https://not-financial-advice-vjm.com/"
+  },
+  "isAccessibleForFree": true,
+  "offers": {
+   "@type": "Offer",
+   "price": "0",
+   "priceCurrency": "USD",
+   "availability": "https://schema.org/InStock"
+  }
+ },
  "hasCourseInstance": {
   "@type": "CourseInstance",
   "courseMode": "online",
-  "courseWorkload": "PT50H",
   "instructor": {
    "@type": "Person",
    "name": "PJ Trades"
@@ -31,20 +53,30 @@
  },
  "offers": {
   "@type": "Offer",
+  "name": "Futures Core membership (monthly)",
   "category": "Subscription",
-  "price": "129.00",
+  "price": "100.00",
   "priceCurrency": "USD",
+  "priceSpecification": {
+   "@type": "UnitPriceSpecification",
+   "price": "100.00",
+   "priceCurrency": "USD",
+   "billingDuration": 1,
+   "billingIncrement": 1,
+   "unitCode": "MON"
+  },
   "availability": "https://schema.org/InStock",
   "url": "https://whop.com/pjtradespremium"
  }
 }
 </script>
-<meta property="og:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
+<meta property="og:url" content="https://not-financial-advice-vjm.com/futures-dissection">
+<meta property="og:image" content="https://not-financial-advice-vjm.com/assets/pj-banner.jpg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://not-financial-advice-vjm.com/pj/assets/pj-banner.jpg">
+<meta name="twitter:url" content="https://not-financial-advice-vjm.com/futures-dissection">
+<meta name="twitter:image" content="https://not-financial-advice-vjm.com/assets/pj-banner.jpg">
 <title>Futures Dissection | PJ Trades x St</title>
 <meta name="description" content="PJ Trades x St — the complete futures curriculum for ES, MES, NQ, MNQ, YM, MYM, RTY, and M2K: contract mechanics, sessions, order flow, and professional risk engineering.">
-<meta name="robots" content="index, follow">
 <link rel="stylesheet" href="assets/curriculum.css">
 <script src="assets/theme.js"></script>
 </head>
