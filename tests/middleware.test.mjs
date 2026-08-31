@@ -15,6 +15,7 @@
 import assert from 'node:assert/strict';
 import { onRequest } from '../functions/_middleware.js';
 import { signSession } from '../functions/api/_lib/session.js';
+import { TIERS, SESSION_VERSION } from '../functions/api/_lib/entitlements.js';
 
 const SECRET = 'x'.repeat(32);
 
@@ -124,6 +125,21 @@ async function sessionCookie() {
   return `__Host-vjm_session=${token}`;
 }
 
+// A tier-carrying (v2) session cookie, the shape every mint now produces.
+async function tieredCookie(tier) {
+  const token = await signSession(
+    { v: SESSION_VERSION, mr: 'ab12', dn: '', t: tier, exp: Date.now() + 60000 }, SECRET,
+  );
+  return `__Host-vjm_session=${token}`;
+}
+
+// Does this response still contain the paid lesson body?
+async function unlocked(path, opts) {
+  const { promise } = run(path, opts);
+  const body = await (await promise).text();
+  return body.includes('paid lesson text');
+}
+
 // Unauthenticated GET to a gated course page: paid content never reaches the
 // response body, but the wrapper element and its sibling free content survive.
 {
@@ -213,4 +229,110 @@ for (const path of ['/psychology-enhancer', '/options-lab.html']) {
   assert.ok(!body.includes('paid lesson text'), `${path}: paid content was not stripped`);
 }
 
-console.log('# VJM middleware (gated-content) tests passed.');
+// ---------------------------------------------------------------------------
+// The entitlement matrix, through the REAL middleware.
+//
+// This is the bug the whole change exists for: the gate used to be
+// `!!getSession(...)`, so ANY valid session unlocked ALL four courses and a
+// $100 Futures Only buyer silently received the $129 Complete library. These
+// assertions are what make the two products actually different products —
+// if the middleware ever goes back to a boolean session check, the two
+// Complete-only rows below unlock and fail.
+// ---------------------------------------------------------------------------
+const CORE_PAGES = ['/futures-dissection', '/futures-dissection.html', '/psychology-enhancer', '/psychology-enhancer.html'];
+const COMPLETE_PAGES = ['/stock-breakdown', '/stock-breakdown.html', '/options-lab', '/options-lab.html'];
+const TIER_ENV = { SESSION_SIGNING_SECRET: SECRET };
+
+// $100 Futures Only: the futures track and the psychology material it
+// depends on — and nothing from the Complete-only library.
+{
+  const cookie = await tieredCookie(TIERS.FUTURES_CORE);
+  for (const path of CORE_PAGES) {
+    assert.equal(await unlocked(path, { env: TIER_ENV, cookie }), true,
+      `${path}: a futures_core member was denied content they paid for`);
+  }
+  for (const path of COMPLETE_PAGES) {
+    assert.equal(await unlocked(path, { env: TIER_ENV, cookie }), false,
+      `${path}: a $100 futures_core member received Complete-only content`);
+  }
+}
+
+// $129 Complete: everything, because Complete outranks Core.
+{
+  const cookie = await tieredCookie(TIERS.COMPLETE);
+  for (const path of [...CORE_PAGES, ...COMPLETE_PAGES]) {
+    assert.equal(await unlocked(path, { env: TIER_ENV, cookie }), true,
+      `${path}: a $129 complete member was denied content they paid for`);
+  }
+}
+
+// No session at all: nothing gated, on any of the four courses.
+for (const path of [...CORE_PAGES, ...COMPLETE_PAGES]) {
+  assert.equal(await unlocked(path, { env: TIER_ENV }), false,
+    `${path}: an anonymous visitor received paid content`);
+}
+
+// A denied under-tier member must be indistinguishable from an anonymous
+// visitor: the same stripped page, same locked marker, same free teaser —
+// not an error, not a redirect, not a partial reveal.
+{
+  const cookie = await tieredCookie(TIERS.FUTURES_CORE);
+  const { promise } = run('/options-lab', { env: TIER_ENV, cookie });
+  const res = await promise;
+  const body = await res.text();
+  assert.equal(res.status, 200);
+  assert.match(body, /data-locked="1"/, 'an under-tier member must get the same locked page an anonymous visitor gets');
+  assert.ok(body.includes('free teaser'), 'the free content must still render for an under-tier member');
+  assert.equal(res.headers.get('Cache-Control'), 'private, no-store',
+    'a tier-dependent body must never be cached for another visitor');
+}
+
+// A tier that is not one of ours is not a tier: a forged or renamed claim
+// falls back to the legacy path, and under STRICT_LEGACY_SESSIONS it is
+// simply denied. Either way it must not out-rank complete.
+{
+  const cookie = await tieredCookie('superuser');
+  assert.equal(
+    await unlocked('/options-lab', { env: { ...TIER_ENV, STRICT_LEGACY_SESSIONS: 'true' }, cookie }), false,
+    'an invented tier name must not unlock Complete-only content',
+  );
+}
+
+// Pre-tier (v1) tokens are grandfathered so shipping this does not sign out
+// every live member mid-session…
+{
+  const token = await signSession({ v: 1, mr: 'ab12', dn: '', exp: Date.now() + 60000 }, SECRET);
+  const cookie = `__Host-vjm_session=${token}`;
+  assert.equal(await unlocked('/options-lab', { env: TIER_ENV, cookie }), true,
+    'an existing v1 session must keep working until it expires on its own');
+
+  // …and the owner can close that window in one env var, forcing everyone to
+  // re-authenticate once and pick up a real tier claim.
+  assert.equal(
+    await unlocked('/options-lab', { env: { ...TIER_ENV, STRICT_LEGACY_SESSIONS: 'true' }, cookie }), false,
+    'STRICT_LEGACY_SESSIONS=true must cut off untiered legacy sessions',
+  );
+  assert.equal(
+    await unlocked('/futures-dissection', { env: { ...TIER_ENV, STRICT_LEGACY_SESSIONS: 'true' }, cookie }), false,
+    'strict mode cuts legacy sessions off from every gated course, not just the Complete ones',
+  );
+}
+
+// Tampering with a tiered cookie's payload (swapping futures_core for
+// complete) breaks the HMAC, so it fails closed to the stripped page rather
+// than being read as a self-declared upgrade.
+{
+  const token = await signSession(
+    { v: SESSION_VERSION, mr: 'ab12', dn: '', t: TIERS.FUTURES_CORE, exp: Date.now() + 60000 }, SECRET,
+  );
+  const [payload, sig] = token.split('.');
+  const forged = JSON.parse(Buffer.from(payload, 'base64url').toString());
+  forged.t = TIERS.COMPLETE;
+  const forgedToken = Buffer.from(JSON.stringify(forged)).toString('base64url') + '.' + sig;
+  assert.equal(
+    await unlocked('/options-lab', { env: TIER_ENV, cookie: `__Host-vjm_session=${forgedToken}` }), false,
+    'a self-upgraded tier claim must not verify — the tier is a SIGNED claim',
+  );
+}
+
+console.log('# VJM middleware (gated-content + tier) tests passed.');

@@ -11,6 +11,10 @@
 //      owner to send manually. Raw codes are never persisted or emailed.
 //   5. On revoke: flips matching member's code status to 'revoked' by
 //      whop_member_id so the next bridge sync can deactivate it.
+//   6. Tier: the grant's product/plan is resolved to an entitlement tier
+//      (see _lib/entitlements.js) and persisted on the row (migration 0005),
+//      so the session minted later carries what was actually bought. A
+//      product that resolves to NO tier grants nothing at all — see below.
 //
 // Env: WHOP_WEBHOOK_SECRET (required), RESEARCH_DB (required),
 //      DISCORD_WHOP_CODES_WEBHOOK (optional delivery channel).
@@ -18,6 +22,7 @@
 import { json } from './_lib/http.js';
 import { normalizeWhopEvent, generateAccessCodeShape, isValidGeneratedCode, timingSafeHexEqual } from './_lib/integrations-core.js';
 import { postEmbed } from './_lib/discord.js';
+import { resolveTier } from './_lib/entitlements.js';
 
 const TIMESTAMP_TOLERANCE_MS = 5 * 60 * 1000;
 
@@ -70,6 +75,24 @@ export async function onRequestPost(context) {
   };
 
   if (evt.action === 'grant') {
+    // An unrecognized product must never become a course credential. A
+    // cheaper item, a separately sold indicator, or a product from another
+    // storefront can reach this endpoint with a perfectly valid signature;
+    // granting on it would hand out the paid library for the wrong price.
+    //
+    // Ack with 2xx anyway: a non-2xx makes Whop retry this event forever,
+    // and no retry will ever change the answer. Record why on the claimed
+    // webhook_events row (which stays claimed, so retries are duplicates)
+    // and leave no code row, no Discord message, no credential behind.
+    const { tier, reason } = resolveTier(env, { product: evt.productId, plan: evt.planId });
+    if (!tier) {
+      await env.RESEARCH_DB.prepare(
+        "UPDATE webhook_events SET note=?2 WHERE provider='whop' AND event_id=?1"
+      ).bind(evt.eventId, 'no_grant:' + reason + ':' + (evt.productId || evt.planId || 'no_product')).run().catch(() => {});
+      console.error('whop-webhook: ' + evt.eventId + ' not granted (' + reason + '): product=' + (evt.productId || '?'));
+      return json({ ok: true, action: 'ignored', granted: false, reason });
+    }
+
     const bytes = new Uint8Array(8);
     crypto.getRandomValues(bytes);
     let code = generateAccessCodeShape(bytes);
@@ -82,12 +105,12 @@ export async function onRequestPost(context) {
     const emailHash = evt.email ? await sha256Hex(evt.email) : null;
 
     await env.RESEARCH_DB.prepare(
-      `INSERT INTO whop_codes (code_hash, code_last4, whop_event_id, whop_member_id, whop_product, status, email_hash, plan_name, expires_at, amount_paid_cents, currency)
-       VALUES (?1, ?2, ?3, ?4, ?5, 'pending', ?6, ?7, ?8, ?9, ?10)
+      `INSERT INTO whop_codes (code_hash, code_last4, whop_event_id, whop_member_id, whop_product, status, email_hash, plan_name, expires_at, amount_paid_cents, currency, tier)
+       VALUES (?1, ?2, ?3, ?4, ?5, 'pending', ?6, ?7, ?8, ?9, ?10, ?11)
        ON CONFLICT(code_hash) DO NOTHING`
     ).bind(
       hash, code.slice(-4), evt.eventId, evt.memberId, evt.productId,
-      emailHash, evt.planName, evt.expiresAt, evt.amountPaidCents, evt.currency
+      emailHash, evt.planName, evt.expiresAt, evt.amountPaidCents, evt.currency, tier
     ).run();
 
     const hook = env.DISCORD_WHOP_CODES_WEBHOOK;
@@ -111,7 +134,7 @@ export async function onRequestPost(context) {
           `Code: \`${code}\`\n\n` +
           `Deliver to the customer, then they sign in at /premium-guidance. ` +
           `Add the same code+status=Active to the Member sheet so the bridge recognizes it.`,
-        fields: [{ name: 'Type', value: evt.type }],
+        fields: [{ name: 'Type', value: evt.type }, { name: 'Tier', value: tier }],
       });
       if (delivered) {
         await env.RESEARCH_DB.prepare(
@@ -119,7 +142,7 @@ export async function onRequestPost(context) {
         ).bind(hash).run();
         await env.RESEARCH_DB.prepare(
           "UPDATE webhook_events SET note=?2 WHERE provider='whop' AND event_id=?1"
-        ).bind(evt.eventId, 'grant:' + (evt.memberId || '?')).run().catch(() => {});
+        ).bind(evt.eventId, 'grant:' + tier + ':' + (evt.memberId || '?')).run().catch(() => {});
       }
     }
     if (!delivered) {
@@ -131,7 +154,7 @@ export async function onRequestPost(context) {
       console.error('whop-webhook: delivery failed for ' + evt.eventId + '; released for retry');
       return json({ ok: false, error: 'Code delivery failed; will retry.' }, 503);
     }
-    return json({ ok: true, action: 'grant', delivered });
+    return json({ ok: true, action: 'grant', delivered, tier });
   }
 
   if (evt.action === 'revoke') {

@@ -36,10 +36,11 @@ async function hmacHex(secret, message) {
 // Minimal D1 fake covering exactly the queries whop-webhook.js issues,
 // matched by a distinguishing substring of each SQL statement. State lives
 // in the Maps/Sets passed in so a test can assert on it directly.
-function makeDb({ claimedEvents = new Set(), codes = new Map() } = {}) {
+function makeDb({ claimedEvents = new Set(), codes = new Map(), notes = new Map() } = {}) {
   return {
     claimedEvents,
     codes,
+    notes,
     prepare(sql) {
       return {
         bind(...args) {
@@ -59,9 +60,10 @@ function makeDb({ claimedEvents = new Set(), codes = new Map() } = {}) {
                 return { meta: { changes: 1 } };
               }
               if (sql.includes('INSERT INTO whop_codes')) {
-                const [hash, last4, eventId, memberId] = args;
+                const [hash, last4, eventId, memberId, product] = args;
+                const tier = args[10]; // ?11 — migration 0005
                 if (!codes.has(hash)) {
-                  codes.set(hash, { code_last4: last4, whop_event_id: eventId, whop_member_id: memberId, status: 'pending' });
+                  codes.set(hash, { code_last4: last4, whop_event_id: eventId, whop_member_id: memberId, whop_product: product, tier, status: 'pending' });
                 }
                 return { meta: { changes: 1 } };
               }
@@ -85,6 +87,8 @@ function makeDb({ claimedEvents = new Set(), codes = new Map() } = {}) {
                 return { meta: { changes } };
               }
               if (sql.includes('UPDATE webhook_events')) {
+                const [eventId, note] = args;
+                notes.set(eventId, note === undefined ? 'revoke' : note);
                 return { meta: { changes: 1 } };
               }
               throw new Error('unhandled query in fake D1: ' + sql);
@@ -115,8 +119,10 @@ async function postWebhook(env, bodyObj, { ts = Math.floor(Date.now() / 1000), s
   return { status: res.status, data: await res.json() };
 }
 
-function grantBody(eventId, memberId = 'user_1') {
-  return { type: 'membership.went_valid', id: eventId, data: { membership: { user_id: memberId, product_id: 'prod_1' } } };
+function grantBody(eventId, memberId = 'user_1', productId = 'prod_1', planId = null) {
+  const membership = { user_id: memberId, product_id: productId };
+  if (planId) membership.plan_id = planId;
+  return { type: 'membership.went_valid', id: eventId, data: { membership } };
 }
 function revokeBody(eventId, memberId) {
   return { type: 'membership.went_invalid', id: eventId, data: memberId ? { membership: { user_id: memberId } } : {} };
@@ -266,6 +272,102 @@ try {
     assert.equal(data.action, 'revoke');
     assert.equal(data.revoked, 1);
     assert.equal([...db.codes.values()][0].status, 'revoked');
+  }
+  // ─────────────────────────────────────────────────────────────────────
+  // Entitlement tier (functions/api/_lib/entitlements.js + migration 0005).
+  //
+  // The site sells $100 Futures Only and $129 Complete. Until now every
+  // grant was identical, so any purchase became a full-library credential.
+  // The webhook now resolves the event's product/plan to a tier and refuses
+  // to grant at all when it resolves to none.
+  // ─────────────────────────────────────────────────────────────────────
+  const ALLOWLIST = {
+    WHOP_PRODUCTS_FUTURES: 'prod_futures_100, plan_futures_monthly',
+    WHOP_PRODUCTS_COMPLETE: 'prod_complete_129',
+  };
+
+  // The core rejection: a product that is not on either allowlist — a cheaper
+  // item, a standalone indicator, another storefront's product — reaches this
+  // endpoint with a PERFECTLY VALID signature. It must grant nothing: no code
+  // row, no Discord delivery, no credential of any kind.
+  {
+    const db = makeDb();
+    const env = { ...baseEnv(db), ...ALLOWLIST, DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    let posted = 0;
+    globalThis.fetch = async () => { posted += 1; return new Response(null, { status: 204 }); };
+
+    const { status, data } = await postWebhook(env, grantBody('tier-reject-1', 'member-X', 'prod_indicator_29'));
+    // Acked, not retried: a non-2xx makes Whop redeliver this event forever
+    // and no retry can change the answer.
+    assert.equal(status, 200);
+    assert.equal(data.granted, false);
+    assert.equal(data.reason, 'not_allowlisted');
+    assert.equal(db.codes.size, 0, 'an unallowlisted product must not mint a code row');
+    assert.equal(posted, 0, 'no code may be delivered for a product that grants nothing');
+    // The claim stays, so Whop's retries are cheap duplicates, and the reason
+    // is written to the row the owner can actually read.
+    assert.equal(db.claimedEvents.size, 1, 'the event stays claimed — retrying it can never grant');
+    assert.match(db.notes.get('tier-reject-1'), /no_grant:not_allowlisted:prod_indicator_29/);
+  }
+
+  // An event carrying no product id at all is likewise not a credential.
+  {
+    const db = makeDb();
+    const env = { ...baseEnv(db), ...ALLOWLIST, DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    globalThis.fetch = async () => { throw new Error('must not deliver a code for an unidentified product'); };
+    const body = { type: 'membership.went_valid', id: 'tier-reject-2', data: { membership: { user_id: 'member-Y' } } };
+    const { status, data } = await postWebhook(env, body);
+    assert.equal(status, 200);
+    assert.equal(data.reason, 'no_product_id');
+    assert.equal(db.codes.size, 0);
+  }
+
+  // The allowlisted $100 futures product mints futures_core — NOT complete.
+  // This is the row the session's signed tier claim is later read from, so
+  // this single value is what stops a $100 buyer reaching the $129 library.
+  {
+    const db = makeDb();
+    const env = { ...baseEnv(db), ...ALLOWLIST, DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    globalThis.fetch = async () => new Response(null, { status: 204 });
+    const { status, data } = await postWebhook(env, grantBody('tier-futures', 'member-F', 'prod_futures_100'));
+    assert.equal(status, 200);
+    assert.equal(data.tier, 'futures_core');
+    assert.equal([...db.codes.values()][0].tier, 'futures_core',
+      'the $100 futures product must be persisted as futures_core, not complete');
+    assert.match(db.notes.get('tier-futures'), /grant:futures_core/);
+  }
+
+  // Whop sends a plan id (not a product id) on some events; the futures plan
+  // must resolve the same way rather than falling through to "no tier".
+  {
+    const db = makeDb();
+    const env = { ...baseEnv(db), ...ALLOWLIST, DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    globalThis.fetch = async () => new Response(null, { status: 204 });
+    const { data } = await postWebhook(env, grantBody('tier-plan', 'member-P', 'prod_unlisted', 'plan_futures_monthly'));
+    assert.equal(data.tier, 'futures_core');
+  }
+
+  // The $129 product mints complete.
+  {
+    const db = makeDb();
+    const env = { ...baseEnv(db), ...ALLOWLIST, DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    globalThis.fetch = async () => new Response(null, { status: 204 });
+    const { data } = await postWebhook(env, grantBody('tier-complete', 'member-C2', 'prod_complete_129'));
+    assert.equal(data.tier, 'complete');
+    assert.equal([...db.codes.values()][0].tier, 'complete');
+  }
+
+  // A deployment with no allowlists configured must keep granting exactly as
+  // it did before this change, so shipping the tier model does not black out
+  // live purchases before the owner sets the env vars.
+  {
+    const db = makeDb();
+    const env = { ...baseEnv(db), DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    globalThis.fetch = async () => new Response(null, { status: 204 });
+    const { status, data } = await postWebhook(env, grantBody('tier-unconfigured', 'member-U', 'prod_whatever'));
+    assert.equal(status, 200);
+    assert.equal(data.tier, 'complete', 'unconfigured deployments keep the pre-tier behaviour');
+    assert.equal([...db.codes.values()][0].tier, 'complete');
   }
 } finally {
   globalThis.fetch = originalFetch;

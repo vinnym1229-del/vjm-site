@@ -16,12 +16,17 @@
 //   MEMBERS_BRIDGE_URL       new authenticated single-record bridge URL
 //   MEMBERS_BRIDGE_SECRET    shared secret for the authenticated bridge
 //   SESSION_DAYS             optional session lifetime (default 7, max 30)
+//   RESEARCH_DB              optional D1; holds whop_codes.tier (migration 0005)
+//
+// The issued session carries a signed tier claim (`t`) so the middleware and
+// the paid APIs can tell a $100 Futures member from a $129 Complete member.
 
 import {
   resolveSigningSecret, signSession, getSession, sessionDays,
 } from './_lib/session.js';
 import { json, jsonWithSession, checkRateLimit } from './_lib/http.js';
 import { turnstileConfigured, verifyTurnstile } from './_lib/turnstile.js';
+import { SESSION_VERSION, isTier, resolveTier } from './_lib/entitlements.js';
 
 const GENERIC_BAD_CODE = 'We could not activate this code. Check it and try again, or DM St1101 on Discord.';
 
@@ -84,8 +89,9 @@ async function handlePost(context) {
   const days = sessionDays(env);
   const expiresAt = Date.now() + days * 24 * 60 * 60 * 1000;
   const memberRef = await memberRefFor(code);
+  const tier = await tierForCode(env, code);
   const token = await signSession(
-    { v: 1, mr: memberRef, dn: record.discord || '', exp: expiresAt },
+    { v: SESSION_VERSION, mr: memberRef, dn: record.discord || '', t: tier, exp: expiresAt },
     secret
   );
   await auditEvent(env, 'verify_code', 'granted', code);
@@ -109,6 +115,44 @@ async function handleGet(context) {
     discord: session.dn || null,
     expiresAt: new Date(Number(session.exp)).toISOString(),
   });
+}
+
+// ---------------------------------------------------------------------------
+// Tier resolution for a code
+// ---------------------------------------------------------------------------
+
+// The whop-webhook records the tier it resolved on the whop_codes row keyed
+// by SHA-256 of the code (migration 0005), so a code minted by a Whop
+// purchase carries its real product's tier.
+//
+// A code that has no D1 row is a legacy member: the owner's Google Sheet
+// predates whop_codes entirely, and the member bridge above just confirmed
+// they are active and paying. Locking them out because we cannot name their
+// product would break live customers, so they get resolveTier's
+// *unconfigured default* — the same tier this site granted everyone before
+// tiers existed (WHOP_DEFAULT_TIER, else 'complete'). Passing an env with no
+// allowlists forces that branch deliberately: the allowlists are for
+// classifying Whop products, and a Sheet-only member has no product id to
+// classify, so 'not_allowlisted' would be the wrong answer, not a safer one.
+async function tierForCode(env, code) {
+  const fallback = resolveTier({ WHOP_DEFAULT_TIER: env && env.WHOP_DEFAULT_TIER }, {}).tier;
+  if (!env || !env.RESEARCH_DB) return fallback;
+  try {
+    const hash = await sha256Hex(code);
+    const row = await env.RESEARCH_DB
+      .prepare('SELECT tier FROM whop_codes WHERE code_hash = ?1 LIMIT 1')
+      .bind(hash).first();
+    if (row && isTier(row.tier)) return row.tier;
+  } catch {
+    // Tier lookup is best-effort: a D1 outage must not lock out a member the
+    // bridge already verified. Fall back rather than fail the sign-in.
+  }
+  return fallback;
+}
+
+async function sha256Hex(s) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 // ---------------------------------------------------------------------------
