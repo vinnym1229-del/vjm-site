@@ -12,11 +12,12 @@
 # above and fails if any page or sitemap entry disagrees with it. Change this
 # line, run `npm test`, and the failures list every place left to update.
 #
-# WARNING — CNAME DISAGREES: CNAME currently says `not-financial-advice.com`,
-# which is NOT this origin. The live DNS/host decision belongs to the owner, so
-# CNAME is deliberately left untouched here. The owner must reconcile CNAME and
-# this origin BEFORE indexing is enabled, or the indexed host will differ from
-# the canonical one and link equity will split across two hosts.
+# CNAME has been removed from this repo — it is a GitHub Pages convention this
+# Cloudflare Pages site never read; custom domains come from the Pages
+# dashboard, not a file. Before lifting the indexing hold below, confirm the
+# dashboard's custom domain actually matches this origin: that is an owner
+# check against Cloudflare's config, not something a file in this repo can
+# assert.
 #
 # Crawling is allowed so that crawlers can SEE the noindex. Indexing itself is
 # held off site-wide by the X-Robots-Tag in `_headers` (see the switch there).

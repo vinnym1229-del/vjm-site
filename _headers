@@ -7,10 +7,12 @@
 # ── INDEXING SWITCH (site-wide hold) ──
 # Indexing is deliberately OFF for the whole site, not just /pj/*. Deleting the
 # `X-Robots-Tag: noindex` line in the /* block below is what enables indexing —
-# do that only after CNAME and the canonical origin declared in robots.txt have
-# been reconciled. Pages that must stay out of the index regardless carry their
-# own noindex meta plus the per-path blocks at the bottom of this file, so
-# lifting that line does not expose them.
+# do that only after confirming the Cloudflare Pages dashboard's custom domain
+# actually matches the canonical origin declared in robots.txt (CNAME has been
+# removed and never controlled this; that dashboard check happens outside the
+# repo). Pages that must stay out of the index regardless carry their own
+# noindex meta plus the per-path blocks at the bottom of this file, so lifting
+# that line does not expose them.
 
 /*
   X-Content-Type-Options: nosniff
