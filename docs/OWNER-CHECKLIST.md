@@ -167,9 +167,24 @@ format, and the `List-Unsubscribe` headers to set.
       answer to "who updates the schedule every week".
 
       Four steps:
-      1. Apps Script: deploy `apps-script/content-sync/Code.gs` from your
-         content spreadsheet (Script Properties: `SHEET_ID`,
-         `CONTENT_BRIDGE_SECRET`). See `docs/APPS-SCRIPT-INTEGRATION.md`.
+      1. Apps Script: open your content spreadsheet → Extensions → Apps
+         Script, paste in `apps-script/content-sync/Code.gs`, then pick
+         **`setUp`** in the function dropdown and press Run.
+
+         It builds all nine tabs with the right headers, seeds the Schedule
+         tab with the exact week the site shows right now (so switching the
+         sync on changes nothing visible), generates the shared secret, and
+         prints what to paste where. Re-running it is safe — it never
+         overwrites a tab, a row, or an existing secret.
+
+         Then Deploy → New deployment → Web app, Execute as **Me**, access
+         **Anyone**, and copy the `/exec` URL. Opening that URL in a browser
+         should show `{"ok":true,"service":"content-bridge"…}` — that is how
+         you confirm you copied the right one.
+
+         `healthCheck` in the same dropdown reports how many usable rows each
+         tab has, which is the fastest way to spot the common mistake of rows
+         with a blank `id` column (the bridge drops those silently).
       2. Cloudflare Pages → Variables: `CONTENT_BRIDGE_URL` (the /exec URL),
          `CONTENT_BRIDGE_SECRET` (same value), `RESEARCH_CRON_SECRET`.
       3. GitHub → repo Settings → Secrets → Actions: `RESEARCH_REFRESH_URL`
