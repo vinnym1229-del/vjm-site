@@ -1396,6 +1396,46 @@
 </section>
 
 
+<!-- GIVEAWAY ENTRY — reuses the newsletter's own signup form (functions/api/newsletter/)
+     rather than a separate contest backend: this site has exactly one email-capture
+     endpoint, and a giveaway is, mechanically, just a labeled reason to join that list.
+     data-source="giveaway" keeps these entries distinguishable in newsletter_subscribers
+     and in the lead_submit analytics event without any new code. -->
+<section id="giveaway" style="background:var(--bg);">
+  <div class="section-inner" style="display:flex;justify-content:center;" data-reveal>
+    <div class="nl">
+      <p class="nl-kicker">🎁 Enter to win</p>
+      <h2 class="nl-title">Win a Free Prop Firm Eval — Plus Daily Sauce</h2>
+      <p class="nl-sub">Drop your email and you're in the running for a free prop firm evaluation
+      &mdash; a real shot at trading a funded account on someone else's money. While you wait to
+      hear back, you get the free daily sauce too: PJ's market callouts and guides, straight to
+      your inbox, no cost.</p>
+      <form class="nl-signup" data-source="giveaway" novalidate>
+        <div class="nl-fields two">
+          <input type="text" name="firstName" autocomplete="given-name" placeholder="First name" aria-label="First name">
+          <input type="email" name="email" autocomplete="email" required placeholder="you@example.com" aria-label="Email address">
+        </div>
+        <div class="nl-hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+        <div class="nl-consent">
+          <input type="checkbox" id="nl-consent-giveaway" name="consent">
+          <label for="nl-consent-giveaway">Yes, enter me and email me the daily sauce. I can unsubscribe from any email, or at
+            <a href="/unsubscribe.html">this link</a>, at any time.</label>
+        </div>
+        <!-- Turnstile mounts here when the owner sets TURNSTILE_SITE_KEY.
+             Empty until then, so nothing renders and nothing shifts. -->
+        <div class="nl-turnstile"></div>
+        <button type="submit" class="btn btn-gold nl-submit">Enter me in</button>
+        <p class="nl-msg" role="status" aria-live="polite"></p>
+      </form>
+      <p class="nl-fine">No purchase necessary to enter or win. One entry per person; winners are chosen
+      at random from active entries and notified by email. Odds depend on the number of entries. We store
+      your address to run this giveaway and send the newsletter, nothing else &mdash; see our
+      <a href="privacy.html">privacy policy</a>. Educational content only &mdash; not financial advice,
+      and not a guarantee you will pass any evaluation.</p>
+    </div>
+  </div>
+</section>
+
 <!-- NEWSLETTER — the site's only email capture.
      Single opt-in with an explicit consent box, stored in the owner's own D1
      rather than a hosted form provider (see functions/api/newsletter/). Every
