@@ -124,6 +124,18 @@ async function fetchContentBridge(env) {
   });
   if (!res.ok) throw new Error('bridge status ' + res.status);
   const data = await res.json();
+  // Apps Script Web Apps cannot return a real HTTP status from
+  // ContentService — every doPost() response comes back 200 regardless of
+  // what the script intended, including "unauthorized" and "not configured".
+  // res.ok is therefore true even on a rejection, so the bridge's own `ok`
+  // field is the only signal that exists. Surfacing data.error here (rather
+  // than folding it into the generic shape-mismatch branch below) is what
+  // makes "the HMAC didn't verify" distinguishable from "the bridge sent
+  // something that isn't even JSON we recognize" — those need different fixes
+  // and were previously indistinguishable from this side.
+  if (data && data.ok === false) {
+    throw new Error('bridge rejected the request: ' + (data.error || 'unknown reason'));
+  }
   if (!data || data.ok !== true || typeof data.content !== 'object') {
     throw new Error('bridge returned unexpected shape');
   }
