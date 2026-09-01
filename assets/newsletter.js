@@ -122,7 +122,12 @@
       var state = new URLSearchParams(location.search).get('state');
       var copy = {
         done: ['ok', 'You are unsubscribed. That address will not receive any more emails from us.'],
-        invalid: ['err', 'That unsubscribe link is not valid or has already been used. Enter your address below and we will remove it.'],
+        // Re-clicking a link whose token has already done its job still redirects
+        // here as 'done', not 'invalid' — the GET handler reports success whether
+        // or not a row actually matched, same as the POST form does. 'invalid' only
+        // ever fires for a malformed or missing token, so the copy must not imply a
+        // used-once model the tokens don't have.
+        invalid: ['err', 'That unsubscribe link is not valid. Enter your address below and we will remove it.'],
         error: ['err', 'Something went wrong on our side. Enter your address below and we will remove it.'],
       }[state];
       if (copy) { banner.className = 'nl-msg ' + copy[0]; banner.textContent = copy[1]; }

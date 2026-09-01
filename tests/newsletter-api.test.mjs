@@ -184,6 +184,24 @@ test('the one-click GET link works without JavaScript and lands on the page', as
   const bad = await unsubscribeGet({ request: new Request(`${UNSUB}?token=../../etc`, { headers: { 'CF-Connecting-IP': `203.0.113.${++ip}` } }), env: envWith(db2) });
   assert.match(bad.headers.get('location'), /state=invalid$/);
   assert.equal(db2.calls.length, 0);
+
+  // A well-formed token that never matched a row (already used on a prior
+  // click, or simply unknown) still redirects to 'done' — the UPDATE runs and
+  // reports no error even when it changes nothing, and this handler never
+  // inspects a changed-rows count to tell the two cases apart. 'invalid' is
+  // reachable only through the malformed-token branch above.
+  const db3 = fakeDb();
+  const reused = await unsubscribeGet({ request: new Request(`${UNSUB}?token=${newUnsubToken()}`, { headers: { 'CF-Connecting-IP': `203.0.113.${++ip}` } }), env: envWith(db3) });
+  assert.match(reused.headers.get('location'), /state=done$/, 're-clicking a spent link must not read as invalid');
+});
+
+test('the one-click link copy does not promise a state the handler cannot reach', () => {
+  // The client-side 'invalid' message used to say a link "has already been
+  // used" — but a reused, well-formed token redirects to 'done' (proven
+  // above), never 'invalid'. Telling a user their link failed for a reason
+  // that in fact always succeeds is worse than saying nothing about it.
+  const js = read('assets/newsletter.js');
+  assert.doesNotMatch(js, /already been used/i);
 });
 
 test('unsubscribe is not an email-existence oracle either', async () => {
