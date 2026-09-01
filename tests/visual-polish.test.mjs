@@ -169,3 +169,25 @@ test('light mode: the featured card and the page bolts are actually visible', ()
   // The page background bolts were tuned against the dark layer and undershot.
   assert.match(read('assets/lightning-bg.js'), /body\.light-mode #site-bolt-layer\{opacity:\.62;\}/);
 });
+
+test('the billing tabs clear the featured card\'s bolt ring', () => {
+  // The ring bleeds outside the Complete card on purpose, and it reaches
+  // upwards by (the card's lift + the bleed). If the gap below the billing
+  // tabs is smaller than that reach, the bolts are drawn on top of the tabs —
+  // which is exactly what happened at a 36px gap.
+  //
+  // Derived from the real values rather than pinned to a magic number, so
+  // changing the bleed or the lift fails here instead of on the page.
+  const lift = Number(/\.tier-card\.hot\{[^}]*transform:translateY\((-?\d+)px\)/.exec(siteCss)[1]);
+  const bleed = Number(/\.tier-card\.hot::before\{[^}]{0,120}?inset:var\(--bolt-bleed,(-?\d+)px\)/.exec(siteCss)[1]);
+  const gap = Number(/\.period-tabs\{[^}]*margin:0 auto (\d+)px/.exec(siteCss)[1]);
+  const reach = -lift + -bleed;
+  assert.ok(gap - reach >= 16,
+    `the ring reaches ${reach}px above the grid but only ${gap}px of gap sits below the tabs`);
+
+  // That gap must be the WHOLE gap. Adjacent siblings collapse their vertical
+  // margins to the larger of the two rather than summing them, so splitting it
+  // with .tier-grid's margin-top silently gives back whichever is smaller.
+  assert.match(siteCss, /\.tier-grid\{[^}]*margin:0 auto;/,
+    'the tier grid must not add a top margin — it would collapse, not add');
+});
