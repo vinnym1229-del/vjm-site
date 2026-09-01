@@ -166,7 +166,46 @@ format, and the `List-Unsubscribe` headers to set.
       the hour** — no deploy, no code edit, nobody in the loop. That is the
       answer to "who updates the schedule every week".
 
-      Four steps:
+      **Where this actually stands right now (2026-09-01):** items 0, the
+      spreadsheet, and the Apps Script deployment are done. Two things are
+      still blocking a working sync, both confirmed by running the workflow
+      against the live site rather than guessed at:
+
+      - **`setUp()` needs to be run again, in the Apps Script project behind
+        the CURRENT `/exec` deployment URL.** The bridge itself is now
+        answering "not configured" — that's `Code.gs` reporting its Script
+        Properties have no `CONTENT_BRIDGE_SECRET`, which only happens if
+        `setUp()` was never run successfully in *that* project (creating a
+        new deployment to fix the earlier 403 does not carry the secret over
+        if it was a new Apps Script project rather than a new deployment of
+        the same one). Open the Apps Script editor for the project that
+        serves the URL currently in Cloudflare's `CONTENT_BRIDGE_URL`, run
+        `setUp`, and it will print a secret — put that exact value into
+        Cloudflare's `CONTENT_BRIDGE_SECRET`, replacing whatever is there now.
+      - **The live domain 502s on this one endpoint specifically, separately
+        from the above.** `POST /api/content-sync` on
+        `not-financial-advice-vjm.com` returns a bare `error code: 502` with
+        no JSON body — an edge-level failure, not the Function running and
+        answering. Confirmed NOT domain-wide: the homepage ("/") and another
+        API route (`GET /api/content`) both return normal 200s on the same
+        domain. Confirmed NOT the deployment: the identical POST against
+        `vjm.pages.dev` (same Production deployment) returns the Function's
+        real JSON response. So something scoped to exactly this one path is
+        intercepting the request before it reaches the Pages Function.
+        Likeliest cause: a **Workers Route** or a **Rule** (Redirect/
+        Transform/WAF custom rule) bound to a pattern matching
+        `/api/content-sync` on this zone — check Cloudflare dashboard →
+        Workers & Pages → **Workers Routes**, and separately **Rules**, for
+        anything matching that path and remove or fix it. `.pages.dev` is
+        outside this zone, which is exactly why it's unaffected.
+
+      Fix the Apps Script secret first — it's the one blocking every sync
+      attempt, custom domain or not. The domain 502 only matters once the
+      hourly cron (which hits the custom domain, not `.pages.dev`) has
+      something working to reach.
+
+      Four steps (for a from-scratch setup — most of this is already done,
+      see above):
       1. **The spreadsheet already exists** — "PJ Trades — Site Content" is in
          your Drive, with the Schedule tab filled in with this week:
          https://docs.google.com/spreadsheets/d/1kqp-qoEU5v9ygV8PpgpVnOvxtyGNsFbgR86t9zDNuUY/edit

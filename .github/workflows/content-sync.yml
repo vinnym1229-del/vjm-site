@@ -54,12 +54,31 @@ jobs:
           test -n "$RESEARCH_REFRESH_URL" || { echo "RESEARCH_REFRESH_URL secret is not set"; exit 1; }
           test -n "$RESEARCH_CRON_SECRET" || { echo "RESEARCH_CRON_SECRET secret is not set"; exit 1; }
 
-      # TEMPORARY diagnostic while tracking down why the Production custom
-      # domain 502s on POST /api/content-sync: hit the exact same path with
-      # the exact same method on the .pages.dev alias of the SAME Production
-      # deployment, so the two results are comparable rather than differing
-      # by both domain and HTTP method as the last manual check did. Remove
-      # once the real domain is confirmed working again.
+      # TEMPORARY diagnostic, kept until BOTH of these are actually fixed:
+      #
+      # 1. The custom domain 502s on POST /api/content-sync with a bare
+      #    "error code: 502" (no JSON — an edge failure, not the Function
+      #    throwing), while root ("/") and another /api/* route (GET
+      #    /api/content) both 200 with real responses on this same domain.
+      #    So it isn't DNS/SSL/the domain's Pages attachment, and it isn't
+      #    /api/* routing generally — something scoped to exactly this one
+      #    path is intercepting it before the Pages Function runs. Most
+      #    likely: a Workers Route or a Rule (Redirect/Transform/WAF) bound
+      #    to this specific path on the zone — check Cloudflare dashboard ->
+      #    Workers & Pages -> Workers Routes, and Rules, for anything
+      #    matching "/api/content-sync". .pages.dev sits outside this zone,
+      #    which is why it's unaffected and still the only place to see the
+      #    Function's real response.
+      # 2. That real response is itself a rejection: "bridge rejected the
+      #    request: not configured" — the Apps Script project behind the
+      #    CURRENT deployment URL has no CONTENT_BRIDGE_SECRET in its Script
+      #    Properties, i.e. setUp() has not been run successfully in THAT
+      #    project (a new deployment does not imply setUp() ran there — see
+      #    docs/OWNER-CHECKLIST.md item 6).
+      #
+      # Once both are fixed this step (and the "no parseable JSON body"
+      # branch below) can go — remove this step and switch the main step
+      # back to querying $RESEARCH_REFRESH_URL directly.
       - name: Diagnostic — same POST against the .pages.dev alias
         if: always()
         continue-on-error: true
@@ -76,52 +95,6 @@ jobs:
           cat /tmp/pages-dev-response.json || true
           echo ""
           echo "------------"
-
-      # TEMPORARY: the custom domain 502s on POST /api/content-sync with a
-      # bare "error code: 502" (no JSON — an edge failure, not the Function
-      # throwing), while the SAME Production deployment's .pages.dev alias
-      # returns a real Function response. That already rules out the
-      # Functions build itself. What's still unknown is whether the 502 is
-      # specific to the /api/* path (a Functions routing rule, or a Worker
-      # route bound to /api/* on this zone shadowing the Pages Function) or
-      # the custom domain is broken end-to-end (DNS, SSL, or the domain not
-      # actually attached to this Pages project). A plain GET of both
-      # domains' document roots, side by side, tells them apart: root 502
-      # too => domain-wide (check Cloudflare Pages -> Custom domains tab for
-      # not-financial-advice-vjm.com's status); root 200 but /api/* 502 =>
-      # routing, most likely a Workers Route on this zone intercepting /api/*
-      # ahead of the Pages Function.
-      - name: Diagnostic — is the custom domain broken domain-wide or just on /api/*
-        if: always()
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -uo pipefail
-          for target in "custom-domain::${RESEARCH_REFRESH_URL%/}/" "pages-dev::https://vjm.pages.dev/"; do
-            label="${target%%::*}"; url="${target#*::}"
-            code="$(curl --silent --show-error --retry 2 --max-time 30 \
-              -o "/tmp/root-${label}.html" -w '%{http_code}' "$url")"
-            echo "$label root ($url) HTTP status: $code"
-            echo "--- first 300 chars ---"
-            head -c 300 "/tmp/root-${label}.html" || true
-            echo ""
-            echo "------------"
-          done
-          # Also check a second, unrelated, GET-only /api/* route (read-only,
-          # no side effects). If THIS also 502s on the custom domain, the
-          # break is /api/*-wide (a Workers Route on the zone matching /api/*
-          # would explain it). If it 200s while content-sync alone 502s, the
-          # break is specific to that one path.
-          for target in "custom-domain::${RESEARCH_REFRESH_URL%/}/api/content" "pages-dev::https://vjm.pages.dev/api/content"; do
-            label="${target%%::*}"; url="${target#*::}"
-            code="$(curl --silent --show-error --retry 2 --max-time 30 \
-              -o "/tmp/api-content-${label}.json" -w '%{http_code}' "$url")"
-            echo "$label GET /api/content ($url) HTTP status: $code"
-            echo "--- first 200 chars ---"
-            head -c 200 "/tmp/api-content-${label}.json" || true
-            echo ""
-            echo "------------"
-          done
 
       - name: Pull the sheet into D1
         shell: bash
