@@ -35,6 +35,72 @@
     return { res: res, data: data };
   }
 
+  /* ── Turnstile ──────────────────────────────────────────────────────────
+   * Off until the owner sets TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY in
+   * Cloudflare. The site key is fetched from the endpoint rather than baked
+   * into three HTML files, so turning the bot check on is an environment
+   * change and not a code change — and so the key cannot drift between the
+   * page that renders the widget and the server that verifies it.
+   *
+   * The dangerous configuration is "secret set, site key not": the server then
+   * rejects every signup and the form has nothing to send. That is reported as
+   * required-without-a-key and the form says so on load, instead of letting
+   * real people find out one failed submit at a time.
+   */
+  var turnstile = { required: false, siteKey: null, ready: false };
+
+  function loadTurnstileScript() {
+    if (document.getElementById('cf-turnstile-script')) return;
+    var s = document.createElement('script');
+    s.id = 'cf-turnstile-script';
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    s.async = true;
+    s.defer = true;
+    s.onload = function () { turnstile.ready = true; renderWidgets(); };
+    document.head.appendChild(s);
+  }
+
+  function renderWidgets() {
+    if (!turnstile.ready || !turnstile.siteKey || !window.turnstile) return;
+    document.querySelectorAll('form.nl-signup').forEach(function (form) {
+      var slot = form.querySelector('.nl-turnstile');
+      if (!slot || slot.dataset.rendered) return;
+      slot.dataset.rendered = '1';
+      try {
+        window.turnstile.render(slot, {
+          sitekey: turnstile.siteKey,
+          callback: function (token) { form.dataset.turnstileToken = token; },
+          'expired-callback': function () { delete form.dataset.turnstileToken; },
+          'error-callback': function () { delete form.dataset.turnstileToken; }
+        });
+      } catch (e) { /* a failed widget must not take the form down with it */ }
+    });
+  }
+
+  async function initTurnstile() {
+    var forms = document.querySelectorAll('form.nl-signup');
+    if (!forms.length) return;
+    try {
+      var res = await fetch('/api/newsletter/subscribe', { headers: { Accept: 'application/json' } });
+      if (!res.ok) return;
+      var cfg = await res.json();
+      turnstile.required = !!(cfg && cfg.required);
+      turnstile.siteKey = (cfg && cfg.siteKey) || null;
+    } catch (e) {
+      return;                       // unreachable config: leave the form as-is
+    }
+    if (turnstile.siteKey) { loadTurnstileScript(); return; }
+    if (turnstile.required) {
+      // Secret set, site key missing. Every submit would 403. Say so now.
+      forms.forEach(function (form) {
+        setMsg(form, 'Signups are temporarily unavailable — the bot check on this '
+          + 'site is misconfigured. Please try again later.', 'err');
+        var btn = form.querySelector('.nl-submit');
+        if (btn) btn.disabled = true;
+      });
+    }
+  }
+
   /* ── Signup ─────────────────────────────────────────────────────────── */
   function initSignup(form) {
     form.addEventListener('submit', async function (e) {
@@ -49,6 +115,11 @@
         return;
       }
 
+      if (turnstile.required && !form.dataset.turnstileToken) {
+        setMsg(form, 'Just a moment — finishing the bot check. Try again in a second.', 'err');
+        return;
+      }
+
       var label = btn ? btn.textContent : '';
       if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
       setMsg(form, '', '');
@@ -60,6 +131,7 @@
           consent: true,
           website: (form.querySelector('input[name="website"]') || {}).value || '',
           source: form.getAttribute('data-source') || 'site',
+          turnstileToken: form.dataset.turnstileToken || '',
         });
         if (out.res.ok && out.data && out.data.ok) {
           // Replace the form rather than leaving a filled-in one on screen: a
@@ -72,6 +144,10 @@
           track('lead_submit', { form: 'newsletter', source: form.getAttribute('data-source') || 'site' });
           return;
         }
+        // A Turnstile token is single-use, so a failed submit must not be
+        // retried with the same one — reset the widget and drop the stale token.
+        delete form.dataset.turnstileToken;
+        if (window.turnstile && turnstile.siteKey) { try { window.turnstile.reset(); } catch (e) { /* nothing to reset */ } }
         setMsg(form, (out.data && out.data.error) || 'Could not sign you up just now. Try again shortly.', 'err');
       } catch (err) {
         setMsg(form, 'Could not reach the server. Check your connection and try again.', 'err');
@@ -114,6 +190,10 @@
   function init() {
     document.querySelectorAll('form.nl-signup').forEach(initSignup);
     document.querySelectorAll('form.nl-unsub').forEach(initUnsub);
+    // Signup only. An unsubscribe must never be gated behind a bot check:
+    // making it harder to leave a list than to join one is the thing the whole
+    // opt-out design is against.
+    initTurnstile();
 
     // A one-click link from an email footer lands back here with ?state=…
     // after the GET handler has already done the removal.

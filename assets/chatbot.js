@@ -160,7 +160,7 @@
       ['Buy / see pricing', 'index.html#premium'],
       ['Check if my membership is active', 'index.html#premium'],
       ['Join the free Discord', 'https://discord.gg/pjtrades'],
-      ['DM support directly', 'https://discord.com/users/St1101'],
+      ['Contact support in Discord', 'https://discord.gg/pjtrades'],
     ];
     const wrap = el('div', 'vjm-msg vjm-msg-bot vjm-support-links');
     for (const [label, href] of links) {

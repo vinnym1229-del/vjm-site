@@ -970,10 +970,10 @@
             <div style="font-weight:700;font-size:0.88rem;">Join Discord</div>
             <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Get your Premium role</div>
           </a>
-          <a href="https://discord.com/users/St1101" target="_blank" rel="noopener" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;text-decoration:none;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+          <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;text-decoration:none;color:var(--text);transition:all .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
             <div style="font-size:1.5rem;margin-bottom:6px;">📩</div>
-            <div style="font-weight:700;font-size:0.88rem;">DM Support</div>
-            <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Direct message St1101</div>
+            <div style="font-weight:700;font-size:0.88rem;">Contact Support</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">Support channel in Discord</div>
           </a>
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;">
@@ -997,11 +997,14 @@
         <input type="text" id="status-discord-input" placeholder="Your Discord username..." style="width:100%;padding:12px 16px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;margin-bottom:12px;box-sizing:border-box;" aria-label="Your Discord username...">
         <button onclick="checkStatus()" class="btn btn-gold" style="width:100%;">Check Status</button>
         <div id="status-result" style="display:none;margin-top:20px;border-radius:12px;padding:20px;">
-          <div id="status-icon" style="font-size:2rem;margin-bottom:8px;"></div>
+          <!-- Filled by JS with an inline SVG tick or cross, not a "✅"/"❌" glyph:
+                 those are colour emoji and the platform paints them in its own
+                 colours, which is why the failure state showed a pink X. -->
+            <div id="status-icon" style="display:flex;justify-content:center;margin-bottom:8px;min-height:36px;"></div>
           <div id="status-text" style="font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:900;"></div>
           <div id="status-sub" style="font-size:0.82rem;margin-top:6px;"></div>
         </div>
-        <p style="color:var(--muted);font-size:0.75rem;margin-top:20px;">If your status is wrong, DM <strong>St1101</strong> on Discord or email <strong>vjmtrading.contact@gmail.com</strong></p>
+        <p style="color:var(--muted);font-size:0.75rem;margin-top:20px;">If your status is wrong, contact support in <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold-ink);"><strong>Discord</strong></a> or email <a href="mailto:pjtradesofficial@gmail.com" style="color:var(--gold-ink);"><strong>pjtradesofficial@gmail.com</strong></a></p>
       </div>
     </div>
 </div>
@@ -1417,6 +1420,9 @@
           <label for="nl-consent-home">Yes, email me the newsletter. I can unsubscribe from any email, or at
             <a href="/unsubscribe.html">this link</a>, at any time.</label>
         </div>
+        <!-- Turnstile mounts here when the owner sets TURNSTILE_SITE_KEY.
+             Empty until then, so nothing renders and nothing shifts. -->
+        <div class="nl-turnstile"></div>
         <button type="submit" class="btn btn-gold nl-submit">Send it over</button>
         <p class="nl-msg" role="status" aria-live="polite"></p>
       </form>
@@ -1450,7 +1456,7 @@
       <a href="#faq">FAQ</a>
       <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=site" target="_blank" rel="noopener">Whop</a>
       <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener">Discord</a>
-      <a href="mailto:vjmtrading.contact@gmail.com">Email</a>
+      <a href="mailto:pjtradesofficial@gmail.com">Email</a>
     </div>
     <div class="social-row" style="width:100%;margin-top:6px;">
       <a class="social-btn" href="https://www.youtube.com/@PJTrades_NQ" target="_blank" rel="noopener" aria-label="PJ Trades on YouTube">
@@ -2052,14 +2058,15 @@ async function checkStatus() {
     text.style.color = 'var(--muted)';
     text.textContent = 'LOOKUP UNAVAILABLE';
     sub.style.color = 'var(--muted)';
-    sub.textContent = 'Status service is temporarily down. DM St1101 on Discord.';
+    sub.textContent = 'Status service is temporarily down. Contact support in Discord or email pjtradesofficial@gmail.com.';
     return;
   }
 
   if (isActive) {
     result.style.background = 'rgba(255,255,255,0.04)';
     result.style.border = '1px solid var(--border)';
-    icon.textContent = '✅';
+    icon.innerHTML = '<svg viewBox="0 0 24 24" width="36" height="36" aria-hidden="true" focusable="false"><path d="M20 6.5 9.6 17 4 11.4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    icon.style.color = 'var(--green)';
     text.style.color = 'var(--green)';
     text.textContent = 'ACTIVE';
     sub.style.color = 'var(--muted)';
@@ -2067,11 +2074,12 @@ async function checkStatus() {
   } else {
     result.style.background = 'rgba(209,67,67,0.10)';
     result.style.border = '1px solid rgba(209,67,67,0.28)';
-    icon.textContent = '❌';
+    icon.innerHTML = '<svg viewBox="0 0 24 24" width="36" height="36" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>';
+    icon.style.color = 'var(--red)';
     text.style.color = 'var(--red)';
     text.textContent = 'NOT ACTIVE';
     sub.style.color = 'var(--muted)';
-    sub.textContent = 'No active membership found for this handle. DM St1101 on Discord if you think this is wrong.';
+    sub.textContent = 'No active membership found for this handle. Contact support in Discord or email pjtradesofficial@gmail.com if you think this is wrong.';
   }
 }
 document.addEventListener('keydown', function(e) {

@@ -40,13 +40,13 @@ import { json, jsonWithSession, checkRateLimit } from './_lib/http.js';
 import { turnstileConfigured, verifyTurnstile } from './_lib/turnstile.js';
 import { SESSION_VERSION, isTier, resolveTier, sessionTier } from './_lib/entitlements.js';
 
-const GENERIC_BAD_CODE = 'We could not activate this code. Check it and try again, or DM St1101 on Discord.';
+const GENERIC_BAD_CODE = 'We could not activate this code. Check it and try again, or contact support in Discord.';
 
 // A distinct message is safe here and only here: to see it you must already
 // possess a code we issued, so it reveals nothing an attacker could enumerate
 // — and telling a lapsed customer "renew" instead of "check your code" is the
 // difference between a renewal and a support ticket.
-const MEMBERSHIP_ENDED = 'That membership is no longer active. Renew on Whop, or DM St1101 on Discord if you think this is wrong.';
+const MEMBERSHIP_ENDED = 'That membership is no longer active. Renew on Whop, or contact support in Discord if you think this is wrong.';
 
 export async function onRequestPost(context) {
   try { return await handlePost(context); }

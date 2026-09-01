@@ -54,6 +54,12 @@
 .nl-consent label { color: var(--vjm-muted); font-size: .82rem; line-height: 1.55; }
 .nl-consent a { color: var(--vjm-red-bright); }
 
+/* Empty until Turnstile is configured, so it must collapse to nothing rather
+   than reserve space — an empty gap above the button on every page would be a
+   visible cost of a feature that is switched off. */
+.nl-turnstile:empty { display: none; }
+.nl-turnstile { margin-top: 14px; }
+
 .nl-submit { width: 100%; margin-top: 14px; }
 .nl-submit[disabled] { opacity: .6; cursor: progress; }
 

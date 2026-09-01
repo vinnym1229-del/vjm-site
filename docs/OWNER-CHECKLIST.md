@@ -8,22 +8,24 @@ something every day they stay undone.
 
 ---
 
-## 1. The entire site is invisible to Google
+## 1. Indexing — now automatic, nothing to do
 
-`_headers` sends `X-Robots-Tag: noindex` on `/*`. That is a deliberate hold —
-it was put there so the site could not be indexed under the wrong domain — but
-it means **no page of this site can appear in any search result**, including
-the free course, the prop-firms page and the newsletter.
+*(Was: "the entire site is invisible to Google.")*
 
-**To lift it:** confirm in the Cloudflare Pages dashboard that the custom
-domain matches the canonical origin declared in `robots.txt`
-(`not-financial-advice-vjm.com`), then delete the single `X-Robots-Tag: noindex`
-line from the `/*` block in `_headers`. Pages that must stay unindexed
-(member tools, the research engine, `/unsubscribe`) carry their own rules
-further down that file and are unaffected.
+This is no longer a switch anyone has to flip. `_headers` still sends
+`X-Robots-Tag: noindex` on everything as a **default**, and
+`functions/_middleware.js` removes it per request when the request arrives on
+the canonical host (`not-financial-advice-vjm.com`) and the path is not one of
+the permanent exclusions. So:
 
-Do not lift it while the domain is unsettled — being indexed under the wrong
-hostname is harder to undo than waiting.
+- A `*.pages.dev` or preview host can never be indexed.
+- The real domain becomes indexable the moment it is actually serving the site.
+- Any bug in that path fails toward "not indexed", never toward "the preview
+  host is in Google" — which is the far more expensive mistake.
+
+To put the whole site back behind a hold, set the `INDEXING` environment
+variable in Cloudflare Pages to anything other than `on`. Do **not** delete the
+`noindex` line from `_headers`; it is what makes the default safe.
 
 ## 2. The $100 and $129 products are currently identical
 
@@ -46,7 +48,18 @@ Also decide `STRICT_LEGACY_SESSIONS`: leaving it unset grandfathers sessions
 issued before tiers existed (they expire on their own within 7 days); setting
 it to `true` forces everyone to sign in again once. See `docs/ENTITLEMENTS.md`.
 
----
+### Related: the Whop webhook has never fired
+
+The live database has **zero** rows in `webhook_events` and **zero** in
+`whop_codes`, and the only audit events are seven `verify_code` entries from
+28–29 August. Nothing from Whop has ever reached this site. So the membership
+pipeline — purchase → webhook → access — is not merely unconfigured, it is
+unproven end to end. Worth one test purchase (or a Whop test event) before
+relying on it, separately from setting the two variables above.
+
+The same query shows `site_content` is empty: the Google Sheet CMS has never
+synced, so the prop-firm directory renders its "not connected yet" state on the
+live site and every CMS-driven section falls back to what is hard-coded.
 
 ## 3. Things that are legally blocking, if you are selling
 
@@ -89,10 +102,15 @@ provider. `docs/NEWSLETTER.md` has the export command, the unsubscribe link
 format, and the `List-Unsubscribe` headers to set.
 
 - [ ] Choose an email provider and add its credential.
-- [ ] **Turnstile (optional).** The endpoint enforces it the moment
-      `TURNSTILE_SECRET_KEY` exists. The front-end widget is **not on the form
-      yet**, so setting the secret today would reject every signup. Ask me to
-      add the widget first, or set the secret and immediately test a signup.
+- [ ] **Turnstile (optional).** The widget is now on the signup forms and
+      configures itself, so this is purely an environment change — but set
+      **both** variables or nothing works:
+      `TURNSTILE_SITE_KEY` (public; the page fetches it) and
+      `TURNSTILE_SECRET_KEY` (private; verifies the token).
+      Setting only the secret makes the server reject every signup; the form
+      detects exactly that case and says so on load rather than letting people
+      fail one at a time. Setting only the site key renders a widget that is
+      never checked. Unsubscribing is never gated by it.
 - [ ] Read the list any time:
       `npx wrangler d1 execute vjm-content --remote --command "SELECT status, COUNT(*) FROM newsletter_subscribers GROUP BY status"`
 

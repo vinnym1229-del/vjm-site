@@ -193,6 +193,9 @@ body.light-mode .nav-top{ background:rgba(0,0,0,.05); }
         <label for="nl-consent-pf">Yes, email me the newsletter. I can unsubscribe from any email, or at
           <a href="/unsubscribe.html">this link</a>, at any time.</label>
       </div>
+      <!-- Turnstile mounts here when the owner sets TURNSTILE_SITE_KEY.
+           Empty until then, so nothing renders and nothing shifts. -->
+      <div class="nl-turnstile"></div>
       <button type="submit" class="vjm-btn vjm-btn-primary nl-submit">Send it over</button>
       <p class="nl-msg" role="status" aria-live="polite"></p>
     </form>

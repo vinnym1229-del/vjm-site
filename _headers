@@ -4,15 +4,21 @@
 # Inline script/style are still required by the current pages (documented
 # debt in docs/SECURITY.md §CSP); no wildcard sources are used.
 
-# ── INDEXING SWITCH (site-wide hold) ──
-# Indexing is deliberately OFF for the whole site, not just /pj/*. Deleting the
-# `X-Robots-Tag: noindex` line in the /* block below is what enables indexing —
-# do that only after confirming the Cloudflare Pages dashboard's custom domain
-# actually matches the canonical origin declared in robots.txt (CNAME has been
-# removed and never controlled this; that dashboard check happens outside the
-# repo). Pages that must stay out of the index regardless carry their own
-# noindex meta plus the per-path blocks at the bottom of this file, so lifting
-# that line does not expose them.
+# ── INDEXING (default deny; the middleware lifts it per request) ──
+# The `X-Robots-Tag: noindex` in the /* block below is now a DEFAULT, not a
+# switch someone has to remember to flip. functions/_middleware.js removes it
+# per request when — and only when — the request arrives on the canonical host
+# declared in robots.txt and the path is not one of the permanent exclusions
+# below (see functions/api/_lib/indexing.js).
+#
+# So: a *.pages.dev deployment or any preview host is never indexable, the real
+# domain becomes indexable the moment it is actually serving the site, and a
+# bug anywhere in that path fails toward "not indexed" rather than toward "the
+# preview host is in Google", which is the far more expensive mistake.
+#
+# DO NOT delete the line below to "turn on indexing" — it is what makes the
+# default safe. To hold the whole site back again, set the INDEXING environment
+# variable to anything other than `on` in Cloudflare Pages.
 
 /*
   X-Content-Type-Options: nosniff

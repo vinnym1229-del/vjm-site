@@ -23,6 +23,7 @@
 
 import { getSession } from './api/_lib/session.js';
 import { authorizeResource } from './api/_lib/entitlements.js';
+import { isIndexable } from './api/_lib/indexing.js';
 
 const GATED_PAGES = new Set([
   '/stock-breakdown', '/stock-breakdown.html',
@@ -38,12 +39,57 @@ class StripGatedContent {
   }
 }
 
+/**
+ * Lift the blanket `X-Robots-Tag: noindex` that `_headers` puts on every
+ * response, but only for a request that is genuinely allowed into the index
+ * (see api/_lib/indexing.js). This only ever REMOVES a header: if this
+ * function is never reached, or throws, the noindex stands and the site simply
+ * stays unindexed — which is the safe direction to fail in, because an indexed
+ * *.pages.dev host is much harder to undo than a late launch.
+ *
+ * Returns the response unchanged unless there is actually something to strip,
+ * so the common case costs one header read and no allocation.
+ */
+async function applyIndexing(maybeResponse, request, env) {
+  // Awaited, not assumed. The real HTMLRewriter.transform() hands back a
+  // Response synchronously because it streams, but nothing guarantees that of
+  // every caller — the test double has to be async, since it reads the body to
+  // rewrite it — and awaiting a plain Response costs a microtask and nothing
+  // else. Assuming the synchronous shape here read `.headers` off a Promise.
+  const response = await maybeResponse;
+  let allowed = false;
+  try {
+    allowed = isIndexable(request, env);
+  } catch {
+    return response;
+  }
+  if (!allowed || !response.headers.has('X-Robots-Tag')) return response;
+
+  const headers = new Headers(response.headers);
+  headers.delete('X-Robots-Tag');
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
-  const url = new URL(request.url);
+
+  // A URL this cannot parse must not take the request down with it. This threw
+  // before reaching any of the guards below, so a malformed request line was a
+  // 500 for the whole site rather than a normally-served page; an unparseable
+  // URL is also, by definition, not one of the gated paths.
+  let url;
+  try {
+    url = new URL(request.url);
+  } catch {
+    return applyIndexing(await context.next(), request, env);
+  }
 
   if (request.method !== 'GET' || !GATED_PAGES.has(url.pathname)) {
-    return context.next();
+    return applyIndexing(await context.next(), request, env);
   }
 
   const response = await context.next();
@@ -68,18 +114,21 @@ export async function onRequest(context) {
   headers.set('Cache-Control', 'private, no-store');
 
   if (authorized) {
-    return new Response(response.body, {
+    return applyIndexing(new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
       headers,
-    });
+    }), request, env);
   }
 
-  return new HTMLRewriter()
+  // The stripped copy is the one a crawler gets, which is correct: the course
+  // pages should be indexed for their public description, never for the paid
+  // lesson text the strip just removed.
+  return applyIndexing(new HTMLRewriter()
     .on('.gated-content', new StripGatedContent())
     .transform(new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
       headers,
-    }));
+    })), request, env);
 }

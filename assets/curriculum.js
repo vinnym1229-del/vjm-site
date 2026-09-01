@@ -541,7 +541,7 @@ body.light-mode .curr .vjm-miss{background:rgba(0,0,0,.03);}
     }
     attach(panel, actions);
     const note = makeEl('div', 'vjm-note',
-      'Billing and plan changes are handled on Whop with the account you bought on. Questions: DM <b>St1101</b> on Discord.');
+      'Billing and plan changes are handled on Whop with the account you bought on. Questions: contact support in Discord or email <b>pjtradesofficial@gmail.com</b>.');
     attach(panel, note);
     attach(gate, panel);
   }

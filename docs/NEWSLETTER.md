@@ -92,14 +92,27 @@ check whether a given person is subscribed.
 ## Turning on the bot check
 
 The signup form has a honeypot field, which stops the low-effort submissions.
-For the rest, Turnstile is already wired: set `TURNSTILE_SECRET_KEY` in the
-Cloudflare Pages environment and the endpoint starts requiring a pass. Until
-it is set the check is skipped entirely, so nothing breaks in the gap — the
-same soft-required pattern the rest of the site uses.
+For the rest, Turnstile is wired end to end and needs **two** environment
+variables in Cloudflare Pages:
 
-Note the front-end widget is not on the form yet. Setting the secret **before**
-the widget is added will reject every signup, so add the widget first, or set
-the secret and immediately test a signup yourself.
+| Variable | Visibility | What it does |
+| --- | --- | --- |
+| `TURNSTILE_SITE_KEY` | public | The page fetches it from `GET /api/newsletter/subscribe` and renders the widget with it. Public by design — it is meant to be readable in page HTML. |
+| `TURNSTILE_SECRET_KEY` | private | Verifies the token server-side. Never leaves the Function. |
+
+The site key is served from the endpoint rather than hard-coded in three HTML
+files, so turning the check on is an environment change and not a code change,
+and the key cannot drift between the page that renders the widget and the
+server that verifies it.
+
+Set **both**. Setting only the secret makes the server reject every signup —
+the form detects that exact case and says so on page load rather than letting
+real people discover it one failed submit at a time. Setting only the site key
+renders a widget nothing checks. With neither set the check is skipped
+entirely, the same soft-required pattern the rest of the site uses.
+
+Unsubscribing is deliberately never gated by it: making it harder to leave a
+list than to join one is the thing the whole opt-out design is against.
 
 ---
 

@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { onRequestPost as subscribe, normalizeEmail, cleanName, newUnsubToken } from '../functions/api/newsletter/subscribe.js';
+import { onRequestPost as subscribe, onRequestGet, normalizeEmail, cleanName, newUnsubToken } from '../functions/api/newsletter/subscribe.js';
 import { onRequestPost as unsubscribe, onRequestGet as unsubscribeGet, cleanToken } from '../functions/api/newsletter/unsubscribe.js';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -233,4 +233,54 @@ test('the unsubscribe page works, and is kept out of the index', () => {
   const privacy = read('privacy.html');
   assert.match(privacy, /<h2>The Newsletter<\/h2>/);
   assert.match(privacy, /suppression record/, 'the policy must explain why an opt-out is not a deletion');
+});
+
+/* ── the Turnstile handshake ───────────────────────────────────────────── */
+
+test('the config endpoint serves the site key and never the secret', async () => {
+  // The SITE key is public by design — it is meant to be read out of page HTML.
+  // The SECRET is what verifies a token server-side and must never be served.
+  const res = await onRequestGet({ env: { TURNSTILE_SITE_KEY: ' 0xSITE ', TURNSTILE_SECRET_KEY: '0xSECRET' } });
+  const body = await res.json();
+  assert.equal(body.siteKey, '0xSITE', 'trimmed, because an env var picks up whitespace');
+  assert.equal(body.required, true);
+  assert.doesNotMatch(JSON.stringify(body), /0xSECRET/, 'the secret must never be served to a browser');
+});
+
+test('an unconfigured deployment reports the check as off, not broken', async () => {
+  const body = await (await onRequestGet({ env: {} })).json();
+  assert.deepEqual(body, { ok: true, required: false, siteKey: null });
+});
+
+test('secret-without-site-key is reported, because it rejects every signup', async () => {
+  // The one configuration that silently breaks the form: the server enforces
+  // Turnstile, the page has no key to render a widget with, so every submit is
+  // a 403. Reporting required-without-a-key is what lets the form say so on
+  // load instead of one failed signup at a time.
+  const body = await (await onRequestGet({ env: { TURNSTILE_SECRET_KEY: 'k' } })).json();
+  assert.equal(body.required, true);
+  assert.equal(body.siteKey, null);
+
+  const js = read('assets/newsletter.js');
+  assert.match(js, /if \(turnstile\.required\) \{/);
+  assert.match(js, /misconfigured/, 'the form must say so rather than failing silently');
+  // A used token is single-use; a retry with the same one always fails.
+  assert.match(js, /delete form\.dataset\.turnstileToken;/);
+  assert.match(js, /window\.turnstile\.reset\(\)/);
+});
+
+test('the widget is on the signup forms and never on the unsubscribe form', () => {
+  // Making it harder to leave a list than to join one is exactly what the
+  // opt-out design is against, so no bot check ever guards an unsubscribe.
+  for (const page of ['index.html', 'prop-firms.html']) {
+    assert.match(read(page), /class="nl-turnstile"/, `${page} needs a widget slot`);
+  }
+  assert.doesNotMatch(read('unsubscribe.html'), /nl-turnstile/);
+  assert.match(read('assets/newsletter.js'), /form\.nl-signup'\)\.forEach\(initSignup\)/);
+  // The slot collapses while the feature is off, so it costs no layout.
+  assert.match(read('assets/newsletter.css'), /\.nl-turnstile:empty \{ display: none; \}/);
+  // The CSP already allows the challenge origin, or the widget could not load.
+  const headers = read('_headers');
+  assert.match(headers, /script-src[^;]*https:\/\/challenges\.cloudflare\.com/);
+  assert.match(headers, /frame-src[^;]*https:\/\/challenges\.cloudflare\.com/);
 });

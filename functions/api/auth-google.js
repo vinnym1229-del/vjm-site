@@ -32,9 +32,9 @@ import {
 import { json, jsonWithSession, checkRateLimit } from './_lib/http.js';
 import { SESSION_VERSION, isTier, resolveTier } from './_lib/entitlements.js';
 
-const EXPIRED = 'That membership has expired. Renew on Whop, or DM St1101 on Discord if you think this is wrong.';
+const EXPIRED = 'That membership has expired. Renew on Whop, or contact support in Discord if you think this is wrong.';
 
-const NO_MATCH = 'That Google account isn’t linked to an active membership yet. Sign in with your access code once to link it, or DM St1101 on Discord.';
+const NO_MATCH = 'That Google account isn\u2019t linked to an active membership yet. Sign in with your access code once to link it, or contact support in Discord.';
 
 export async function onRequestPost(context) {
   try { return await handle(context); }

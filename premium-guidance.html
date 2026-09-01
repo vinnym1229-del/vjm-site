@@ -246,7 +246,7 @@ function showVerifiedCard(){
   if(card){
     card.removeAttribute('aria-labelledby');
     card.setAttribute('aria-label','Premium verified');
-    card.innerHTML='<h2>✅ Premium Verified</h2><p>Your membership is active. What it opens depends on your plan: <b>Futures Core ($100/mo)</b> covers Futures Dissection and Psychology Enhancer, and <b>Complete ($129/mo)</b> adds Stock Breakdown, Options Lab and the premium research tools. A course below that still shows a lock is one your plan does not include.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;"><a class="btn btn-gold" href="futures-dissection.html" style="width:100%;">Futures Dissection</a><a class="btn btn-gold" href="stock-breakdown.html" style="width:100%;">Stock Breakdown</a><a class="btn btn-gold" href="options-lab.html" style="width:100%;">Options Lab</a><a class="btn btn-gold" href="psychology-enhancer.html" style="width:100%;">Psychology</a><a class="btn btn-ghost" href="stock-lab.html" style="width:100%;">Stock Lab</a><a class="btn btn-ghost" href="research-engine.html" style="width:100%;">Research Engine</a></div><p style="font-size:.82rem;color:var(--m2);">On Futures Core and want Stock Breakdown, Options Lab and the research tools? Complete is $129/mo, $29/mo more than Futures Core — <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&amp;utm_medium=site&amp;utm_content=guidance-core-to-complete" target="_blank" rel="noopener" data-vjm-event="plan_cta" data-vjm-plan="complete" data-vjm-location="premium_guidance_verified" style="color:var(--gold-ink);">upgrade on Whop</a>.</p><p style="font-size:.82rem;color:var(--m2);">Live callouts and daily insights run in Discord — questions to <strong>St1101</strong>.</p><button class="btn btn-ghost" type="button" onclick="signOutGuidance()">Sign Out</button>';
+    card.innerHTML='<h2>✅ Premium Verified</h2><p>Your membership is active. What it opens depends on your plan: <b>Futures Core ($100/mo)</b> covers Futures Dissection and Psychology Enhancer, and <b>Complete ($129/mo)</b> adds Stock Breakdown, Options Lab and the premium research tools. A course below that still shows a lock is one your plan does not include.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0;"><a class="btn btn-gold" href="futures-dissection.html" style="width:100%;">Futures Dissection</a><a class="btn btn-gold" href="stock-breakdown.html" style="width:100%;">Stock Breakdown</a><a class="btn btn-gold" href="options-lab.html" style="width:100%;">Options Lab</a><a class="btn btn-gold" href="psychology-enhancer.html" style="width:100%;">Psychology</a><a class="btn btn-ghost" href="stock-lab.html" style="width:100%;">Stock Lab</a><a class="btn btn-ghost" href="research-engine.html" style="width:100%;">Research Engine</a></div><p style="font-size:.82rem;color:var(--m2);">On Futures Core and want Stock Breakdown, Options Lab and the research tools? Complete is $129/mo, $29/mo more than Futures Core — <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&amp;utm_medium=site&amp;utm_content=guidance-core-to-complete" target="_blank" rel="noopener" data-vjm-event="plan_cta" data-vjm-plan="complete" data-vjm-location="premium_guidance_verified" style="color:var(--gold-ink);">upgrade on Whop</a>.</p><p style="font-size:.82rem;color:var(--m2);">Live callouts and daily insights run in Discord — questions to <strong>support in Discord</strong> or <a href="mailto:pjtradesofficial@gmail.com" style="color:var(--gold-ink);">pjtradesofficial@gmail.com</a>.</p><button class="btn btn-ghost" type="button" onclick="signOutGuidance()">Sign Out</button>';
   }
   showLessonCompanion();
   msg('',true);
@@ -451,9 +451,9 @@ async function unlockPremiumGuidance(){
       showVerifiedCard();
       return;
     }
-    msg(data.error||'Incorrect code. DM St1101 on Discord for access.',false);
+    msg(data.error||'Incorrect code. Contact support in Discord or email pjtradesofficial@gmail.com for access.',false);
     if(window.turnstile&&tsEl)window.turnstile.reset(tsEl);
-  }catch(err){msg('Access check unavailable. Refresh and try again, or DM St1101.',false);if(window.turnstile&&tsEl)window.turnstile.reset(tsEl);}
+  }catch(err){msg('Access check unavailable. Refresh and try again, or contact support in Discord.',false);if(window.turnstile&&tsEl)window.turnstile.reset(tsEl);}
   finally{loading(false);}
 }
 document.getElementById('premium-code-input').addEventListener('keydown',function(e){if(e.key==='Enter')unlockPremiumGuidance();});
@@ -489,7 +489,7 @@ async function handleGoogleCredential(response){
     const data=await res.json().catch(()=>({}));
     if(res.ok&&data.ok){msg('',true);showVerifiedCard();return;}
     msg(data.error||'Could not sign you in with that Google account.',false);
-  }catch(err){msg('Sign-in unavailable. Refresh and try again, or DM St1101.',false);}
+  }catch(err){msg('Sign-in unavailable. Refresh and try again, or contact support in Discord.',false);}
   finally{loading(false);}
 }
 </script>

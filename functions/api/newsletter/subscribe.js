@@ -126,3 +126,26 @@ export async function onRequestPost(context) {
   // Identical for a new address and one already on the list, on purpose.
   return json({ ok: true, subscribed: true }, 200);
 }
+
+// GET /api/newsletter/subscribe — what the form needs to know before it can
+// submit. Only two facts, and neither is a secret:
+//
+//   required  — whether this deployment enforces Turnstile at all
+//   siteKey   — the Turnstile SITE key, which is public by design (it is meant
+//               to be read out of page HTML; the SECRET key never leaves here)
+//
+// Serving these instead of hard-coding the site key in three HTML files is
+// what makes turning Turnstile on a pure environment-variable change. It also
+// makes the one dangerous misconfiguration visible: a deployment with the
+// secret set but no site key rejects EVERY signup, and reporting
+// `required: true, siteKey: null` lets the form say so on page load rather
+// than letting real people discover it one failed signup at a time.
+export function onRequestGet({ env }) {
+  const siteKey = env && typeof env.TURNSTILE_SITE_KEY === 'string'
+    ? env.TURNSTILE_SITE_KEY.trim() : '';
+  return json({
+    ok: true,
+    required: turnstileConfigured(env || {}),
+    siteKey: siteKey || null,
+  }, 200);
+}
