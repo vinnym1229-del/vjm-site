@@ -54,6 +54,29 @@ jobs:
           test -n "$RESEARCH_REFRESH_URL" || { echo "RESEARCH_REFRESH_URL secret is not set"; exit 1; }
           test -n "$RESEARCH_CRON_SECRET" || { echo "RESEARCH_CRON_SECRET secret is not set"; exit 1; }
 
+      # TEMPORARY diagnostic while tracking down why the Production custom
+      # domain 502s on POST /api/content-sync: hit the exact same path with
+      # the exact same method on the .pages.dev alias of the SAME Production
+      # deployment, so the two results are comparable rather than differing
+      # by both domain and HTTP method as the last manual check did. Remove
+      # once the real domain is confirmed working again.
+      - name: Diagnostic — same POST against the .pages.dev alias
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -uo pipefail
+          code="$(curl --silent --show-error --retry 2 --max-time 30 \
+            -o /tmp/pages-dev-response.json -w '%{http_code}' \
+            -X POST \
+            -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
+            "https://vjm.pages.dev/api/content-sync")"
+          echo "vjm.pages.dev HTTP status: $code"
+          echo "--- body ---"
+          cat /tmp/pages-dev-response.json || true
+          echo ""
+          echo "------------"
+
       - name: Pull the sheet into D1
         shell: bash
         run: |
