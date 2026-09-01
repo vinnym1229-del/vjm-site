@@ -65,9 +65,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --gold: #d14343;--gold-ink:#d9d9dd; --gold2: #a63333;
+  --gold: #e26060;--gold-ink:#d9d9dd; --gold2: #a63333;
   --green: #cfcfd4; --emerald: #d9d9dd;
-  --red: #d14343;
+  --red: #e26060;
   --bg: #0c0c0d; --bg2: #131315; --bg3: #1a1a1c;
   --card: #161618; --border: #2a2a2e; --text: #ededee; --muted: #9a9aa0; --accent: #1d1d20;
 }
@@ -252,7 +252,7 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
     </div>
   </div>
   <div class="nav-cta">
-    <button id="theme-toggle" onclick="toggleTheme()">&#127769; <span id="theme-label">Dark</span></button>
+    <button id="theme-toggle" onclick="toggleTheme()">&#9728;&#65039; <span id="theme-label">Light</span></button>
     <a class="join" href="index.html#bundles">Join</a>
     <button class="hamb" id="curr-hamb" type="button" aria-label="Menu" aria-expanded="false" onclick="currToggleMenu()"><span></span><span></span><span></span></button>
   </div>
@@ -638,7 +638,7 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
       document.getElementById('op-out-maxl').textContent=isFinite(maxLoss)?fmtUsd(maxLoss):'Unlimited';
       var canvas=document.getElementById('op-chart');
       if(canvas&&window.currDrawLine){
-        window.currDrawLine(canvas,points,{color:'#d14343',xFmt:function(v){return '$'+v.toFixed(0);},yFmt:fmtUsd});
+        window.currDrawLine(canvas,points,{color:'#e26060',xFmt:function(v){return '$'+v.toFixed(0);},yFmt:fmtUsd});
       }
     }
     ['op-type','op-side','op-strike','op-premium','op-contracts'].forEach(function(id){
@@ -987,13 +987,19 @@ function toggleTheme() {
   const isLight = document.body.classList.toggle('light-mode');
   const btn = document.getElementById('theme-toggle');
   btn.innerHTML = themeButtonHtml(isLight);
-  localStorage.setItem('st-theme', isLight ? 'light' : 'dark');
+  // Always store the explicit choice — 'dark' is what opts out of the default.
+  try { localStorage.setItem('st-theme', isLight ? 'light' : 'dark'); } catch (e) { /* storage blocked */ }
 }
 (function() {
-  if (localStorage.getItem('st-theme') === 'light') {
-    document.body.classList.add('light-mode');
-    document.getElementById('theme-toggle').innerHTML = themeButtonHtml(true);
-  }
+  // Light is the DEFAULT (owner request, 2026-09-01): only an explicit stored
+  // 'dark' opts out. assets/theme.js has already put .light-mode on <body>
+  // before first paint using the same rule; this block re-states it (harmless,
+  // idempotent) and is what syncs the toggle's label to the live state.
+  let stored = null;
+  try { stored = localStorage.getItem('st-theme'); } catch (e) { /* storage blocked */ }
+  const isLight = stored !== 'dark';
+  document.body.classList.toggle('light-mode', isLight);
+  document.getElementById('theme-toggle').innerHTML = themeButtonHtml(isLight);
 })();
 </script>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

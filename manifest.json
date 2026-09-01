@@ -4,8 +4,8 @@
   "description": "Live futures trading 3-5x per week, the IFVG Starter Crash Course, group classes, and prop firm giveaways. Educational only.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0c0c0d",
-  "theme_color": "#0c0c0d",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "icons": [
     { "src": "assets/pj-logo.jpg", "sizes": "208x187", "type": "image/jpeg", "purpose": "any" },
     { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }

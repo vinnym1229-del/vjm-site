@@ -79,10 +79,34 @@ test('every page applies the stored theme preference', () => {
   assert.match(read('assets/theme.js'), /st-theme/);
 });
 
-test('theme-color meta matches the manifest and the new page background', () => {
+// Updated 2026-09-01: LIGHT is now the default theme, so the browser chrome
+// colour must describe the LIGHT page, not the old dark one. The light
+// background is body.light-mode's --bg (#ffffff); #0c0c0d is the dark --bg and
+// is now only what a visitor sees after explicitly choosing dark.
+const LIGHT_BG = '#ffffff';
+
+test('theme-color meta matches the manifest and the light default background', () => {
   const manifest = JSON.parse(read('manifest.json'));
-  assert.equal(manifest.theme_color, '#0c0c0d');
-  assert.match(read('index.html'), /<meta name="theme-color" content="#0c0c0d">/);
+  assert.equal(manifest.theme_color, LIGHT_BG);
+  assert.equal(manifest.background_color, LIGHT_BG);
+  // TRANSITIONAL (2026-09-01): index.html is being edited in a parallel lane
+  // this cycle, so its meta tag is swept there rather than here. Once it ships
+  //   <meta name="theme-color" content="#ffffff">
+  // delete the '#0c0c0d' alternative below and pin the meta to LIGHT_BG.
+  const meta = read('index.html').match(/<meta name="theme-color" content="(#[0-9a-f]{6})">/i);
+  assert.ok(meta, 'theme-color meta missing from index.html');
+  assert.ok([LIGHT_BG, '#0c0c0d'].includes(meta[1].toLowerCase()),
+    `unexpected theme-color ${meta[1]} — it should be ${LIGHT_BG}`);
+});
+
+test('light is the default theme; only an explicit "dark" opts out', () => {
+  // The bootstrap used to read `if (stored !== 'light') return;`, which made
+  // dark the default and put every first-time visitor on a black page.
+  const js = read('assets/theme.js');
+  assert.match(js, /stored === 'dark'/, 'theme.js must opt out on stored dark, not opt in on stored light');
+  assert.doesNotMatch(js, /stored !== 'light'/, 'the old dark-by-default rule is back');
+  // and the page with the toggle must agree with the bootstrap.
+  assert.match(read('options-lab.html'), /stored !== 'dark'/, 'options-lab toggle must default to light');
 });
 
 test('core text/background pairs clear WCAG AA in both themes', () => {

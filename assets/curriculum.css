@@ -194,13 +194,46 @@ body.light-mode .curr .tool canvas,body.light-mode.curr .tool canvas{background:
 .curr .essay .refs h4{font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
 .curr .essay .refs ol{padding-left:18px;color:var(--muted);font-size:.82rem;}
 .curr .essay .refs li{margin-bottom:5px;}
-.curr .essay-full-toggle{margin-top:18px;border-top:1px solid var(--border);padding-top:16px;}
-.curr .essay-full-toggle summary{list-style:none;cursor:pointer;color:var(--gold-ink);font-weight:900;font-size:.9rem;text-transform:uppercase;letter-spacing:.6px;display:inline-flex;align-items:center;gap:8px;}
-.curr .essay-full-toggle summary::-webkit-details-marker{display:none;}
-.curr .essay-full-toggle summary::before{content:'▸';transition:transform .15s;}
-.curr .essay-full-toggle[open] summary::before{transform:rotate(90deg);}
-.curr .essay-full{margin-top:16px;font-size:.95rem;line-height:1.75;}
-.curr .essay-full p{margin-bottom:14px;}
+/* Essay: a self-contained summary up top, then a real button that opens the
+   full ~2,700-word paper. <details>/<summary> keeps it working without JS and
+   carries the native expanded/collapsed semantics; the CSS below is what makes
+   the summary element read as a button rather than a text link. */
+.curr .essay-summary{max-width:70ch;}
+.curr .essay .essay-tag{margin-bottom:12px;}
+.curr .essay-full-toggle{margin-top:22px;}
+.curr .essay-full-toggle > summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:13px;
+  max-width:100%;padding:12px 20px 12px 14px;border:1px solid var(--border);border-radius:14px;
+  background:var(--accent);color:var(--text);font-family:'IBM Plex Sans',sans-serif;
+  transition:border-color .18s,transform .18s,box-shadow .18s;}
+.curr .essay-full-toggle > summary::-webkit-details-marker{display:none;}
+.curr .essay-full-toggle > summary::marker{content:'';}
+.curr .essay-full-toggle > summary:hover{border-color:var(--muted);transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.16);}
+.curr .essay-full-toggle > summary:focus-visible{outline:2px solid var(--gold-ink);outline-offset:3px;}
+.curr .essay-open-icon{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:1px solid var(--border);
+  background:var(--card);position:relative;}
+.curr .essay-open-icon::before{content:'';position:absolute;left:50%;top:50%;width:7px;height:7px;
+  border-right:2px solid var(--gold-ink);border-bottom:2px solid var(--gold-ink);
+  transform:translate(-50%,-72%) rotate(45deg);transition:transform .2s;}
+.curr .essay-full-toggle[open] .essay-open-icon::before{transform:translate(-50%,-28%) rotate(225deg);}
+.curr .essay-open-text{min-width:0;}
+.curr .essay-open-label{display:block;font-weight:800;font-size:.95rem;letter-spacing:.2px;line-height:1.25;}
+.curr .essay-open-meta{display:block;color:var(--muted);font-size:.76rem;font-weight:600;margin-top:3px;line-height:1.3;}
+.curr .essay-full-toggle .when-open{display:none;}
+.curr .essay-full-toggle[open] .when-open{display:inline;}
+.curr .essay-full-toggle[open] .when-closed{display:none;}
+.curr .essay-full{max-width:70ch;margin-top:22px;padding-top:20px;border-top:1px solid var(--border);
+  font-size:1.02rem;line-height:1.8;}
+.curr .essay-full p{margin-bottom:17px;}
+.curr .essay-back{margin-top:24px;padding-top:18px;border-top:1px solid var(--border);}
+.curr .essay-back a{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border:1px solid var(--border);
+  border-radius:12px;background:var(--accent);color:var(--muted);text-decoration:none;font-weight:700;font-size:.82rem;
+  transition:color .18s,border-color .18s;}
+.curr .essay-back a:hover{color:var(--text);border-color:var(--muted);}
+.curr .essay-back a:focus-visible{outline:2px solid var(--gold-ink);outline-offset:3px;}
+@media(max-width:620px){
+  .curr .essay-full-toggle > summary{width:100%;padding:14px 16px;}
+  .curr .essay-open-meta{font-size:.72rem;}
+}
 
 /* ─── REFERENCES ─── */
 .curr .refs-block{margin-top:44px;padding-top:24px;border-top:1px solid var(--border);}
