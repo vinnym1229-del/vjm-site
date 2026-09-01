@@ -58,16 +58,36 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          response="$(curl --fail-with-body --silent --show-error --retry 3 --max-time 90 \
+          # Deliberately NOT --fail-with-body: that makes curl's own non-zero
+          # exit trip `set -e` on the very next line, which killed the script
+          # before the response body was ever read — every past failure of
+          # this job showed a bare "curl: (22) ... 502" with the actual error
+          # detail from the Function (or proof there wasn't one) thrown away.
+          # -o/-w capture status and body separately so both get printed
+          # regardless of outcome, and the JSON is what decides success here.
+          http_code="$(curl --silent --show-error --retry 3 --max-time 90 \
+            -o /tmp/content-sync-response.json -w '%{http_code}' \
             -X POST \
             -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
             "${RESEARCH_REFRESH_URL%/}/api/content-sync")"
+          echo "HTTP status: $http_code"
+          echo "--- response body ---"
+          cat /tmp/content-sync-response.json || true
+          echo ""
+          echo "---------------------"
           # Fail loudly on ok:false. A sync that 200s while storing nothing is
           # the failure mode that goes unnoticed for weeks, because the site
           # keeps serving the last good copy and looks fine.
-          RESPONSE="$response" node -e '
-            const p = JSON.parse(process.env.RESPONSE);
-            if (!p.ok) { console.error(p.error || "sync reported failure"); process.exit(1); }
+          RESPONSE="$(cat /tmp/content-sync-response.json)" HTTP_CODE="$http_code" node -e '
+            const code = Number(process.env.HTTP_CODE);
+            let p = null;
+            try { p = JSON.parse(process.env.RESPONSE); } catch {}
+            if (!p || !p.ok) {
+              const detail = p ? (p.error || "sync reported failure") :
+                "no parseable JSON body — this is a Cloudflare/edge error page, not a response from the Function itself";
+              console.error(`Sync failed (HTTP ${code}): ${detail}`);
+              process.exit(1);
+            }
             const s = p.summary || {};
             const rows = Object.entries(s).map(([k, v]) => `${k}=${typeof v === "object" ? JSON.stringify(v) : v}`);
             console.log(rows.length ? rows.join("  ") : "(no rows returned)");
