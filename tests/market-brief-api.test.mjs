@@ -218,6 +218,89 @@ try {
     assert.equal(data.discordPosted, true);
     assert.equal(data.discordDetail, 'delivered');
   }
+
+  // Every third-party call SUCCEEDING was never exercised above (the earlier
+  // block only proved the degrade path) -- Alpaca configured, its snapshot
+  // and movers endpoints answering, Yahoo's search endpoint returning real
+  // headlines, and the ForexFactory calendar feed all resolving together, so
+  // no fetch failure could accidentally be standing in for a real assertion.
+  // Also exercises maybePostToDiscord's no-narrative branch (dataOnly:true,
+  // so it formats brief.lean/brief.movers itself) and its headline-links
+  // list, which the AI-narrative test above never reaches because a present
+  // narrative takes the other branch.
+  {
+    const todayIso = new Date().toISOString();
+    globalThis.fetch = async (url) => {
+      const href = String(url);
+      if (href.startsWith('https://data.alpaca.markets/v2/stocks/snapshots')) {
+        return new Response(JSON.stringify({
+          SPY: { latestTrade: { p: 450, t: todayIso }, prevDailyBar: { c: 445 } },
+          QQQ: { latestTrade: { p: 380, t: todayIso }, prevDailyBar: { c: 376 } },
+        }), { status: 200 });
+      }
+      if (href.startsWith('https://data.alpaca.markets/v1beta1/screener/stocks/movers')) {
+        return new Response(JSON.stringify({
+          gainers: [{ symbol: 'NVDA', price_change_percent: 4.2, price: 120 }],
+          losers: [{ symbol: 'TSLA', price_change_percent: -2.1, price: 240 }],
+        }), { status: 200 });
+      }
+      if (href.startsWith('https://query1.finance.yahoo.com/v1/finance/search')) {
+        const symbol = new URL(href).searchParams.get('q');
+        return new Response(JSON.stringify({
+          news: [{ title: `${symbol} headline`, link: `https://finance.yahoo.com/news/${symbol}`, providerPublishTime: Math.floor(Date.now() / 1000) }],
+        }), { status: 200 });
+      }
+      if (href === 'https://nfs.faireconomy.media/ff_calendar_thisweek.json') {
+        return new Response(JSON.stringify([
+          { country: 'USD', impact: 'High', date: todayIso },
+          { country: 'USD', impact: 'Low', date: todayIso },
+          { country: 'EUR', impact: 'High', date: todayIso },
+        ]), { status: 200 });
+      }
+      if (href.startsWith('https://discord.com/api/webhooks/')) return new Response(null, { status: 204 });
+      throw new Error('unexpected fetch target: ' + href);
+    };
+    const env = {
+      RESEARCH_CRON_SECRET: CRON_SECRET,
+      RESEARCH_DB: makeDb(),
+      DISCORD_ANNOUNCEMENTS_WEBHOOK: 'https://discord.com/api/webhooks/1/abc',
+      ALPACA_API_KEY: 'k', ALPACA_SECRET_KEY: 's',
+    };
+    const { status, data } = await postBrief(env);
+    assert.equal(status, 200);
+    assert.equal(data.brief.dataOnly, true, 'no AI binding means still data-only here');
+    assert.deepEqual(data.brief.warnings, [], 'every source succeeded, so no degrade warnings');
+    assert.equal(data.brief.proxies.length, 2);
+    assert.equal(data.brief.proxies[0].symbol, 'SPY');
+    assert.equal(data.brief.lean.lean, 'long-leaning', 'QQQ +1.06% *2 + SPY +1.12% clears the +0.5 long-leaning threshold');
+    assert.equal(data.brief.movers.gainers[0].symbol, 'NVDA');
+    assert.equal(data.brief.movers.losers[0].symbol, 'TSLA');
+    assert.equal(data.brief.headlines.length, 5, 'one headline per NEWS_SYMBOLS entry');
+    assert.equal(data.brief.calendarEventCountToday, 1, 'only the single USD/High row today counts');
+    assert.equal(data.discordPosted, true);
+    assert.equal(data.discordDetail, 'delivered');
+  }
+
+  // A configured webhook that Discord itself rejects (rate-limited, bad
+  // token, timeout) must report that distinctly from "not configured" --
+  // postEmbed returning false, not throwing, is what maybePostToDiscord
+  // turns into this detail string.
+  {
+    globalThis.fetch = async (url) => {
+      const href = String(url);
+      if (href.startsWith('https://discord.com/api/webhooks/')) return new Response('{}', { status: 401 });
+      throw new Error('unexpected fetch target: ' + href);
+    };
+    const env = {
+      RESEARCH_CRON_SECRET: CRON_SECRET,
+      RESEARCH_DB: makeDb(),
+      DISCORD_ANNOUNCEMENTS_WEBHOOK: 'https://discord.com/api/webhooks/1/abc',
+    };
+    const { status, data } = await postBrief(env);
+    assert.equal(status, 200, 'a rejected webhook post must not fail brief generation itself');
+    assert.equal(data.discordPosted, false);
+    assert.equal(data.discordDetail, 'webhook rejected or timed out');
+  }
 } finally {
   globalThis.fetch = originalFetch;
 }

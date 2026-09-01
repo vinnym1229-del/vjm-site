@@ -151,7 +151,7 @@ async function generateBrief(env) {
   return brief;
 }
 
-// ─── Headlines via public Yahoo RSS (same sanitizer as yahoo-news fn) ──────
+// ─── Headlines via Yahoo Finance's JSON search endpoint ────────────────────
 
 async function fetchHeadlines(symbols) {
   const seen = new Set();
@@ -186,18 +186,6 @@ async function fetchHeadlines(symbols) {
     } catch { /* individual feed failure tolerated */ }
   }));
   return out;
-}
-
-function pick(block, tag) {
-  const m = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i').exec(block);
-  if (!m) return '';
-  return m[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim();
-}
-
-function decodeEntities(s) {
-  return String(s)
-    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
 }
 
 async function todaysHighImpactCount() {

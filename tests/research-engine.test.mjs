@@ -3,6 +3,7 @@ import { __test } from '../functions/api/research-engine.js';
 
 const {
   analyseFib,
+  buildPriceActionModel,
   classifySweep,
   combineFibStats,
   cumulativeVwap,
@@ -295,6 +296,83 @@ const bullishSummary = fvgSummary.find((row) => row.condition === '5m Bullish');
 assert.equal(bullishSummary.n, 2);
 assert.equal(bullishSummary.retestRate, 0.5);
 assert.equal(bullishSummary.medianMinutesToRetest, 10, 'the untested row\'s null minutesToRetest must not pull the median down');
+
+// buildPriceActionModel is the orchestrator behind the premium FVG/IFVG stats
+// (it feeds fvgStats/conditions/timing in intradayModule) and was the one
+// __test export with zero direct references -- everything it calls
+// (splitSession, scanFvgs, scanDisplacement) was already pinned individually,
+// but never that it actually scans all four timeframes, skips thin days, and
+// respects the days window, rather than e.g. silently dropping a timeframe.
+{
+  // A January ET date (EST, UTC-5, no DST) so a fixed UTC offset maps cleanly
+  // to RTH minutes without reimplementing the Intl formatter under test.
+  function rthDay(dateIso, bars, jumpAt) {
+    const rows = [];
+    let price = 100;
+    for (let minute = 0; minute < bars; minute++) {
+      if (minute === jumpAt) price += 3; // a clean gap, guaranteed to form an FVG
+      const open = price;
+      const close = price + Math.sin(minute * 0.9) * 0.05;
+      const high = Math.max(open, close) + 0.02;
+      const low = Math.min(open, close) - 0.02;
+      price = close;
+      const utcMinute = 14 * 60 + 30 + minute; // 14:30 UTC = 09:30 ET in January
+      const t = `${dateIso}T${String(Math.floor(utcMinute / 60)).padStart(2, '0')}:${String(utcMinute % 60).padStart(2, '0')}:00.000Z`;
+      const etMinute = 570 + minute; // 09:30 ET
+      const _time = `${String(Math.floor(etMinute / 60)).padStart(2, '0')}:${String(etMinute % 60).padStart(2, '0')}`;
+      rows.push({ t, o: open, h: high, l: low, c: close, v: 1000, _time });
+    }
+    return rows;
+  }
+
+  const thinDay = rthDay('2024-01-08', 20, 10); // below splitSession's usable RTH size
+  const fullDay1 = rthDay('2024-01-09', 390, 150);
+  const fullDay2 = rthDay('2024-01-10', 390, 220);
+
+  const daysMap = new Map([
+    ['2024-01-08', thinDay],
+    ['2024-01-09', fullDay1],
+    ['2024-01-10', fullDay2],
+  ]);
+
+  // A day with fewer than 30 RTH bars must be skipped outright, not scanned
+  // with whatever partial data it has.
+  const skipThin = buildPriceActionModel(daysMap, 3);
+  assert.ok(
+    skipThin.events.every((e) => e.date !== '2024-01-08') && skipThin.fvgRecords.every((r) => r.date !== '2024-01-08'),
+    'a day with under 30 RTH bars must never contribute events or records',
+  );
+
+  // days (limitDays) selects the most recent N calendar dates, sorted, not an
+  // arbitrary N entries -- with limitDays=1 only the last full day should show.
+  const onlyLatest = buildPriceActionModel(daysMap, 1);
+  assert.ok(onlyLatest.fvgRecords.length > 0, 'the synthetic gap must actually produce FVG records to make this check meaningful');
+  assert.ok(
+    onlyLatest.events.every((e) => e.date === '2024-01-10') && onlyLatest.fvgRecords.every((r) => r.date === '2024-01-10'),
+    'limitDays=1 must restrict to the single most recent trading day',
+  );
+
+  // With both full days in the window, the model must be the exact union of
+  // scanning every one of the four timeframes (1/5/15/60) plus the
+  // displacement scan on each day's RTH session -- not a subset, and not
+  // double-counted. This is the regression this file's own comments warn
+  // about: FVG/displacement work in this codebase has broken silently before
+  // when a timeframe or session boundary was mishandled.
+  const both = buildPriceActionModel(daysMap, 2);
+  const expectedRecords = [];
+  const expectedEvents = [];
+  for (const date of ['2024-01-09', '2024-01-10']) {
+    const rth = splitSession(daysMap.get(date)).rth;
+    for (const timeframe of [1, 5, 15, 60]) {
+      const scan = scanFvgs(rth, date, timeframe);
+      expectedRecords.push(...scan.records);
+      expectedEvents.push(...scan.events);
+    }
+    expectedEvents.push(...scanDisplacement(rth, date));
+  }
+  assert.deepEqual(both.fvgRecords, expectedRecords, 'fvgRecords must equal scanning every timeframe on every included day, in order');
+  assert.deepEqual(both.events, expectedEvents, 'events must equal every timeframe\'s FVG events plus the displacement scan, in order');
+}
 
 // ---------------------------------------------------------------------------
 // Client contract for the cookie session and the 403 "plan" state.
