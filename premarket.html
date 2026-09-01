@@ -88,6 +88,13 @@ body::before {
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,
 textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
   outline:2px solid var(--gold-ink,#d14343);outline-offset:3px;border-radius:4px;}
+
+/* Light mode: this page's nav and dropdown hardcode dark surfaces
+   (rgba(12,12,13,...)), so they stayed black once light became the default
+   theme. The rest of the page rides tokens.css and was already correct. */
+body.light-mode .nav{ background:rgba(255,255,255,.9); border-bottom-color:var(--vjm-border); }
+body.light-mode .nav-drop{ background:rgba(255,255,255,.99); box-shadow:0 20px 54px rgba(0,0,0,.16); }
+body.light-mode .nav-top{ background:rgba(0,0,0,.05); }
 </style>
 <script src="assets/theme.js"></script>
 </head>

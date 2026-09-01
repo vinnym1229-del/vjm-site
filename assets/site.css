@@ -782,13 +782,13 @@ body.light-mode .bolt-underline .bh-trunk { filter: drop-shadow(0 0 4px rgba(20,
 /* The tier cards stay dark in BOTH themes by design, so their text must not
    follow the light-mode text vars — otherwise it renders dark-on-dark and is
    effectively invisible (pre-existing bug, caught in light-mode review). */
-body.light-mode .tier-card li{color:#ededee;}
-body.light-mode .tier-name{color:#9a9aa0;}
-body.light-mode .tier-sub,body.light-mode .tier-price span,body.light-mode .tier-note{color:#9a9aa0;}
-body.light-mode .tier-card .btn-outline{color:#d9d9dd;border-color:rgba(255,255,255,.3);}
+body.light-mode .tier-card li{color:var(--text);}
+body.light-mode .tier-name{color:var(--muted);}
+body.light-mode .tier-sub,body.light-mode .tier-price span,body.light-mode .tier-note{color:var(--muted);}
+body.light-mode .tier-card .btn-outline{color:var(--text);border-color:var(--border-strong);}
 /* Same reason: these all resolved to near-black on the dark card in light mode. */
-body.light-mode .tier-price{color:#e26060;}
-body.light-mode .tier-card li .tick,body.light-mode .tier-plus,body.light-mode .tier-save{color:#d9d9dd;}
+body.light-mode .tier-price{color:var(--gold-ink);}
+body.light-mode .tier-card li .tick,body.light-mode .tier-plus,body.light-mode .tier-save{color:var(--text);}
 .tier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px;max-width:1020px;margin:20px auto 0;align-items:stretch;}
 .tier-card{position:relative;background:linear-gradient(168deg,#1d1d20 0%,#161618 42%,#131315 100%);border:1.5px solid var(--border);border-radius:20px;padding:28px 24px;display:flex;flex-direction:column;box-shadow:0 18px 46px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.045);}
 .tier-card.hot{border-color:transparent;box-shadow:0 0 78px rgba(0,0,0,.5),inset 0 0 60px rgba(209,67,67,.05);transform:translateY(-16px);z-index:2;}
@@ -961,3 +961,55 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
    sitewide focus ring; restate it at matching specificity. */
 .field:focus-visible,.control:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
   outline:2px solid var(--gold-ink,#e26060);outline-offset:2px;}
+
+/* ─── LIGHT MODE: the panelled surfaces ───────────────────────────────────
+   These five were authored as dark panels and had no light-mode rule at all,
+   so on the (now default) white page they stayed near-black -- and the tier
+   cards' own text rules were still light-on-dark, i.e. heading for
+   white-on-white. Owner asked for everything light in light mode. */
+body.light-mode .tier-card{
+  background:linear-gradient(168deg,#ffffff 0%,#fbfbfc 42%,#f6f6f7 100%);
+  border-color:var(--border);
+  box-shadow:0 14px 34px rgba(0,0,0,.09),inset 0 1px 0 rgba(255,255,255,.9);
+}
+body.light-mode .tier-card.hot{
+  background:linear-gradient(168deg,#ffffff 0%,#fffafa 55%,#fdf5f5 100%);
+  border-color:rgba(179,37,29,.34);
+  box-shadow:0 22px 52px rgba(0,0,0,.13),0 0 0 1px rgba(179,37,29,.10);
+}
+body.light-mode .course-card{
+  background:linear-gradient(145deg,#ffffff,#f6f6f7);
+  border-color:var(--border);
+}
+body.light-mode .buffett-card{
+  background:linear-gradient(145deg,#ffffff,#f6f6f7);
+  border-color:var(--border-strong);
+  box-shadow:0 16px 40px rgba(0,0,0,.10);
+}
+/* The poster image fills the frame; only the letterbox edge shows through. */
+body.light-mode .video-facade{background:var(--bg3);box-shadow:0 18px 44px rgba(0,0,0,.14);}
+body.light-mode .video-poster{background:var(--bg3);}
+
+/* The non-featured tier badges were dark pills with light text; on a white
+   page they read as the only black objects in the pricing row. The .red
+   badge (the featured plan) deliberately stays red in both themes. */
+body.light-mode .tier-badge{
+  background:linear-gradient(180deg,#ffffff 0%,#f6f6f7 55%,#eeeef0 100%);
+  color:var(--text);
+  border-color:var(--border-strong);
+  box-shadow:0 4px 14px rgba(0,0,0,.10);
+}
+body.light-mode .tier-badge.alt{background:linear-gradient(180deg,#fbfbfc,#f1f1f3);}
+
+/* Remaining panels that had no light-mode rule. The TradingView ticker is a
+   third-party iframe whose own colorTheme is set in its JSON config, so the
+   wrapper is lightened here and the widget theme is left as the owner set it
+   (switching it needs a re-init on theme change -- noted, not done). */
+body.light-mode .feature-card{
+  background:linear-gradient(145deg,#ffffff,#f6f6f7);
+  border-color:var(--border);
+}
+body.light-mode #ticker-wrap{ background:var(--bg2); }
+body.light-mode #ticker-wrap iframe{ background:var(--bg2) !important; color-scheme: light; }
+/* A scrim over locked content: same job, opposite direction, on a light page. */
+body.light-mode .locked-overlay{ background:rgba(255,255,255,0.92); }
