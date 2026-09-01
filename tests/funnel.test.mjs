@@ -242,7 +242,11 @@ test('the homepage lead capture cannot claim a signup that did not happen', () =
   assert.match(index, /function renderQuizLead/);
   // With no collector configured no form is rendered at all.
   assert.match(index, /window\.vjmLead && window\.vjmLead\.configured\(\)/);
-  assert.match(index, /There is no email list to join yet/);
+  // The copy for that branch changed with the endpoint: a list exists now, so
+  // "there is no email list to join yet" would be false on a live page. What
+  // it must still do is decline honestly rather than render a dead form.
+  assert.match(index, /Email signup is switched off at the moment/);
+  assert.doesNotMatch(index, /There is no email list to join yet/);
   // And every failure path says the address was not saved.
   assert.match(index, /Email signup is not connected yet — your address was not saved\./);
   assert.match(index, /your address was not saved\. Please try again\./);

@@ -604,12 +604,12 @@
               <p id="quiz-track-note" style="font-size:0.74rem;color:var(--muted);margin-top:10px;"></p>
             </div>
 
-            <!-- OWNED LEAD — the free tier captures no way to reach a visitor
-                 who is not ready to buy today. The form only renders when a
-                 collector is configured (assets/funnel.js: LEAD_ENDPOINT);
-                 with none configured this slot shows the honest alternative
-                 instead of a form that would silently drop the address.
-                 TODO: owner to connect an email collector. -->
+            <!-- OWNED LEAD — a way to reach a visitor who is not ready to buy
+                 today. Posts to the site's own newsletter endpoint
+                 (assets/funnel.js: LEAD_ENDPOINT). The form still only renders
+                 when that is configured, so emptying the constant turns the
+                 capture off cleanly rather than leaving a form that silently
+                 drops addresses. -->
             <div id="quiz-lead" style="border-top:1px solid var(--border);margin-top:18px;padding-top:16px;text-align:left;"></div>
 
             <button onclick="resetQuiz()" style="background:var(--accent);border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;cursor:pointer;font-size:0.82rem;margin-top:18px;">Retake Quiz</button>
@@ -1901,9 +1901,12 @@ function renderQuizLead(track) {
   if (!box) return;
   const configured = !!(window.vjmLead && window.vjmLead.configured());
   if (!configured) {
+    // Reachable only if LEAD_ENDPOINT has been emptied deliberately. The list
+    // exists, so the old wording ("there is no email list to join yet") would
+    // now be a false statement on a live page; say signup is off instead.
     box.innerHTML =
       '<p style="font-size:0.82rem;color:var(--muted);line-height:1.6;margin:0;">' +
-      'There is no email list to join yet — nothing to sign up for today. ' +
+      'Email signup is switched off at the moment. ' +
       'The Futures starter course is open right now, and the Discord is free.' +
       '</p>';
     return;
