@@ -7,6 +7,7 @@
 // identifying recorded. These tests pin all three.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { onRequestPost, ALLOWED_EVENTS } from '../functions/api/analytics.js';
 
 /** A D1 fake that records what would have been written. */
@@ -128,4 +129,18 @@ test('nothing identifying is recorded', async () => {
   const db = fakeDb();
   await post({ visit: 'v', events: [{ name: 'plan_cta', path: '/' }] }, envWith(db));
   assert.equal(db.written[0].length, 4, 'name, props, visit_id, path — and nothing else');
+});
+
+test('the funnel report covers every stage the collector accepts', async () => {
+  // Drift here is silent and one-directional: add a stage to the collector,
+  // forget the report, and the new stage is invisible in the only place anyone
+  // looks. The report warns about it at runtime; this fails the build instead.
+  const src = readFileSync(new URL('../tools/funnel-report.mjs', import.meta.url), 'utf8');
+  const listed = [...src.matchAll(/^\s*\['([a-z_]+)',/gm)].map((m) => m[1]);
+  const missing = [...ALLOWED_EVENTS].filter((e) => !listed.includes(e));
+  assert.deepEqual(missing, [], `stages accepted but not reported: ${missing.join(', ')}`);
+  // …and nothing in the report that the collector would reject, which would
+  // print a permanently-empty row and read as "nobody ever did this".
+  const stray = listed.filter((e) => !ALLOWED_EVENTS.has(e));
+  assert.deepEqual(stray, [], `reported but never collectible: ${stray.join(', ')}`);
 });

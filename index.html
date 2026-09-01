@@ -512,18 +512,18 @@
 </section>
 
 <!-- INTRO VIDEO — sits above the bundle options (owner request).
-     The file is 232MB, over Cloudflare Pages' 25MB per-file limit, so it is
-     NOT committed. Two zero-code ways to go live:
-     1) Compress the video to ≤25MB, save it as assets/pj-intro.mp4 — the
-        facade picks it up automatically.
-     2) Or upload to YouTube (unlisted) and paste the embed URL into
-        data-video-yt below. -->
+     The file IS committed, at assets/pj-intro.mp4 (17MB, under the 25MB
+     per-file limit). data-video-mp4 pointed at /video/pj-intro.mp4 — a path
+     that does not exist — so the HEAD check 404'd and every visitor who
+     clicked play got "dropping here soon" while the video sat one directory
+     away. To swap in a YouTube copy instead, paste an embed URL into
+     data-video-yt below; it takes precedence. -->
 <section id="video" style="background:var(--bg2);padding:70px 24px;">
   <div class="section-inner" style="max-width:900px;">
     <div style="text-align:center;margin-bottom:34px;" data-reveal>
       <div class="section-tag xl">Meet PJ Trades</div>
     </div>
-    <div class="video-facade" id="video-facade" data-video-mp4="/video/pj-intro.mp4" data-video-yt="" role="button" tabindex="0" aria-label="Play introduction video" data-reveal>
+    <div class="video-facade" id="video-facade" data-video-mp4="/assets/pj-intro.mp4" data-video-yt="" role="button" tabindex="0" aria-label="Play introduction video" data-reveal>
       <div class="video-poster" aria-hidden="true">
         <!-- lazy <img> instead of a CSS background: the poster is below the
              fold and 111KB; CSS backgrounds load eagerly, loading=lazy defers

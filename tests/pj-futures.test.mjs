@@ -66,7 +66,16 @@ test('video sits above bundles with a PJ video-frame poster and lazy facade', ()
   const bundleIdx = index.indexOf('Bundles</div>');
   assert.ok(videoIdx > -1 && bundleIdx > -1 && videoIdx < bundleIdx, 'video must appear before bundles');
   assert.match(index, /id="video-facade"/);
-  assert.match(index, /data-video-mp4="\/video\/pj-intro\.mp4"/);
+  // Was: assert.match(index, /data-video-mp4="\/video\/pj-intro\.mp4"/).
+  // That pinned a path to a file that did not exist, so this test cemented the
+  // bug it should have caught — the facade 404'd and every visitor who clicked
+  // play was told the video was "dropping here soon". Assert the file is
+  // really there instead of asserting one particular spelling of its name;
+  // tests/visual-polish.test.mjs also checks it against the 25MB deploy limit.
+  const mp4 = /data-video-mp4="([^"]+)"/.exec(index);
+  assert.ok(mp4, 'the facade must declare a video source');
+  assert.ok(existsSync(join(ROOT, mp4[1].replace(/^\//, ''))),
+    `data-video-mp4 points at ${mp4[1]}, which is not in the repo`);
   assert.match(index, /assets\/pj-intro-poster\.jpg/, 'video poster must come from PJ\'s own video');
   assert.ok(existsSync(join(ROOT, 'assets', 'pj-intro-poster.jpg')), 'video-frame poster asset missing');
   assert.doesNotMatch(index, /<video[^>]*src=/, 'no eager video src (25MB deploy limit + LCP)');

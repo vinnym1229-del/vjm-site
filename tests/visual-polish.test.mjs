@@ -1,7 +1,7 @@
 // Visual polish + assistant wiring contract tests (pj branch).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -190,4 +190,20 @@ test('the billing tabs clear the featured card\'s bolt ring', () => {
   // with .tier-grid's margin-top silently gives back whichever is smaller.
   assert.match(siteCss, /\.tier-grid\{[^}]*margin:0 auto;/,
     'the tier grid must not add a top margin — it would collapse, not add');
+});
+
+test('the intro video points at the file that actually exists', () => {
+  // The facade pointed at /video/pj-intro.mp4 while the file sat committed at
+  // assets/pj-intro.mp4. The HEAD check 404'd, so the most prominent element
+  // on the homepage told every visitor the video was "dropping here soon"
+  // while it was one directory away. A path typo with no error anywhere.
+  const html = read('index.html');
+  const src = /data-video-mp4="([^"]*)"/.exec(html);
+  assert.ok(src, 'the facade must declare a video source');
+  const path = src[1].replace(/^\//, '');
+  assert.ok(existsSync(join(ROOT, path)), `data-video-mp4 points at ${src[1]}, which does not exist in the repo`);
+  // Cloudflare Pages refuses any single file over 25MB, and a video that fails
+  // to deploy fails exactly like a wrong path: silently, as "coming soon".
+  const mb = statSync(join(ROOT, path)).size / 1e6;
+  assert.ok(mb < 25, `${path} is ${mb.toFixed(1)}MB — over Cloudflare Pages' 25MB per-file limit`);
 });
