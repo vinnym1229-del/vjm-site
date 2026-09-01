@@ -9,9 +9,9 @@
 import assert from 'node:assert/strict';
 import { onRequestGet } from '../functions/api/check-member-status.js';
 
-async function lookup(env, discord) {
+async function lookup(env, discord, headers) {
   const res = await onRequestGet({
-    request: new Request(`https://example.com/api/check-member-status?discord=${encodeURIComponent(discord)}`),
+    request: new Request(`https://example.com/api/check-member-status?discord=${encodeURIComponent(discord)}`, { headers }),
     env,
   });
   return { status: res.status, data: await res.json() };
@@ -140,6 +140,120 @@ try {
   }
 } finally {
   globalThis.fetch = originalFetch2;
+}
+
+// ---------------------------------------------------------------------------
+// The 8/min rate limit trips before the "is anything configured" check even
+// runs -- an unconfigured deployment must not become a way to skip the
+// limiter. Uses a dedicated IP so it can't collide with buckets other tests
+// in this file/process fill.
+// ---------------------------------------------------------------------------
+{
+  const ip = `10.5.5.${Math.floor(Math.random() * 1000)}`;
+  const headers = { 'CF-Connecting-IP': ip };
+  let last;
+  for (let i = 0; i < 8; i++) {
+    last = await lookup({}, 'ratelimituser', headers);
+    assert.equal(last.status, 503); // env={} is unconfigured, but the hit still counts
+  }
+  const limited = await lookup({}, 'ratelimituser', headers);
+  assert.equal(limited.status, 429);
+  assert.equal(limited.data.ok, false);
+}
+
+// ---------------------------------------------------------------------------
+// MEMBERS_BRIDGE_URL + MEMBERS_BRIDGE_SECRET: the preferred authenticated
+// single-record bridge (functions/api/verify-premium.js's lookupViaSecureBridge
+// signs requests the identical way -- same "${timestamp}\n${nonce}\n${bodyJson}"
+// HMAC-SHA256 message -- but check-member-status.js's bridgeLookup() had never
+// been exercised at all, so nothing pinned that the two independent
+// implementations actually agree, or that the request/response contract is
+// respected.
+// ---------------------------------------------------------------------------
+
+async function verifyMac(secret, timestamp, nonce, bodyJson, mac) {
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']
+  );
+  const bytes = mac.match(/../g).map((h) => parseInt(h, 16));
+  return crypto.subtle.verify(
+    'HMAC', key, new Uint8Array(bytes),
+    new TextEncoder().encode(`${timestamp}\n${nonce}\n${bodyJson}`)
+  );
+}
+
+const BRIDGE = { MEMBERS_BRIDGE_URL: 'https://bridge.example.com/exec', MEMBERS_BRIDGE_SECRET: 'shh-secret' };
+
+const originalFetch3 = globalThis.fetch;
+try {
+  // Success: the bridge finds the handle with a live status.
+  {
+    let sentBody;
+    globalThis.fetch = async (url, init) => {
+      assert.equal(url, BRIDGE.MEMBERS_BRIDGE_URL);
+      assert.equal(init.method, 'POST');
+      sentBody = JSON.parse(init.body);
+      return Response.json({ ok: true, found: true, status: 'active', discord: 'bridgeduser' });
+    };
+    const { status, data } = await lookup(BRIDGE, 'bridgeduser');
+    assert.equal(status, 200);
+    assert.equal(data.active, true);
+
+    // The request actually is what verify-premium.js's own signer produces:
+    // {type, value} payload, HMAC over timestamp\nnonce\npayload, sent as hex.
+    assert.deepEqual(Object.keys(sentBody).sort(), ['mac', 'nonce', 'payload', 'timestamp']);
+    assert.deepEqual(JSON.parse(sentBody.payload), { type: 'discord', value: 'bridgeduser' });
+    assert.match(sentBody.mac, /^[0-9a-f]{64}$/);
+    const validSig = await verifyMac(BRIDGE.MEMBERS_BRIDGE_SECRET, sentBody.timestamp, sentBody.nonce, sentBody.payload, sentBody.mac);
+    assert.equal(validSig, true, 'the mac must actually verify against the secret and the exact bytes sent');
+    const wrongSecret = await verifyMac('a-different-secret', sentBody.timestamp, sentBody.nonce, sentBody.payload, sentBody.mac);
+    assert.equal(wrongSecret, false, 'the mac must not verify under a different secret');
+  }
+
+  // Found but a status that never counts as live (e.g. a cancelled record the
+  // sheet still carries): same "not active" outcome as any other lapsed user.
+  {
+    globalThis.fetch = async () => Response.json({ ok: true, found: true, status: 'cancelled', discord: 'bridgeduser2' });
+    const { status, data } = await lookup(BRIDGE, 'bridgeduser2');
+    assert.equal(status, 404);
+    assert.equal(data.active, false);
+  }
+
+  // Not found on the bridge at all: generic inactive response, not an error.
+  {
+    globalThis.fetch = async () => Response.json({ ok: true, found: false });
+    const { status, data } = await lookup(BRIDGE, 'neverheardof');
+    assert.equal(status, 404);
+    assert.equal(data.active, false);
+  }
+
+  // Bridge answers ok:false (rejected the request): treated the same as "not
+  // found" by bridgeLookup's own `!data.ok` guard, not surfaced as an error.
+  {
+    globalThis.fetch = async () => Response.json({ ok: false });
+    const { status, data } = await lookup(BRIDGE, 'rejecteduser');
+    assert.equal(status, 404);
+    assert.equal(data.active, false);
+  }
+
+  // A non-ok HTTP response from the bridge (outage, bad deploy) must fail
+  // closed to the generic 502, never be read as "not a member".
+  {
+    globalThis.fetch = async () => new Response('gateway down', { status: 502 });
+    const { status, data } = await lookup(BRIDGE, 'outageduser');
+    assert.equal(status, 502);
+    assert.equal(data.ok, false);
+  }
+
+  // A thrown network error must also fail closed to 502, not propagate raw.
+  {
+    globalThis.fetch = async () => { throw new Error('network unreachable'); };
+    const { status } = await lookup(BRIDGE, 'unreachableuser');
+    assert.equal(status, 502);
+  }
+} finally {
+  globalThis.fetch = originalFetch3;
 }
 
 console.log('VJM check-member-status API tests passed.');
