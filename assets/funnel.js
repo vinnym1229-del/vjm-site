@@ -166,31 +166,90 @@
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
-   * THE ONE PLACE A PROVIDER GETS WIRED IN
+   * THE SINK: first-party, same-origin.
    *
-   * TODO: owner to choose an analytics provider.
+   * No vendor. Events POST to /api/analytics on this site and land in the
+   * owner's own D1, which means no third-party script, no CSP widening, no
+   * account to sign up for, and no visitor data leaving this infrastructure.
    *
-   * Nothing here talks to a network. When you have picked a provider, do
-   * BOTH of these and nothing else changes anywhere on the site:
-   *   1. add its origin to script-src / connect-src in `_headers` (the CSP
-   *      blocks it otherwise, silently), and
-   *   2. register the sink, e.g.
+   * The endpoint takes an allowlist of stage names and caps every size, so
+   * this stays a funnel counter rather than a general write sink. It records
+   * no IP, no user agent and no member identity — `visit` is the random
+   * per-tab id above, purely so one visit's stages can be joined in a report.
    *
-   *        vjmFunnel.setSink(function (name, props) {
-   *          // plausible:  window.plausible(name, { props: props });
-   *          // ga4:        window.gtag('event', name, props);
-   *          // own worker: navigator.sendBeacon('<your endpoint>', ...);
-   *        });
+   * Delivery is deliberately unreliable-by-design: batched, flushed on a
+   * timer and on page hide, sent with sendBeacon (or keepalive fetch) so a
+   * click that navigates away still reports, and silent on every failure.
+   * Measurement must never be able to break, block or slow a page.
    *
-   * setSink replays everything already buffered, so stages that happened
-   * before the provider finished loading are not lost.
+   * To use a third-party provider instead, call vjmFunnel.setSink(fn) — it
+   * replaces this one and replays anything already buffered.
    * ───────────────────────────────────────────────────────────────────────── */
+  var ENDPOINT = '/api/analytics';
+  var pending = [];
+  var flushTimer = null;
+  var FLUSH_MS = 4000;
+  var MAX_BATCH = 25;
+
+  function postBatch(batch, useBeacon) {
+    if (!batch.length) return;
+    var payload = JSON.stringify({ visit: sessionId(), events: batch });
+    try {
+      if (useBeacon && navigator && typeof navigator.sendBeacon === 'function') {
+        // type text/plain keeps this a CORS-simple request: no preflight, and
+        // the endpoint is same-origin anyway.
+        navigator.sendBeacon(ENDPOINT, new Blob([payload], { type: 'text/plain' }));
+        return;
+      }
+      fetch(ENDPOINT, {
+        method: 'POST', body: payload, keepalive: true,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'omit', cache: 'no-store'
+      }).catch(function () { /* analytics must never surface an error */ });
+    } catch (e) { /* sandboxed or offline — drop it */ }
+  }
+
+  function flush(useBeacon) {
+    if (flushTimer) { try { clearTimeout(flushTimer); } catch (e) {} flushTimer = null; }
+    if (!pending.length) return;
+    var batch = pending.splice(0, MAX_BATCH);
+    postBatch(batch, useBeacon === true);
+    if (pending.length) scheduleFlush();
+  }
+
+  function scheduleFlush() {
+    if (flushTimer) return;
+    try { flushTimer = setTimeout(function () { flushTimer = null; flush(false); }, FLUSH_MS); }
+    catch (e) { /* no timers — the pagehide flush still covers us */ }
+  }
+
+  function firstPartySink(name, props) {
+    var path = '';
+    try { path = window.location.pathname || ''; } catch (e) {}
+    pending.push({ name: name, props: props, path: path });
+    if (pending.length >= MAX_BATCH) flush(false);
+    else scheduleFlush();
+  }
+
+  try {
+    // A click that leaves the page is the most valuable event there is, so
+    // flush on hide rather than on unload (which fires unreliably on mobile).
+    window.addEventListener('pagehide', function () { flush(true); });
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') flush(true);
+    });
+  } catch (e) { /* no event target — timer flush still applies */ }
+
   function setSink(fn) {
     if (typeof fn !== 'function') { sink = null; return false; }
     sink = fn;
     for (var i = 0; i < buffer.length; i++) emit(buffer[i]);
     return true;
   }
+
+  // Live by default. setSink(fn) swaps in a provider; setSink(null) turns
+  // collection off entirely without touching any page.
+  sink = firstPartySink;
 
   /* ── declarative binding ────────────────────────────────────────────────── */
 

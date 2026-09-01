@@ -46,11 +46,15 @@ function load({ queue, storage = true, search = '' } = {}) {
   return { win: sandbox, listeners };
 }
 
-test('window.vjmTrack exists, no-ops silently with no sink, and buffers', () => {
+test('window.vjmTrack exists, buffers, and ships with the first-party sink live', () => {
   const { win } = load();
   assert.equal(typeof win.vjmTrack, 'function');
-  assert.equal(win.vjmFunnel.hasSink(), false);
-  // No sink configured: the call must do nothing observable and must not throw.
+  // The sink is now live by default and first-party: events go to this site's
+  // own /api/analytics, not to a vendor. setSink(null) turns collection off
+  // without touching a single page.
+  assert.equal(win.vjmFunnel.hasSink(), true, 'collection ships enabled');
+  win.vjmFunnel.setSink(null);
+  assert.equal(win.vjmFunnel.hasSink(), false, 'setSink(null) must disable collection entirely');
   win.vjmTrack('plan_cta', { plan: 'complete' });
   const events = win.vjmFunnel.events();
   assert.equal(events.length, 1);
@@ -118,18 +122,26 @@ test('the buffer is capped so a long session cannot grow without bound', () => {
   assert.equal(events[events.length - 1].name, 'e399', 'the newest events are the ones kept');
 });
 
-test('no analytics vendor is loaded and no request is made from the event layer', () => {
-  // Deliberate: no vendor has been chosen, and the CSP in _headers would block
-  // one. Picking a provider is the owner's call.
-  for (const bad of ['googletagmanager', 'plausible.io', 'segment.com', 'mixpanel', "createElement('script')"]) {
+test('collection is first-party only: no vendor, no cross-origin request', () => {
+  // The funnel is measured in the owner's own D1 via /api/analytics. That is
+  // what keeps the CSP unchanged, keeps visitor data on this account, and
+  // means there is no processor to disclose. A vendor tag creeping in here
+  // would quietly undo all three.
+  for (const bad of ['googletagmanager', 'plausible.io', 'segment.com', 'mixpanel', 'google-analytics', "createElement('script')"]) {
     assert.ok(!funnelSrc.includes(bad), `funnel.js must not reference ${bad}`);
   }
-  // Strip comments (they document how a provider WOULD be wired) and check the
-  // executable file makes exactly one request: the unconfigured lead collector.
   const code = funnelSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  assert.equal((code.match(/\bfetch\(/g) || []).length, 1);
-  assert.equal((code.match(/sendBeacon|XMLHttpRequest|new Image\(/g) || []).length, 0);
-  assert.match(funnelSrc, /TODO: owner to choose an analytics provider/);
+  // Every request target in the executable file must be same-origin and root
+  // relative -- no absolute URL, no protocol, no other host.
+  const targets = [...code.matchAll(/(?:fetch|sendBeacon)\(\s*([A-Za-z_$][\w$]*|'[^']*')/g)].map((m) => m[1]);
+  assert.ok(targets.length >= 2, 'expected the analytics endpoint and the lead stub');
+  for (const t of targets) {
+    assert.ok(!/^'https?:/.test(t) && !t.includes('//'), `request target must be same-origin, got ${t}`);
+  }
+  assert.match(code, /var ENDPOINT = '\/api\/analytics';/, 'the analytics endpoint is same-origin and root-relative');
+  assert.equal((code.match(/XMLHttpRequest|new Image\(/g) || []).length, 0, 'no pixel or XHR smuggling');
+  // The old "no provider chosen" TODO is gone precisely because one is wired.
+  assert.doesNotMatch(funnelSrc, /TODO: owner to choose an analytics provider/);
 });
 
 test('lead capture is a marked stub and never reports a signup it did not make', async () => {
