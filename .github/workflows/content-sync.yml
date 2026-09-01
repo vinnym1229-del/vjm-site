@@ -77,6 +77,26 @@ jobs:
           echo ""
           echo "------------"
 
+      # TEMPORARY: verify the freshly redeployed Apps Script web app is
+      # genuinely public (a plain GET, no auth needed — doGet() requires
+      # nothing) before it gets wired into Cloudflare as CONTENT_BRIDGE_URL.
+      # A Google sign-in page or a non-JSON body here means the deployment
+      # still is not actually public, whatever the dropdown in the UI says.
+      - name: Diagnostic — is the new Apps Script deployment actually public
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -uo pipefail
+          code="$(curl --silent --show-error -L --retry 2 --max-time 30 \
+            -o /tmp/apps-script-response.txt -w '%{http_code}' \
+            "https://script.google.com/macros/s/AKfycbyNEZ-qkLS2rUKEADTcQcL7eEgCnFrF9BzW00tioPSZPXOkMtJsoelLVJeUbKyIOyQj/exec")"
+          echo "Apps Script GET HTTP status: $code"
+          echo "--- body (first 500 chars) ---"
+          head -c 500 /tmp/apps-script-response.txt || true
+          echo ""
+          echo "------------"
+
       - name: Pull the sheet into D1
         shell: bash
         run: |
