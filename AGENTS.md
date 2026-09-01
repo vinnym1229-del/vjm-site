@@ -76,7 +76,7 @@ all six steps every session:
 | Instance | Machine / Path | Branch | Last seen |
 |----------|----------------|--------|-----------|
 | Codex /root | C:\\Users\\splys\\OneDrive\\Vjm Website Repo\\vjm-site | pj | 2026-08-27 |
-| claude (Claude Code on the web) | remote container, ephemeral clone | pj | 2026-08-31 |
+| claude (Claude Code on the web) | remote container, ephemeral clone | pj | 2026-09-01 |
 | (register yourself here on first use) | | | |
 
 ## Where knowledge lives
