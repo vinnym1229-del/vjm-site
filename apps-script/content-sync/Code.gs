@@ -227,6 +227,22 @@ function setUp() {
     var name = TABS[i][0];
     var headers = TABS[i][1];
     var sheet = ss.getSheetByName(name);
+
+    // A sheet imported from CSV is named after the FILE, not the tab, so a
+    // correctly-filled Schedule can sit there under the wrong name and the
+    // bridge will never find it. If some sheet's header row is an exact match
+    // for a tab we are about to create, adopt it instead of creating an empty
+    // duplicate beside it. Exact-match only, and only when the target name is
+    // free, so this can never rename a sheet out from under real content.
+    if (!sheet) {
+      var adopted = findSheetByHeaders_(ss, headers);
+      if (adopted) {
+        log.push('Renamed "' + adopted.getName() + '" to "' + name + '" (its columns already matched)');
+        adopted.setName(name);
+        sheet = adopted;
+      }
+    }
+
     if (!sheet) {
       sheet = ss.insertSheet(name);
       sheet.getRange(1, 1, 1, headers.length).setValues([headers]).setFontWeight('bold');
@@ -294,6 +310,26 @@ function healthCheck() {
   var out = lines.join('\n');
   Logger.log(out);
   return out;
+}
+
+// The sheet whose first row is exactly these headers, if there is one and only
+// one. Returns null on no match or on ambiguity — renaming the wrong sheet is
+// far worse than making the owner rename one by hand.
+function findSheetByHeaders_(ss, headers) {
+  var sheets = ss.getSheets();
+  var found = null;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].getLastRow() < 1 || sheets[i].getLastColumn() < headers.length) continue;
+    var row = sheets[i].getRange(1, 1, 1, headers.length).getValues()[0];
+    var same = true;
+    for (var c = 0; c < headers.length; c++) {
+      if (String(row[c]).trim().toLowerCase().replace(/\s+/g, '_') !== headers[c]) { same = false; break; }
+    }
+    if (!same) continue;
+    if (found) return null;                    // ambiguous: leave both alone
+    found = sheets[i];
+  }
+  return found;
 }
 
 // Bound scripts can find their own spreadsheet; standalone ones need SHEET_ID.

@@ -25,9 +25,12 @@ const SRC = readFileSync(join(ROOT, 'apps-script', 'content-sync', 'Code.gs'), '
 function fakeSheet(name, rows = []) {
   const grid = rows.map((r) => r.slice());
   return {
-    name,
+    get name() { return name; },
     grid,
     getLastRow: () => grid.length,
+    getLastColumn: () => Math.max(0, ...grid.map((r) => r.length)),
+    getName: () => name,
+    setName(n) { name = n; return this; },
     setFrozenRows() {},
     getDataRange: () => ({ getValues: () => grid.map((r) => r.slice()) }),
     getRange(row, col, numRows, numCols) {
@@ -41,6 +44,14 @@ function fakeSheet(name, rows = []) {
           return this;
         },
         setFontWeight() { return this; },
+        getValues() {
+          const out = [];
+          for (let i = 0; i < numRows; i++) {
+            const src = grid[row - 1 + i] || [];
+            out.push(Array.from({ length: numCols }, (_, j) => src[col - 1 + j] ?? ''));
+          }
+          return out;
+        },
       };
     },
   };
@@ -51,7 +62,8 @@ function fakeSpreadsheet(sheets = {}) {
   return {
     getId: () => 'SHEET_ID_123',
     getName: () => 'Content',
-    getSheetByName: (n) => map.get(n) || null,
+    getSheetByName: (n) => [...map.values()].find((sh) => sh.name === n) || null,
+    getSheets: () => [...map.values()],
     insertSheet(n) { const s = fakeSheet(n); map.set(n, s); return s; },
     _sheets: map,
   };
@@ -219,4 +231,46 @@ test('an unsigned POST is still rejected, setUp or no setUp', () => {
     timestamp: Date.now(), nonce: 'n', payload: '{"action":"all"}', mac: 'deadbeef',
   }) } });
   assert.equal(JSON.parse(res._t).error, 'unauthorized');
+});
+
+test('a CSV import named after the file is adopted, not duplicated', () => {
+  // Uploading a CSV to Drive names the sheet after the FILE, so a correctly
+  // filled Schedule can sit there under the wrong name and the bridge never
+  // finds it — it would create an empty "Schedule" beside it and the site
+  // would show nothing.
+  const imported = fakeSheet('PJ Trades — Site Content', [
+    ['id', 'day', 'session', 'time_et', 'host', 'note', 'active'],
+    ['s1', 'Mon', 'NYAM', '9:30 AM ET', 'Live trading with Caleb & Fin', '', 'true'],
+  ]);
+  const ss = fakeSpreadsheet({ imported });
+  const { ctx } = load(ss);
+  ctx.setUp();
+
+  const schedule = ss.getSheetByName('Schedule');
+  assert.ok(schedule, 'the imported sheet should have become Schedule');
+  assert.equal(schedule.grid.length, 2, 'the imported row survived');
+  assert.equal(schedule.grid[1][4], 'Live trading with Caleb & Fin');
+  // …and no empty duplicate was created beside it.
+  assert.equal(ss.getSheets().filter((sh) => sh.name === 'Schedule').length, 1);
+});
+
+test('a sheet is never renamed when the match is ambiguous or partial', () => {
+  // Renaming the wrong sheet is much worse than making someone rename one by
+  // hand, so an exact single match is the only case that adopts.
+  const headers = ['id', 'day', 'session', 'time_et', 'host', 'note', 'active'];
+  const twin1 = fakeSheet('Copy of A', [headers.slice()]);
+  const twin2 = fakeSheet('Copy of B', [headers.slice()]);
+  const ss = fakeSpreadsheet({ twin1, twin2 });
+  const { ctx } = load(ss);
+  ctx.setUp();
+  assert.equal(twin1.name, 'Copy of A', 'ambiguous match must not rename');
+  assert.equal(twin2.name, 'Copy of B');
+  assert.ok(ss.getSheetByName('Schedule'), 'a fresh Schedule is created instead');
+
+  // A near-miss header row is not a match either.
+  const near = fakeSheet('Nearly', [['id', 'day', 'session', 'time', 'host', 'note', 'active']]);
+  const ss2 = fakeSpreadsheet({ near });
+  const { ctx: ctx2 } = load(ss2);
+  ctx2.setUp();
+  assert.equal(near.name, 'Nearly');
 });

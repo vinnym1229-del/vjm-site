@@ -167,9 +167,19 @@ format, and the `List-Unsubscribe` headers to set.
       answer to "who updates the schedule every week".
 
       Four steps:
-      1. Apps Script: open your content spreadsheet → Extensions → Apps
-         Script, paste in `apps-script/content-sync/Code.gs`, then pick
-         **`setUp`** in the function dropdown and press Run.
+      1. **The spreadsheet already exists** — "PJ Trades — Site Content" is in
+         your Drive, with the Schedule tab filled in with this week:
+         https://docs.google.com/spreadsheets/d/1kqp-qoEU5v9ygV8PpgpVnOvxtyGNsFbgR86t9zDNuUY/edit
+
+         It is deliberately a SEPARATE file from `VJM_Member_Tracker`, which
+         holds member names, payments and plaintext access codes. Website
+         content and member credentials must not share a spreadsheet.
+
+         Open it → Extensions → Apps Script, paste in
+         `apps-script/content-sync/Code.gs`, then pick **`setUp`** in the
+         function dropdown and press Run. (The single tab is currently named
+         after the file because it was imported from CSV; `setUp` recognises
+         its columns and renames it to `Schedule` for you.)
 
          It builds all nine tabs with the right headers, seeds the Schedule
          tab with the exact week the site shows right now (so switching the
