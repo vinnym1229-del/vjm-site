@@ -408,3 +408,142 @@ console.log('VJM verify-premium API tests passed.');
 }
 
 console.log('VJM verify-premium tier-reporting test passed.');
+
+// ---------------------------------------------------------------------------
+// MEMBERS_BRIDGE_URL + MEMBERS_BRIDGE_SECRET: the preferred authenticated
+// single-record bridge (lookupViaSecureBridge). check-member-status.js's own
+// copy of this same signing scheme (bridgeLookup, identical
+// "${timestamp}\n${nonce}\n${bodyJson}" HMAC-SHA256 message) got test
+// coverage in tests/member-status-api.test.mjs; this file's copy had never
+// been exercised -- every prior test above that grants access goes through
+// the deprecated MEMBERS_STATUS_URL full-map bridge instead.
+// ---------------------------------------------------------------------------
+async function verifyMac(secret, timestamp, nonce, bodyJson, mac) {
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']
+  );
+  const bytes = mac.match(/../g).map((h) => parseInt(h, 16));
+  return crypto.subtle.verify(
+    'HMAC', key, new Uint8Array(bytes),
+    new TextEncoder().encode(`${timestamp}\n${nonce}\n${bodyJson}`)
+  );
+}
+
+const SECURE_BRIDGE = { MEMBERS_BRIDGE_URL: 'https://bridge.example.com/exec', MEMBERS_BRIDGE_SECRET: 'shh-secret' };
+
+{
+  const originalFetch = globalThis.fetch;
+  try {
+    // Success: the bridge finds the code with a live status, signed the
+    // request the documented way, and never touches the legacy full-map
+    // bridge even though MEMBERS_STATUS_URL is also configured here (the
+    // secure bridge takes priority -- see lookupByCode's own branch order).
+    {
+      let sentBody = null;
+      globalThis.fetch = async (url, init) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        assert.equal(url, SECURE_BRIDGE.MEMBERS_BRIDGE_URL, 'must never contact the legacy MEMBERS_STATUS_URL bridge');
+        sentBody = JSON.parse(init.body);
+        return Response.json({ ok: true, found: true, status: 'active', discord: 'securebridgeuser' });
+      };
+      const env = {
+        ...baseEnv(), TURNSTILE_SECRET_KEY: 'secret',
+        ...SECURE_BRIDGE, MEMBERS_STATUS_URL: 'https://example.com/status.json',
+      };
+      const { status, data } = await callVerify(env, { code: 'ABCD-9999', turnstileToken: 'tok' });
+      assert.equal(status, 200);
+      assert.equal(data.discord, 'securebridgeuser');
+
+      assert.deepEqual(Object.keys(sentBody).sort(), ['mac', 'nonce', 'payload', 'timestamp']);
+      assert.deepEqual(JSON.parse(sentBody.payload), { type: 'code', value: 'ABCD-9999' });
+      assert.match(sentBody.mac, /^[0-9a-f]{64}$/);
+      assert.equal(await verifyMac(SECURE_BRIDGE.MEMBERS_BRIDGE_SECRET, sentBody.timestamp, sentBody.nonce, sentBody.payload, sentBody.mac), true,
+        'the mac must actually verify against the secret and the exact bytes sent');
+      assert.equal(await verifyMac('wrong-secret', sentBody.timestamp, sentBody.nonce, sentBody.payload, sentBody.mac), false,
+        'the mac must not verify under a different secret');
+    }
+
+    // 'renewed' counts as live, same as 'active'.
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return Response.json({ ok: true, found: true, status: 'renewed', discord: 'renewedmember' });
+      };
+      const env = { ...baseEnv(), TURNSTILE_SECRET_KEY: 'secret', ...SECURE_BRIDGE };
+      const { status, data } = await callVerify(env, { code: 'ABCD-1111', turnstileToken: 'tok' });
+      assert.equal(status, 200);
+      assert.equal(data.discord, 'renewedmember');
+    }
+
+    // Not found on the bridge: the generic bad-code message, not the
+    // bot-check one, proving the flow moved past Turnstile and simply found
+    // no member for this code.
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return Response.json({ ok: true, found: false });
+      };
+      const env = { ...baseEnv(), TURNSTILE_SECRET_KEY: 'secret', ...SECURE_BRIDGE };
+      const { status, data } = await callVerify(env, { code: 'ABCD-2222', turnstileToken: 'tok' });
+      assert.equal(status, 401);
+      assert.equal(data.error, GENERIC_BAD_CODE);
+    }
+
+    // A status the bridge sends that isn't active/renewed (e.g. a cancelled
+    // Sheet row) is not an entitlement either.
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return Response.json({ ok: true, found: true, status: 'cancelled', discord: 'x' });
+      };
+      const env = { ...baseEnv(), TURNSTILE_SECRET_KEY: 'secret', ...SECURE_BRIDGE };
+      const { status } = await callVerify(env, { code: 'ABCD-3333', turnstileToken: 'tok' });
+      assert.equal(status, 401);
+    }
+
+    // The bridge being unreachable must fail closed, surfacing as the same
+    // generic 500 every other unexpected throw in this handler produces --
+    // never a silent "no such code".
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        throw new Error('network down');
+      };
+      const env = { ...baseEnv(), TURNSTILE_SECRET_KEY: 'secret', ...SECURE_BRIDGE };
+      const { status, data } = await callVerify(env, { code: 'ABCD-4444', turnstileToken: 'tok' });
+      assert.equal(status, 500);
+      assert.equal(data.ok, false);
+    }
+
+    // A non-ok HTTP response from the bridge (outage, bad deploy) fails
+    // closed the same way.
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return new Response('bad gateway', { status: 502 });
+      };
+      const env = { ...baseEnv(), TURNSTILE_SECRET_KEY: 'secret', ...SECURE_BRIDGE };
+      const { status } = await callVerify(env, { code: 'ABCD-5555', turnstileToken: 'tok' });
+      assert.equal(status, 500);
+    }
+
+    // Malformed JSON from the bridge collapses to "not found" rather than an
+    // outage -- res.json() rejecting is caught to null, which data.ok !==
+    // true already treats the same as no record.
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return new Response('not json', { status: 200 });
+      };
+      const env = { ...baseEnv(), TURNSTILE_SECRET_KEY: 'secret', ...SECURE_BRIDGE };
+      const { status, data } = await callVerify(env, { code: 'ABCD-6666', turnstileToken: 'tok' });
+      assert.equal(status, 401);
+      assert.equal(data.error, GENERIC_BAD_CODE);
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+console.log('VJM verify-premium secure-bridge tests passed.');
