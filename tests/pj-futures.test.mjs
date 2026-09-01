@@ -324,3 +324,19 @@ test('package.json check:syntax covers content.js', () => {
   const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
   assert.match(pkg.scripts['check:syntax'], /functions\/api\/content\.js/);
 });
+
+test('the sheet-driven schedule can express an off slot, like the hard-coded one', () => {
+  // Switching the schedule to the CMS must not be a regression. The static
+  // grid shows Monday 2:30 as explicitly off; if the CMS renderer could only
+  // draw sessions, the first sheet sync would silently delete that row and
+  // leave a gap that reads as an oversight. A blank host cell is how the owner
+  // says "nobody is running this one".
+  assert.match(index, /if \(!String\(s\.host \|\| ''\)\.trim\(\)\) \{[\s\S]{0,200}?session-row-off/,
+    'a hostless CMS row must render as an off slot, not a session');
+  // …and must not feed the live countdown, which would tick down to a session
+  // nobody runs.
+  assert.match(index, /Hostless rows are cancelled slots/);
+  // The off row keeps its own class so the "15 sessions" count stays honest.
+  assert.doesNotMatch(index, /session-row-off[^]{0,40}sess-name[^]{0,200}host host-/,
+    'an off row must not carry a host colour class');
+});

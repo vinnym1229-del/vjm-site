@@ -124,10 +124,35 @@ format, and the `List-Unsubscribe` headers to set.
 - [ ] **Session durations.** The countdown assumes 90 minutes for trading
       sessions and 60 for classes. If those are wrong the "live now" state is
       wrong.
-- [ ] **The weekly schedule is a hand edit.** It mirrors your graphic and has
-      to be changed in `index.html` every time the week changes. Moving it to
-      the Sheet CMS tab (`/api/content?type=schedule`) would let you update it
-      from the spreadsheet — worth doing if the schedule keeps moving.
+- [ ] **Turn on the sheet sync — this is the big one.** The schedule, the
+      prop-firm directory, the team, the FAQs, the bundles and the stats are
+      all already wired to read from a Google Sheet. The Apps Script bridge is
+      written (`apps-script/content-sync/Code.gs`), the endpoint is written
+      (`/api/content-sync`), and the hourly GitHub Action now exists. It has
+      simply never been switched on, which is why `site_content` is empty and
+      the prop-firm page shows "not connected yet" to real visitors.
+
+      Once it runs, **you edit a spreadsheet and the site updates itself within
+      the hour** — no deploy, no code edit, nobody in the loop. That is the
+      answer to "who updates the schedule every week".
+
+      Four steps:
+      1. Apps Script: deploy `apps-script/content-sync/Code.gs` from your
+         content spreadsheet (Script Properties: `SHEET_ID`,
+         `CONTENT_BRIDGE_SECRET`). See `docs/APPS-SCRIPT-INTEGRATION.md`.
+      2. Cloudflare Pages → Variables: `CONTENT_BRIDGE_URL` (the /exec URL),
+         `CONTENT_BRIDGE_SECRET` (same value), `RESEARCH_CRON_SECRET`.
+      3. GitHub → repo Settings → Secrets → Actions: `RESEARCH_REFRESH_URL`
+         (the site origin) and `RESEARCH_CRON_SECRET` (same value as above).
+      4. Actions → "Sync site content from the owner's sheet" → Run workflow,
+         and check the log prints row counts rather than an error.
+
+      **Schedule tab columns:** `id | day | session | time_et | host | note |
+      active`. `day` is Mon–Fri, `session` is one of `NYAM`, `NYPM`, `CLASS`,
+      `ASIA` (uppercase), `time_et` is free text like `9:30 AM ET`.
+      **Leave `host` blank to mark a slot as off** — it renders struck through,
+      the way Monday 2:30 does now, instead of vanishing and leaving a gap.
+      `active` = `false` removes the row entirely.
 
 ## 7. Repository and access
 

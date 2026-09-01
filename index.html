@@ -2510,6 +2510,18 @@ setInterval(tickSessionClock, 30000);
             .map((s) => {
               const slugMatch = String(s.host || '').toLowerCase().match(/[a-z]+/);
               const hostClass = slugMatch ? 'host host-' + slugMatch[0] : 'host';
+              // A row with no host is a slot the schedule graphic marks as OFF
+              // (Monday 2:30, currently). It renders struck-through with its
+              // own class rather than as a session, because the "15 sessions a
+              // week" copy is derived by counting .session-row — and because
+              // dropping the row entirely leaves a silent gap that reads as an
+              // oversight rather than as "nothing today". Leaving the host
+              // cell blank in the sheet is how the owner expresses that.
+              if (!String(s.host || '').trim()) {
+                return '<div class="session-row-off"><span class="sess-name">' + esc(s.session) +
+                  '</span><span class="sess-time">' + esc(s.timeET) +
+                  '</span><span class="host">' + esc(s.note || 'No live trading') + '</span></div>';
+              }
               return '<div class="session-row"><span class="sess-name">' + esc(s.session) + '</span><span class="sess-time">' +
                 esc(s.timeET) + '</span><span class="' + hostClass + '">' + esc(s.host || '') +
                 (s.note ? ' — ' + esc(s.note) : '') + '</span></div>';
@@ -2521,6 +2533,9 @@ setInterval(tickSessionClock, 30000);
 
       const byName = {};
       active.forEach((s) => {
+        // Hostless rows are cancelled slots; counting them here would have the
+        // countdown advertise a session nobody is running.
+        if (!String(s.host || '').trim()) return;
         const mins = parseTimeET(s.timeET);
         if (mins == null) return;
         const dow = DAY_NUM[s.day];
