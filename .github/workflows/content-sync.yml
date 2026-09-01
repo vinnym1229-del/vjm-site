@@ -10,6 +10,14 @@
 # With this in place the owner edits a spreadsheet tab and the website updates
 # itself within the hour. No deploy, no code edit, nobody in the loop.
 #
+# PREREQUISITE, and it is not obvious: GitHub only registers and runs
+# workflows that exist on the repository's DEFAULT branch. This repo's default
+# is still an old Pine Script branch that contains no .github directory, so the
+# API currently reports zero workflows and none of them — this one, the
+# research refresh, or the morning automation — has ever run. Switching the
+# default branch to `pj` is what turns them all on. See docs/OWNER-CHECKLIST.md
+# item 0.
+#
 # Requires the SAME two repository secrets the research refresh already uses:
 #   RESEARCH_REFRESH_URL   the site origin, e.g. https://not-financial-advice-vjm.com
 #   RESEARCH_CRON_SECRET   must equal RESEARCH_CRON_SECRET in Cloudflare Pages

@@ -8,6 +8,36 @@ something every day they stay undone.
 
 ---
 
+## 0. Change the GitHub default branch to `pj` — one dropdown
+
+**This is the single highest-value click available, and it takes ten seconds.**
+
+The repository's default branch is `claude/nlm-fvg-ifvg-bpr-2l0bhm`, which
+contains exactly two files: `NLM.pine` and `README.md`. It is an old Pine
+Script branch with no website in it. All the site code, and all four GitHub
+Actions workflows, live on `pj`.
+
+GitHub only registers and runs workflows that exist **on the default branch**.
+Verified against the API just now: this repository reports
+`total_count: 0` workflows. So:
+
+- The **research refresh has never run**, not once — every scheduled snapshot
+  the research engine is supposed to serve has never been generated.
+- The **morning automation has never run**.
+- The **content sync** (item 6) will not run either, no matter what secrets
+  are set.
+- `workflow_dispatch` does not even appear in the Actions tab, so there is no
+  "Run workflow" button to press.
+
+Setting the Actions secrets first would have changed nothing. This is the
+blocker underneath all of it.
+
+**Fix:** GitHub → repo Settings → General → Default branch → switch to `pj`.
+Cloudflare Pages already deploys from `pj`, so nothing about the live site
+changes. The Pine branch is not deleted; it just stops being the default.
+
+Do this before item 6, or item 6 cannot work.
+
 ## 1. Indexing — now automatic, nothing to do
 
 *(Was: "the entire site is invisible to Google.")*
@@ -144,7 +174,9 @@ format, and the `List-Unsubscribe` headers to set.
          `CONTENT_BRIDGE_SECRET` (same value), `RESEARCH_CRON_SECRET`.
       3. GitHub → repo Settings → Secrets → Actions: `RESEARCH_REFRESH_URL`
          (the site origin) and `RESEARCH_CRON_SECRET` (same value as above).
-      4. Actions → "Sync site content from the owner's sheet" → Run workflow,
+      4. **Item 0 first** — until the default branch is `pj`, this workflow is
+         not registered and there is no Run workflow button. Then:
+         Actions → "Sync site content from the owner's sheet" → Run workflow,
          and check the log prints row counts rather than an error.
 
       **Schedule tab columns:** `id | day | session | time_et | host | note |
@@ -156,10 +188,8 @@ format, and the `List-Unsubscribe` headers to set.
 
 ## 7. Repository and access
 
-- [ ] The GitHub default branch is currently a feature branch
-      (`claude/nlm-fvg-ifvg-bpr-2l0bhm`), not `pj`. Cloudflare deploys from
-      `pj` so the site is fine, but anyone landing on the repo sees stale
-      code. Settings → General → Default branch.
+- [ ] **The default branch is wrong, and it is silently disabling every
+      scheduled job.** See item 0 — this is not cosmetic.
 - [ ] Decide whether this repository should be private. It contains no
       secrets — every credential is a Cloudflare environment variable — but it
       does contain the full course content that sits behind the paywall.
