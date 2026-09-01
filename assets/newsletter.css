@@ -14,7 +14,10 @@
 .nl-kicker {
   font-family: var(--vjm-font-display, 'Barlow Condensed', sans-serif);
   font-size: .74rem; font-weight: 900; letter-spacing: 2.4px; text-transform: uppercase;
-  color: var(--vjm-red); margin: 0 0 8px;
+  /* --vjm-red-bright, not --vjm-red: on the dark card #d14343 measures 3.95:1
+     against #161618, under the 4.5 minimum for text this size. The bright
+     token clears it in dark and stays a deep red in light. */
+  color: var(--vjm-red-bright); margin: 0 0 8px;
 }
 .nl h2, .nl-title {
   font-family: var(--vjm-font-display, 'Barlow Condensed', sans-serif);
@@ -49,7 +52,7 @@
 .nl-consent { display: flex; gap: 10px; align-items: flex-start; margin: 14px 0 4px; }
 .nl-consent input { margin: 3px 0 0; width: 16px; height: 16px; flex: none; accent-color: var(--vjm-red); }
 .nl-consent label { color: var(--vjm-muted); font-size: .82rem; line-height: 1.55; }
-.nl-consent a { color: var(--vjm-red); }
+.nl-consent a { color: var(--vjm-red-bright); }
 
 .nl-submit { width: 100%; margin-top: 14px; }
 .nl-submit[disabled] { opacity: .6; cursor: progress; }

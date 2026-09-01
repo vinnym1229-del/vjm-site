@@ -66,9 +66,12 @@
 #site-bolt-layer{position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden;
   opacity:.3;}
 /* Light mode swaps in the all-red art (see LIGHT above) rather than inverting
-   the dark art. A touch more opacity: red on white carries less weight than a
-   white-hot bolt on black, and this has to stay visible without shouting. */
-body.light-mode #site-bolt-layer{opacity:.4;}
+   the dark art, and runs it harder: .4 was tuned against the dark layer's .3
+   and undershot badly, because a mid-red line on white has far less contrast
+   than a white-hot bolt on black. The strike keyframes then spend most of
+   their cycle at .42 of THIS, so the resting state was ~.17 effective — which
+   is why the bolts read as smudges rather than lightning on the white page. */
+body.light-mode #site-bolt-layer{opacity:.62;}
 #site-bolt-layer .sbl-r,#site-bolt-layer .sbl-l{position:absolute; inset:0;
   background-repeat:repeat-y; background-size:min(23vw,270px) 940px;}
 #site-bolt-layer .sbl-r{background-image:url("${RIGHT_DARK}"); background-position:right -18px top 0;

@@ -113,3 +113,59 @@ test('mobile polish: the three defects reported from a phone stay fixed', () => 
   // a line of its own, which is exactly what it did at 360px.
   assert.match(html, /<span class="hb-item"><span class="pulse-dot"><\/span>/);
 });
+
+test('light mode: text that was painted for a dark surface stays repainted', () => {
+  // Every item here was measured invisible or near-invisible on the white page
+  // by tools/contrast-audit.mjs — colours chosen against a near-black card that
+  // were never revisited when light mode became the default. The worst,
+  // .course-badge.free, was #ffffff on #ffffff.
+  //
+  // This test pins the repaints. The audit tool is the real check (it resolves
+  // the cascade in a browser, which no string match can), but it needs
+  // Playwright, so these assertions keep the fixes from silently reverting in
+  // a run that only has node.
+  for (const sel of [
+    'body\\.light-mode \\.course-badge\\.free',
+    'body\\.light-mode \\.course-badge',
+    'body\\.light-mode \\.course-cta',
+    'body\\.light-mode \\.tier-was',
+    'body\\.light-mode #stream-countdown-bar \\.cd-live',
+  ]) {
+    assert.match(siteCss, new RegExp(sel), `${sel.replace(/\\\\/g, '')} needs a light-mode colour`);
+  }
+  // The Buffett card's surface was repainted for light mode and its text was
+  // not, which is the bug that started this sweep.
+  assert.match(siteCss, /body\.light-mode \.buffett-card blockquote\{color:var\(--text\);?\}/);
+  assert.match(siteCss, /body\.light-mode \.buffett-card figcaption\{color:var\(--muted\);?\}/);
+
+  // Body-copy links had no colour rule on the legal pages, so they fell back to
+  // the browser's #0000EE — unreadable on the dark page.
+  for (const page of ['privacy.html', 'terms.html', 'risk-disclosure.html']) {
+    assert.match(read(page), /main a,p a,li a\{color:var\(--gold-ink\)/, `${page} must colour body-copy links`);
+    assert.doesNotMatch(read(page), /#0000EE/i, 'do not write the default blue as a literal — the palette test reads hex codes');
+  }
+
+  // Exclusions from the audit must carry their reason in the markup, so that
+  // "the tool passes" can never mean "the tool was told not to look".
+  const index = read('index.html');
+  for (const m of index.matchAll(/data-contrast-ignore="([^"]*)"/g)) {
+    assert.ok(m[1].length > 20, 'every data-contrast-ignore needs a stated reason');
+  }
+});
+
+test('light mode: the featured card and the page bolts are actually visible', () => {
+  // The ring around the Complete card was still the DARK art — a white-hot
+  // filament fading to red — which on a white page loses its brightest half.
+  assert.match(siteCss, /body\.light-mode \.tier-card\.hot::before\{[\s\S]{0,200}?background-image:/,
+    'the featured card needs all-red bolt art in light mode');
+  const lightRing = siteCss.slice(siteCss.indexOf('body.light-mode .tier-card.hot::before{'));
+  const ringRule = lightRing.slice(0, lightRing.indexOf('\n}'));
+  for (const neutral of ['%23ffffff', '%23ededee', '%23c8c8ce']) {
+    assert.ok(!ringRule.includes(neutral), `${neutral} must not survive into the light-mode ring`);
+  }
+  // …and it must not be dimmer than the dark one it replaced.
+  assert.match(siteCss, /@keyframes cardBoltFlashLight\{0%\{opacity:\.78;\}/);
+
+  // The page background bolts were tuned against the dark layer and undershot.
+  assert.match(read('assets/lightning-bg.js'), /body\.light-mode #site-bolt-layer\{opacity:\.62;\}/);
+});
