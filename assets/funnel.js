@@ -350,22 +350,20 @@
   }
 
   /* ── owned lead capture ─────────────────────────────────────────────────────
-   * The free tier collects no owned lead: every visitor who is not ready to
-   * buy today leaves without the site keeping any way to reach them.
+   * The free tier used to collect no owned lead at all: every visitor who was
+   * not ready to buy today left without the site keeping any way to reach
+   * them. LEAD_ENDPOINT sat empty because no mailing backend existed.
    *
-   * TODO: owner to connect. LEAD_ENDPOINT is intentionally empty — no mailing
-   * backend exists in this repository and inventing one (or embedding a
-   * third-party form) is not this file's call. Set it to your own
-   * same-origin collector path (and add the route under functions/) and the
-   * capture form on the homepage turns itself on.
+   * It exists now — functions/api/newsletter/subscribe.js, same-origin, the
+   * list in the owner's own D1 — so this points at it. `configured()` still
+   * gates the homepage form, so setting this back to '' cleanly turns the
+   * capture off rather than leaving a form that drops addresses.
    *
-   * While it is empty, `configured()` is false and the homepage shows an
-   * honest next step instead of a form that cannot store anything. `submit()`
-   * NEVER reports success it did not get: with no endpoint it resolves
-   * { ok:false, reason:'not_configured' }, and on a failed request it resolves
-   * { ok:false, reason:'error' }. The UI is written against those.
+   * `submit()` NEVER reports success it did not get: with no endpoint it
+   * resolves { ok:false, reason:'not_configured' }, and on a failed request it
+   * resolves { ok:false, reason:'error' }. The UI is written against those.
    */
-  var LEAD_ENDPOINT = '';
+  var LEAD_ENDPOINT = '/api/newsletter/subscribe';
 
   function leadConfigured() {
     return typeof LEAD_ENDPOINT === 'string' && LEAD_ENDPOINT.length > 0;
@@ -377,9 +375,22 @@
   }
 
   function submitLead(email, props) {
-    var payload = { email: String(email || '').trim(), props: cleanProps(props) };
+    var p = props || {};
+    // Shaped for the subscribe endpoint. `consent` is passed through from the
+    // form rather than defaulted here: the endpoint rejects a signup without
+    // it, and a helper that quietly supplied it would defeat the point of
+    // requiring an affirmative opt-in at all.
+    var payload = {
+      email: String(email || '').trim(),
+      consent: p.consent === true,
+      source: typeof p.source === 'string' ? p.source : 'site',
+      props: cleanProps(props)
+    };
     if (!looksLikeEmail(payload.email)) {
       return Promise.resolve({ ok: false, reason: 'invalid_email' });
+    }
+    if (payload.consent !== true) {
+      return Promise.resolve({ ok: false, reason: 'no_consent' });
     }
     if (!leadConfigured()) {
       // No backend. Say so; do not pretend anything was stored.

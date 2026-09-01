@@ -15,16 +15,24 @@ function read(p) {
 
 test('every /api/ route referenced by HTML has a Function implementation', () => {
   const functionsDir = join(ROOT, 'functions', 'api');
-  const implemented = new Set(
-    readdirSync(functionsDir)
-      .filter((f) => f.endsWith('.js') && !f.startsWith('_'))
-      .map((f) => '/api/' + f.replace(/\.js$/, ''))
-  );
+  // Pages Functions routing is file-based and nests: functions/api/thing.js is
+  // /api/thing, and functions/api/thing/sub.js is /api/thing/sub. Only walking
+  // the top level made a nested route look unimplemented, and — worse — would
+  // have let a genuinely missing nested route pass by matching its parent.
+  const implemented = new Set();
+  const walk = (dir, prefix) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name.startsWith('_')) continue;
+      if (entry.isDirectory()) { walk(join(dir, entry.name), `${prefix}/${entry.name}`); continue; }
+      if (entry.name.endsWith('.js')) implemented.add(`${prefix}/${entry.name.replace(/\.js$/, '')}`);
+    }
+  };
+  walk(functionsDir, '/api');
   const missing = [];
   for (const page of HTML_PAGES) {
     if (!existsSync(join(ROOT, page))) continue;
     const html = read(page);
-    for (const m of html.matchAll(/['"`]\/api\/([a-z0-9-]+)/gi)) {
+    for (const m of html.matchAll(/['"`]\/api\/([a-z0-9/-]+)/gi)) {
       const route = '/api/' + m[1];
       if (!implemented.has(route) && !missing.includes(route)) missing.push(route);
     }
@@ -33,7 +41,7 @@ test('every /api/ route referenced by HTML has a Function implementation', () =>
   if (existsSync(join(ROOT, 'assets'))) {
     for (const f of readdirSync(join(ROOT, 'assets')).filter((f) => f.endsWith('.js'))) {
       const src = read(join('assets', f));
-      for (const m of src.matchAll(/['"`]\/api\/([a-z0-9-]+)/g)) {
+      for (const m of src.matchAll(/['"`]\/api\/([a-z0-9/-]+)/g)) {
         const route = '/api/' + m[1];
         if (!implemented.has(route) && !missing.includes(route)) missing.push(route);
       }

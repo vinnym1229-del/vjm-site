@@ -1,0 +1,71 @@
+/* Newsletter signup + unsubscribe form.
+ *
+ * Built on the --vjm-* tokens rather than the homepage's own variables, so the
+ * one component works on index.html, prop-firms.html and unsubscribe.html and
+ * follows light/dark automatically instead of needing a per-page override. */
+
+.nl {
+  max-width: 560px;
+  border: 1px solid var(--vjm-border-strong);
+  border-radius: 18px;
+  padding: 26px 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .03), transparent), var(--vjm-card);
+}
+.nl-kicker {
+  font-family: var(--vjm-font-display, 'Barlow Condensed', sans-serif);
+  font-size: .74rem; font-weight: 900; letter-spacing: 2.4px; text-transform: uppercase;
+  color: var(--vjm-red); margin: 0 0 8px;
+}
+.nl h2, .nl-title {
+  font-family: var(--vjm-font-display, 'Barlow Condensed', sans-serif);
+  font-size: clamp(1.35rem, 5vw, 1.9rem); font-weight: 900; line-height: 1.1;
+  text-transform: uppercase; letter-spacing: .5px; margin: 0 0 10px; color: var(--vjm-text, inherit);
+}
+.nl-sub { margin: 0 0 18px; color: var(--vjm-muted); font-size: .9rem; line-height: 1.6; }
+
+.nl-fields { display: grid; gap: 10px; }
+@media (min-width: 520px) { .nl-fields.two { grid-template-columns: 1fr 1.3fr; } }
+
+.nl input[type="text"], .nl input[type="email"] {
+  width: 100%; box-sizing: border-box;
+  font: inherit; font-size: .95rem;
+  padding: 13px 14px;
+  color: var(--vjm-text, inherit);
+  background: var(--vjm-bg2);
+  border: 1px solid var(--vjm-border-strong);
+  border-radius: 11px;
+}
+.nl input::placeholder { color: var(--vjm-muted); opacity: .85; }
+.nl input:focus-visible { outline: 2px solid var(--vjm-red); outline-offset: 2px; }
+
+/* The honeypot. Off-screen rather than display:none — some bots skip hidden
+   fields but fill positioned ones — and removed from the tab order and the
+   accessibility tree so no real person can land in it by accident. */
+.nl-hp {
+  position: absolute; left: -9999px; width: 1px; height: 1px;
+  overflow: hidden; opacity: 0; pointer-events: none;
+}
+
+.nl-consent { display: flex; gap: 10px; align-items: flex-start; margin: 14px 0 4px; }
+.nl-consent input { margin: 3px 0 0; width: 16px; height: 16px; flex: none; accent-color: var(--vjm-red); }
+.nl-consent label { color: var(--vjm-muted); font-size: .82rem; line-height: 1.55; }
+.nl-consent a { color: var(--vjm-red); }
+
+.nl-submit { width: 100%; margin-top: 14px; }
+.nl-submit[disabled] { opacity: .6; cursor: progress; }
+
+.nl-fine { margin: 12px 0 0; color: var(--vjm-muted); font-size: .74rem; line-height: 1.6; }
+.nl-fine a { color: inherit; }
+
+/* One live region for both outcomes, so a screen reader announces the result
+   of a submit without the focus moving anywhere. */
+.nl-msg { margin: 14px 0 0; font-size: .87rem; line-height: 1.6; }
+.nl-msg:empty { margin: 0; }
+/* --vjm-green is the site's neutral "good" token (a near-white in dark mode,
+   a dark grey in light) — the palette is white/black/red only, so a real
+   green here would be the one foreign hue on the page. */
+.nl-msg.ok { color: var(--vjm-green); }
+.nl-msg.err { color: var(--vjm-red-bright); }
+
+.nl-done { text-align: left; }
+.nl-done h2 { margin-bottom: 8px; }

@@ -144,15 +144,26 @@ test('collection is first-party only: no vendor, no cross-origin request', () =>
   assert.doesNotMatch(funnelSrc, /TODO: owner to choose an analytics provider/);
 });
 
-test('lead capture is a marked stub and never reports a signup it did not make', async () => {
+test('lead capture points at the site\'s own endpoint and never reports a signup it did not make', async () => {
+  // This used to assert the opposite — LEAD_ENDPOINT shipped empty because no
+  // mailing backend existed and inventing one was not funnel.js's call. One
+  // exists now (functions/api/newsletter/subscribe.js), same-origin, with the
+  // list in the owner's own D1, so the helper is wired to it. What has NOT
+  // changed is the part that matters: it still never claims a signup it did
+  // not get.
   const { win } = load();
-  assert.equal(win.vjmLead.configured(), false, 'no mailing backend exists in this repo');
-  assert.match(funnelSrc, /TODO: owner to connect/);
-  assert.match(funnelSrc, /var LEAD_ENDPOINT = '';/, 'the endpoint must ship empty, not invented');
+  assert.equal(win.vjmLead.configured(), true);
+  assert.match(funnelSrc, /var LEAD_ENDPOINT = '\/api\/newsletter\/subscribe';/,
+    'same-origin and root-relative — never a third-party form host');
+  assert.doesNotMatch(funnelSrc, /TODO: owner to connect\. LEAD_ENDPOINT/);
 
-  assert.deepEqual(plain(await win.vjmLead.submit('reader@example.com', {})), { ok: false, reason: 'not_configured' });
-  assert.deepEqual(plain(await win.vjmLead.submit('nope', {})), { ok: false, reason: 'invalid_email' });
-  assert.deepEqual(plain(await win.vjmLead.submit('', {})), { ok: false, reason: 'invalid_email' });
+  // Rejected before any request is made, so a typo or an unticked box cannot
+  // reach the endpoint and cannot be reported as success.
+  assert.deepEqual(plain(await win.vjmLead.submit('nope', { consent: true })), { ok: false, reason: 'invalid_email' });
+  assert.deepEqual(plain(await win.vjmLead.submit('', { consent: true })), { ok: false, reason: 'invalid_email' });
+  assert.deepEqual(plain(await win.vjmLead.submit('reader@example.com', {})), { ok: false, reason: 'no_consent' },
+    'consent comes from the form; the helper must never supply it');
+  assert.deepEqual(plain(await win.vjmLead.submit('reader@example.com', { consent: 'yes' })), { ok: false, reason: 'no_consent' });
 });
 
 test('the homepage carries the queue shim and loads the event layer', () => {

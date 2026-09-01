@@ -140,6 +140,14 @@ test('the stated session frequency matches the schedule table itself', () => {
 
   // "10+ times a week" was never sourced from anything; it must not come back.
   assert.doesNotMatch(index, /10\+ times/, 'unsourced claim');
+
+  // A slot the owner's graphic marks as off (Monday 2:30) is shown, because a
+  // silent gap reads as an oversight rather than as "nothing today". It must
+  // carry .session-row-off, never .session-row: counted as a session it would
+  // inflate the figure above by one and the copy would overstate the week.
+  assert.match(staticMarkup, /class="session-row-off"/, 'the off slot must be shown, not silently dropped');
+  const offRows = [...staticMarkup.matchAll(/<div class="session-row-off">/g)].length;
+  assert.equal(offRows + realRows, 16, 'every schedule row is either a session or an explicit off slot');
 });
 
 // functions/api/_lib/backtest-core.js exists but is wired to no route and no

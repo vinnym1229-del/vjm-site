@@ -69,6 +69,7 @@
 <link rel="preload" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" as="style" onload="this.rel='stylesheet'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/newsletter.css">
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
@@ -1092,9 +1093,17 @@
 </section>
 
 <!-- WEEKLY STREAM SCHEDULE — mirrored from the owner's "PJ's Stream Schedule"
-     graphic for the week of Aug 24–28, 2026. Sessions recur weekly; hosts can
-     shift week to week — TODO: move to the schedule CMS tab so the owner
-     updates this from the Google Sheet without code. -->
+     graphic for the week of Aug 31 – Sep 4, 2026. Sessions recur weekly; hosts
+     can shift week to week — TODO: move to the schedule CMS tab so the owner
+     updates this from the Google Sheet without code, instead of this being a
+     hand edit every Monday.
+
+     Changes from the Aug 24–28 week: Monday 2:30 is off (the graphic says so
+     explicitly, so the page does too rather than leaving a silent gap),
+     Wednesday 2:30 gains Gainz alongside KWT, and Thursday's Asia session is
+     Caleb AND Fin. Session count is unchanged at 15 — see the test in
+     tests/pj-futures.test.mjs that derives the "15 a week" copy from these
+     rows rather than trusting it. -->
 <section id="schedule" style="background:var(--bg2);">
   <div class="section-inner">
     <div style="text-align:center;margin-bottom:40px;" data-reveal>
@@ -1107,6 +1116,10 @@
       <div class="day-card">
         <h3>Monday</h3>
         <div class="session-row"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
+        <!-- Deliberately class="session-row-off", not "session-row": this is the
+             absence of a session, and counting it would inflate the "15 a week"
+             figure that tests/pj-futures.test.mjs derives from these rows. -->
+        <div class="session-row-off"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host">No live trading</span></div>
         <div class="session-row"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
       </div>
       <div class="day-card">
@@ -1119,7 +1132,7 @@
       <div class="day-card">
         <h3>Wednesday</h3>
         <div class="session-row"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host host-pj">Live trading with PJTrades</span></div>
-        <div class="session-row"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host host-kwt">Live trading with KWT</span></div>
+        <div class="session-row"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host host-kwt">Live trading with KWT &amp; Gainz</span></div>
         <div class="session-row"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
       </div>
       <div class="day-card">
@@ -1127,7 +1140,7 @@
         <div class="session-row"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host host-pj">Live trading with PJTrades</span></div>
         <div class="session-row"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host host-kwt">Live trading with KWT</span></div>
         <div class="session-row"><span class="sess-name">Class</span><span class="sess-time">5:30 PM ET</span><span class="host host-caleb">Night class with Caleb</span></div>
-        <div class="session-row"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host host-caleb">Live trading with Caleb</span></div>
+        <div class="session-row"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
       </div>
       <div class="day-card">
         <h3>Friday</h3>
@@ -1379,6 +1392,41 @@
   </div>
 </section>
 
+
+<!-- NEWSLETTER — the site's only email capture.
+     Single opt-in with an explicit consent box, stored in the owner's own D1
+     rather than a hosted form provider (see functions/api/newsletter/). Every
+     subscriber gets an unsubscribe token at signup; /unsubscribe.html also
+     works for anyone who no longer has the link. -->
+<section id="newsletter" style="background:var(--bg2);">
+  <div class="section-inner" style="display:flex;justify-content:center;" data-reveal>
+    <div class="nl">
+      <p class="nl-kicker">Free newsletter</p>
+      <h2 class="nl-title">The guides, in your inbox</h2>
+      <p class="nl-sub">PJ&rsquo;s free guides as they go out, prop firm deals worth knowing about,
+      and the occasional note on what the market is doing. No fixed schedule and no filler
+      &mdash; it goes out when there is something to send.</p>
+      <form class="nl-signup" data-source="home" novalidate>
+        <div class="nl-fields two">
+          <input type="text" name="firstName" autocomplete="given-name" placeholder="First name" aria-label="First name">
+          <input type="email" name="email" autocomplete="email" required placeholder="you@example.com" aria-label="Email address">
+        </div>
+        <div class="nl-hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+        <div class="nl-consent">
+          <input type="checkbox" id="nl-consent-home" name="consent">
+          <label for="nl-consent-home">Yes, email me the newsletter. I can unsubscribe from any email, or at
+            <a href="/unsubscribe.html">this link</a>, at any time.</label>
+        </div>
+        <button type="submit" class="btn btn-gold nl-submit">Send it over</button>
+        <p class="nl-msg" role="status" aria-live="polite"></p>
+      </form>
+      <p class="nl-fine">We store your address to send you this newsletter and nothing else.
+      It is never sold or shared. See our <a href="privacy.html">privacy policy</a>.
+      Educational content only &mdash; not financial advice.</p>
+    </div>
+  </div>
+</section>
+
 <!-- DISCLOSURE -->
 <div class="disclosure">
   <p><strong>⚠️ Important Disclosure:</strong> Investing in financial markets involves risk, including the loss of principal. Past performance is not indicative of future results. Always consider your investment objectives and risk tolerance before making decisions. I am not a licensed financial advisor. All content on this site is for educational purposes only and does not constitute financial advice. We recommend consulting with a licensed financial advisor for personalized advice. I am not in this for the money — but it is said to never give valuable information for free. I am dedicated to helping everyone no matter their situation.</p>
@@ -1425,6 +1473,7 @@
     </div>
     <div class="footer-links" style="margin-top:8px;">
       <a href="privacy.html">Privacy</a>
+      <a href="unsubscribe.html">Unsubscribe</a>
       <a href="terms.html">Terms</a>
       <a href="risk-disclosure.html">Risk Disclosure</a>
     </div>
@@ -1640,10 +1689,13 @@ function toggleTheme() {
 
 // ─── STREAM COUNTDOWN ───
 // Session template mirrored from the weekly schedule section (owner's
-// schedule graphic, week of Aug 24 2026). Live-window lengths are estimates —
+// schedule graphic, week of Aug 31 - Sep 4 2026). Live-window lengths are
+// estimates —
 // TODO: owner to confirm typical session durations.
 const PJ_SESSIONS = [
   { name: 'NYAM',  days: [1, 2, 3, 4, 5], start: 9 * 60 + 30,  mins: 90 },
+  // Tue-Fri only: Monday 2:30 is off on the current schedule, and a countdown
+  // ticking down to a session nobody runs is worse than no countdown.
   { name: 'NYPM',  days: [2, 3, 4, 5],    start: 14 * 60 + 30, mins: 90 },
   { name: 'CLASS', days: [2, 4],          start: 17 * 60 + 30, mins: 60 },
   { name: 'ASIA',  days: [1, 2, 3, 4],    start: 20 * 60,      mins: 90 },
@@ -1863,6 +1915,14 @@ function renderQuizLead(track) {
       '<input id="quiz-lead-email" type="email" required autocomplete="email" placeholder="you@example.com" ' +
         'style="flex:1;min-width:200px;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--accent);color:var(--text);font-size:0.9rem;">' +
       '<button type="submit" class="btn btn-gold" style="font-size:0.9rem;padding:11px 20px;">Send it</button>' +
+      // Affirmative opt-in, same as the two standalone newsletter forms. The
+      // endpoint rejects a signup without it, so this is the consent record,
+      // not a decoration on top of one.
+      '<label style="flex:1 0 100%;display:flex;gap:9px;align-items:flex-start;font-size:0.76rem;color:var(--muted);line-height:1.55;">' +
+        '<input type="checkbox" id="quiz-lead-consent" style="margin:2px 0 0;width:15px;height:15px;flex:none;accent-color:var(--gold);">' +
+        '<span>Yes, email me the free lessons and the newsletter. I can unsubscribe from any email, or at ' +
+        '<a href="unsubscribe.html" style="color:var(--gold-ink);">this link</a>, at any time.</span>' +
+      '</label>' +
     '</form>' +
     '<p style="font-size:0.72rem;color:var(--muted);line-height:1.6;margin:10px 0 0;">' +
       'Used only to send you PJ Trades course and membership emails. No selling, no sharing, unsubscribe in every email. ' +
@@ -1878,13 +1938,16 @@ function renderQuizLead(track) {
     const button = form.querySelector('button');
     msg.textContent = 'Sending…';
     button.disabled = true;
-    window.vjmLead.submit(input.value, { track: track, source: 'homepage-quiz' }).then(function (res) {
+    const consented = !!(document.getElementById('quiz-lead-consent') || {}).checked;
+    window.vjmLead.submit(input.value, { track: track, source: 'homepage-quiz', consent: consented }).then(function (res) {
       button.disabled = false;
       if (res.ok) {
         msg.textContent = 'Sent — check your inbox.';
         form.style.display = 'none';
       } else if (res.reason === 'invalid_email') {
         msg.textContent = 'That does not look like an email address — check it and try again.';
+      } else if (res.reason === 'no_consent') {
+        msg.textContent = 'Tick the box so we know you want the emails — nothing was saved.';
       } else if (res.reason === 'not_configured') {
         // Reachable only if the endpoint is unset out from under us. Never
         // claim the address was stored when it was not.
@@ -2652,6 +2715,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
+<script src="assets/newsletter.js" defer></script>
 <script src="assets/funnel.js" defer></script>
 <script src="assets/live-ticker.js" defer></script>
 <script src="assets/lightning-bg.js" defer></script>

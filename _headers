@@ -61,3 +61,12 @@
 
 /premium-guidance.html
   X-Robots-Tag: noindex, nofollow
+
+# The unsubscribe page must never be indexed. A search result for it is a way
+# for a crawler — or anyone who is not the subscriber — to reach an opt-out
+# flow, and there is nothing here worth ranking.
+/unsubscribe
+  X-Robots-Tag: noindex, nofollow
+
+/unsubscribe.html
+  X-Robots-Tag: noindex, nofollow

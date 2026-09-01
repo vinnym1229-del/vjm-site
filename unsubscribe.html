@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Unsubscribe | PJ Trades x St</title>
+<meta name="description" content="Remove your email address from the PJ Trades newsletter.">
+<!-- Kept out of search results permanently (see _headers): an unsubscribe page
+     has no reason to be indexed, and a crawler following it is one more way an
+     opt-out link gets triggered by something that is not a person. -->
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=IBM+Plex+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/newsletter.css">
+<style>
+  body.vjm-page{margin:0;--vjm-font-body:'IBM Plex Sans',system-ui,sans-serif}
+  .wrap{max-width:640px;margin:0 auto;padding:64px 22px 90px}
+  .back{display:inline-block;margin-bottom:26px;color:var(--vjm-muted);text-decoration:none;font-size:.82rem;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+  .back:hover{color:var(--vjm-red)}
+  footer{border-top:1px solid var(--vjm-border);padding:26px;text-align:center;color:var(--vjm-muted);font-size:.78rem}
+  footer a{color:var(--vjm-muted)}
+  a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--vjm-red);outline-offset:3px;border-radius:4px}
+</style>
+<script src="assets/theme.js"></script>
+</head>
+<body class="vjm-page">
+<main class="wrap">
+  <a class="back" href="/">← PJ Trades</a>
+
+  <!-- The one-click link from an email footer hits
+       /api/newsletter/unsubscribe?token=… , which removes the address and then
+       redirects here with ?state=done. The reader is already unsubscribed by
+       the time they see this page; the form below is only for someone who no
+       longer has the link. -->
+  <p id="nl-state" class="nl-msg" role="status" aria-live="polite"></p>
+
+  <div class="nl" style="margin-top:18px">
+    <p class="nl-kicker">Newsletter</p>
+    <h1 class="nl-title">Unsubscribe</h1>
+    <p class="nl-sub">Enter the address you want removed. No login, no reason needed,
+    and no confirmation step — one submit and you are off the list for good.</p>
+
+    <form class="nl-unsub" novalidate>
+      <div class="nl-fields">
+        <input type="email" name="email" autocomplete="email" required
+               placeholder="you@example.com" aria-label="Email address to remove">
+      </div>
+      <button type="submit" class="vjm-btn vjm-btn-primary nl-submit">Unsubscribe me</button>
+      <p class="nl-msg" role="status" aria-live="polite"></p>
+    </form>
+
+    <p class="nl-fine">
+      We do not tell you whether an address was on the list, because answering
+      that would let anyone use this page to check whether a given address is
+      subscribed. Either way, the address you enter will not receive further
+      emails from us. Removal is immediate; anything already in the queue when
+      you unsubscribe may still land. See our <a href="privacy.html">privacy policy</a>.
+    </p>
+  </div>
+</main>
+
+<footer><a href="risk-disclosure.html">Risk Disclosure</a> · <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></footer>
+<script src="assets/newsletter.js" defer></script>
+</body>
+</html>

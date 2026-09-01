@@ -863,6 +863,17 @@ body.light-mode .tier-card li .tick,body.light-mode .tier-plus,body.light-mode .
    every row of every day card. */
 .session-row{display:grid;grid-template-columns:64px 108px minmax(0,1fr);align-items:baseline;column-gap:14px;padding:9px 0;border-bottom:1px solid var(--border);font-size:.88rem;}
 .session-row:last-child{border-bottom:none;}
+/* A slot the schedule graphic explicitly marks as off. Same grid as a real
+   session so the times stay in column, but muted and struck through the middle
+   column so it reads as "nothing here" at a glance rather than as one more
+   thing to show up for. Its own class, not a modifier on .session-row, because
+   the "15 sessions a week" copy is derived by counting .session-row and a
+   cancelled slot is not a session. */
+.session-row-off{display:grid;grid-template-columns:64px 108px minmax(0,1fr);align-items:baseline;column-gap:14px;padding:9px 0;border-bottom:1px solid var(--border);font-size:.88rem;opacity:.55;}
+.session-row-off:last-child{border-bottom:none;}
+.session-row-off .sess-name{font-weight:800;color:var(--muted);white-space:nowrap;text-decoration:line-through;}
+.session-row-off .sess-time{color:var(--muted);font-weight:600;white-space:nowrap;text-align:center;font-variant-numeric:tabular-nums;text-decoration:line-through;}
+.session-row-off .host{color:var(--muted);font-weight:700;text-align:right;min-width:0;}
 .session-row .sess-name{font-weight:800;color:var(--text);white-space:nowrap;}
 .session-row .sess-time{color:var(--muted);font-weight:600;white-space:nowrap;text-align:center;font-variant-numeric:tabular-nums;}
 .host{font-weight:800;text-align:right;min-width:0;}
@@ -873,6 +884,9 @@ body.light-mode .tier-card li .tick,body.light-mode .tier-plus,body.light-mode .
   .session-row{grid-template-columns:56px minmax(0,1fr);row-gap:2px;padding:10px 0;}
   .session-row .sess-time{text-align:left;}
   .session-row .host{grid-column:1 / -1;text-align:left;font-weight:700;}
+  .session-row-off{grid-template-columns:56px minmax(0,1fr);row-gap:2px;padding:10px 0;}
+  .session-row-off .sess-time{text-align:left;}
+  .session-row-off .host{grid-column:1 / -1;text-align:left;font-weight:700;}
 }
 
 /* ─── TEAM CARDS ─── */

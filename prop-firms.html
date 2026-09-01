@@ -19,6 +19,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=IBM+Plex+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/newsletter.css">
 <style>
   body.vjm-page{margin:0;--vjm-font-body:'IBM Plex Sans',system-ui,sans-serif}
   .nav{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;
@@ -139,6 +140,66 @@ body.light-mode .nav-top{ background:rgba(0,0,0,.05); }
        still valid before relying on them — was unverified as of 2026-08-24. -->
   <div id="firms" class="firms" aria-live="polite"></div>
   <noscript><p class="empty">Enable JavaScript to load the firm directory.</p></noscript>
+
+  <!-- ── THE PROP FIRM PLAYBOOK ─────────────────────────────────────────────
+       PJ hosts these two guides on Notion and links them from Discord; this
+       section is the on-site entry point to the same page rather than a second
+       copy of the files, so there is one place to update when a guide changes.
+
+       The Notion URL lives in exactly ONE place: data-playbook-url below. If it
+       is empty the whole section removes itself, which is why no placeholder or
+       "coming soon" state ships — a dead link to a free resource is worse than
+       no link. Paste the shared Notion page URL there and the section appears.
+       TODO: owner to paste the Notion page URL.
+
+       What is deliberately NOT reproduced here: the discount percentages, the
+       per-account prices, the promo code, and the "$10K / month" figure that
+       appear inside the PDFs. Prices and codes go stale silently and belong in
+       the owner-managed sheet that drives the cards above; an income figure
+       stated on-site is a performance claim about a paid product, which is the
+       one thing this site does not make. The guides say what they say; the
+       site describes them without repeating either. -->
+  <section id="playbook" data-playbook-url="" style="margin-top:52px" hidden>
+    <span class="vjm-chip red">Free guide</span>
+    <h2 style="font-family:var(--vjm-font-display);text-transform:uppercase;font-weight:900;font-size:clamp(1.5rem,5vw,2.1rem);margin:10px 0 8px">The Prop Firm Playbook</h2>
+    <p style="color:var(--vjm-muted);max-width:640px;margin:0 0 18px;line-height:1.7">
+      Two PDFs PJ put together, free and hosted on Notion. The
+      <strong>Account Guide</strong> compares the account types side by side so you
+      can tell which rule set matches how you actually trade. The
+      <strong>Prop Firm Scaling Guide</strong> walks through how he would approach
+      scaling one account into several. Educational only, and the pricing inside
+      is whatever was current when it was written — check the firm&rsquo;s own site.
+    </p>
+    <a class="vjm-btn vjm-btn-primary" id="playbook-link" target="_blank" rel="noopener noreferrer" href="#">Open the playbook on Notion &nearr;</a>
+  </section>
+
+  <!-- ── NEWSLETTER ─────────────────────────────────────────────────────────
+       Single opt-in with an explicit consent box, stored in the owner's own D1
+       (see functions/api/newsletter/). Every address gets an unsubscribe token
+       at signup and /unsubscribe.html works without one. -->
+  <div class="nl" id="newsletter" style="margin-top:52px">
+    <p class="nl-kicker">Newsletter</p>
+    <h2 class="nl-title">Get the guides and the next one</h2>
+    <p class="nl-sub">New prop firm deals, rule changes worth knowing about, and each new
+    guide as it goes out. No fixed schedule &mdash; PJ sends it when there is something to send.</p>
+    <form class="nl-signup" data-source="prop-firms" novalidate>
+      <div class="nl-fields two">
+        <input type="text" name="firstName" autocomplete="given-name" placeholder="First name" aria-label="First name">
+        <input type="email" name="email" autocomplete="email" required placeholder="you@example.com" aria-label="Email address">
+      </div>
+      <div class="nl-hp" aria-hidden="true"><label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+      <div class="nl-consent">
+        <input type="checkbox" id="nl-consent-pf" name="consent">
+        <label for="nl-consent-pf">Yes, email me the newsletter. I can unsubscribe from any email, or at
+          <a href="/unsubscribe.html">this link</a>, at any time.</label>
+      </div>
+      <button type="submit" class="vjm-btn vjm-btn-primary nl-submit">Send it over</button>
+      <p class="nl-msg" role="status" aria-live="polite"></p>
+    </form>
+    <p class="nl-fine">We store your address to send you this newsletter and nothing else. It is
+    never sold and never passed to a firm listed above. See our <a href="privacy.html">privacy policy</a>.
+    Educational content only &mdash; not financial advice.</p>
+  </div>
 </main>
 
 <footer>PJ Trades x St · Owner-managed directory · Educational only — not financial advice</footer>
@@ -226,6 +287,20 @@ body.light-mode .nav-top{ background:rgba(0,0,0,.05); }
   })();
 })();
 </script>
+<script>
+// The playbook section is present in the HTML but hidden until the owner sets
+// data-playbook-url, so an unconfigured deployment shows nothing rather than a
+// link that goes nowhere.
+(function(){
+  var sec = document.getElementById('playbook');
+  if (!sec) return;
+  var url = (sec.getAttribute('data-playbook-url') || '').trim();
+  if (!/^https:\/\//.test(url)) return;
+  document.getElementById('playbook-link').href = url;
+  sec.hidden = false;
+})();
+</script>
+<script src="assets/newsletter.js" defer></script>
 <script src="assets/lightning-bg.js" defer></script>
 </body>
 </html>
