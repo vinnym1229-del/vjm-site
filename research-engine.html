@@ -64,7 +64,30 @@
   body.light-mode .nav .nav-drop a{color:var(--muted,#5f5f66)}
   body.light-mode .nav .nav-drop a:hover,
   body.light-mode .nav .nav-drop a.on{color:var(--red,#b3251d);background:rgba(179,37,29,.07)}
-  </style>
+  
+/* ─── MOBILE NAV: collapse the link row ───────────────────────────────
+   This page has no hamburger, so at 380px every dropdown trigger stacked
+   vertically and the nav grew to ~200-290px tall, with the links sitting on
+   top of the brand. No JS and no new markup: below 620px the row becomes a
+   single horizontally-scrollable strip, so the nav is one line again and
+   every link stays reachable. */
+@media (max-width: 620px) {
+  .nav { flex-wrap: wrap; row-gap: 6px; padding-left: 12px; padding-right: 12px; }
+  .links {
+    order: 3;
+    flex: 1 0 100%;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 14px;
+    padding-bottom: 2px;
+  }
+  .links::-webkit-scrollbar { display: none; }
+  .links > * { flex: 0 0 auto; white-space: nowrap; }
+}
+</style>
 <script src="assets/theme.js"></script>
 </head>
 <body>

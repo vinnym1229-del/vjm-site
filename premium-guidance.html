@@ -90,6 +90,29 @@ body.light-mode #lesson-companion>div,
 body.light-mode #market-analyst>div{background:var(--bg2)!important}
 body.light-mode #analyst-metrics>div{background:#ffffff!important;border-color:var(--bdr)!important}
 body.light-mode footer{background:#ffffff!important;border-top-color:var(--bdr)}
+
+/* ─── MOBILE NAV: collapse the link row ───────────────────────────────
+   This page has no hamburger, so at 380px every dropdown trigger stacked
+   vertically and the nav grew to ~200-290px tall, with the links sitting on
+   top of the brand. No JS and no new markup: below 620px the row becomes a
+   single horizontally-scrollable strip, so the nav is one line again and
+   every link stays reachable. */
+@media (max-width: 620px) {
+  .nav { flex-wrap: wrap; row-gap: 6px; padding-left: 12px; padding-right: 12px; }
+  .nav-links {
+    order: 3;
+    flex: 1 0 100%;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 14px;
+    padding-bottom: 2px;
+  }
+  .nav-links::-webkit-scrollbar { display: none; }
+  .nav-links > * { flex: 0 0 auto; white-space: nowrap; }
+}
 </style>
 <script src="assets/theme.js"></script>
 <script>window.vjmTrackQueue = window.vjmTrackQueue || [];

@@ -171,3 +171,13 @@ body.light-mode .skeleton:after{background:linear-gradient(90deg,transparent,rgb
 @media(max-width:760px){.provenance-list{grid-template-columns:1fr;gap:3px 0}.provenance-list dd{margin-bottom:6px}}
 body.light-mode .provenance{background:rgba(0,0,0,.025)}
 body.light-mode .provenance.missing{background:rgba(0,0,0,.035)}
+
+/* ─── NARROW VIEWPORTS ───────────────────────────────────────────────────
+   .hero h1 was clamp(3.4rem, 7vw, 7.2rem): at 380px the 7vw term is ~27px,
+   so the 3.4rem (54px) FLOOR won -- the headline could never shrink and a
+   long word ("CONDITION.") pushed the page 70px wide. The floor has to be
+   small enough for the narrowest supported width. */
+@media (max-width: 620px) {
+  .hero h1 { font-size: clamp(2.1rem, 9vw, 7.2rem); overflow-wrap: anywhere; }
+  .hero-copy, .system-card { padding: 20px 16px; border-radius: 20px; }
+}

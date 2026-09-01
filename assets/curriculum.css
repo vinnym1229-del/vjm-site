@@ -363,3 +363,12 @@ body.light-mode .curr .nav-cta a.join,body.light-mode.curr .nav-cta a.join{box-s
 body.light-mode .curr .tool h2,body.light-mode.curr .tool h2,
 body.light-mode .curr .essay h2,body.light-mode.curr .essay h2{border-bottom-color:rgba(179,37,29,.22);}
 body.light-mode .curr .skeleton::after,body.light-mode.curr .skeleton::after{background:linear-gradient(90deg,transparent,rgba(0,0,0,.06),transparent);}
+
+/* The course nav carries 26px of horizontal padding plus a non-shrinking
+   action cluster, which pushed the page 3px wide at 380px -- small, but it
+   is what makes a phone rubber-band sideways on every course page. */
+@media (max-width: 560px) {
+  .curr nav{ padding-left:14px; padding-right:14px; gap:8px; }
+  .curr .nav-cta{ min-width:0; gap:8px; }
+  .curr .nav-cta > *{ min-width:0; }
+}

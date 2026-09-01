@@ -95,6 +95,24 @@ body.light-mode .news-item{border-color:rgba(20,20,22,.09);background:#fafafa}
 body.light-mode .news-item a{color:var(--text)}
 body.light-mode .note{border-color:rgba(179,37,29,.22);background:rgba(179,37,29,.06);color:var(--soft)}
 body.light-mode .footer{border-top-color:var(--line);color:var(--muted)}
+
+/* ─── MOBILE NAV: collapse the link row ───────────────────────────────
+   An earlier rule turned the whole nav into a column below 920px, so brand,
+   links and CTA each took a full row and the nav grew to ~288px on a phone.
+   Keep it a row and let the link strip scroll horizontally instead; selectors
+   are `.nav .links` to match the specificity of the rules being overridden. */
+@media (max-width: 920px) {
+  .nav { flex-direction: row; align-items: center; flex-wrap: wrap; row-gap: 6px;
+         padding-left: 12px; padding-right: 12px; }
+  .nav div { width: auto; }
+  .nav .links {
+    order: 3; flex: 1 0 100%; flex-wrap: nowrap; justify-content: flex-start;
+    overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    gap: 2px; padding-bottom: 2px; width: 100%;
+  }
+  .nav .links::-webkit-scrollbar { display: none; }
+  .nav .links > * { flex: 0 0 auto; }
+}
 </style>
 <script src="assets/theme.js"></script>
 </head>
