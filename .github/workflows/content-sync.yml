@@ -77,25 +77,36 @@ jobs:
           echo ""
           echo "------------"
 
-      # TEMPORARY: verify the freshly redeployed Apps Script web app is
-      # genuinely public (a plain GET, no auth needed — doGet() requires
-      # nothing) before it gets wired into Cloudflare as CONTENT_BRIDGE_URL.
-      # A Google sign-in page or a non-JSON body here means the deployment
-      # still is not actually public, whatever the dropdown in the UI says.
-      - name: Diagnostic — is the new Apps Script deployment actually public
+      # TEMPORARY: the custom domain 502s on POST /api/content-sync with a
+      # bare "error code: 502" (no JSON — an edge failure, not the Function
+      # throwing), while the SAME Production deployment's .pages.dev alias
+      # returns a real Function response. That already rules out the
+      # Functions build itself. What's still unknown is whether the 502 is
+      # specific to the /api/* path (a Functions routing rule, or a Worker
+      # route bound to /api/* on this zone shadowing the Pages Function) or
+      # the custom domain is broken end-to-end (DNS, SSL, or the domain not
+      # actually attached to this Pages project). A plain GET of both
+      # domains' document roots, side by side, tells them apart: root 502
+      # too => domain-wide (check Cloudflare Pages -> Custom domains tab for
+      # not-financial-advice-vjm.com's status); root 200 but /api/* 502 =>
+      # routing, most likely a Workers Route on this zone intercepting /api/*
+      # ahead of the Pages Function.
+      - name: Diagnostic — is the custom domain broken domain-wide or just on /api/*
         if: always()
         continue-on-error: true
         shell: bash
         run: |
           set -uo pipefail
-          code="$(curl --silent --show-error -L --retry 2 --max-time 30 \
-            -o /tmp/apps-script-response.txt -w '%{http_code}' \
-            "https://script.google.com/macros/s/AKfycbyNEZ-qkLS2rUKEADTcQcL7eEgCnFrF9BzW00tioPSZPXOkMtJsoelLVJeUbKyIOyQj/exec")"
-          echo "Apps Script GET HTTP status: $code"
-          echo "--- body (first 500 chars) ---"
-          head -c 500 /tmp/apps-script-response.txt || true
-          echo ""
-          echo "------------"
+          for target in "custom-domain::${RESEARCH_REFRESH_URL%/}/" "pages-dev::https://vjm.pages.dev/"; do
+            label="${target%%::*}"; url="${target#*::}"
+            code="$(curl --silent --show-error --retry 2 --max-time 30 \
+              -o "/tmp/root-${label}.html" -w '%{http_code}' "$url")"
+            echo "$label root ($url) HTTP status: $code"
+            echo "--- first 300 chars ---"
+            head -c 300 "/tmp/root-${label}.html" || true
+            echo ""
+            echo "------------"
+          done
 
       - name: Pull the sheet into D1
         shell: bash
