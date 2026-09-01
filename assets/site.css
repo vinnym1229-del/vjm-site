@@ -1129,3 +1129,79 @@ body.light-mode #stream-countdown-bar .cd-live{
   color:var(--gold);
 }
 body.light-mode #stream-countdown-bar .cd-live-dot{background:var(--gold);}
+
+/* ─── FERRARI SHOWCASE ───────────────────────────────────────────────────
+   A real photo of the owner and his car, pinned on the left while this band
+   scrolls by. The rotation is driven by how far the visitor has actually
+   scrolled through .fs-track (see the scroll-driven spin script near the end
+   of index.html) rather than a time-based loop, so it can never drift out of
+   sync with the scrollbar. Nothing here may clip overflow — sticky
+   positioning breaks the moment an ancestor does. */
+#ferrari-showcase { background: var(--bg); position: relative; }
+.fs-track { height: 220vh; position: relative; }
+.fs-stage {
+  position: sticky; top: 0; height: 100vh;
+  display: flex; align-items: center;
+  padding-left: clamp(20px, 7vw, 100px);
+  perspective: 1400px;
+}
+.fs-card {
+  position: relative;
+  width: min(340px, 62vw);
+  transform-style: preserve-3d;
+  /* backface-visibility is a safety net, not decoration: a single photo has
+     no back side, so the rotation is clamped in JS to an oscillation that
+     never reaches 90deg. If that ever overshot, this hides the mirrored,
+     backwards card that rotateY would otherwise render past the edge,
+     instead of showing something that looks broken. */
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  transform: rotateY(var(--fs-deg, 0deg)) translateY(var(--fs-float, 0px)) scale(var(--fs-scale, 1));
+  will-change: transform;
+}
+/* Showroom spotlight: without something lighting the card from behind, the
+   rotation reads as "a flat photo tilting" instead of "an object turning in
+   space" — the glow is what sells the illusion. */
+.fs-card::before {
+  content: ''; position: absolute; inset: -18%;
+  background: radial-gradient(closest-side, var(--red-soft) 0%, transparent 72%);
+  filter: blur(6px); z-index: -1;
+  transform: translateZ(-60px) scale(1.1);
+}
+.fs-card img {
+  display: block; width: 100%; height: auto;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  box-shadow: 0 26px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.03) inset;
+}
+.fs-caption {
+  margin: 14px 2px 0; font-size: .8rem; color: var(--muted);
+  font-family: 'Barlow Condensed', sans-serif; letter-spacing: .3px;
+}
+/* Floor reflection: the same image, flipped and faded — the classic
+   "product shot on glass" trick. Cheap to render, reads as expensive. */
+.fs-card::after {
+  content: '';
+  position: absolute; left: 0; right: 0; top: 100%; height: 55%;
+  background-image: url('pj-ferrari.jpg');
+  background-size: 100% auto; background-position: top center;
+  transform: scaleY(-1);
+  opacity: .16;
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,.6), transparent 70%);
+          mask-image: linear-gradient(to bottom, rgba(0,0,0,.6), transparent 70%);
+  border-radius: 22px;
+  pointer-events: none;
+}
+@media (max-width: 760px) {
+  /* A 220vh pinned scroll band is mostly dead space on a phone, and the 3D
+     spin reads as jitter rather than "cool" at this width — show a normal
+     static card in the flow instead of pinning and rotating it. */
+  .fs-track { height: auto; }
+  .fs-stage { position: static; height: auto; padding: 40px 20px; justify-content: center; perspective: none; }
+  .fs-card { transform: none !important; width: min(300px, 78vw); }
+  .fs-card::after { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fs-track { height: auto; }
+  .fs-stage { position: static; height: auto; padding: 40px 20px; justify-content: center; }
+  .fs-card { transform: none !important; }
+}

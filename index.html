@@ -407,6 +407,26 @@
   <div class="proof-item"><strong>$50,000</strong><span>prop firm funding giveaways</span></div>
 </div>
 
+<!-- FERRARI SHOWCASE — PJ's own photo, pinned on the left while this band
+     scrolls by, rotating on scroll progress rather than a fixed animation
+     loop (so it always matches how far the visitor has actually scrolled,
+     instead of drifting out of sync). Collapses to a static inline card on
+     narrow screens and under prefers-reduced-motion: see assets/site.css
+     and the "FERRARI SHOWCASE — scroll-driven spin" script near the end of
+     this file. Real photo, not a render — see docs/OWNER-CHECKLIST.md if a
+     higher-resolution copy ever replaces assets/pj-ferrari.jpg. -->
+<section id="ferrari-showcase" aria-label="PJ's Ferrari">
+  <div class="fs-track">
+    <div class="fs-stage">
+      <div class="fs-card">
+        <img src="assets/pj-ferrari.jpg" width="482" height="650" loading="lazy"
+             alt="PJ standing beside his red Ferrari 488 Spider">
+        <p class="fs-caption">Yes, it's real. Futures pay the bills.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- WHAT YOU GET — futures-first feature showcase (recreated from the owner's Whop carousel, 2026-08-24) -->
 <section id="features" style="background:var(--bg);">
   <div class="liquid-bg soft" aria-hidden="true">
@@ -2748,6 +2768,48 @@ setInterval(tickSessionClock, 30000);
   targets.forEach(function (el) { el.classList.add('reveal-init'); io.observe(el); });
   sweep();
   window.addEventListener('scroll', sweep, { passive: true });
+})();
+
+// ─── FERRARI SHOWCASE — scroll-driven spin ─────────────────────────────────
+// Rotation tracks how far the visitor has scrolled through .fs-track, not a
+// timer, so pausing mid-scroll pauses the spin exactly where it was. Skips
+// entirely under prefers-reduced-motion, on narrow screens, or if the markup
+// isn't on the page — .fs-track's height collapses to auto below 760px (see
+// assets/site.css), so there is nothing useful to track there anyway.
+//
+// The angle OSCILLATES rather than spinning through a full 360: this is one
+// photo taken from one angle, so there is no "back" of the car to rotate
+// into. A full spin would cross 90deg and show a mirrored, backwards card
+// for half of every turn. Swinging between +/-AMPLITUDE keeps the real photo
+// facing forward the entire time while still reading as continuous 3D motion
+// as the visitor scrolls.
+(function () {
+  'use strict';
+  var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var track = document.querySelector('.fs-track');
+  var card = document.querySelector('.fs-card');
+  if (reduced || !track || !card || window.innerWidth <= 760) return;
+
+  var AMPLITUDE = 30;   // degrees either side of facing forward
+  var SWINGS = 4;       // full back-and-forth cycles across the track
+
+  var ticking = false;
+  function update() {
+    ticking = false;
+    var rect = track.getBoundingClientRect();
+    var scrollable = rect.height - window.innerHeight;
+    var progress = scrollable > 0 ? Math.min(1, Math.max(0, -rect.top / scrollable)) : 0;
+    var wave = Math.sin(progress * Math.PI * SWINGS);
+    card.style.setProperty('--fs-deg', (wave * AMPLITUDE) + 'deg');
+    card.style.setProperty('--fs-float', (wave * -10) + 'px');
+    card.style.setProperty('--fs-scale', (1 + Math.abs(wave) * 0.04).toFixed(3));
+  }
+  function onScroll() {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }
+  update();
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
 })();
 </script>
 
