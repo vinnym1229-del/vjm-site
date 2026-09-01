@@ -107,6 +107,21 @@ jobs:
             echo ""
             echo "------------"
           done
+          # Also check a second, unrelated, GET-only /api/* route (read-only,
+          # no side effects). If THIS also 502s on the custom domain, the
+          # break is /api/*-wide (a Workers Route on the zone matching /api/*
+          # would explain it). If it 200s while content-sync alone 502s, the
+          # break is specific to that one path.
+          for target in "custom-domain::${RESEARCH_REFRESH_URL%/}/api/content" "pages-dev::https://vjm.pages.dev/api/content"; do
+            label="${target%%::*}"; url="${target#*::}"
+            code="$(curl --silent --show-error --retry 2 --max-time 30 \
+              -o "/tmp/api-content-${label}.json" -w '%{http_code}' "$url")"
+            echo "$label GET /api/content ($url) HTTP status: $code"
+            echo "--- first 200 chars ---"
+            head -c 200 "/tmp/api-content-${label}.json" || true
+            echo ""
+            echo "------------"
+          done
 
       - name: Pull the sheet into D1
         shell: bash
