@@ -81,3 +81,35 @@ test('prop-firms page states no unverified specifics in code', () => {
   assert.match(propFirms, /rel="noopener noreferrer sponsored"/, 'outbound firm links must be marked sponsored');
   assert.match(propFirms, /TODO: owner to confirm/);
 });
+
+test('mobile polish: the three defects reported from a phone stay fixed', () => {
+  const html = read('index.html');
+
+  // 1. The play button was the "▶" character, which iOS and Android render as
+  //    a colour emoji — it looked like an emoji pasted onto the poster.
+  assert.doesNotMatch(html, /class="video-play"[^>]*>\s*<span>[▶►]/u, 'play button must not be a glyph');
+  assert.match(html, /class="video-play">[\s\S]{0,400}?<svg[^>]*viewBox="0 0 24 24"/, 'play button must be an inline SVG triangle');
+  // …and it was centred, which put it squarely on PJ's face at every width.
+  assert.match(siteCss, /\.video-poster\{[^}]*justify-content:flex-end/, 'poster controls sit in the lower third, off the subject');
+
+  // 2. The poster title used var(--text): dark text on the dark end of the
+  //    poster gradient, so it was invisible in light mode.
+  assert.doesNotMatch(siteCss, /\.video-poster-title\{[^}]*color:var\(--text\)/, 'title must not inherit the theme text colour');
+  assert.match(siteCss, /\.video-poster-title\{[^}]*color:#fff/, 'title is white over the poster in both themes');
+  assert.match(siteCss, /body\.light-mode \.video-poster-title\{color:#fff;\}/, 'light mode must not repaint it dark');
+
+  // 3. The hero badge was an inline-flex row, so each phrase wrapped on its own
+  //    and "5.0", "★ on Whop", the review count and the join count landed on
+  //    different lines at different baselines.
+  assert.doesNotMatch(siteCss, /\.hero-badge\{[^}]*display:inline-flex/, 'badge must not be a flex row');
+  assert.match(siteCss, /\.hero-badge\{[^}]*display:inline-block/);
+  assert.match(siteCss, /\.hero-badge \.hb-item\{white-space:nowrap;\}/, 'each figure stays glued to its label');
+  // A break may only happen at a separator, so every figure keeps its label.
+  for (const [id, label] of [['hb-rating', '★ on Whop'], ['hb-reviews', 'reviews'], ['hb-joined', 'joined']]) {
+    assert.match(html, new RegExp(`<span class="hb-item">(?:<span class="pulse-dot"></span>)?<span id="${id}">[^<]+</span>\\s*${label}</span>`),
+      `${id} must sit inside a nowrap .hb-item with its own label`);
+  }
+  // The pulsing dot lives inside the first item so it cannot be orphaned onto
+  // a line of its own, which is exactly what it did at 360px.
+  assert.match(html, /<span class="hb-item"><span class="pulse-dot"><\/span>/);
+});

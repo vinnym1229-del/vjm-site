@@ -349,7 +349,7 @@
     </g>
   </svg>
   <div class="hero-inner" style="position:relative;z-index:2;">
-    <div class="hero-badge"><span class="pulse-dot"></span> <span id="hb-rating">5.0</span>★ on Whop · <span id="hb-reviews">2,240</span> reviews · <span id="hb-joined">49,136</span> joined</div>
+    <div class="hero-badge"><span class="hb-item"><span class="pulse-dot"></span><span id="hb-rating">5.0</span>★ on Whop</span><span class="hb-sep" aria-hidden="true">·</span><span class="hb-item"><span id="hb-reviews">2,240</span> reviews</span><span class="hb-sep" aria-hidden="true">·</span><span class="hb-item"><span id="hb-joined">49,136</span> joined</span></div>
     <h1><span class="bolt-wrap">PJ<svg class="bolt-underline" viewBox="0 -10 140 44" preserveAspectRatio="none" aria-hidden="true">
       <g class="bolt-glow">
         <path class="bg-trunk" d="M2,15 L22,4 L36,20 L56,3 L72,21 L92,5 L108,17 L138,9"/>
@@ -529,7 +529,12 @@
              it until the visitor scrolls near the video. Gradient overlays it. -->
         <img class="video-poster-img" src="assets/pj-intro-poster.jpg" alt="" width="1600" height="900" loading="lazy" decoding="async">
         <div class="video-poster-glow"></div>
-        <div class="video-play"><span>▶</span></div>
+        <div class="video-play">
+          <!-- An inline SVG triangle, not a "▶" glyph: the character renders as a
+               colour emoji on iOS and Android, which is why this button looked like
+               a pasted-in emoji on mobile. -->
+          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" focusable="false"><path d="M8 5.2v13.6a1 1 0 0 0 1.53.85l10.6-6.8a1 1 0 0 0 0-1.7L9.53 4.35A1 1 0 0 0 8 5.2Z" fill="currentColor"/></svg>
+        </div>
         <p class="video-poster-title">PJ Trades — Live Futures Trading &amp; Analysis</p>
       </div>
     </div>

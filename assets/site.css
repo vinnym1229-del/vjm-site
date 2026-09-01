@@ -402,6 +402,12 @@ body.light-mode .nav-drop a:hover { color: #141416; }
   display: flex; align-items: center; justify-content: center; gap: 40px; flex-wrap: wrap;
 }
 .proof-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--muted); }
+/* Four items across one flex line wrap 2/1/1 on a phone, which reads as a
+   mistake rather than a layout. Below 640px they become an even 2x2 grid. */
+@media (max-width: 640px) {
+  .proof-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; padding: 16px; }
+  .proof-item { flex-direction: column; align-items: center; text-align: center; gap: 2px; line-height: 1.3; }
+}
 .proof-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); animation: pulse 2s infinite; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 .proof-item strong { color: var(--text); }
@@ -757,18 +763,24 @@ body.light-mode .bolt-underline .bh-trunk { filter: drop-shadow(0 0 4px rgba(20,
 /* ─── VIDEO FACADE (lazy; nothing loads until clicked) ─── */
 .video-facade{position:relative;z-index:3;aspect-ratio:16/9;border-radius:20px;overflow:hidden;border:1px solid var(--border-strong);cursor:pointer;box-shadow:0 20px 60px rgba(0,0,0,.5);outline:none;background:#0c0c0d;isolation:isolate;}
 .video-facade:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
-.video-poster{position:relative;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#131315;}
+/* The play button and title sit in the lower third rather than dead centre:
+   centred, the button landed squarely on PJ's face at every width. */
+.video-poster{position:relative;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:14px;padding:0 18px 7%;background:#131315;}
 .video-poster-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;}
-.video-poster::before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(12,12,13,.10) 0%,rgba(12,12,13,.24) 55%,rgba(12,12,13,.86) 100%);pointer-events:none;}
+.video-poster::before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(12,12,13,.10) 0%,rgba(12,12,13,.28) 48%,rgba(12,12,13,.92) 100%);pointer-events:none;}
 .video-poster>*:not(.video-poster-img){position:relative;z-index:2;}
 /* Neutral vignette only -- the red/gold wash used to tint the poster and
    made the thumbnail look muddy. The red ambience stays on every other
    section, just not across the player. */
 .video-poster-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,transparent 45%,rgba(12,12,13,.55) 100%);}
-.video-play{position:relative;width:84px;height:84px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 10px rgba(209,67,67,.12),0 12px 40px rgba(0,0,0,.4);transition:transform .2s;}
+.video-play{position:relative;width:clamp(56px,14vw,76px);height:clamp(56px,14vw,76px);border-radius:50%;background:var(--gold);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 8px rgba(209,67,67,.14),0 12px 40px rgba(0,0,0,.4);transition:transform .2s;}
 .video-facade:hover .video-play{transform:scale(1.08);}
-.video-play span{font-size:1.7rem;color:#fff;margin-left:5px;}
-.video-poster-title{position:relative;font-family:'Barlow Condensed',sans-serif;font-size:1.15rem;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--text);}
+.video-play svg{width:42%;height:42%;margin-left:8%;display:block;}
+/* Always white, in both themes: this text sits on the dark end of the poster
+   gradient, not on the page background, so var(--text) made it invisible in
+   light mode. The shadow keeps it readable over a bright frame of the video. */
+.video-poster-title{position:relative;margin:0;max-width:100%;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:clamp(.82rem,3.2vw,1.15rem);line-height:1.25;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.75);}
+body.light-mode .video-poster-title{color:#fff;}
 .video-facade iframe,.video-facade video{position:absolute;inset:0;width:100%;height:100%;border:0;}
 .video-note{display:none;text-align:center;padding:40px 20px;color:var(--muted);font-size:.9rem;}
 
@@ -922,8 +934,15 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
 }
 
 /* ─── HERO EXTRAS ─── */
-.hero-badge{display:inline-flex;align-items:center;gap:9px;background:var(--emerald-glow);border:1px solid var(--border);border-radius:999px;padding:7px 16px;font-size:.8rem;font-weight:800;color:var(--text);margin-bottom:22px;}
-.pulse-dot{width:9px;height:9px;border-radius:50%;background:var(--emerald);box-shadow:0 0 0 0 rgba(255,255,255,.25);animation:pulseDot 2s infinite;}
+/* Deliberately NOT a flex row. As flex, each phrase was its own item and
+   wrapped independently at phone widths — "5.0", "\2605 on", "Whop \00B7" and the
+   counts all landed on different lines and different baselines. Normal inline
+   text flow gives them one shared baseline; .hb-item keeps each figure glued
+   to its own label so a break can only happen at a separator. */
+.hero-badge{display:inline-block;max-width:100%;text-align:center;background:var(--emerald-glow);border:1px solid var(--border);border-radius:999px;padding:7px 16px;font-size:.8rem;line-height:1.55;font-weight:800;color:var(--text);margin-bottom:22px;}
+.hero-badge .hb-item{white-space:nowrap;}
+.hero-badge .hb-sep{margin:0 .45em;opacity:.55;}
+.pulse-dot{display:inline-block;vertical-align:middle;margin-right:9px;position:relative;top:-1px;width:9px;height:9px;border-radius:50%;background:var(--emerald);box-shadow:0 0 0 0 rgba(255,255,255,.25);animation:pulseDot 2s infinite;}
 @keyframes pulseDot{0%{box-shadow:0 0 0 0 rgba(255,255,255,.22)}70%{box-shadow:0 0 0 12px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
 @media (prefers-reduced-motion: reduce){.pulse-dot{animation:none}}
 .hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:30px;}
