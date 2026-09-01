@@ -50,6 +50,12 @@ assert.match(html, /Educational research only—not financial advice/);
 // Sessions travel via HttpOnly cookies; no Bearer tokens in client code.
 assert.doesNotMatch(javascript, /Authorization\s*=\s*'Bearer '/, 'client code must not attach Bearer tokens');
 assert.doesNotMatch(javascript, /localStorage\.getItem\(/, 'client code must not read tokens from storage');
-assert.doesNotMatch(readFileSync(resolve(root, 'CNAME'), 'utf8'), /\s+\n/, 'CNAME must not contain trailing whitespace');
+// CNAME is a GitHub Pages convention. This site deploys via Cloudflare
+// Pages, which takes its custom domains from the dashboard and ignores
+// this file entirely -- so the stale `not-financial-advice.com` in it was
+// pure misdirection, contradicting every canonical on the site while
+// having no effect on anything. Removed; this pins it staying removed.
+assert.ok(!existsSync(resolve(root, 'CNAME')),
+  'CNAME does nothing on Cloudflare Pages and only contradicts the canonical origin');
 
 console.log('VJM site structure and secret-leak tests passed.');

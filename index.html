@@ -82,27 +82,7 @@
 
 <!-- TICKER -->
 <div id="ticker-wrap">
-  <div class="tradingview-widget-container" style="height:46px">
-    <div class="tradingview-widget-container__widget"></div>
-    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
-    {
-      "symbols": [
-        {"proName":"NASDAQ:QQQ","title":"QQQ (NQ)"},
-        {"proName":"AMEX:IVV","title":"IVV (ES)"},
-        {"proName":"AMEX:DIA","title":"DIA (YM)"},
-        {"proName":"AMEX:IWM","title":"IWM (Russell)"},
-        {"proName":"TVC:GOLD","title":"GOLD"},
-        {"proName":"TVC:USOIL","title":"CRUDE"},
-        {"proName":"BINANCE:BTCUSDT","title":"BTC"}
-      ],
-      "showSymbolLogo": false,
-      "isTransparent": false,
-      "displayMode": "compact",
-      "colorTheme": "dark",
-      "locale": "en"
-    }
-    </script>
-  </div>
+  <div class="tradingview-widget-container" style="height:46px" id="tv-ticker"></div>
 </div>
 
 <!-- BRAND BANNER — sits above the nav like a channel cover photo -->
@@ -1605,7 +1585,47 @@ function toggleTheme() {
   const btn = document.getElementById('theme-toggle');
   btn.innerHTML = themeButtonHtml(isLight);
   localStorage.setItem('st-theme', isLight ? 'light' : 'dark');
+  // Third-party embeds bake their colour scheme in at construction, so they
+  // need telling rather than inheriting. One event, no polling.
+  window.dispatchEvent(new CustomEvent('vjm:themechange', { detail: { theme: isLight ? 'light' : 'dark' } }));
 }
+
+// ─── TRADINGVIEW TICKER (theme-aware) ───
+// The widget reads colorTheme once, when its script runs, so following the
+// site theme means rebuilding it. That is cheap here: a 46px strip with seven
+// symbols. isTransparent lets our own wrapper background show through, so the
+// strip matches the page even in the moment before the widget paints.
+(function () {
+  const host = document.getElementById('tv-ticker');
+  if (!host) return;
+  const SYMBOLS = [
+    { proName: 'NASDAQ:QQQ', title: 'QQQ (NQ)' },
+    { proName: 'AMEX:IVV', title: 'IVV (ES)' },
+    { proName: 'AMEX:DIA', title: 'DIA (YM)' },
+    { proName: 'AMEX:IWM', title: 'IWM (Russell)' },
+    { proName: 'TVC:GOLD', title: 'GOLD' },
+    { proName: 'TVC:USOIL', title: 'CRUDE' },
+    { proName: 'BINANCE:BTCUSDT', title: 'BTC' }
+  ];
+  let current = null;
+  function build() {
+    const theme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
+    if (current === theme) return;
+    current = theme;
+    host.innerHTML = '<div class="tradingview-widget-container__widget"></div>';
+    const s = document.createElement('script');
+    s.type = 'text/javascript';
+    s.src = 'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js';
+    s.async = true;
+    s.text = JSON.stringify({
+      symbols: SYMBOLS, showSymbolLogo: false, isTransparent: true,
+      displayMode: 'compact', colorTheme: theme, locale: 'en'
+    });
+    host.appendChild(s);
+  }
+  build();
+  window.addEventListener('vjm:themechange', build);
+})();
 (function() {
   if (localStorage.getItem('st-theme') === 'light') {
     document.body.classList.add('light-mode');
