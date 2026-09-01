@@ -309,4 +309,234 @@ try {
   assert.equal(data.ok, true);
 }
 
+// ---------------------------------------------------------------------------
+// module=stock, module=sectors, module=biotech, the unknown-module 400, the
+// missing-Alpaca-config 503, and the D1 cached-snapshot fallback on a live
+// refresh failure. Every one of these was reachable only through 'options'
+// and 'intraday' before this file's own fetch fixtures existed, so the other
+// three data modules -- and the two error paths every module shares -- had
+// never been exercised at the handler level, only indirectly through their
+// pure helpers in tests/research-engine.test.mjs.
+// ---------------------------------------------------------------------------
+
+function dailyBar(dateIso, o, h, l, c, v = 1_000_000) {
+  return { t: dateIso, o, h, l, c, v };
+}
+
+// A daily series with a linear drift plus a slow oscillation, long enough to
+// print real swing highs for stockModule's fib study (needs pivot*2+25 = 35
+// bars at the default pivot) and enough weeks for the weekly leg too.
+function makeDailySeries(n, { start = 90, drift = 0.15 } = {}) {
+  const bars = [];
+  let date = new Date('2026-01-05T00:00:00Z');
+  for (let i = 0; i < n; i++) {
+    const close = start + i * drift + Math.sin(i / 4) * 6;
+    const open = i === 0 ? close - 1 : bars[i - 1].c;
+    const high = Math.max(open, close) + 1.5;
+    const low = Math.min(open, close) - 1.5;
+    bars.push(dailyBar(date.toISOString(), open, high, low, close, 1_000_000 + (i % 7) * 25_000));
+    date = new Date(date.getTime() + 86400000);
+  }
+  return bars;
+}
+
+{
+  const cronEnv = { ALPACA_API_KEY: 'test-key', ALPACA_SECRET_KEY: 'test-secret', RESEARCH_CRON_SECRET: 'cron-test-secret' };
+  const cronHeaders = { 'X-Research-Cron': 'cron-test-secret' };
+
+  // module=stock: the fib retracement study, never reached by any prior test.
+  {
+    const stockFetch = globalThis.fetch;
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/v2/stocks/bars') return Response.json({ bars: { NVDA: makeDailySeries(150) } });
+      return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
+    };
+    try {
+      const { status, data } = await callEngine(cronEnv, 'module=stock&symbol=NVDA', cronHeaders);
+      assert.equal(status, 200);
+      assert.equal(data.ok, true);
+      assert.equal(data.data.summary.lastPrice, makeDailySeries(150).at(-1).c);
+      assert.deepEqual(data.data.fibStats.map((s) => s.level), [.382, .5, .618], 'all three fib levels always report, even with zero touches');
+      assert.equal(data.data.timeframeBreakdown.length, 2, 'the default timeframe=combined runs both a Daily and a Weekly leg');
+      assert.deepEqual(data.data.timeframeBreakdown.map((t) => t.timeframe), ['Daily', 'Weekly']);
+    } finally {
+      globalThis.fetch = stockFetch;
+    }
+  }
+
+  // module=stock: too few adjusted daily bars must fail 422, not compute a
+  // study off a handful of days -- and with no RESEARCH_DB, the outer catch's
+  // cache-fallback finds nothing and the 422 reaches the caller.
+  {
+    const stockFetch = globalThis.fetch;
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/v2/stocks/bars') return Response.json({ bars: { NVDA: makeDailySeries(10) } });
+      return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
+    };
+    try {
+      const { status, data } = await callEngine(cronEnv, 'module=stock&symbol=NVDA', cronHeaders);
+      assert.equal(status, 422);
+      assert.equal(data.ok, false);
+    } finally {
+      globalThis.fetch = stockFetch;
+    }
+  }
+
+  // module=sectors: relative strength must actually rank the outperformer
+  // first and the underperformer last, not just return unsorted rows.
+  {
+    const sectorFetch = globalThis.fetch;
+    const SECTOR_ETFS = ['XLK', 'XLF', 'XLE', 'XLV', 'XLI', 'XLY', 'XLP', 'XLU', 'XLB', 'XLRE', 'XLC'];
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/v2/stocks/bars') {
+        const symbols = url.searchParams.get('symbols').split(',');
+        const bars = Object.fromEntries(symbols.map((s) => [
+          s,
+          makeDailySeries(30, { drift: s === 'XLK' ? 1.5 : s === 'XLU' ? -1.5 : 0.1 }),
+        ]));
+        return Response.json({ bars });
+      }
+      return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
+    };
+    try {
+      const { status, data } = await callEngine(cronEnv, 'module=sectors', cronHeaders);
+      assert.equal(status, 200);
+      assert.equal(data.data.benchmark, 'QQQ');
+      assert.equal(data.data.rows.length, SECTOR_ETFS.length);
+      assert.equal(data.data.rows[0].etf, 'XLK', 'the strongest sector must sort first');
+      assert.equal(data.data.rows.at(-1).etf, 'XLU', 'the weakest sector must sort last');
+    } finally {
+      globalThis.fetch = sectorFetch;
+    }
+  }
+
+  // module=biotech: no relative-strength sort, but the fixed universe and its
+  // "not connected" catalyst fields are the contract the UI reads.
+  {
+    const bioFetch = globalThis.fetch;
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/v2/stocks/bars') {
+        const symbols = url.searchParams.get('symbols').split(',');
+        const bars = Object.fromEntries(symbols.map((s) => [s, makeDailySeries(30)]));
+        return Response.json({ bars });
+      }
+      return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
+    };
+    try {
+      const { status, data } = await callEngine(cronEnv, 'module=biotech', cronHeaders);
+      assert.equal(status, 200);
+      assert.equal(data.data.rows.length, 10);
+      assert.ok(data.data.rows.every((r) => ['HIGH', 'REVIEW', 'LOW'].includes(r.riskFlag)));
+      assert.ok(data.data.rows.every((r) => r.catalyst === null && r.catalystStatus === 'Not available from Alpaca'));
+      assert.equal(data.data.missingFields.length, 6);
+    } finally {
+      globalThis.fetch = bioFetch;
+    }
+  }
+
+  // An unrecognized module must 400 before touching Alpaca at all -- proven
+  // by a fetch mock that throws if it's ever called.
+  {
+    const noCallFetch = globalThis.fetch;
+    globalThis.fetch = async () => { throw new Error('must not call Alpaca for an unknown module'); };
+    try {
+      const { status, data } = await callEngine(cronEnv, 'module=nope', cronHeaders);
+      assert.equal(status, 400);
+      assert.equal(data.ok, false);
+    } finally {
+      globalThis.fetch = noCallFetch;
+    }
+  }
+
+  // Alpaca not configured on the server: fail closed 503 after authorization
+  // but before any module runs, for a credential that would otherwise pass.
+  {
+    const { status, data } = await callEngine({ RESEARCH_CRON_SECRET: 'cron-test-secret' }, 'module=options', cronHeaders);
+    assert.equal(status, 503);
+    assert.equal(data.ok, false);
+  }
+}
+
+// D1 cached-snapshot fallback: a live refresh failure must serve the last
+// saved snapshot for the same module+params, marked stale, rather than a
+// hard error -- the Research Engine's own comment documents this as
+// intentional degrade-on-outage behavior, but nothing had exercised the D1
+// write/read round trip that makes it work (research_snapshots + the
+// research_latest upsert saveSnapshot performs, and the SELECT loadLatest
+// reads back). Minimal fake mirrors the same two tables market-brief.js's
+// test fixture uses for the shared research_latest cache.
+function makeResearchDb() {
+  const latest = new Map();
+  function apply(sql, args) {
+    if (sql.includes('INSERT INTO research_latest')) {
+      const [cacheKey, , , payload] = args;
+      latest.set(cacheKey, payload);
+    }
+  }
+  return {
+    prepare(sql) {
+      return {
+        bind(...args) {
+          return {
+            sql, args,
+            async run() { apply(sql, args); return { meta: { changes: 1 } }; },
+            async first() {
+              if (sql.includes('SELECT payload FROM research_latest')) {
+                const [cacheKey] = args;
+                return latest.has(cacheKey) ? { payload: latest.get(cacheKey) } : null;
+              }
+              return null;
+            },
+          };
+        },
+      };
+    },
+    async batch(statements) {
+      for (const stmt of statements) apply(stmt.sql, stmt.args);
+      return statements.map(() => ({ meta: { changes: 1 } }));
+    },
+  };
+}
+
+{
+  const db = makeResearchDb();
+  const dbEnv = { ALPACA_API_KEY: 'test-key', ALPACA_SECRET_KEY: 'test-secret', RESEARCH_CRON_SECRET: 'cron-test-secret', RESEARCH_DB: db };
+  const cronHeaders = { 'X-Research-Cron': 'cron-test-secret' };
+  const query = 'module=options&symbol=QQQ&expiryDays=7';
+
+  const liveFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname === '/v2/stocks/QQQ/snapshot') return Response.json({ latestTrade: { p: 600 } });
+    if (url.pathname === '/v2/options/contracts') return Response.json({ option_contracts: [] });
+    if (url.pathname === '/v1beta1/options/snapshots/QQQ') return Response.json({ snapshots: {} });
+    return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
+  };
+  let firstSpot;
+  try {
+    const { status, data } = await callEngine(dbEnv, query, cronHeaders);
+    assert.equal(status, 200);
+    firstSpot = data.data.spot;
+    assert.equal(firstSpot, 600, 'the live snapshot saved to D1 must be the one served back on a later outage');
+  } finally {
+    globalThis.fetch = liveFetch;
+  }
+
+  globalThis.fetch = async () => { throw new Error('simulated Alpaca outage'); };
+  try {
+    const { status, data } = await callEngine(dbEnv, query, cronHeaders);
+    assert.equal(status, 200, 'a cached snapshot must still serve 200, not surface the outage as an error');
+    assert.equal(data.ok, true);
+    assert.equal(data.cached, true);
+    assert.equal(data.data.spot, firstSpot, 'the served snapshot must be the exact one saved, not a fresh (failed) computation');
+    assert.match(data.warning, /Live refresh failed/);
+  } finally {
+    globalThis.fetch = liveFetch;
+  }
+}
+
 console.log('VJM research API route tests passed.');

@@ -24,6 +24,7 @@ const {
   summarizeConditions,
   summarizeFvg,
   summarizeTiming,
+  swingLiquidityLevels,
   scanDisplacement,
   classifyDirectionalOutcome,
   barCloseTime,
@@ -208,6 +209,23 @@ const profile = marketProfileLevels([
 ]);
 assert.ok(profile.val <= profile.poc && profile.poc <= profile.vah, 'POC must remain inside the calculated value area');
 assert.ok(profile.coverage >= .70, 'value area must include at least 70% of observed volume');
+
+// swingLiquidityLevels feeds the "Overnight BSL/SSL" sweep conditions and the
+// Latest Levels panel; a pivot needs `pivot` bars strictly lower/higher on
+// BOTH sides, so a would-be extreme within `pivot` bars of either array edge
+// (no full window to check) is never reported.
+const liquidityBars = [
+  { t: '2026-08-25T00:00:00Z', h: 10, l: 5, _source: 'BOATS' },
+  { t: '2026-08-25T00:01:00Z', h: 11, l: 4 },
+  { t: '2026-08-25T00:02:00Z', h: 15, l: 2, _source: 'BOATS' }, // pivot high (15) and NOT a pivot low (2 beaten by index 4's 1)
+  { t: '2026-08-25T00:03:00Z', h: 12, l: null },
+  { t: '2026-08-25T00:04:00Z', h: 13, l: 1 }, // pivot low (1)
+  { t: '2026-08-25T00:05:00Z', h: 9, l: 6 },
+  { t: '2026-08-25T00:06:00Z', h: 20, l: 7 }, // would be the highest high of all, but sits inside the trailing `pivot` bars with no window on its right
+];
+const liquidity = swingLiquidityLevels(liquidityBars, 2);
+assert.deepEqual(liquidity.highs, [{ price: 15, time: '2026-08-25T00:02:00Z', source: 'BOATS' }], 'only the confirmed interior pivot high should be reported, carrying the bar\'s own source');
+assert.deepEqual(liquidity.lows, [{ price: 1, time: '2026-08-25T00:04:00Z', source: 'Observed' }], 'a bar with no _source falls back to "Observed", and a null low in the pivot window must not break the comparison');
 
 const fvgBars = [
   bar('2026-08-20T13:30:00Z', 99.5, 100, 99, 99.8),
