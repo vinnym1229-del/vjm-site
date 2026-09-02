@@ -109,13 +109,8 @@ jobs:
             echo "nothing to commit"
             exit 0
           fi
-          git commit -m "Vendor Three.js and the Ferrari model into the repo
-
-Removes the runtime dependency on cdn.jsdelivr.net, threejs.org, and
-raw.githubusercontent.com for the homepage's 3D Ferrari section. All
-three were single points of failure the owner's own network/ad-blocker
-could silently break with no way to tell from the outside.
-
-Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_015mxHgV3pr4vTWZJ7teNwa4"
+          git commit -m "Vendor Three.js and the Ferrari model into the repo" \
+            -m "Removes the runtime dependency on cdn.jsdelivr.net, threejs.org, and raw.githubusercontent.com for the homepage's 3D Ferrari section. All three were single points of failure the owner's own network/ad-blocker could silently break with no way to tell from the outside." \
+            -m "Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>" \
+            -m "Claude-Session: https://claude.ai/code/session_015mxHgV3pr4vTWZJ7teNwa4"
           git push origin HEAD:pj
