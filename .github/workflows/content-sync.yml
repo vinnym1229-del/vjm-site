@@ -40,31 +40,6 @@ jobs:
           test -n "$RESEARCH_REFRESH_URL" || { echo "RESEARCH_REFRESH_URL secret is not set"; exit 1; }
           test -n "$RESEARCH_CRON_SECRET" || { echo "RESEARCH_CRON_SECRET secret is not set"; exit 1; }
 
-      # ONE-OFF: verify commit 7ce8d68 (blank-page flash fix + loading
-      # placeholder boxes) is actually live. Delete this step after one run.
-      - name: One-off — verify commit 7ce8d68 is actually live
-        if: always()
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -uo pipefail
-          curl --silent --show-error --retry 2 --max-time 30 -o /tmp/homepage.html "${RESEARCH_REFRESH_URL%/}/"
-          echo "bytes fetched (homepage): $(wc -c < /tmp/homepage.html)"
-          echo "--- reveal-timing fix comment present? ---"
-          grep -c 'Anything already inside the initial viewport' /tmp/homepage.html || true
-          echo "--- versioned site.css link present? ---"
-          grep -c 'assets/site.css?v=2' /tmp/homepage.html || true
-          CSS_HREF=$(grep -o 'assets/site\.css[^"]*' /tmp/homepage.html | head -1)
-          echo "css href actually served: $CSS_HREF"
-          curl --silent --show-error --retry 2 --max-time 30 -o /tmp/site.css "${RESEARCH_REFRESH_URL%/}/${CSS_HREF}"
-          echo "bytes fetched (site.css): $(wc -c < /tmp/site.css)"
-          echo "--- fs-loading bordered box present? ---"
-          grep -c 'position: absolute; inset: 12px' /tmp/site.css || true
-          echo "--- brand-banner uses --bg2 placeholder? ---"
-          grep -c 'aspect-ratio:1600/316;max-height:300px;min-height:104px;overflow:hidden;background:var(--bg2)' /tmp/site.css || true
-          echo "--- cache status on versioned css url ---"
-          curl -sI --max-time 20 "${RESEARCH_REFRESH_URL%/}/${CSS_HREF}" | grep -i "cf-cache-status\|age:\|last-modified" || true
-
       - name: Pull the sheet into D1
         shell: bash
         run: |
