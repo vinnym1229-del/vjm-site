@@ -276,3 +276,19 @@ test('the intro video points at the file that actually exists', () => {
   const mb = statSync(join(ROOT, path)).size / 1e6;
   assert.ok(mb < 25, `${path} is ${mb.toFixed(1)}MB — over Cloudflare Pages' 25MB per-file limit`);
 });
+
+test('premium chart toggles keep their visible label as the accessible name', () => {
+  // An explicit aria-label always wins over a wrapping <label>'s text, even
+  // when that text is right there and correct. These five checkboxes had
+  // aria-label="compareToggle" etc — the raw camelCase id — so a screen
+  // reader announced "compare Toggle" instead of "vs SPY/QQQ", "ema Toggle"
+  // instead of "EMA", and so on, while sighted users saw the real label.
+  // No aria-label at all is correct here: the wrapping <label> already
+  // supplies it.
+  const stockLab = read('stock-lab.html');
+  for (const id of ['compareToggle', 'emaToggle', 'volumeToggle', 'rsiToggle', 'macdToggle']) {
+    const tag = new RegExp(`<input type="checkbox" id="${id}"[^>]*>`).exec(stockLab);
+    assert.ok(tag, `#${id} checkbox not found`);
+    assert.doesNotMatch(tag[0], /aria-label=/, `#${id} must rely on its wrapping <label> text, not a redundant aria-label`);
+  }
+});
