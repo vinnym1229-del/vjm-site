@@ -192,54 +192,43 @@ test('the billing tabs clear the featured card\'s bolt ring', () => {
     'the tier grid must not add a top margin — it would collapse, not add');
 });
 
-test('ferrari showcase collapses to a static card under reduced motion and on phones', () => {
-  // The pinned 220vh scroll band + 3D rotateY only make sense with a working
-  // scrollbar and a visitor who tolerates motion. Both bail-out paths must
-  // hold, in CSS (so nothing pins/rotates even if the script fails to load)
-  // and in JS (so no rAF loop runs computing a transform nobody sees).
-  assert.match(siteCss, /@media \(max-width: 760px\) \{[\s\S]*?\.fs-track \{ height: auto; \}[\s\S]*?\.fs-card \{ transform: none !important;/,
-    'phone breakpoint must flatten the track and freeze the card transform');
-  assert.match(siteCss, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.fs-track \{ height: auto; \}[\s\S]*?\.fs-card \{ transform: none !important; \}/,
-    'reduced-motion must flatten the track and freeze the card transform, same as the phone breakpoint');
-  // backface-visibility is the belt-and-suspenders guard against the one
-  // photo ever rendering mirrored/backwards if the JS clamp is ever loosened.
-  assert.match(siteCss, /\.fs-card \{[\s\S]*?backface-visibility: hidden;/);
+test('ferrari showcase (WebGL) never loads on phones or under reduced motion', () => {
+  // Three.js + a multi-megabyte glTF model is real weight for pure
+  // decoration. Both bail-out paths must hold, in CSS (so the section takes
+  // up no space even if the script never runs) and in JS (so the import()
+  // calls — and the network requests they trigger — never fire at all).
+  assert.match(siteCss, /@media \(max-width: 1080px\), \(prefers-reduced-motion: reduce\) \{[\s\S]*?#ferrari-showcase \{ display: none; \}/,
+    'narrow screens and reduced motion must collapse the whole section, not just hide the canvas');
 
   assert.match(index, /var reduced = window\.matchMedia && window\.matchMedia\('\(prefers-reduced-motion: reduce\)'\)\.matches;/);
-  assert.match(index, /if \(reduced \|\| !track \|\| !card \|\| window\.innerWidth <= 760\) return;/,
-    'the spin script must bail out before touching the DOM under any of these conditions');
+  assert.match(index, /if \(reduced \|\| !section \|\| !track \|\| !stage \|\| !canvas \|\| window\.innerWidth <= 1080\) return;/,
+    'the module script must bail out, before importing Three.js, under any of these conditions');
 });
 
-test('ferrari showcase image ships correct intrinsic dimensions and a real alt text', () => {
-  // Same class of bug as the testimonials collage CLS incident: declared
-  // width/height must match the actual file, or the browser reserves the
-  // wrong box and the page jumps once the real image decodes.
-  const declared = /<img src="assets\/pj-ferrari\.jpg" width="(\d+)" height="(\d+)"/.exec(index);
-  assert.ok(declared, 'ferrari showcase image must declare width/height');
-  const path = join(ROOT, 'assets/pj-ferrari.jpg');
-  assert.ok(existsSync(path), 'assets/pj-ferrari.jpg must exist');
-  const buf = readFileSync(path);
-  let real = null;
-  for (let i = 2; i < buf.length; ) {
-    if (buf[i] !== 0xFF) { i++; continue; }
-    const marker = buf[i + 1];
-    if (marker === 0xD8 || marker === 0xD9) { i += 2; continue; }
-    const len = buf.readUInt16BE(i + 2);
-    if (marker >= 0xC0 && marker <= 0xCF && marker !== 0xC4 && marker !== 0xC8 && marker !== 0xCC) {
-      real = { width: buf.readUInt16BE(i + 7), height: buf.readUInt16BE(i + 5) };
-      break;
-    }
-    i += 2 + len;
+test('ferrari showcase loads Three.js only from the CSP-allowlisted CDN, and fails silently', () => {
+  // Every module specifier must resolve to a host the CSP in _headers
+  // actually allows (script-src), or the browser blocks the import and the
+  // section is left half-built. Cross-check both files instead of trusting
+  // them to stay in sync by hand.
+  const headers = read('_headers');
+  const csp = /Content-Security-Policy: ([^\n]+)/.exec(headers)[1];
+  const scriptSrc = /script-src ([^;]+)/.exec(csp)[1];
+  assert.ok(scriptSrc.includes('cdn.jsdelivr.net'), 'CSP script-src must allow cdn.jsdelivr.net for the Three.js importmap');
+  const connectSrc = /connect-src ([^;]+)/.exec(csp)[1];
+  for (const host of ['cdn.jsdelivr.net', 'threejs.org', 'raw.githubusercontent.com']) {
+    assert.ok(connectSrc.includes(host), `CSP connect-src must allow ${host} for the model/decoder fetch`);
   }
-  assert.ok(real, 'could not read a JPEG SOF0 frame from assets/pj-ferrari.jpg');
-  assert.equal(Number(declared[1]), real.width, 'declared width must match the real file');
-  assert.equal(Number(declared[2]), real.height, 'declared height must match the real file');
 
-  // A filename or "photo" is not alt text — a screen reader gets nothing
-  // useful from either, and this is a real photo of the owner, not decoration.
-  const alt = /<img src="assets\/pj-ferrari\.jpg"[\s\S]{0,120}?alt="([^"]+)"/.exec(index);
-  assert.ok(alt, 'ferrari showcase image must have an alt attribute');
-  assert.ok(alt[1].length > 15 && !/pj-ferrari|\.jpg/i.test(alt[1]), 'alt text must describe the photo, not name the file');
+  assert.match(index, /"three": "https:\/\/cdn\.jsdelivr\.net\/npm\/three@[\d.]+\/build\/three\.module\.js"/,
+    'importmap must pin an exact Three.js version, not a floating tag');
+
+  // Every failure path — WebGL unsupported, the CDN unreachable, every model
+  // URL 404ing — must remove the section rather than leave a broken canvas
+  // or an unhandled rejection on the page.
+  assert.match(index, /if \(!mods\) \{ section\.remove\(\); return; \}/, 'a failed Three.js import must remove the section');
+  assert.match(index, /catch \(e\) \{ section\.remove\(\); return; \}/, 'a WebGL context failure must remove the section');
+  assert.match(index, /catch \(e\) \{ section\.remove\(\); return; \}\s*\n\s*const swap/,
+    'a model load failure must also remove the section, not proceed to material swaps on an undefined model');
 });
 
 test('the intro video points at the file that actually exists', () => {

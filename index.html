@@ -407,22 +407,24 @@
   <div class="proof-item"><strong>$50,000</strong><span>prop firm funding giveaways</span></div>
 </div>
 
-<!-- FERRARI SHOWCASE — PJ's own photo, pinned on the left while this band
-     scrolls by, rotating on scroll progress rather than a fixed animation
-     loop (so it always matches how far the visitor has actually scrolled,
-     instead of drifting out of sync). Collapses to a static inline card on
-     narrow screens and under prefers-reduced-motion: see assets/site.css
-     and the "FERRARI SHOWCASE — scroll-driven spin" script near the end of
-     this file. Real photo, not a render — see docs/OWNER-CHECKLIST.md if a
-     higher-resolution copy ever replaces assets/pj-ferrari.jpg. -->
-<section id="ferrari-showcase" aria-label="PJ's Ferrari">
-  <div class="fs-track">
-    <div class="fs-stage">
-      <div class="fs-card">
-        <img src="assets/pj-ferrari.jpg" width="482" height="650" loading="lazy"
-             alt="PJ standing beside his red Ferrari 488 Spider">
-        <p class="fs-caption">Yes, it's real. Futures pay the bills.</p>
-      </div>
+<!-- FERRARI SHOWCASE — a real-time 3D render (Three.js + WebGL), not a photo
+     or a video, pinned on the left of this band while it scrolls by. It
+     turns on scroll progress rather than a timer, so pausing mid-scroll
+     pauses the turntable exactly there. The model is a generic red Ferrari
+     glTF asset (there is no photogrammetry of the owner's actual car), lit
+     and materialed to read as a studio product shot rather than a game
+     asset — see the comment above the material setup in the script near
+     the end of this file for why. Skips loading Three.js entirely on
+     screens <=1080px and under prefers-reduced-motion (assets/site.css):
+     that's most of mobile traffic, and this is pure decoration, so there is
+     no reason to spend the download or the GPU time there. If the model or
+     the WebGL context fails to load for any reason, the whole layer removes
+     itself — nothing about the rest of the page depends on it. -->
+<section id="ferrari-showcase" aria-label="3D Ferrari">
+  <div class="fs-track" id="fsTrack">
+    <div class="fs-stage" id="fsStage">
+      <canvas id="fsCanvas" aria-hidden="true"></canvas>
+      <p class="fs-caption">Futures pay for real things.</p>
     </div>
   </div>
 </section>
@@ -2769,47 +2771,231 @@ setInterval(tickSessionClock, 30000);
   sweep();
   window.addEventListener('scroll', sweep, { passive: true });
 })();
+</script>
 
-// ─── FERRARI SHOWCASE — scroll-driven spin ─────────────────────────────────
-// Rotation tracks how far the visitor has scrolled through .fs-track, not a
-// timer, so pausing mid-scroll pauses the spin exactly where it was. Skips
-// entirely under prefers-reduced-motion, on narrow screens, or if the markup
-// isn't on the page — .fs-track's height collapses to auto below 760px (see
-// assets/site.css), so there is nothing useful to track there anyway.
-//
-// The angle OSCILLATES rather than spinning through a full 360: this is one
-// photo taken from one angle, so there is no "back" of the car to rotate
-// into. A full spin would cross 90deg and show a mirrored, backwards card
-// for half of every turn. Swinging between +/-AMPLITUDE keeps the real photo
-// facing forward the entire time while still reading as continuous 3D motion
-// as the visitor scrolls.
-(function () {
+<!-- FERRARI SHOWCASE — real-time WebGL turntable (Three.js), loaded only
+     when the section will actually be visible and motion is allowed — the
+     guard below matches the CSS media query in assets/site.css so the two
+     never disagree about when this runs. Every failure path (WebGL
+     unsupported, a CDN unreachable, the model 404s) removes the section and
+     leaves the rest of the page untouched; nothing here is load-bearing. -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+(async () => {
   'use strict';
   var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var track = document.querySelector('.fs-track');
-  var card = document.querySelector('.fs-card');
-  if (reduced || !track || !card || window.innerWidth <= 760) return;
+  var section = document.getElementById('ferrari-showcase');
+  var track = document.getElementById('fsTrack');
+  var stage = document.getElementById('fsStage');
+  var canvas = document.getElementById('fsCanvas');
+  if (reduced || !section || !track || !stage || !canvas || window.innerWidth <= 1080) return;
 
-  var AMPLITUDE = 30;   // degrees either side of facing forward
-  var SWINGS = 4;       // full back-and-forth cycles across the track
+  const mods = await Promise.all([
+    import('three'),
+    import('three/addons/loaders/GLTFLoader.js'),
+    import('three/addons/loaders/DRACOLoader.js'),
+  ]).catch(() => null);
+  if (!mods) { section.remove(); return; }
+  const [THREE, { GLTFLoader }, { DRACOLoader }] = mods;
 
-  var ticking = false;
-  function update() {
-    ticking = false;
-    var rect = track.getBoundingClientRect();
-    var scrollable = rect.height - window.innerHeight;
-    var progress = scrollable > 0 ? Math.min(1, Math.max(0, -rect.top / scrollable)) : 0;
-    var wave = Math.sin(progress * Math.PI * SWINGS);
-    card.style.setProperty('--fs-deg', (wave * AMPLITUDE) + 'deg');
-    card.style.setProperty('--fs-float', (wave * -10) + 'px');
-    card.style.setProperty('--fs-scale', (1 + Math.abs(wave) * 0.04).toFixed(3));
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+  } catch (e) { section.remove(); return; }
+
+  renderer.outputColorSpace    = THREE.SRGBColorSpace;
+  renderer.toneMapping         = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.95;   // 1.15 blew the highlights out into a "fake" look
+  renderer.setClearColor(0x000000, 0);
+  renderer.shadowMap.enabled   = true;
+  renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
+
+  const scene  = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 60);
+  const LOOK_Y = 0.75;
+
+  // Studio light rig, all intensities well below their naive defaults: dim,
+  // broad panels read as soft highlight bands along the body, the way an
+  // actual product shoot lights a car. Cranking these up is what makes a
+  // render look like toy plastic instead of lacquered steel.
+  function buildEnv() {
+    const env = new THREE.Scene();
+    env.add(new THREE.Mesh(
+      new THREE.SphereGeometry(20, 32, 16),
+      new THREE.MeshBasicMaterial({ side: THREE.BackSide, color: 0x0a0a0d })
+    ));
+    const panel = (w, h, hex, intensity, pos) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial());
+      m.material.color.set(hex).multiplyScalar(intensity);
+      m.position.set(pos[0], pos[1], pos[2]);
+      m.lookAt(0, 0.6, 0);
+      env.add(m);
+    };
+    panel(11, 1.5, 0xffffff, 5.0, [0, 7.5, 0.5]);     // overhead key -> roof streak
+    panel(9,  0.9, 0xdfe9ff, 2.4, [0, 6.8, 3.2]);      // cool secondary strip
+    panel(1.1, 6,  0xffe3d2, 1.8, [-7.5, 1.6, 0]);     // warm side blade
+    panel(1.1, 6,  0xd7e4ff, 1.5, [7.5, 1.6, 0]);      // cool side blade
+    panel(7,  2.6, 0xffffff, 1.1, [0, 2, 8.5]);        // gentle front fill
+    panel(10, 0.7, 0xffffff, 3.2, [0, 2.6, -8.5]);     // rear rim streak
+    panel(14, 14,  0x232120, 0.6, [0, -8, 0]);         // floor bounce
+    return env;
   }
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(buildEnv(), 0.04).texture;
+  pmrem.dispose();
+
+  const sun = new THREE.DirectionalLight(0xfff2e8, 1.6);
+  sun.position.set(-5, 7, 4);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.near = 2;  sun.shadow.camera.far = 22;
+  sun.shadow.camera.left = -6; sun.shadow.camera.right = 6;
+  sun.shadow.camera.top = 6;   sun.shadow.camera.bottom = -6;
+  sun.shadow.bias = -0.0004;   sun.shadow.normalBias = 0.02;
+  scene.add(sun);
+
+  const catcher = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: 0.22 }));
+  catcher.rotation.x = -Math.PI / 2;
+  catcher.receiveShadow = true;
+  scene.add(catcher);
+
+  // Dielectric base coat + satin clearcoat — real paint, not a mirror.
+  // metalness this high across the whole body reads as chrome, not lacquer.
+  const paint = new THREE.MeshPhysicalMaterial({
+    color: 0x9e0e14,
+    metalness: 0.12, roughness: 0.44,
+    clearcoat: 0.55, clearcoatRoughness: 0.18,
+    sheen: 0.35, sheenColor: 0x2e0507,
+    envMapIntensity: 0.7,
+  });
+  const darkMetal = new THREE.MeshStandardMaterial({ color: 0x141416, metalness: 1.0, roughness: 0.55, envMapIntensity: 0.8 });
+  const glassMat  = new THREE.MeshPhysicalMaterial({ color: 0x0d1117, metalness: 0.9, roughness: 0.18, envMapIntensity: 0.9 });
+
+  const draco = new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
+  const gltfLoader = new GLTFLoader().setDRACOLoader(draco);
+  const MODEL_URLS = [
+    'https://threejs.org/examples/models/gltf/ferrari.glb',
+    'https://raw.githubusercontent.com/mrdoob/three.js/r160/examples/models/gltf/ferrari.glb',
+    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/models/gltf/ferrari.glb',
+  ];
+  let carModel;
+  try {
+    const gltf = await new Promise((res, rej) => {
+      const attempt = (i) => {
+        if (i >= MODEL_URLS.length) return rej(new Error('load failed'));
+        gltfLoader.load(MODEL_URLS[i], res, undefined, () => attempt(i + 1));
+      };
+      attempt(0);
+    });
+    carModel = gltf.scene.children[0] || gltf.scene;
+  } catch (e) { section.remove(); return; }
+
+  const swap = (name, mat) => { const o = carModel.getObjectByName(name); if (o) o.material = mat; };
+  swap('body', paint);
+  ['rim_fl', 'rim_fr', 'rim_rl', 'rim_rr', 'trim'].forEach((n) => swap(n, darkMetal));
+  swap('glass', glassMat);
+  carModel.traverse((o) => { if (o.isMesh) o.castShadow = o.name !== 'glass'; });
+
+  const box    = new THREE.Box3().setFromObject(carModel);
+  const size   = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  carModel.position.sub(new THREE.Vector3(center.x, box.min.y, center.z));
+
+  const carGroup = new THREE.Group();
+  carGroup.add(carModel);
+  scene.add(carGroup);
+
+  // Soft contact shadow under the tires — cheap to draw, reads as expensive.
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const cctx = c.getContext('2d');
+  const grad = cctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  [[0, 'rgba(8,6,6,.45)'], [0.38, 'rgba(8,6,6,.22)'], [0.72, 'rgba(8,6,6,.06)'], [1, 'rgba(8,6,6,0)']]
+    .forEach(([o, col]) => grad.addColorStop(o, col));
+  cctx.fillStyle = grad; cctx.fillRect(0, 0, 256, 256);
+  const blobTex = new THREE.CanvasTexture(c);
+  blobTex.colorSpace = THREE.SRGBColorSpace;
+  const blob = new THREE.Mesh(
+    new THREE.PlaneGeometry(size.x * 1.55, size.z * 1.12),
+    new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, depthWrite: false, toneMapped: false })
+  );
+  blob.rotation.x = -Math.PI / 2;
+  blob.position.y = 0.02;
+  carGroup.add(blob);
+
+  // Framing: the car sits in the left portion of the stage, not centered.
+  let dist = 12;
+  const camX = 1.6;
+  function frame() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    if (!w || !h) return;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    const halfV = THREE.MathUtils.degToRad(camera.fov) / 2;
+    const halfH = Math.atan(Math.tan(halfV) * camera.aspect);
+    const R = Math.max(size.x * 0.72, size.z * 0.55) + 0.4;
+    dist = Math.min(18, Math.max(8, Math.max(R / Math.sin(halfV), R / Math.sin(halfH)) * 1.18));
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', frame, { passive: true });
+  frame();
+  stage.classList.add('fs-ready');
+
+  // Scroll = turntable, measured across .fs-track's OWN runway rather than
+  // the whole document — otherwise the spin rate would depend on how long
+  // every other section on the page happens to be, and pausing mid-scroll
+  // wouldn't reliably pause the rotation exactly where it was.
+  const TAU = Math.PI * 2;
+  const BASE_ROT = Math.PI - 0.55;
+  let scrollP = 0, scrollRot = 0;
   function onScroll() {
-    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+    const rect = track.getBoundingClientRect();
+    const scrollable = rect.height - window.innerHeight;
+    scrollP = scrollable > 0 ? Math.min(1, Math.max(0, -rect.top / scrollable)) : 0;
   }
-  update();
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll, { passive: true });
+  onScroll();
+
+  let mx = 0, my = 0, smx = 0, smy = 0;
+  window.addEventListener('mousemove', (e) => {
+    const r = stage.getBoundingClientRect();
+    mx = ((e.clientX - r.left) / r.width)  * 2 - 1;
+    my = ((e.clientY - r.top)  / r.height) * 2 - 1;
+  });
+
+  let visible = true;
+  new IntersectionObserver((entries) => { visible = entries[0].isIntersecting; }, { threshold: 0 }).observe(section);
+
+  const clock = new THREE.Clock();
+  let idle = 0, intro = 1.5;
+  function animate() {
+    requestAnimationFrame(animate);
+    if (!visible) return;   // no GPU work spent on a layer nobody can see
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t  = clock.elapsedTime;
+
+    scrollRot += (scrollP * TAU * 1.5 - scrollRot) * (1 - Math.exp(-dt * 4.5));
+    idle += dt * 0.055;               // showroom drift
+    intro *= Math.exp(-dt * 1.8);     // settle-in swing on load
+
+    carGroup.rotation.y = BASE_ROT + scrollRot + idle + intro;
+    carModel.position.y = Math.sin(t * 1.35) * 0.01;   // suspension breathing
+
+    smx += (mx - smx) * (1 - Math.exp(-dt * 3));
+    smy += (my - smy) * (1 - Math.exp(-dt * 3));
+    camera.position.set(camX + smx * 0.35, LOOK_Y + 2.1 - smy * 0.2, dist);
+    camera.lookAt(camX, LOOK_Y + smy * 0.12, 0);
+
+    renderer.render(scene, camera);
+  }
+  animate();
 })();
 </script>
 
