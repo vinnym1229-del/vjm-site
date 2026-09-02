@@ -73,7 +73,7 @@
 <!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
      than _headers declares -- bump this ?v= on every edit to site.css or
      it can take hours to show up live even after a hard refresh. -->
-<link rel="stylesheet" href="assets/site.css?v=5">
+<link rel="stylesheet" href="assets/site.css?v=6">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -2920,12 +2920,16 @@ setInterval(tickSessionClock, 30000);
   // "this is a video game" tell, so the two layers stay separate here: a
   // low-metalness, medium-rough base for the colour, and a near-mirror
   // clearcoat on top that carries the reflections of the light rig.
+  // Rosso Corsa -- the actual Ferrari red (bright, warm, orange-leaning),
+  // not the dark brick-red this was before. That earlier color read as
+  // "generic sports car maroon" rather than the specific, recognizable red
+  // the owner's own reference photo shows.
   const paint = new THREE.MeshPhysicalMaterial({
-    color: 0x8f0d13,
-    metalness: 0.18, roughness: 0.36,
-    clearcoat: 0.95, clearcoatRoughness: 0.055,
-    sheen: 0.4, sheenColor: 0x3a0709, sheenRoughness: 0.5,
-    envMapIntensity: 1.05,
+    color: 0xb3121b,
+    metalness: 0.15, roughness: 0.32,
+    clearcoat: 0.95, clearcoatRoughness: 0.05,
+    sheen: 0.3, sheenColor: 0x5a0d10, sheenRoughness: 0.45,
+    envMapIntensity: 1.1,
   });
   // Machined alloy: bright and directional, not the near-black plastic the
   // old 0.55 roughness produced. Trim stays darker and softer than the rims.
@@ -3030,10 +3034,12 @@ setInterval(tickSessionClock, 30000);
 
   // Framing: the car sits in the left portion of the stage, not centered.
   let dist = 12;
-  // Positive camX aims the camera to the right of the car, which pushes the
-  // car left in frame — clear of the hero paragraph, whose first line the
-  // car's nose was previously overlapping.
-  const camX = 0.62;
+  // The hero is now a real two-column grid (assets/site.css), so the car's
+  // own box no longer overlaps the copy at all -- camX no longer needs to
+  // bias the framing off-centre to dodge it. The old 0.62 just pushed the
+  // car hard toward the right edge of its own column with nothing in it,
+  // which is its own kind of "off-centre and wrong".
+  const camX = 0;
   function frame() {
     const w = stage.clientWidth, h = stage.clientHeight;
     if (!w || !h) return;
@@ -3052,23 +3058,12 @@ setInterval(tickSessionClock, 30000);
 
   // Scroll = turntable, measured across the hero's OWN height rather than
   // the whole document — otherwise the spin rate would depend on how long
-  // every other section on the page happens to be, and pausing mid-scroll
-  // wouldn't reliably pause the rotation exactly where it was. The car now
-  // lives inside the hero, which is shorter than the viewport's scrollable
-  // run, so progress is "how far the hero has travelled up past the top",
-  // not "how far through a taller-than-viewport track" — the old formula
-  // divided by (height - innerHeight), which is <= 0 here and pinned the
-  // rotation at zero forever.
-  const TAU = Math.PI * 2;
+  // Rotation is a constant slow turntable drift, not tied to scroll at all —
+  // the car lives inside the hero now rather than a scroll-pinned band of
+  // its own, and a rotation driven by scroll position stopped making sense
+  // once the car is just one element among several rather than the whole
+  // point of a dedicated section.
   const BASE_ROT = Math.PI - 0.55;
-  let scrollP = 0, scrollRot = 0;
-  function onScroll() {
-    const rect = track.getBoundingClientRect();
-    const travel = rect.height || 1;
-    scrollP = Math.min(1, Math.max(0, -rect.top / travel));
-  }
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
 
   let mx = 0, my = 0, smx = 0, smy = 0;
   window.addEventListener('mousemove', (e) => {
@@ -3118,18 +3113,17 @@ setInterval(tickSessionClock, 30000);
     const dt = Math.min(clock.getDelta(), 0.05);
     const t  = clock.elapsedTime;
 
-    scrollRot += (scrollP * TAU * 1.5 - scrollRot) * (1 - Math.exp(-dt * 4.5));
-    // Hand control wins while it is happening: the idle drift is there to
-    // keep a untouched car alive, and adding it on top of a drag makes the
-    // car creep away from wherever it was let go.
+    // Hand control wins while it is happening: the idle turntable is there
+    // to keep an untouched car alive, and adding it on top of a drag makes
+    // the car creep away from wherever it was let go.
     if (!dragging) {
-      idle += dt * 0.055;             // showroom drift
+      idle += dt * 0.12;              // slow, constant showroom turntable
       dragRot += dragVel;             // carry the throw after release
       dragVel *= Math.exp(-dt * 3.2); // ...and let it coast to a stop
     }
     intro *= Math.exp(-dt * 1.8);     // settle-in swing on load
 
-    carGroup.rotation.y = BASE_ROT + scrollRot + idle + intro + dragRot;
+    carGroup.rotation.y = BASE_ROT + idle + intro + dragRot;
     carModel.position.y = Math.sin(t * 1.35) * 0.01;   // suspension breathing
 
     smx += (mx - smx) * (1 - Math.exp(-dt * 3));
