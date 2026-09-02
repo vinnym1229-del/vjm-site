@@ -85,7 +85,21 @@ function doPost(e) {
 // confirm they copied the right URL — the single most common setup mistake —
 // without needing to sign a request. Deliberately says NOTHING about the
 // spreadsheet: no tab names, no row counts, no content. Anyone can reach it.
-function doGet() {
+function doGet(e) {
+  // TEMPORARY debug fingerprint — reveals only the stored secret's length and
+  // its first/last 4 characters (never the whole value), to answer one
+  // question: does what's stored here actually match what's in Cloudflare?
+  // Remove this branch once that's confirmed either way.
+  if (e && e.parameter && e.parameter.debug === 'fingerprint') {
+    var secret = PropertiesService.getScriptProperties().getProperty('CONTENT_BRIDGE_SECRET') || '';
+    return json_({
+      ok: true,
+      configured: !!secret,
+      length: secret.length,
+      first4: secret.slice(0, 4),
+      last4: secret.slice(-4),
+    });
+  }
   return json_({ ok: true, service: 'content-bridge', method: 'POST' });
 }
 
