@@ -73,7 +73,7 @@
 <!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
      than _headers declares -- bump this ?v= on every edit to site.css or
      it can take hours to show up live even after a hard refresh. -->
-<link rel="stylesheet" href="assets/site.css?v=8">
+<link rel="stylesheet" href="assets/site.css?v=9">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -2815,14 +2815,16 @@ setInterval(tickSessionClock, 30000);
   var track = document.getElementById('fsTrack');
   var stage = document.getElementById('fsStage');
   var canvas = document.getElementById('fsCanvas');
-  if (reduced || !section || !track || !stage || !canvas || window.innerWidth <= 1080) return;
+  // The hero's two-column grid (assets/site.css, .hero.has-car) only makes
+  // sense while the car is actually there to fill the first column. Any exit
+  // from this script -- the guard below, or any failure further down -- has
+  // to take the class off, or the grid keeps a column reserved for something
+  // that will never arrive and the copy sits off-centre beside a void.
+  const unGrid = () => document.querySelector('.hero')?.classList.remove('has-car');
 
-  // Every failure path below removes the section, but the hero's two-column
-  // grid (assets/site.css, .hero.has-car) also needs to come off at the same
-  // time -- otherwise a failed load leaves the grid's first column empty and
-  // the hero copy sitting off-centre in the second column, rather than
-  // collapsing cleanly back to the single-column centered layout.
-  function fail() { section.remove(); document.querySelector('.hero')?.classList.remove('has-car'); }
+  if (reduced || !section || !track || !stage || !canvas || window.innerWidth <= 1080) { unGrid(); return; }
+
+  function fail() { section.remove(); unGrid(); }
 
   // A blocked or silently-dropped request (ad blockers, some corporate
   // firewalls) never calls onerror -- it just never resolves -- so without a
@@ -3034,16 +3036,85 @@ setInterval(tickSessionClock, 30000);
   // car hard toward the right edge of its own column with nothing in it,
   // which is its own kind of "off-centre and wrong".
   const camX = 0;
+  // Where the camera sits for a given distance. Shared with the animate loop
+  // so the fit below measures the exact view the visitor ends up seeing —
+  // fitting against a differently-placed camera is how you get a "correct"
+  // framing calculation that still looks wrong on screen.
+  // Solved by frame() rather than hand-tuned: a constant that centres the car
+  // at one frame size is wrong at every other one, which is how this drifted
+  // out of centre each time the layout changed.
+  let aimY = LOOK_Y - 0.5;
+
+  function placeCamera(d, ox = 0, oy = 0) {
+    camera.position.set(camX + ox * 0.35, LOOK_Y + 1.95 - oy * 0.2, d);
+    camera.lookAt(camX, aimY + oy * 0.12, 0);
+  }
+
+  // The subject's bounds, sampled as two circles: the turntable is a disc, so
+  // its silhouette is identical from every angle no matter where the car has
+  // spun to, and the car sits inside it. Sampling the rim rather than taking
+  // a box around it matters — a square drawn around a circle overshoots by
+  // 41% at the diagonal, and fitting that phantom margin is what left the car
+  // filling barely half its frame with the fit "working" exactly as written.
+  // Truncated cone, not a cylinder: the disc is wide at the ground, but the
+  // car above it is narrower than the rim it stands on. Bounding the top at
+  // the rim's radius invents a band of empty air across the top of the frame,
+  // and centring against that phantom pushes the real car low.
+  const carR = 0.5 * Math.max(size.x, size.z);
+  const fitPoints = [];
+  for (let i = 0; i < 32; i++) {
+    const a = (i / 32) * Math.PI * 2;
+    const cos = Math.cos(a), sin = Math.sin(a);
+    // The disc has real thickness below the ground plane and its underside
+    // edge is visible from this camera height — leaving it out of the bound
+    // let the silhouette hang past the bottom of the frame it was fitted to.
+    fitPoints.push(new THREE.Vector3(cos * padR, -0.12, sin * padR));       // disc underside
+    fitPoints.push(new THREE.Vector3(cos * padR, 0, sin * padR));           // disc rim
+    fitPoints.push(new THREE.Vector3(cos * carR, size.y, sin * carR));      // car roof
+  }
+
+  // How much of the frame the subject should span in whichever axis binds
+  // first. The old code fitted a bounding SPHERE, whose radius is set by the
+  // subject's longest dimension — for something as wide and flat as a car on
+  // a disc that pushed the camera far enough back to fill the width and left
+  // the car occupying barely a third of the frame's height. Measuring the
+  // projected box instead fits what is actually on screen.
+  const FILL = 0.92;
+
   function frame() {
     const w = stage.clientWidth, h = stage.clientHeight;
     if (!w || !h) return;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+
+    // Solve distance AND vertical aim together, iteratively rather than in
+    // closed form: the camera's height is fixed while its distance varies, so
+    // the tilt — and therefore the projected extents — changes with every
+    // candidate distance. A dozen passes converges well inside a pixel, and
+    // being solved rather than tuned means it stays correct at frame sizes
+    // nobody thought to check.
     const halfV = THREE.MathUtils.degToRad(camera.fov) / 2;
-    const halfH = Math.atan(Math.tan(halfV) * camera.aspect);
-    const R = Math.max(size.x * 0.72, size.z * 0.55) + 0.4;
-    dist = Math.min(18, Math.max(8, Math.max(R / Math.sin(halfV), R / Math.sin(halfH)) * 1.18));
+    const p = new THREE.Vector3();
+    for (let i = 0; i < 12; i++) {
+      placeCamera(dist);
+      camera.updateMatrixWorld();
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const c of fitPoints) {
+        p.copy(c).project(camera);             // normalised device coords, -1..1
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      }
+      const span = Math.max(maxX - minX, maxY - minY) / 2;   // vs the half-frame
+      if (!isFinite(span) || span <= 0) break;
+      // Raising the aim point tilts the camera up, which slides the subject
+      // down the frame — so drive the aim by however far off-centre it sits.
+      aimY += ((minY + maxY) / 2) * dist * Math.tan(halfV);
+      dist = Math.min(24, Math.max(5, dist * (span / FILL)));
+    }
     camera.updateProjectionMatrix();
   }
   window.addEventListener('resize', frame, { passive: true });
@@ -3128,11 +3199,8 @@ setInterval(tickSessionClock, 30000);
 
     smx += (mx - smx) * (1 - Math.exp(-dt * 3));
     smy += (my - smy) * (1 - Math.exp(-dt * 3));
-    camera.position.set(camX + smx * 0.35, LOOK_Y + 1.95 - smy * 0.2, dist);
-    // Aiming below the car's own centre lifts it in frame; centred on the
-    // hero's full height it otherwise sat low enough to graze the bottom
-    // edge of its column.
-    camera.lookAt(camX, LOOK_Y - 0.78 + smy * 0.12, 0);
+    // Same placement the fit above solved against, mouse parallax included.
+    placeCamera(dist, smx, smy);
 
     renderer.render(scene, camera);
   }

@@ -201,8 +201,25 @@ test('ferrari showcase (WebGL) never loads on phones or under reduced motion', (
     'narrow screens and reduced motion must collapse the whole section, not just hide the canvas');
 
   assert.match(index, /var reduced = window\.matchMedia && window\.matchMedia\('\(prefers-reduced-motion: reduce\)'\)\.matches;/);
-  assert.match(index, /if \(reduced \|\| !section \|\| !track \|\| !stage \|\| !canvas \|\| window\.innerWidth <= 1080\) return;/,
-    'the module script must bail out, before importing Three.js, under any of these conditions');
+  assert.match(index, /if \(reduced \|\| !section \|\| !track \|\| !stage \|\| !canvas \|\| window\.innerWidth <= 1080\) \{ unGrid\(\); return; \}/,
+    'the module script must bail out, before importing Three.js, under any of these conditions — and drop the grid class on the way out');
+});
+
+test('the hero grid and the car appear under exactly the same conditions', () => {
+  // The car is hidden under reduced motion, and a display:none grid item
+  // generates no box — so a two-column grid that applies under conditions the
+  // car does NOT is a grid holding a single item, which auto-places into the
+  // narrow first column and strands the hero copy beside an empty half-page.
+  // That shipped, and no amount of resizing a normal browser would reveal it:
+  // it only appears with an OS accessibility setting turned on.
+  const grid = /@media \(min-width: 1081px\) and \(prefers-reduced-motion: no-preference\) \{\s*\.hero\.has-car \{/;
+  assert.match(siteCss, grid,
+    'the hero grid must be gated on reduced-motion too, not just width, or it outlives the car it was sized for');
+
+  // And when JS takes the car away at runtime, the class goes with it.
+  assert.match(index, /const unGrid = \(\) => document\.querySelector\('\.hero'\)\?\.classList\.remove\('has-car'\);/);
+  assert.match(index, /function fail\(\) \{ section\.remove\(\); unGrid\(\); \}/,
+    'every failure path must collapse the grid, not just remove the section');
 });
 
 test('ferrari showcase loads Three.js and the model from this repo, not a third-party CDN, and fails silently', () => {
@@ -253,8 +270,8 @@ test('ferrari showcase loads Three.js and the model from this repo, not a third-
   // class, so a failed load collapses the two-column grid back to a
   // centered single column instead of leaving the copy off-centre in an
   // empty grid column.
-  assert.match(index, /function fail\(\) \{ section\.remove\(\); document\.querySelector\('\.hero'\)\?\.classList\.remove\('has-car'\); \}/,
-    'the failure helper must remove both the section and the hero grid class');
+  // (the fail()/unGrid() pairing itself is asserted in the grid-conditions
+  // test above; here we only care that every failure path routes through it)
   assert.match(index, /if \(!mods\) \{ fail\(\); return; \}/, 'a failed Three.js import must call fail()');
   assert.match(index, /catch \(e\) \{ fail\(\); return; \}/, 'a WebGL context failure must call fail()');
   assert.match(index, /catch \(e\) \{ fail\(\); return; \}\s*\n\s*const swap/,

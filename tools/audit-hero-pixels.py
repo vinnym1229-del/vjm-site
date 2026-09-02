@@ -15,6 +15,13 @@ from PIL import Image, ImageChops
 TOL_X = 12   # px; anything under this is imperceptible at these sizes
 TOL_Y = 16
 
+# How much of its frame the car must actually occupy. Centering alone is not
+# composition: an earlier build passed every centering check while the car
+# filled 35% of the frame's height, which looks exactly like "not centred" to
+# anyone looking at it. A subject that fills its frame cannot look marooned.
+MIN_FILL_W = 0.70
+MIN_FILL_H = 0.55
+
 
 def content_bbox(path):
     im = Image.open(path).convert('RGB')
@@ -65,6 +72,14 @@ def main():
         print(f'{"PASS" if ok_x else "FAIL"}  horizontally centred (tolerance {TOL_X}px)')
         print(f'{"PASS" if ok_y else "FAIL"}  vertically centred (tolerance {TOL_Y}px)')
         failures += (not ok_x) + (not ok_y)
+
+        fill_w = (maxx - minx) / w
+        fill_h = (maxy - miny) / h
+        ok_fw, ok_fh = fill_w >= MIN_FILL_W, fill_h >= MIN_FILL_H
+        print(f'fills {fill_w * 100:.0f}% of width, {fill_h * 100:.0f}% of height')
+        print(f'{"PASS" if ok_fw else "FAIL"}  fills its frame horizontally (min {MIN_FILL_W:.0%})')
+        print(f'{"PASS" if ok_fh else "FAIL"}  fills its frame vertically (min {MIN_FILL_H:.0%})')
+        failures += (not ok_fw) + (not ok_fh)
 
         # Rotation: the two frames are seconds apart with no interaction, so a
         # turning car must differ. Identical frames mean it is frozen — which

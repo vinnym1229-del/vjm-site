@@ -21,7 +21,7 @@ mkdirSync(OUT, { recursive: true });
 
 const WIDTHS = (process.env.WIDTHS || '1920,1512,1280').split(',').map(Number);
 
-const browser = await chromium.launch();
+const browser = await chromium.launch(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {});
 let failures = 0;
 
 for (const width of WIDTHS) {

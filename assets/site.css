@@ -350,7 +350,15 @@ body.light-mode .nav-drop a:hover { color: #141416; }
    #ferrari-showcase server-side (only its JS-driven WebGL content can fail
    later), so there was never a need to feature-detect its presence in CSS
    at all -- a plain class the server always sends is enough. */
-@media (min-width: 1081px) {
+/* The reduced-motion clause matters as much as the width one. The car is
+   hidden under (prefers-reduced-motion: reduce) further down this file, and a
+   display:none grid item generates no box at all — so without this condition
+   the grid still declared two columns while holding a single item, and the
+   hero copy auto-placed into the narrow 44% column with the entire right half
+   of the page left empty. Every reduced-motion desktop visitor got that, and
+   no amount of resizing a normal browser would ever reveal it. The grid and
+   the car must appear under exactly the same conditions. */
+@media (min-width: 1081px) and (prefers-reduced-motion: no-preference) {
   .hero.has-car {
     display: grid; grid-template-columns: minmax(320px, 44%) 1fr;
     align-items: center; text-align: left; column-gap: clamp(20px, 4vw, 60px);
@@ -358,8 +366,13 @@ body.light-mode .nav-drop a:hover { color: #141416; }
   .hero.has-car #ferrari-showcase {
     position: relative; inset: auto; width: 100%;
     /* A grid row sized to its (auto) content can't resolve a percentage
-       height on a child, so this needs an explicit length rather than a %. */
-    height: min(58vh, 560px);
+       height on a child, so this needs an explicit length rather than a %.
+       Landscape on purpose: a car on a turntable is roughly 2.5x wider than
+       it is tall, so a near-square frame (this was min(58vh, 560px)) can only
+       ever fill about a third of its own height no matter how the camera is
+       fitted — the car ends up dead-centred and marooned in empty space,
+       which reads as "not centred" even when it is centred to the pixel. */
+    height: clamp(240px, 23vw, 400px);
   }
   .hero.has-car .hero-inner { text-align: center; margin: 0 auto; }
 }
