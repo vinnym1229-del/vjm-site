@@ -229,16 +229,43 @@ test('every signup form carries an affirmative consent box and an opt-out route'
   for (const page of ['index.html', 'prop-firms.html']) {
     const html = read(page);
     assert.match(html, /class="nl-signup"/, `${page} must carry the signup form`);
-    assert.match(html, /<input type="checkbox"[^>]*name="consent"/, `${page} needs an unticked consent box`);
-    assert.doesNotMatch(html, /name="consent"[^>]*\bchecked\b/, `${page} must not pre-tick consent`);
     assert.match(html, /unsubscribe\.html/, `${page} must link the opt-out next to the form`);
     assert.match(html, /privacy\.html/, `${page} must link the privacy policy`);
-    assert.match(html, /class="nl-hp"/, `${page} needs the honeypot field`);
   }
   // The quiz's own capture goes through the same endpoint and the same rule.
   assert.match(read('index.html'), /id="quiz-lead-consent"/);
   assert.match(read('assets/funnel.js'), /LEAD_ENDPOINT = '\/api\/newsletter\/subscribe'/);
   assert.match(read('assets/funnel.js'), /consent: p\.consent === true/, 'the helper must not supply consent itself');
+});
+
+test('each individual nl-signup form is fully wired, not just the page as a whole', () => {
+  // index.html now carries two of these (the "home" newsletter section and the
+  // giveaway section added alongside it). The whole-page substring match above
+  // can't tell a fully-wired form from one missing its consent box or honeypot,
+  // as long as some OTHER form on the same page still has them — it would have
+  // passed unchanged even if the giveaway form had shipped with no honeypot at
+  // all. Scope every check to each individual <form> so a defect in one can't
+  // hide behind a sibling.
+  for (const page of ['index.html', 'prop-firms.html']) {
+    const html = read(page);
+    const forms = [...html.matchAll(/<form class="nl-signup"[\s\S]*?<\/form>/g)].map((m) => m[0]);
+    assert.ok(forms.length >= 1, `${page} has no nl-signup form to check`);
+    const seenIds = new Set();
+    for (const form of forms) {
+      const source = form.match(/data-source="([^"]+)"/)?.[1];
+      assert.ok(source, `${page}: every nl-signup form must declare data-source (DB rows and analytics need it to tell entries apart)`);
+      assert.match(form, /type="email"[^>]*\brequired\b/, `${page} [${source}]: email field must be required`);
+      assert.match(form, /class="nl-hp"/, `${page} [${source}]: needs its own honeypot field`);
+      assert.match(form, /<input type="checkbox"[^>]*name="consent"/, `${page} [${source}]: needs an unticked consent box`);
+      assert.doesNotMatch(form, /name="consent"[^>]*\bchecked\b/, `${page} [${source}]: must not pre-tick consent`);
+      assert.match(form, /role="status" aria-live="polite"/, `${page} [${source}]: submit feedback needs a live region`);
+      const id = form.match(/id="(nl-consent-[^"]+)"/)?.[1];
+      assert.ok(id, `${page} [${source}]: consent checkbox needs an id its label can reference`);
+      assert.ok(!seenIds.has(id), `${page}: duplicate consent checkbox id "${id}" — two forms on one page can't share it without breaking the other's label`);
+      seenIds.add(id);
+      assert.match(form, new RegExp(`for="${id}"`), `${page} [${source}]: label must reference the consent checkbox's own id`);
+    }
+  }
 });
 
 test('the unsubscribe page works, and is kept out of the index', () => {
