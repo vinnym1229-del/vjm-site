@@ -73,7 +73,7 @@
 <!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
      than _headers declares -- bump this ?v= on every edit to site.css or
      it can take hours to show up live even after a hard refresh. -->
-<link rel="stylesheet" href="assets/site.css?v=4">
+<link rel="stylesheet" href="assets/site.css?v=5">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -2892,7 +2892,7 @@ setInterval(tickSessionClock, 30000);
   // Tighter frustum around the car for the same map size = more shadow
   // texels per metre, which is what turns a soft grey smudge under the car
   // into something with an actual tyre-shaped edge.
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(1024, 1024);
   sun.shadow.camera.near = 2;  sun.shadow.camera.far = 20;
   sun.shadow.camera.left = -4; sun.shadow.camera.right = 4;
   sun.shadow.camera.top = 4;   sun.shadow.camera.bottom = -4;
@@ -2969,51 +2969,38 @@ setInterval(tickSessionClock, 30000);
   // Branded turntable. It is part of carGroup rather than the scene, so it
   // turns with the car the way a real showroom platform does — a fixed disc
   // under a spinning car reads as the car sliding around on top of it.
-  // The wordmark is drawn to a canvas rather than shipped as an image so it
-  // stays crisp at any DPR and needs no extra asset. Fonts are awaited first;
-  // drawing before they load silently bakes the fallback face into the texture.
-  try { await document.fonts?.ready; } catch (e) { /* fallback face is fine */ }
+  // The whole top face is the site's own icon (assets/pj-logo.jpg — the
+  // exact file the browser tab favicon uses, so this is the same mark
+  // everywhere rather than a separate wordmark invented for this platform),
+  // drawn to a canvas so it can be circle-cropped and given a rim, with no
+  // extra image asset beyond the one already shipped for the favicon.
+  const logoImg = await new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = 'assets/pj-logo.jpg';
+  });
   const PC = 1024, pc = document.createElement('canvas');
   pc.width = pc.height = PC;
   const px = pc.getContext('2d');
   const R = PC / 2;
-  const disc = px.createRadialGradient(R, R, 0, R, R, R);
-  disc.addColorStop(0, '#101013');
-  disc.addColorStop(0.72, '#0a0a0c');
-  disc.addColorStop(1, '#050506');
-  px.fillStyle = disc;
-  px.beginPath(); px.arc(R, R, R - 2, 0, Math.PI * 2); px.fill();
-  px.strokeStyle = 'rgba(209,67,67,.85)'; px.lineWidth = 7;
-  px.beginPath(); px.arc(R, R, R - 16, 0, Math.PI * 2); px.stroke();
-  px.strokeStyle = 'rgba(255,255,255,.10)'; px.lineWidth = 2;
-  px.beginPath(); px.arc(R, R, R - 44, 0, Math.PI * 2); px.stroke();
-  // Wordmark twice, 180 degrees apart, so one of them faces the camera for
-  // most of a rotation without the rim ever looking crowded.
-  const arcText = (text, centreAngle, radius, size, colour) => {
-    px.save();
-    px.translate(R, R);
-    px.rotate(centreAngle);
-    px.fillStyle = colour;
-    px.font = `900 ${size}px 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif`;
-    px.textAlign = 'center';
-    px.textBaseline = 'middle';
-    const step = 0.052;
-    const start = -((text.length - 1) / 2) * step;
-    [...text].forEach((ch, i) => {
-      px.save();
-      px.rotate(start + i * step);
-      px.translate(0, -radius);
-      px.fillText(ch, 0, 0);
-      px.restore();
-    });
-    px.restore();
-  };
-  arcText('PJ TRADES', 0, R - 82, 58, 'rgba(237,237,238,.92)');
-  arcText('PJ TRADES', Math.PI, R - 82, 58, 'rgba(237,237,238,.92)');
+  px.save();
+  px.beginPath(); px.arc(R, R, R - 2, 0, Math.PI * 2); px.clip();
+  if (logoImg) {
+    // object-fit: cover into the circle, cropping to a centred square first
+    // so a non-square source still fills the disc without distorting.
+    const s = Math.min(logoImg.width, logoImg.height);
+    px.drawImage(logoImg, (logoImg.width - s) / 2, (logoImg.height - s) / 2, s, s, 0, 0, PC, PC);
+  } else {
+    px.fillStyle = '#0c0c0d'; px.fillRect(0, 0, PC, PC);
+  }
+  px.restore();
+  px.strokeStyle = 'rgba(209,67,67,.85)'; px.lineWidth = 10;
+  px.beginPath(); px.arc(R, R, R - 6, 0, Math.PI * 2); px.stroke();
   const padTex = new THREE.CanvasTexture(pc);
   padTex.colorSpace = THREE.SRGBColorSpace;
   padTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  const padR = Math.max(size.x, size.z) * 0.56;
+  const padR = Math.max(size.x, size.z) * 0.72;
   const padSide = new THREE.MeshStandardMaterial({ color: 0x0d0d0f, metalness: 0.6, roughness: 0.45, envMapIntensity: 0.7 });
   const pad = new THREE.Mesh(
     new THREE.CylinderGeometry(padR, padR, 0.12, 128),
@@ -3050,7 +3037,7 @@ setInterval(tickSessionClock, 30000);
   function frame() {
     const w = stage.clientWidth, h = stage.clientHeight;
     if (!w || !h) return;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     const halfV = THREE.MathUtils.degToRad(camera.fov) / 2;
@@ -3191,7 +3178,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 <script src="assets/newsletter.js" defer></script>
 <script src="assets/funnel.js" defer></script>
-<script src="assets/live-ticker.js?v=2" defer></script>
+<script src="assets/live-ticker.js?v=3" defer></script>
 <script src="assets/lightning-bg.js?v=9751680" defer></script>
 </body>
 </html>

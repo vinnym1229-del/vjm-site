@@ -31,6 +31,13 @@ test('red stays a minority of the palette', () => {
   assert.ok(share < 0.25, `red is ${(share * 100).toFixed(1)}% of all color literals (budget: 25%)`);
 });
 
+// The one deliberate exception to red-only chromatic color: a financial
+// ticker's "up" state reads as green everywhere else on the internet, and
+// the owner asked for it explicitly (2026-09-02) rather than this being an
+// old-palette leftover slipping back in. Scoped to exactly the two literals
+// that make it up (dark-mode and light-mode), in exactly the one file.
+const TICKER_UP_GREEN = new Set(['assets/live-ticker.js: #3ecf72', 'assets/live-ticker.js: #1a8a45']);
+
 test('the palette stays white / black / red — no foreign hues', () => {
   // Every chromatic color should be the red accent. Greens, blues, golds and
   // teals are what made the original find-replace inconsistent.
@@ -42,13 +49,14 @@ test('the palette stays white / black / red — no foreign hues', () => {
       const l = (max + min) / 2 / 255;
       const s = max === min ? 0 : (max - min) / (255 - Math.abs(max + min - 255));
       if (s < 0.25 || l < 0.06 || l > 0.94 || a < 0.06) continue; // neutral or invisible
-      if (!isRed(c)) strays.push(`${p}: ${c.raw}`);
+      if (!isRed(c) && !TICKER_UP_GREEN.has(`${p}: ${c.raw}`)) strays.push(`${p}: ${c.raw}`);
     }
   }
   // Zero, not a tolerance: the system is white/black/red by design, so any
   // chromatic non-red literal is either a leftover from the old palette or a
   // new hue someone added without deciding to. Adding one deliberately means
-  // editing this test on purpose.
+  // editing this test on purpose — see TICKER_UP_GREEN above for the one
+  // case where that has actually happened.
   assert.deepEqual(strays, [], `non-red hues found:\n${strays.join('\n')}`);
 });
 

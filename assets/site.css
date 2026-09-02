@@ -334,6 +334,27 @@ body.light-mode .nav-drop a:hover { color: #141416; }
               linear-gradient(180deg, #0c0c0d 0%, #131315 100%);
   position: relative; overflow: hidden;
 }
+/* Above the car's own visibility breakpoint, the hero becomes an explicit
+   two-column grid instead of a centered block with the car absolutely
+   positioned over it. Independent centering + absolute positioning is what
+   let the car and the "With ten years..." paragraph occupy the same
+   horizontal space at some viewport widths (a centered 820px text block's
+   left edge can fall well inside a "car gets the left 48vw" box) -- actual
+   grid columns cannot overlap by construction, so this is fixed for every
+   width above the breakpoint, not just the one this was tuned against. */
+@media (min-width: 1081px) {
+  .hero:has(#ferrari-showcase) {
+    display: grid; grid-template-columns: minmax(320px, 44%) 1fr;
+    align-items: center; text-align: left; column-gap: clamp(20px, 4vw, 60px);
+  }
+  .hero:has(#ferrari-showcase) #ferrari-showcase {
+    position: relative; inset: auto; width: 100%;
+    /* A grid row sized to its (auto) content can't resolve a percentage
+       height on a child, so this needs an explicit length rather than a %. */
+    height: min(58vh, 560px);
+  }
+  .hero:has(#ferrari-showcase) .hero-inner { text-align: center; margin: 0 auto; }
+}
 .hero::before {
   content:'';
   position: absolute; inset: 0;

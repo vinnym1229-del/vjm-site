@@ -130,7 +130,7 @@
 #ticker-wrap .lt-label{font-family:'Inter',sans-serif;font-size:.68rem;font-weight:800;letter-spacing:1px;color:#9a9aa0;text-transform:uppercase;transition:color .15s;}
 #ticker-wrap .lt-price{font-family:'Barlow Condensed',sans-serif;font-size:1.06rem;font-weight:900;color:#ededee;letter-spacing:.5px;}
 #ticker-wrap .lt-pct{font-family:'Inter',sans-serif;font-size:.7rem;font-weight:800;}
-#ticker-wrap .lt-pct.up{color:#cfcfd4;}
+#ticker-wrap .lt-pct.up{color:#3ecf72;}
 #ticker-wrap .lt-pct.down{color:#d14343;}
 #ticker-wrap .lt-sess{font-family:'Inter',sans-serif;font-size:.54rem;font-weight:900;letter-spacing:.4px;padding:2px 6px;border-radius:5px;white-space:nowrap;}
 #ticker-wrap .lt-sess.sess-op{color:#cfcfd4;background:rgba(255,255,255,.10);}
@@ -142,7 +142,7 @@ body.light-mode #ticker-wrap .lt-cell{border-right-color:rgba(0,0,0,.08);}
 body.light-mode #ticker-wrap .lt-cell:hover .lt-label{color:#141416;}
 body.light-mode #ticker-wrap .lt-label{color:#6b6b70;}
 body.light-mode #ticker-wrap .lt-price{color:#141416;}
-body.light-mode #ticker-wrap .lt-pct.up{color:#3a3a3e;}
+body.light-mode #ticker-wrap .lt-pct.up{color:#1a8a45;}
 body.light-mode #ticker-wrap .lt-sess.sess-op{color:#3a3a3e;background:rgba(0,0,0,.06);}
 body.light-mode #ticker-wrap .lt-sess.sess-ah,
 body.light-mode #ticker-wrap .lt-sess.sess-on,
