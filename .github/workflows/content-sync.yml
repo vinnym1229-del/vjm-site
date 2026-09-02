@@ -40,38 +40,6 @@ jobs:
           test -n "$RESEARCH_REFRESH_URL" || { echo "RESEARCH_REFRESH_URL secret is not set"; exit 1; }
           test -n "$RESEARCH_CRON_SECRET" || { echo "RESEARCH_CRON_SECRET secret is not set"; exit 1; }
 
-      # ONE-OFF: the owner reports seeing no change after a push (commit
-      # ea24062: Ferrari load timeout + light-mode lightning/ticker fixes).
-      # Check the live homepage and its CSS bundle directly rather than
-      # guessing whether this is a deploy problem or a browser-cache one.
-      # Delete this step after one run.
-      - name: One-off — verify commit ea24062 is actually live
-        if: always()
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -uo pipefail
-          curl --silent --show-error --retry 2 --max-time 30 -o /tmp/homepage.html "${RESEARCH_REFRESH_URL%/}/"
-          echo "bytes fetched (homepage): $(wc -c < /tmp/homepage.html)"
-          echo "--- fs-loading placeholder markup present? ---"
-          grep -c 'id="fsLoading"' /tmp/homepage.html || true
-          echo "--- fs-loading noscript guard present? ---"
-          grep -c 'ferrari-showcase{display:none;}' /tmp/homepage.html || true
-          echo "--- ferrari-showcase section present? ---"
-          grep -c 'id="ferrari-showcase"' /tmp/homepage.html || true
-          curl --silent --show-error --retry 2 --max-time 30 -o /tmp/site.css "${RESEARCH_REFRESH_URL%/}/assets/site.css"
-          echo "bytes fetched (site.css): $(wc -c < /tmp/site.css)"
-          echo "--- left-edge lightning hidden in light mode present? ---"
-          grep -c '.sbl-l { display: none' /tmp/site.css || true
-          echo "--- ticker contrast filter present? ---"
-          grep -c 'ticker-wrap iframe { filter: contrast' /tmp/site.css || true
-          echo "--- mega-bolt red-not-black fix present? ---"
-          grep -c '.mega-bolt .bolt-core .c-trunk { stroke: #a63333' /tmp/site.css || true
-          echo "--- cache headers (homepage) ---"
-          curl -sI --max-time 20 "${RESEARCH_REFRESH_URL%/}/" | grep -i "cf-cache-status\|age:\|last-modified" || true
-          echo "--- cache headers (site.css) ---"
-          curl -sI --max-time 20 "${RESEARCH_REFRESH_URL%/}/assets/site.css" | grep -i "cf-cache-status\|age:\|last-modified\|cache-control" || true
-
       - name: Pull the sheet into D1
         shell: bash
         run: |
