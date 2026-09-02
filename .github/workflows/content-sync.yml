@@ -40,24 +40,6 @@ jobs:
           test -n "$RESEARCH_REFRESH_URL" || { echo "RESEARCH_REFRESH_URL secret is not set"; exit 1; }
           test -n "$RESEARCH_CRON_SECRET" || { echo "RESEARCH_CRON_SECRET secret is not set"; exit 1; }
 
-      # ONE-OFF: confirm the debug fingerprint branch removed from doGet() in
-      # Code.gs is actually gone from the live deployment after the owner's
-      # redeploy. Delete this step immediately after one successful run.
-      - name: One-off — confirm debug fingerprint endpoint is gone
-        if: always()
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -uo pipefail
-          code="$(curl --silent --show-error -L --retry 2 --max-time 30 \
-            -o /tmp/fingerprint-check.json -w '%{http_code}' \
-            "https://script.google.com/macros/s/AKfycbyNEZ-qkLS2rUKEADTcQcL7eEgCnFrF9BzW00tioPSZPXOkMtJsoelLVJeUbKyIOyQj/exec?debug=fingerprint")"
-          echo "HTTP status: $code"
-          echo "--- body ---"
-          cat /tmp/fingerprint-check.json || true
-          echo ""
-          echo "------------"
-
       - name: Pull the sheet into D1
         shell: bash
         run: |
