@@ -40,6 +40,33 @@ jobs:
           test -n "$RESEARCH_REFRESH_URL" || { echo "RESEARCH_REFRESH_URL secret is not set"; exit 1; }
           test -n "$RESEARCH_CRON_SECRET" || { echo "RESEARCH_CRON_SECRET secret is not set"; exit 1; }
 
+      # ONE-OFF: the maintenance session's own sandbox has no route to the
+      # live domain (org egress policy blocks arbitrary internet hosts), so
+      # this run smoke-tests pages/endpoints/bot-protection from the Actions
+      # runner instead, which does have a normal route out. Delete this step
+      # once its output is read.
+      - name: One-off — smoke-test the live deployment
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -uo pipefail
+          BASE="${RESEARCH_REFRESH_URL%/}"
+          echo "== pages =="
+          for p in / /futures-dissection.html /prop-firms.html /stock-lab.html /research-engine.html /options-lab.html /premarket.html /premium-guidance.html /forex-calendar.html; do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$BASE$p")"
+            echo "$p -> $code"
+          done
+          echo "== JSON endpoints =="
+          for ep in "/api/ticker" "/api/yahoo-news?symbol=AAPL" "/api/stock-research?symbol=AAPL" "/api/content?type=schedule"; do
+            body="$(curl -s --max-time 20 "$BASE$ep")"
+            ok="$(RESPONSE="$body" node -e 'try{console.log(JSON.parse(process.env.RESPONSE).ok===true)}catch{console.log("PARSE_FAIL")}')"
+            echo "$ep -> ok=$ok"
+          done
+          echo "== verify-premium bot protection =="
+          resp="$(curl -s --max-time 20 -X POST -H 'Content-Type: application/json' -d '{"code":"BAD-CODE-0000"}' "$BASE/api/verify-premium")"
+          echo "$resp"
+
       - name: Pull the sheet into D1
         shell: bash
         run: |
