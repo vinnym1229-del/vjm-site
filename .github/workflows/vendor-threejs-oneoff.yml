@@ -1,0 +1,121 @@
+# ONE-OFF: vendor Three.js + the Ferrari model into this repo instead of
+# pulling them from three external CDNs at runtime (cdn.jsdelivr.net,
+# threejs.org, raw.githubusercontent.com). The owner keeps seeing "no
+# Ferrari" and cannot tell whether that's a stale deploy or their own
+# network/ad-blocker refusing one of those hosts -- self-hosting removes
+# the ambiguity and the dependency on three separate third parties being
+# reachable at once. Delete this workflow file after one successful run.
+#
+# The sandbox this session runs in cannot reach any of those CDNs itself
+# (outbound HTTPS to them is blocked), which is exactly why this has to
+# run on a GitHub-hosted runner instead.
+
+name: One-off — vendor Three.js and the Ferrari model
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: pj
+
+      - name: Fetch three.js, its addons, and the car model
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://cdn.jsdelivr.net/npm/three@0.160.0"
+          OUT="assets/vendor/three"
+          mkdir -p "$OUT"
+
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const https = require("https");
+
+            const BASE = process.argv[1];
+            const OUT = process.argv[2];
+
+            function get(url) {
+              return new Promise((resolve, reject) => {
+                https.get(url, (res) => {
+                  if (res.statusCode !== 200) { reject(new Error(url + " -> " + res.statusCode)); return; }
+                  const chunks = [];
+                  res.on("data", (c) => chunks.push(c));
+                  res.on("end", () => resolve(Buffer.concat(chunks)));
+                }).on("error", reject);
+              });
+            }
+
+            const seen = new Set();
+            const queue = ["build/three.module.js", "examples/jsm/loaders/GLTFLoader.js", "examples/jsm/loaders/DRACOLoader.js"];
+
+            async function run() {
+              while (queue.length) {
+                const rel = queue.shift();
+                if (seen.has(rel)) continue;
+                seen.add(rel);
+                const url = BASE + "/" + rel;
+                console.log("fetching", url);
+                const buf = await get(url);
+                const dest = path.join(OUT, rel);
+                fs.mkdirSync(path.dirname(dest), { recursive: true });
+                fs.writeFileSync(dest, buf);
+                const text = buf.toString("utf8");
+                const re = /from\s+["'"'"'](\.\.?\/[^"'"'"']+)["'"'"']/g;
+                let m;
+                while ((m = re.exec(text))) {
+                  const resolved = path.normalize(path.join(path.dirname(rel), m[1])).split(path.sep).join("/");
+                  if (!seen.has(resolved) && seen.size + queue.length < 60) queue.push(resolved);
+                }
+              }
+            }
+            run().then(() => console.log("done,", seen.size, "files")).catch((e) => { console.error(e); process.exit(1); });
+          ' "$BASE" "$OUT"
+
+          # DRACOLoader fetches its decoder at runtime (not a static import),
+          # so the import-graph walk above never sees these three files.
+          DRACO_DIR="$OUT/examples/jsm/libs/draco/gltf"
+          mkdir -p "$DRACO_DIR"
+          for f in draco_decoder.js draco_decoder.wasm draco_wasm_wrapper.js; do
+            echo "fetching draco/$f"
+            curl --silent --show-error --fail --retry 3 --max-time 60 \
+              -o "$DRACO_DIR/$f" "$BASE/examples/jsm/libs/draco/gltf/$f"
+          done
+
+          mkdir -p assets/models
+          echo "fetching ferrari.glb"
+          curl --silent --show-error --fail --retry 3 --max-time 120 \
+            -o assets/models/ferrari.glb "https://threejs.org/examples/models/gltf/ferrari.glb"
+
+          echo "--- sizes ---"
+          du -sh assets/vendor assets/models/ferrari.glb
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/vendor assets/models/ferrari.glb
+          if git diff --cached --quiet; then
+            echo "nothing to commit"
+            exit 0
+          fi
+          git commit -m "Vendor Three.js and the Ferrari model into the repo
+
+Removes the runtime dependency on cdn.jsdelivr.net, threejs.org, and
+raw.githubusercontent.com for the homepage's 3D Ferrari section. All
+three were single points of failure the owner's own network/ad-blocker
+could silently break with no way to tell from the outside.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015mxHgV3pr4vTWZJ7teNwa4"
+          git push origin HEAD:pj
