@@ -3,6 +3,7 @@ import { __test } from '../functions/api/research-engine.js';
 
 const {
   analyseFib,
+  buildLatestLevels,
   buildPriceActionModel,
   classifySweep,
   combineFibStats,
@@ -390,6 +391,98 @@ assert.equal(bullishSummary.medianMinutesToRetest, 10, 'the untested row\'s null
   }
   assert.deepEqual(both.fvgRecords, expectedRecords, 'fvgRecords must equal scanning every timeframe on every included day, in order');
   assert.deepEqual(both.events, expectedEvents, 'events must equal every timeframe\'s FVG events plus the displacement scan, in order');
+}
+
+// buildLatestLevels drives the premium dashboard's "Latest Levels" panel --
+// the one place all of PDH/PDL, prior-week range, prior-session value area,
+// and the current session's overnight/asia/london/premarket ranges and most
+// recent confirmed BSL/SSL pivot are combined into a single ordered list. It
+// had zero direct test references despite every helper it calls already
+// being pinned individually.
+{
+  function levelBar(t, h, l, time) {
+    return { t, o: (h + l) / 2, h, l, c: (h + l) / 2, v: 1000, _time: time };
+  }
+
+  // Prior week: a day in the calendar week before the trade date, so
+  // priorWeekRange has something to find.
+  const priorWeekRth = [
+    levelBar('2026-08-18T13:30:00Z', 90, 80, '09:30'),
+    levelBar('2026-08-18T13:31:00Z', 95, 85, '09:31'),
+  ];
+  // Prior day: RTH bars back PDH/PDL and the prior-session value area.
+  const prevRth = [
+    levelBar('2026-08-24T13:30:00Z', 105, 95, '09:30'),
+    levelBar('2026-08-24T13:31:00Z', 110, 100, '09:31'),
+    levelBar('2026-08-24T13:32:00Z', 108, 98, '09:32'),
+  ];
+  // Current day overnight bars, 5 minutes apart, built so swingLiquidityLevels
+  // (pivot=2) finds exactly one interior pivot high (15) and one pivot low (3)
+  // -- same fixture shape as the swingLiquidityLevels case above.
+  const overnightSpec = [[10, 5], [11, 4], [15, 6], [12, 3], [9, 6], [8, 7], [7, 8]];
+  const overnight = overnightSpec.map(([h, l], i) => levelBar(
+    `2026-08-25T22:${String(i * 5).padStart(2, '0')}:00Z`, h, l, `18:${String(i * 5).padStart(2, '0')}`,
+  ));
+  const asia = [
+    levelBar('2026-08-25T00:15:00Z', 20, 18, '20:15'),
+    levelBar('2026-08-25T00:45:00Z', 22, 17, '20:45'),
+  ];
+  const london = [
+    levelBar('2026-08-25T06:15:00Z', 30, 28, '02:15'),
+    levelBar('2026-08-25T06:45:00Z', 32, 27, '02:45'),
+  ];
+  const pre = [
+    levelBar('2026-08-25T09:15:00Z', 40, 38, '05:15'),
+    levelBar('2026-08-25T09:45:00Z', 42, 37, '05:45'),
+  ];
+
+  const daysMap = new Map([
+    ['2026-08-18', priorWeekRth],
+    ['2026-08-24', prevRth],
+    ['2026-08-25', [...overnight, ...asia, ...london, ...pre]],
+  ]);
+
+  const levels = buildLatestLevels(daysMap);
+  assert.equal(levels.tradeDate, '2026-08-25', 'trade date is the most recent key, not the map insertion order');
+  const byLevel = Object.fromEntries(levels.rows.map((row) => [row.level, row]));
+  assert.deepEqual(
+    { price: byLevel.PDH.price, source: byLevel.PDH.source },
+    { price: 110, source: 'SIP' },
+    'PDH must come from the prior day\'s RTH high, not the current (still-forming) day',
+  );
+  assert.equal(byLevel.PDL.price, 95);
+  assert.deepEqual(
+    { PWH: byLevel.PWH.price, PWL: byLevel.PWL.price },
+    { PWH: 95, PWL: 80 },
+    'prior-week range must pool the whole prior calendar week\'s RTH bars, not just one day',
+  );
+  assert.ok(
+    byLevel['Prior VAH'].price >= byLevel['Prior POC'].price && byLevel['Prior POC'].price >= byLevel['Prior VAL'].price,
+    'the prior session\'s value area must stay ordered VAH >= POC >= VAL',
+  );
+  assert.deepEqual(
+    { high: byLevel['Overnight High'].price, low: byLevel['Overnight Low'].price },
+    { high: 42, low: 3 },
+    'the "Overnight" range spans 6pm-9:30am ET, so it must include the london/premarket bars too, not just the evening ones',
+  );
+  assert.deepEqual({ high: byLevel['Asia Proxy High'].price, low: byLevel['Asia Proxy Low'].price }, { high: 22, low: 17 });
+  assert.deepEqual({ high: byLevel['London Proxy High'].price, low: byLevel['London Proxy Low'].price }, { high: 32, low: 27 });
+  assert.deepEqual({ high: byLevel['Premarket High'].price, low: byLevel['Premarket Low'].price }, { high: 42, low: 37 });
+  assert.deepEqual(
+    { bsl: byLevel['Latest Overnight BSL'].price, ssl: byLevel['Latest Overnight SSL'].price },
+    { bsl: 15, ssl: 3 },
+    'the panel\'s BSL/SSL must be the most recent confirmed 5m pivot, and must not be fooled by the much larger london/premarket prices sharing the same resampled array',
+  );
+
+  // With no prior day in the map, PDH/PDL/value-area/prior-week rows must not
+  // appear at all -- not as nulls, not as zeros.
+  const soleDay = buildLatestLevels(new Map([['2026-08-25', overnight]]));
+  for (const label of ['PDH', 'PDL', 'PWH', 'PWL', 'Prior VAH', 'Prior VAL', 'Prior POC']) {
+    assert.ok(!soleDay.rows.some((row) => row.level === label), `${label} must be absent with no prior trading day, not present with a null price`);
+  }
+  assert.ok(soleDay.rows.some((row) => row.level === 'Overnight High'), 'the current day\'s own ranges must still populate with no prior day');
+
+  assert.deepEqual(buildLatestLevels(new Map()), { tradeDate: null, rows: [] }, 'an empty days map must not throw');
 }
 
 // ---------------------------------------------------------------------------
