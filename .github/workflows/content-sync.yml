@@ -40,28 +40,6 @@ jobs:
           test -n "$RESEARCH_REFRESH_URL" || { echo "RESEARCH_REFRESH_URL secret is not set"; exit 1; }
           test -n "$RESEARCH_CRON_SECRET" || { echo "RESEARCH_CRON_SECRET secret is not set"; exit 1; }
 
-      # ONE-OFF: verify commit 602b6f2 (x St removal + cache-busted assets)
-      # is actually live. Delete this step after one run.
-      - name: One-off — verify commit 602b6f2 is actually live
-        if: always()
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -uo pipefail
-          curl --silent --show-error --retry 2 --max-time 30 -o /tmp/homepage.html "${RESEARCH_REFRESH_URL%/}/"
-          echo "bytes fetched (homepage): $(wc -c < /tmp/homepage.html)"
-          echo "--- leftover 'x St' branding gone? (should be 0) ---"
-          grep -c 'x St' /tmp/homepage.html || true
-          echo "--- cache-busted site.css link present? ---"
-          grep -c 'assets/site.css?v=602b6f2\|assets/site.css?v=9751680' /tmp/homepage.html || true
-          CSS_HREF=$(grep -o 'assets/site\.css[^"]*' /tmp/homepage.html | head -1)
-          echo "css href actually served: $CSS_HREF"
-          curl --silent --show-error --retry 2 --max-time 30 -o /tmp/site.css "${RESEARCH_REFRESH_URL%/}/${CSS_HREF}"
-          echo "bytes fetched (site.css via versioned url): $(wc -c < /tmp/site.css)"
-          grep -c '.sbl-l { display: none' /tmp/site.css || true
-          echo "--- cache status on versioned css url (should be fresh) ---"
-          curl -sI --max-time 20 "${RESEARCH_REFRESH_URL%/}/${CSS_HREF}" | grep -i "cf-cache-status\|age:\|last-modified" || true
-
       - name: Pull the sheet into D1
         shell: bash
         run: |
