@@ -40,6 +40,30 @@ jobs:
           test -n "$RESEARCH_REFRESH_URL" || { echo "RESEARCH_REFRESH_URL secret is not set"; exit 1; }
           test -n "$RESEARCH_CRON_SECRET" || { echo "RESEARCH_CRON_SECRET secret is not set"; exit 1; }
 
+      # ONE-OFF: verify commit 8349fb6 (self-hosted Three.js/Ferrari model,
+      # ticker light-mode fix) is actually live. Delete after one run.
+      - name: One-off — verify commit 8349fb6 is actually live
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -uo pipefail
+          curl --silent --show-error --retry 2 --max-time 30 -o /tmp/homepage.html "${RESEARCH_REFRESH_URL%/}/"
+          echo "--- self-hosted three.js importmap present? ---"
+          grep -c '"three": "./assets/vendor/three/build/three.module.js"' /tmp/homepage.html || true
+          echo "--- old jsdelivr CDN reference gone? (should be 0) ---"
+          grep -c 'cdn.jsdelivr.net' /tmp/homepage.html || true
+          echo "--- versioned live-ticker.js link present? ---"
+          grep -c 'assets/live-ticker.js?v=2' /tmp/homepage.html || true
+          echo "--- vendored three.module.js actually served? ---"
+          curl -s -o /dev/null -w "%{http_code} %{size_download} bytes\n" "${RESEARCH_REFRESH_URL%/}/assets/vendor/three/build/three.module.js"
+          echo "--- ferrari.glb actually served? ---"
+          curl -s -o /dev/null -w "%{http_code} %{size_download} bytes\n" "${RESEARCH_REFRESH_URL%/}/assets/models/ferrari.glb"
+          echo "--- draco decoder wasm actually served? ---"
+          curl -s -o /dev/null -w "%{http_code} %{size_download} bytes\n" "${RESEARCH_REFRESH_URL%/}/assets/vendor/three/examples/jsm/libs/draco/gltf/draco_decoder.wasm"
+          echo "--- ticker light-mode fix present? ---"
+          curl --silent --show-error --retry 2 --max-time 30 "${RESEARCH_REFRESH_URL%/}/assets/live-ticker.js?v=2" | grep -c 'body.light-mode #ticker-wrap .lt-price{color:#141416;}' || true
+
       - name: Pull the sheet into D1
         shell: bash
         run: |
