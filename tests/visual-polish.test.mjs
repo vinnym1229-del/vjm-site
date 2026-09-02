@@ -234,6 +234,19 @@ test('ferrari showcase loads Three.js and the model from this repo, not a third-
     assert.ok(!index.includes(host), `${host} should no longer be referenced now that Three.js is vendored`);
   }
 
+  // The car model is Draco-compressed and Draco's decoder is WebAssembly.
+  // A CSP that names script-src at all blocks WebAssembly compilation unless
+  // it also allows 'wasm-unsafe-eval' — so without this the browser refuses
+  // to compile the decoder, the model never loads, and the section deletes
+  // itself, with nothing on the page to say why. This cost a full debugging
+  // session precisely because it cannot reproduce on a local static server:
+  // python3 -m http.server sends no CSP, so it only ever fails in production.
+  const headers = read('_headers');
+  const csp = /Content-Security-Policy: ([^\n]+)/.exec(headers)[1];
+  const scriptSrc = /script-src ([^;]+)/.exec(csp)[1];
+  assert.ok(/'wasm-unsafe-eval'|'unsafe-eval'/.test(scriptSrc),
+    "CSP script-src must allow 'wasm-unsafe-eval' or the Draco WASM decoder cannot compile and the car silently never renders");
+
   // Every failure path — WebGL unsupported, a corrupt local file, whatever —
   // must still remove the section rather than leave a broken canvas or an
   // unhandled rejection on the page.

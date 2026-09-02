@@ -73,7 +73,7 @@
 <!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
      than _headers declares -- bump this ?v= on every edit to site.css or
      it can take hours to show up live even after a hard refresh. -->
-<link rel="stylesheet" href="assets/site.css?v=2">
+<link rel="stylesheet" href="assets/site.css?v=3">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -233,6 +233,30 @@
 </script>
 <!-- HERO -->
 <section class="hero" id="home">
+  <!-- FERRARI — a real-time 3D render (Three.js + WebGL), not a photo or a
+       video, filling the empty left column the centred hero copy leaves on a
+       wide screen. It turns on the hero's own scroll progress rather than a
+       timer, so pausing mid-scroll pauses the turntable exactly there.
+       Three.js and the model are vendored in this repo (assets/vendor/three,
+       assets/models/ferrari.glb) rather than pulled from a CDN — three
+       separate third parties used to decide whether this rendered at all.
+       The model is Draco-compressed, so its decoder is WebAssembly, which is
+       why script-src in _headers carries 'wasm-unsafe-eval': without it the
+       browser refuses to compile the decoder and the car never appears, with
+       nothing visibly wrong on the page to explain why.
+       Skips loading Three.js entirely on screens <=1080px and under
+       prefers-reduced-motion (assets/site.css) — that's most of mobile
+       traffic, and this is pure decoration. Any failure removes the layer;
+       nothing about the rest of the page depends on it. -->
+  <noscript><style>#ferrari-showcase{display:none;}</style></noscript>
+  <div id="ferrari-showcase" aria-label="3D Ferrari">
+    <div class="fs-track" id="fsTrack">
+      <div class="fs-stage" id="fsStage">
+        <div class="fs-loading" id="fsLoading" aria-hidden="true"><span class="fs-loading-pulse"></span></div>
+        <canvas id="fsCanvas" aria-hidden="true"></canvas>
+      </div>
+    </div>
+  </div>
   <div class="liquid-bg" aria-hidden="true">
     <div class="liquid-blob lb-1"></div>
     <div class="liquid-blob lb-2"></div>
@@ -410,29 +434,6 @@
   <div class="proof-item"><strong>$50,000</strong><span>prop firm funding giveaways</span></div>
 </div>
 
-<!-- FERRARI SHOWCASE — a real-time 3D render (Three.js + WebGL), not a photo
-     or a video, pinned on the left of this band while it scrolls by. It
-     turns on scroll progress rather than a timer, so pausing mid-scroll
-     pauses the turntable exactly there. The model is a generic red Ferrari
-     glTF asset (there is no photogrammetry of the owner's actual car), lit
-     and materialed to read as a studio product shot rather than a game
-     asset — see the comment above the material setup in the script near
-     the end of this file for why. Skips loading Three.js entirely on
-     screens <=1080px and under prefers-reduced-motion (assets/site.css):
-     that's most of mobile traffic, and this is pure decoration, so there is
-     no reason to spend the download or the GPU time there. If the model or
-     the WebGL context fails to load for any reason, the whole layer removes
-     itself — nothing about the rest of the page depends on it. -->
-<noscript><style>#ferrari-showcase{display:none;}</style></noscript>
-<section id="ferrari-showcase" aria-label="3D Ferrari">
-  <div class="fs-track" id="fsTrack">
-    <div class="fs-stage" id="fsStage">
-      <div class="fs-loading" id="fsLoading" aria-hidden="true"><span class="fs-loading-pulse"></span></div>
-      <canvas id="fsCanvas" aria-hidden="true"></canvas>
-      <p class="fs-caption">Futures pay for real things.</p>
-    </div>
-  </div>
-</section>
 
 <!-- WHAT YOU GET — futures-first feature showcase (recreated from the owner's Whop carousel, 2026-08-24) -->
 <section id="features" style="background:var(--bg);">
@@ -2950,7 +2951,11 @@ setInterval(tickSessionClock, 30000);
 
   // Framing: the car sits in the left portion of the stage, not centered.
   let dist = 12;
-  const camX = 1.6;
+  // The stage is now the hero's own left column, so the car centres inside
+  // it. The old 1.6 offset dated from when the stage spanned the full page
+  // width and the car had to be pushed left within it; keeping it here just
+  // shoved half the car off the edge of its own column.
+  const camX = 0;
   function frame() {
     const w = stage.clientWidth, h = stage.clientHeight;
     if (!w || !h) return;
@@ -2967,17 +2972,22 @@ setInterval(tickSessionClock, 30000);
   frame();
   stage.classList.add('fs-ready');
 
-  // Scroll = turntable, measured across .fs-track's OWN runway rather than
+  // Scroll = turntable, measured across the hero's OWN height rather than
   // the whole document — otherwise the spin rate would depend on how long
   // every other section on the page happens to be, and pausing mid-scroll
-  // wouldn't reliably pause the rotation exactly where it was.
+  // wouldn't reliably pause the rotation exactly where it was. The car now
+  // lives inside the hero, which is shorter than the viewport's scrollable
+  // run, so progress is "how far the hero has travelled up past the top",
+  // not "how far through a taller-than-viewport track" — the old formula
+  // divided by (height - innerHeight), which is <= 0 here and pinned the
+  // rotation at zero forever.
   const TAU = Math.PI * 2;
   const BASE_ROT = Math.PI - 0.55;
   let scrollP = 0, scrollRot = 0;
   function onScroll() {
     const rect = track.getBoundingClientRect();
-    const scrollable = rect.height - window.innerHeight;
-    scrollP = scrollable > 0 ? Math.min(1, Math.max(0, -rect.top / scrollable)) : 0;
+    const travel = rect.height || 1;
+    scrollP = Math.min(1, Math.max(0, -rect.top / travel));
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
@@ -3009,8 +3019,11 @@ setInterval(tickSessionClock, 30000);
 
     smx += (mx - smx) * (1 - Math.exp(-dt * 3));
     smy += (my - smy) * (1 - Math.exp(-dt * 3));
-    camera.position.set(camX + smx * 0.35, LOOK_Y + 2.1 - smy * 0.2, dist);
-    camera.lookAt(camX, LOOK_Y + smy * 0.12, 0);
+    camera.position.set(camX + smx * 0.35, LOOK_Y + 1.95 - smy * 0.2, dist);
+    // Aiming below the car's own centre lifts it in frame; centred on the
+    // hero's full height it otherwise sat low enough to graze the bottom
+    // edge of its column.
+    camera.lookAt(camX, LOOK_Y - 0.3 + smy * 0.12, 0);
 
     renderer.render(scene, camera);
   }
