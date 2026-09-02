@@ -205,26 +205,38 @@ test('ferrari showcase (WebGL) never loads on phones or under reduced motion', (
     'the module script must bail out, before importing Three.js, under any of these conditions');
 });
 
-test('ferrari showcase loads Three.js only from the CSP-allowlisted CDN, and fails silently', () => {
-  // Every module specifier must resolve to a host the CSP in _headers
-  // actually allows (script-src), or the browser blocks the import and the
-  // section is left half-built. Cross-check both files instead of trusting
-  // them to stay in sync by hand.
-  const headers = read('_headers');
-  const csp = /Content-Security-Policy: ([^\n]+)/.exec(headers)[1];
-  const scriptSrc = /script-src ([^;]+)/.exec(csp)[1];
-  assert.ok(scriptSrc.includes('cdn.jsdelivr.net'), 'CSP script-src must allow cdn.jsdelivr.net for the Three.js importmap');
-  const connectSrc = /connect-src ([^;]+)/.exec(csp)[1];
-  for (const host of ['cdn.jsdelivr.net', 'threejs.org', 'raw.githubusercontent.com']) {
-    assert.ok(connectSrc.includes(host), `CSP connect-src must allow ${host} for the model/decoder fetch`);
+test('ferrari showcase loads Three.js and the model from this repo, not a third-party CDN, and fails silently', () => {
+  // Three.js, its addons, and the car model are vendored into the repo
+  // (assets/vendor/three, assets/models/ferrari.glb) rather than pulled from
+  // cdn.jsdelivr.net / threejs.org / raw.githubusercontent.com at runtime --
+  // three separate third parties whose reachability (or an ad blocker's
+  // opinion of them) used to decide whether this section rendered at all.
+  assert.match(index, /"three": "\.\/assets\/vendor\/three\/build\/three\.module\.js"/,
+    'importmap must resolve "three" to the vendored copy, not an external CDN');
+  assert.match(index, /"three\/addons\/": "\.\/assets\/vendor\/three\/examples\/jsm\/"/);
+  assert.match(index, /gltfLoader\.load\('assets\/models\/ferrari\.glb', res, undefined, rej\)/,
+    'the model must load from the vendored local copy');
+  assert.match(index, /setDecoderPath\('assets\/vendor\/three\/examples\/jsm\/libs\/draco\/gltf\/'\)/);
+
+  for (const f of [
+    'assets/vendor/three/build/three.module.js',
+    'assets/vendor/three/examples/jsm/loaders/GLTFLoader.js',
+    'assets/vendor/three/examples/jsm/loaders/DRACOLoader.js',
+    'assets/vendor/three/examples/jsm/libs/draco/gltf/draco_decoder.js',
+    'assets/vendor/three/examples/jsm/libs/draco/gltf/draco_decoder.wasm',
+    'assets/vendor/three/examples/jsm/libs/draco/gltf/draco_wasm_wrapper.js',
+    'assets/models/ferrari.glb',
+  ]) {
+    assert.ok(existsSync(join(ROOT, f)), `${f} must actually be committed, not just referenced`);
   }
 
-  assert.match(index, /"three": "https:\/\/cdn\.jsdelivr\.net\/npm\/three@[\d.]+\/build\/three\.module\.js"/,
-    'importmap must pin an exact Three.js version, not a floating tag');
+  for (const host of ['cdn.jsdelivr.net', 'threejs.org', 'raw.githubusercontent.com']) {
+    assert.ok(!index.includes(host), `${host} should no longer be referenced now that Three.js is vendored`);
+  }
 
-  // Every failure path — WebGL unsupported, the CDN unreachable, every model
-  // URL 404ing — must remove the section rather than leave a broken canvas
-  // or an unhandled rejection on the page.
+  // Every failure path — WebGL unsupported, a corrupt local file, whatever —
+  // must still remove the section rather than leave a broken canvas or an
+  // unhandled rejection on the page.
   assert.match(index, /if \(!mods\) \{ section\.remove\(\); return; \}/, 'a failed Three.js import must remove the section');
   assert.match(index, /catch \(e\) \{ section\.remove\(\); return; \}/, 'a WebGL context failure must remove the section');
   assert.match(index, /catch \(e\) \{ section\.remove\(\); return; \}\s*\n\s*const swap/,

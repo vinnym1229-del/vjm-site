@@ -138,6 +138,15 @@
 #ticker-wrap .lt-sess.sess-on{color:#9a9aa0;background:rgba(255,255,255,.07);}
 #ticker-wrap .lt-sess.sess-cl{color:#d14343;background:rgba(209,67,67,.10);}
 #ticker-wrap .lt-sess.sess-247{color:#9a9aa0;background:rgba(255,255,255,.07);}
+body.light-mode #ticker-wrap .lt-cell{border-right-color:rgba(0,0,0,.08);}
+body.light-mode #ticker-wrap .lt-cell:hover .lt-label{color:#141416;}
+body.light-mode #ticker-wrap .lt-label{color:#6b6b70;}
+body.light-mode #ticker-wrap .lt-price{color:#141416;}
+body.light-mode #ticker-wrap .lt-pct.up{color:#3a3a3e;}
+body.light-mode #ticker-wrap .lt-sess.sess-op{color:#3a3a3e;background:rgba(0,0,0,.06);}
+body.light-mode #ticker-wrap .lt-sess.sess-ah,
+body.light-mode #ticker-wrap .lt-sess.sess-on,
+body.light-mode #ticker-wrap .lt-sess.sess-247{color:#6b6b70;background:rgba(0,0,0,.05);}
 `;
     document.head.appendChild(style);
   }

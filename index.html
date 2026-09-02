@@ -2801,8 +2801,8 @@ setInterval(tickSessionClock, 30000);
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    "three": "./assets/vendor/three/build/three.module.js",
+    "three/addons/": "./assets/vendor/three/examples/jsm/"
   }
 }
 </script>
@@ -2906,21 +2906,12 @@ setInterval(tickSessionClock, 30000);
   const darkMetal = new THREE.MeshStandardMaterial({ color: 0x141416, metalness: 1.0, roughness: 0.55, envMapIntensity: 0.8 });
   const glassMat  = new THREE.MeshPhysicalMaterial({ color: 0x0d1117, metalness: 0.9, roughness: 0.18, envMapIntensity: 0.9 });
 
-  const draco = new DRACOLoader().setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/');
+  const draco = new DRACOLoader().setDecoderPath('assets/vendor/three/examples/jsm/libs/draco/gltf/');
   const gltfLoader = new GLTFLoader().setDRACOLoader(draco);
-  const MODEL_URLS = [
-    'https://threejs.org/examples/models/gltf/ferrari.glb',
-    'https://raw.githubusercontent.com/mrdoob/three.js/r160/examples/models/gltf/ferrari.glb',
-    'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r160/examples/models/gltf/ferrari.glb',
-  ];
   let carModel;
   try {
     const gltf = await withTimeout(new Promise((res, rej) => {
-      const attempt = (i) => {
-        if (i >= MODEL_URLS.length) return rej(new Error('load failed'));
-        gltfLoader.load(MODEL_URLS[i], res, undefined, () => attempt(i + 1));
-      };
-      attempt(0);
+      gltfLoader.load('assets/models/ferrari.glb', res, undefined, rej);
     }), 12000);
     carModel = gltf.scene.children[0] || gltf.scene;
   } catch (e) { section.remove(); return; }
@@ -3059,7 +3050,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 <script src="assets/newsletter.js" defer></script>
 <script src="assets/funnel.js" defer></script>
-<script src="assets/live-ticker.js" defer></script>
+<script src="assets/live-ticker.js?v=2" defer></script>
 <script src="assets/lightning-bg.js?v=9751680" defer></script>
 </body>
 </html>
