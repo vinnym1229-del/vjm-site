@@ -207,6 +207,41 @@ import {
   assert.equal(sanitizeContentRow('stats', { id: 'st1', key: '' }), null, 'stats requires a key');
   assert.equal(sanitizeContentRow('results', { id: 'r2', image_url: '' }), null, 'results requires an image_url');
 
+  // team/faqs/stats/results success paths: only the required-field rejection
+  // above was ever exercised for these four types, so the actual field
+  // mapping on a valid row -- including the order-defaulting and photoUrl
+  // sanitization every other ordered/linked type already had covered -- had
+  // never run once.
+  const team = sanitizeContentRow('team', {
+    id: 'tm2', name: 'Caleb', role: 'Futures Coach',
+    bio: 'Runs the @everyone night class', photo_url: 'javascript:alert(1)',
+    socials: '@calebtrades', order: 'not-a-number',
+  });
+  assert.equal(team.name, 'Caleb');
+  assert.equal(team.role, 'Futures Coach');
+  assert.equal(team.bio.includes('@everyone'), false, 'team bio must get the same @everyone guard as announcements');
+  assert.equal(team.photoUrl, '', 'a javascript: photo_url must be dropped, not passed through');
+  assert.equal(team.order, 0, 'a non-numeric order must default to 0, not NaN');
+
+  const faq = sanitizeContentRow('faqs', {
+    id: 'f2', question: 'Do you offer refunds?', answer: 'No, see the Terms.', order: '3',
+  });
+  assert.equal(faq.question, 'Do you offer refunds?');
+  assert.equal(faq.answer, 'No, see the Terms.');
+  assert.equal(faq.order, 3, 'a numeric-string order must parse, not just a number');
+
+  const stat = sanitizeContentRow('stats', { id: 'st2', key: 'members', value: '2,240', label: 'Members' });
+  assert.equal(stat.key, 'members');
+  assert.equal(stat.value, '2,240');
+  assert.equal(stat.label, 'Members');
+
+  const result = sanitizeContentRow('results', {
+    id: 'r3', image_url: 'https://example.com/a.jpg', caption: 'March payout',
+  });
+  assert.equal(result.imageUrl, 'https://example.com/a.jpg');
+  assert.equal(result.caption, 'March payout');
+  assert.equal(result.order, 0, 'order defaults to 0 when the sheet leaves it blank');
+
   // active/highlight/pinned boolean coercion: default true unless explicitly
   // false-ish; pinned/highlight default false unless explicitly true-ish.
   const propFirm = sanitizeContentRow('prop_firms', { id: 'p3', name: 'F', url: 'https://f.example.com' });
