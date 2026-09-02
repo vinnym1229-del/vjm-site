@@ -37,7 +37,12 @@ body.light-mode {--gold-ink:#b3251d;
   --bg2: #f6f6f7;
   --bg3: #eeeef0;
   --card: #ffffff;
-  --border: #e3e3e6;
+  /* Was #e3e3e6: a white card on a white page with a near-white border has
+     no visible edge at all, which is what made every box read as a flat
+     block of colour rather than a panel. Every card on the site draws its
+     border from this token — including the ones with inline styles — so
+     darkening it here is what actually gives them all an edge. */
+  --border: #d4d4db;
   --text: #141416;
   --muted: #5f5f66;
   --accent: #eeeef0;
@@ -1085,6 +1090,25 @@ body.light-mode .feature-card{
   background:linear-gradient(145deg,#ffffff,#f6f6f7);
   border-color:var(--border);
 }
+/* Light mode gets a soft drop shadow on the card families as well as the
+   border. On the dark theme a panel separates from the page by being
+   lighter than it; on white there is nothing lighter to go to, so the only
+   things left to lift a card off the page are its edge and its shadow. */
+body.light-mode .feature-card,
+body.light-mode .course-card,
+body.light-mode .service-card,
+body.light-mode .tier-card,
+body.light-mode .review-card,
+body.light-mode .win-card,
+body.light-mode .nl{
+  box-shadow: 0 1px 2px rgba(16,16,20,.04), 0 6px 18px rgba(16,16,20,.06);
+}
+body.light-mode .feature-card:hover,
+body.light-mode .course-card:hover,
+body.light-mode .service-card:hover,
+body.light-mode .tier-card:hover{
+  box-shadow: 0 2px 4px rgba(16,16,20,.06), 0 14px 34px rgba(16,16,20,.10);
+}
 body.light-mode #ticker-wrap{ background:var(--bg2); }
 body.light-mode #ticker-wrap iframe{ background:var(--bg2) !important; color-scheme: light; }
 /* A scrim over locked content: same job, opposite direction, on a light page. */
@@ -1159,7 +1183,15 @@ body.light-mode #stream-countdown-bar .cd-live-dot{background:var(--gold);}
 }
 .fs-track { position: absolute; inset: 0; }
 .fs-stage { position: absolute; inset: 0; overflow: hidden; }
-.fs-stage canvas { display: block; width: 100%; height: 100%; }
+/* The layer is pointer-events:none so it never swallows a click meant for
+   the hero copy; the canvas alone opts back in so the car can be grabbed and
+   spun. .hero-inner sits above it (z-index 3), so where the two overlap the
+   copy still wins and its CTAs stay clickable. */
+.fs-stage canvas {
+  display: block; width: 100%; height: 100%;
+  pointer-events: auto; cursor: grab; touch-action: pan-y;
+}
+.fs-stage canvas.fs-dragging { cursor: grabbing; }
 .fs-loading {
   position: absolute; inset: 12% 10%; display: flex; align-items: center; justify-content: center;
   background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;

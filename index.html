@@ -73,7 +73,7 @@
 <!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
      than _headers declares -- bump this ?v= on every edit to site.css or
      it can take hours to show up live even after a hard refresh. -->
-<link rel="stylesheet" href="assets/site.css?v=3">
+<link rel="stylesheet" href="assets/site.css?v=4">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -2841,7 +2841,7 @@ setInterval(tickSessionClock, 30000);
 
   renderer.outputColorSpace    = THREE.SRGBColorSpace;
   renderer.toneMapping         = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.95;   // 1.15 blew the highlights out into a "fake" look
+  renderer.toneMappingExposure = 0.98;   // 1.15 blew the highlights out into a "fake" look
   renderer.setClearColor(0x000000, 0);
   renderer.shadowMap.enabled   = true;
   renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
@@ -2867,45 +2867,78 @@ setInterval(tickSessionClock, 30000);
       m.lookAt(0, 0.6, 0);
       env.add(m);
     };
-    panel(11, 1.5, 0xffffff, 5.0, [0, 7.5, 0.5]);     // overhead key -> roof streak
-    panel(9,  0.9, 0xdfe9ff, 2.4, [0, 6.8, 3.2]);      // cool secondary strip
-    panel(1.1, 6,  0xffe3d2, 1.8, [-7.5, 1.6, 0]);     // warm side blade
-    panel(1.1, 6,  0xd7e4ff, 1.5, [7.5, 1.6, 0]);      // cool side blade
-    panel(7,  2.6, 0xffffff, 1.1, [0, 2, 8.5]);        // gentle front fill
-    panel(10, 0.7, 0xffffff, 3.2, [0, 2.6, -8.5]);     // rear rim streak
+    panel(11, 1.5, 0xffffff, 5.4, [0, 7.5, 0.5]);     // overhead key -> roof streak
+    panel(9,  0.9, 0xdfe9ff, 2.6, [0, 6.8, 3.2]);      // cool secondary strip
+    panel(1.1, 6,  0xffe3d2, 2.0, [-7.5, 1.6, 0]);     // warm side blade
+    panel(1.1, 6,  0xd7e4ff, 1.7, [7.5, 1.6, 0]);      // cool side blade
+    panel(7,  2.6, 0xffffff, 1.2, [0, 2, 8.5]);        // gentle front fill
+    panel(10, 0.7, 0xffffff, 3.4, [0, 2.6, -8.5]);     // rear rim streak
     panel(14, 14,  0x232120, 0.6, [0, -8, 0]);         // floor bounce
+    // Two narrow blades low on the flanks. A car body is mostly a vertical
+    // surface, and the rig above is almost all overhead — without these the
+    // door and sill panels fall into flat shadow and the whole thing reads
+    // like an untextured render rather than a lit object.
+    panel(6, 0.5, 0xfff0e4, 2.2, [-5.5, 0.55, 2.2]);   // low warm kicker, near side
+    panel(6, 0.5, 0xe6efff, 1.9, [5.5, 0.55, -2.2]);   // low cool kicker, far side
     return env;
   }
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(buildEnv(), 0.04).texture;
   pmrem.dispose();
 
-  const sun = new THREE.DirectionalLight(0xfff2e8, 1.6);
+  const sun = new THREE.DirectionalLight(0xfff2e8, 1.7);
   sun.position.set(-5, 7, 4);
   sun.castShadow = true;
+  // Tighter frustum around the car for the same map size = more shadow
+  // texels per metre, which is what turns a soft grey smudge under the car
+  // into something with an actual tyre-shaped edge.
   sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.near = 2;  sun.shadow.camera.far = 22;
-  sun.shadow.camera.left = -6; sun.shadow.camera.right = 6;
-  sun.shadow.camera.top = 6;   sun.shadow.camera.bottom = -6;
-  sun.shadow.bias = -0.0004;   sun.shadow.normalBias = 0.02;
+  sun.shadow.camera.near = 2;  sun.shadow.camera.far = 20;
+  sun.shadow.camera.left = -4; sun.shadow.camera.right = 4;
+  sun.shadow.camera.top = 4;   sun.shadow.camera.bottom = -4;
+  sun.shadow.bias = -0.0003;   sun.shadow.normalBias = 0.02;
   scene.add(sun);
+
+  // Rim light from behind-left, no shadow: separates the roof and shoulder
+  // line from the background instead of letting the silhouette dissolve.
+  const rim = new THREE.DirectionalLight(0xdfe8ff, 0.85);
+  rim.position.set(4.5, 3.5, -6);
+  scene.add(rim);
 
   const catcher = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: 0.22 }));
   catcher.rotation.x = -Math.PI / 2;
+  // A hair under the turntable's own top face, which also sits at y=0 —
+  // coplanar with it they z-fight and the platform flickers as it turns.
+  catcher.position.y = -0.004;
   catcher.receiveShadow = true;
   scene.add(catcher);
 
   // Dielectric base coat + satin clearcoat — real paint, not a mirror.
   // metalness this high across the whole body reads as chrome, not lacquer.
+  // Real automotive paint is a pigmented base coat under a thin, very glossy
+  // clear layer. Modelling it as one glossy metal is the single biggest
+  // "this is a video game" tell, so the two layers stay separate here: a
+  // low-metalness, medium-rough base for the colour, and a near-mirror
+  // clearcoat on top that carries the reflections of the light rig.
   const paint = new THREE.MeshPhysicalMaterial({
-    color: 0x9e0e14,
-    metalness: 0.12, roughness: 0.44,
-    clearcoat: 0.55, clearcoatRoughness: 0.18,
-    sheen: 0.35, sheenColor: 0x2e0507,
-    envMapIntensity: 0.7,
+    color: 0x8f0d13,
+    metalness: 0.18, roughness: 0.36,
+    clearcoat: 0.95, clearcoatRoughness: 0.055,
+    sheen: 0.4, sheenColor: 0x3a0709, sheenRoughness: 0.5,
+    envMapIntensity: 1.05,
   });
-  const darkMetal = new THREE.MeshStandardMaterial({ color: 0x141416, metalness: 1.0, roughness: 0.55, envMapIntensity: 0.8 });
-  const glassMat  = new THREE.MeshPhysicalMaterial({ color: 0x0d1117, metalness: 0.9, roughness: 0.18, envMapIntensity: 0.9 });
+  // Machined alloy: bright and directional, not the near-black plastic the
+  // old 0.55 roughness produced. Trim stays darker and softer than the rims.
+  const rimMetal  = new THREE.MeshStandardMaterial({ color: 0x8d9096, metalness: 1.0, roughness: 0.28, envMapIntensity: 1.25 });
+  const trimMetal = new THREE.MeshStandardMaterial({ color: 0x17171a, metalness: 0.9, roughness: 0.42, envMapIntensity: 0.9 });
+  // Tinted glass reads as glass through its reflections, so it needs a
+  // sharper clearcoat than the body and a touch of transmission for depth.
+  const glassMat  = new THREE.MeshPhysicalMaterial({
+    color: 0x090c11, metalness: 0.25, roughness: 0.06,
+    clearcoat: 1.0, clearcoatRoughness: 0.03,
+    transmission: 0.14, thickness: 0.35, ior: 1.45,
+    envMapIntensity: 1.4,
+  });
 
   const draco = new DRACOLoader().setDecoderPath('assets/vendor/three/examples/jsm/libs/draco/gltf/');
   const gltfLoader = new GLTFLoader().setDRACOLoader(draco);
@@ -2919,7 +2952,8 @@ setInterval(tickSessionClock, 30000);
 
   const swap = (name, mat) => { const o = carModel.getObjectByName(name); if (o) o.material = mat; };
   swap('body', paint);
-  ['rim_fl', 'rim_fr', 'rim_rl', 'rim_rr', 'trim'].forEach((n) => swap(n, darkMetal));
+  ['rim_fl', 'rim_fr', 'rim_rl', 'rim_rr'].forEach((n) => swap(n, rimMetal));
+  swap('trim', trimMetal);
   swap('glass', glassMat);
   carModel.traverse((o) => { if (o.isMesh) o.castShadow = o.name !== 'glass'; });
 
@@ -2931,6 +2965,64 @@ setInterval(tickSessionClock, 30000);
   const carGroup = new THREE.Group();
   carGroup.add(carModel);
   scene.add(carGroup);
+
+  // Branded turntable. It is part of carGroup rather than the scene, so it
+  // turns with the car the way a real showroom platform does — a fixed disc
+  // under a spinning car reads as the car sliding around on top of it.
+  // The wordmark is drawn to a canvas rather than shipped as an image so it
+  // stays crisp at any DPR and needs no extra asset. Fonts are awaited first;
+  // drawing before they load silently bakes the fallback face into the texture.
+  try { await document.fonts?.ready; } catch (e) { /* fallback face is fine */ }
+  const PC = 1024, pc = document.createElement('canvas');
+  pc.width = pc.height = PC;
+  const px = pc.getContext('2d');
+  const R = PC / 2;
+  const disc = px.createRadialGradient(R, R, 0, R, R, R);
+  disc.addColorStop(0, '#101013');
+  disc.addColorStop(0.72, '#0a0a0c');
+  disc.addColorStop(1, '#050506');
+  px.fillStyle = disc;
+  px.beginPath(); px.arc(R, R, R - 2, 0, Math.PI * 2); px.fill();
+  px.strokeStyle = 'rgba(209,67,67,.85)'; px.lineWidth = 7;
+  px.beginPath(); px.arc(R, R, R - 16, 0, Math.PI * 2); px.stroke();
+  px.strokeStyle = 'rgba(255,255,255,.10)'; px.lineWidth = 2;
+  px.beginPath(); px.arc(R, R, R - 44, 0, Math.PI * 2); px.stroke();
+  // Wordmark twice, 180 degrees apart, so one of them faces the camera for
+  // most of a rotation without the rim ever looking crowded.
+  const arcText = (text, centreAngle, radius, size, colour) => {
+    px.save();
+    px.translate(R, R);
+    px.rotate(centreAngle);
+    px.fillStyle = colour;
+    px.font = `900 ${size}px 'Barlow Condensed', 'Arial Narrow', Impact, sans-serif`;
+    px.textAlign = 'center';
+    px.textBaseline = 'middle';
+    const step = 0.052;
+    const start = -((text.length - 1) / 2) * step;
+    [...text].forEach((ch, i) => {
+      px.save();
+      px.rotate(start + i * step);
+      px.translate(0, -radius);
+      px.fillText(ch, 0, 0);
+      px.restore();
+    });
+    px.restore();
+  };
+  arcText('PJ TRADES', 0, R - 82, 58, 'rgba(237,237,238,.92)');
+  arcText('PJ TRADES', Math.PI, R - 82, 58, 'rgba(237,237,238,.92)');
+  const padTex = new THREE.CanvasTexture(pc);
+  padTex.colorSpace = THREE.SRGBColorSpace;
+  padTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  const padR = Math.max(size.x, size.z) * 0.56;
+  const padSide = new THREE.MeshStandardMaterial({ color: 0x0d0d0f, metalness: 0.6, roughness: 0.45, envMapIntensity: 0.7 });
+  const pad = new THREE.Mesh(
+    new THREE.CylinderGeometry(padR, padR, 0.12, 128),
+    // Cylinder material order is [side, top, bottom]; only the top is branded.
+    [padSide, new THREE.MeshStandardMaterial({ map: padTex, metalness: 0.45, roughness: 0.42, envMapIntensity: 0.5 }), padSide]
+  );
+  pad.position.y = -0.06;   // top face lands exactly on y=0, where the tyres sit
+  pad.receiveShadow = true;
+  carGroup.add(pad);
 
   // Soft contact shadow under the tires — cheap to draw, reads as expensive.
   const c = document.createElement('canvas'); c.width = c.height = 256;
@@ -2951,15 +3043,14 @@ setInterval(tickSessionClock, 30000);
 
   // Framing: the car sits in the left portion of the stage, not centered.
   let dist = 12;
-  // The stage is now the hero's own left column, so the car centres inside
-  // it. The old 1.6 offset dated from when the stage spanned the full page
-  // width and the car had to be pushed left within it; keeping it here just
-  // shoved half the car off the edge of its own column.
-  const camX = 0;
+  // Positive camX aims the camera to the right of the car, which pushes the
+  // car left in frame — clear of the hero paragraph, whose first line the
+  // car's nose was previously overlapping.
+  const camX = 0.62;
   function frame() {
     const w = stage.clientWidth, h = stage.clientHeight;
     if (!w || !h) return;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     const halfV = THREE.MathUtils.degToRad(camera.fov) / 2;
@@ -2999,6 +3090,36 @@ setInterval(tickSessionClock, 30000);
     my = ((e.clientY - r.top)  / r.height) * 2 - 1;
   });
 
+  // Grab and spin. Only the canvas takes pointer events (the section itself
+  // is pointer-events:none), and .hero-inner sits above it on z-index, so
+  // dragging never steals a click from the headline or the CTAs underneath.
+  let dragging = false, dragRot = 0, dragVel = 0, lastX = 0;
+  canvas.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    dragVel = 0;
+    lastX = e.clientX;
+    canvas.classList.add('fs-dragging');
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - lastX;
+    lastX = e.clientX;
+    const step = dx * 0.007;
+    dragRot += step;
+    // Velocity is a rolling blend, not the last frame's delta: a single
+    // stuttered frame at release would otherwise fling the car.
+    dragVel = dragVel * 0.7 + step * 0.3;
+  });
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    canvas.classList.remove('fs-dragging');
+    try { canvas.releasePointerCapture(e.pointerId); } catch (err) { /* already gone */ }
+  };
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+
   let visible = true;
   new IntersectionObserver((entries) => { visible = entries[0].isIntersecting; }, { threshold: 0 }).observe(section);
 
@@ -3011,10 +3132,17 @@ setInterval(tickSessionClock, 30000);
     const t  = clock.elapsedTime;
 
     scrollRot += (scrollP * TAU * 1.5 - scrollRot) * (1 - Math.exp(-dt * 4.5));
-    idle += dt * 0.055;               // showroom drift
+    // Hand control wins while it is happening: the idle drift is there to
+    // keep a untouched car alive, and adding it on top of a drag makes the
+    // car creep away from wherever it was let go.
+    if (!dragging) {
+      idle += dt * 0.055;             // showroom drift
+      dragRot += dragVel;             // carry the throw after release
+      dragVel *= Math.exp(-dt * 3.2); // ...and let it coast to a stop
+    }
     intro *= Math.exp(-dt * 1.8);     // settle-in swing on load
 
-    carGroup.rotation.y = BASE_ROT + scrollRot + idle + intro;
+    carGroup.rotation.y = BASE_ROT + scrollRot + idle + intro + dragRot;
     carModel.position.y = Math.sin(t * 1.35) * 0.01;   // suspension breathing
 
     smx += (mx - smx) * (1 - Math.exp(-dt * 3));
@@ -3023,7 +3151,7 @@ setInterval(tickSessionClock, 30000);
     // Aiming below the car's own centre lifts it in frame; centred on the
     // hero's full height it otherwise sat low enough to graze the bottom
     // edge of its column.
-    camera.lookAt(camX, LOOK_Y - 0.3 + smy * 0.12, 0);
+    camera.lookAt(camX, LOOK_Y - 0.52 + smy * 0.12, 0);
 
     renderer.render(scene, camera);
   }
