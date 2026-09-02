@@ -40,31 +40,6 @@ jobs:
           test -n "$RESEARCH_REFRESH_URL" || { echo "RESEARCH_REFRESH_URL secret is not set"; exit 1; }
           test -n "$RESEARCH_CRON_SECRET" || { echo "RESEARCH_CRON_SECRET secret is not set"; exit 1; }
 
-      # ONE-OFF: check the live homepage HTML directly for the essay contrast
-      # fix and the new Ferrari WebGL section, rather than guessing whether a
-      # report of "still not visible" is a browser-cache issue or a real
-      # deploy problem. Delete this step after one run.
-      - name: One-off — verify homepage deploy contains both recent fixes
-        if: always()
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -uo pipefail
-          curl --silent --show-error --retry 2 --max-time 30 \
-            -o /tmp/homepage.html \
-            "${RESEARCH_REFRESH_URL%/}/"
-          echo "bytes fetched: $(wc -c < /tmp/homepage.html)"
-          echo "--- essay fix (#ededee Bottom Line text) present? ---"
-          grep -c 'color:#ededee;">Ultimately, trading is a useful case study' /tmp/homepage.html || true
-          echo "--- ferrari-showcase section present? ---"
-          grep -c 'id="ferrari-showcase"' /tmp/homepage.html || true
-          echo "--- three.js importmap present? ---"
-          grep -c 'cdn.jsdelivr.net/npm/three' /tmp/homepage.html || true
-          echo "--- old fs-card (should be GONE) ---"
-          grep -c 'fs-card' /tmp/homepage.html || true
-          echo "--- Cloudflare cache status header ---"
-          curl -sI --max-time 20 "${RESEARCH_REFRESH_URL%/}/" | grep -i "cf-cache-status\|age:\|last-modified" || true
-
       - name: Pull the sheet into D1
         shell: bash
         run: |
