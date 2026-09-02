@@ -224,8 +224,6 @@ format, and the `List-Unsubscribe` headers to set.
 
 ## 7. Repository and access
 
-- [ ] **The default branch is wrong, and it is silently disabling every
-      scheduled job.** See item 0 — this is not cosmetic.
 - [ ] Decide whether this repository should be private. It contains no
       secrets — every credential is a Cloudflare environment variable — but it
       does contain the full course content that sits behind the paywall.
