@@ -40,26 +40,6 @@ jobs:
           test -n "$RESEARCH_REFRESH_URL" || { echo "RESEARCH_REFRESH_URL secret is not set"; exit 1; }
           test -n "$RESEARCH_CRON_SECRET" || { echo "RESEARCH_CRON_SECRET secret is not set"; exit 1; }
 
-      # ONE-OFF: verify the CSP now allows the Draco WASM decoder and the car
-      # sits in the hero. Delete this step after one run.
-      - name: One-off — verify wasm-unsafe-eval and hero car are live
-        if: always()
-        continue-on-error: true
-        shell: bash
-        run: |
-          set -uo pipefail
-          echo "--- live CSP allows WebAssembly? (the actual bug) ---"
-          curl -sI --max-time 20 "${RESEARCH_REFRESH_URL%/}/" | grep -io "wasm-unsafe-eval" || echo "MISSING - still blocked"
-          curl --silent --show-error --retry 2 --max-time 30 -o /tmp/h.html "${RESEARCH_REFRESH_URL%/}/"
-          echo "--- car markup now inside the hero? ---"
-          grep -c 'class="hero" id="home"' /tmp/h.html || true
-          grep -c 'id="ferrari-showcase"' /tmp/h.html || true
-          echo "--- site.css?v=3 linked? ---"
-          grep -c 'assets/site.css?v=3' /tmp/h.html || true
-          echo "--- vendored model + decoder served? ---"
-          curl -s -o /dev/null -w "glb: %{http_code} %{size_download}\n" "${RESEARCH_REFRESH_URL%/}/assets/models/ferrari.glb"
-          curl -s -o /dev/null -w "wasm: %{http_code} %{size_download}\n" "${RESEARCH_REFRESH_URL%/}/assets/vendor/three/examples/jsm/libs/draco/gltf/draco_decoder.wasm"
-
       - name: Pull the sheet into D1
         shell: bash
         run: |
