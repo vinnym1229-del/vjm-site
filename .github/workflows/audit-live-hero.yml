@@ -1,0 +1,59 @@
+# Render the LIVE site in a real browser and measure the hero.
+#
+# The agent sessions that work on this repo run in a sandbox with no egress to
+# the live domain, so every previous verification of the 3D hero was done
+# against a local static server. That is precisely where the bugs hid: a CSP
+# header the local server never sent (blocked the WASM decoder), a :has()
+# selector the test browser supported and others didn't (layout silently never
+# applied), a frame rate CI never reproduced (rotation froze). This runs on a
+# GitHub runner, which can actually reach the site, and prints hard numbers.
+#
+# Manually triggered — it is a diagnostic, not a gate.
+
+name: Audit the live hero in a real browser
+
+on:
+  workflow_dispatch:
+    inputs:
+      widths:
+        description: 'Comma-separated viewport widths to audit'
+        required: false
+        default: '1920,1512,1280'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright + Pillow
+        run: |
+          npm install --no-save playwright@1.49.1
+          npx playwright install chromium --with-deps
+          python3 -m pip install --quiet --break-system-packages pillow
+
+      - name: Render and measure the live hero
+        env:
+          SITE: ${{ secrets.RESEARCH_REFRESH_URL }}
+          WIDTHS: ${{ inputs.widths }}
+          OUT_DIR: audit-out
+        run: node tools/audit-live-hero.mjs
+
+      - name: Measure centering and rotation from the pixels
+        run: python3 tools/audit-hero-pixels.py audit-out
+
+      - name: Upload the renders
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-hero-renders
+          path: audit-out/
+          retention-days: 7
