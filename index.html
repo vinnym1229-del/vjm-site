@@ -73,7 +73,7 @@
 <!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
      than _headers declares -- bump this ?v= on every edit to site.css or
      it can take hours to show up live even after a hard refresh. -->
-<link rel="stylesheet" href="assets/site.css?v=7">
+<link rel="stylesheet" href="assets/site.css?v=8">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -2850,8 +2850,14 @@ setInterval(tickSessionClock, 30000);
   renderer.toneMapping         = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 0.98;   // 1.15 blew the highlights out into a "fake" look
   renderer.setClearColor(0x000000, 0);
-  renderer.shadowMap.enabled   = true;
-  renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
+  // No real-time shadow map: rendering a shadow-casting light every frame
+  // was the single biggest GPU cost in this scene, expensive enough on
+  // ordinary hardware that requestAnimationFrame's own delta-time clamp (see
+  // the animate() loop below) made the idle turntable crawl to a near-stop
+  // instead of rotating smoothly -- which is what actually made the car look
+  // "stuck" and off-centre, not a positioning bug. The canvas-drawn contact
+  // blob a few lines down already reads as a soft ground shadow for a
+  // fraction of the cost, so the real one bought nothing worth this.
 
   const scene  = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 60);
@@ -2895,15 +2901,6 @@ setInterval(tickSessionClock, 30000);
 
   const sun = new THREE.DirectionalLight(0xfff2e8, 1.7);
   sun.position.set(-5, 7, 4);
-  sun.castShadow = true;
-  // Tighter frustum around the car for the same map size = more shadow
-  // texels per metre, which is what turns a soft grey smudge under the car
-  // into something with an actual tyre-shaped edge.
-  sun.shadow.mapSize.set(1024, 1024);
-  sun.shadow.camera.near = 2;  sun.shadow.camera.far = 20;
-  sun.shadow.camera.left = -4; sun.shadow.camera.right = 4;
-  sun.shadow.camera.top = 4;   sun.shadow.camera.bottom = -4;
-  sun.shadow.bias = -0.0003;   sun.shadow.normalBias = 0.02;
   scene.add(sun);
 
   // Rim light from behind-left, no shadow: separates the roof and shoulder
@@ -2911,14 +2908,6 @@ setInterval(tickSessionClock, 30000);
   const rim = new THREE.DirectionalLight(0xdfe8ff, 0.85);
   rim.position.set(4.5, 3.5, -6);
   scene.add(rim);
-
-  const catcher = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: 0.22 }));
-  catcher.rotation.x = -Math.PI / 2;
-  // A hair under the turntable's own top face, which also sits at y=0 —
-  // coplanar with it they z-fight and the platform flickers as it turns.
-  catcher.position.y = -0.004;
-  catcher.receiveShadow = true;
-  scene.add(catcher);
 
   // Dielectric base coat + satin clearcoat — real paint, not a mirror.
   // metalness this high across the whole body reads as chrome, not lacquer.
@@ -2966,7 +2955,6 @@ setInterval(tickSessionClock, 30000);
   ['rim_fl', 'rim_fr', 'rim_rl', 'rim_rr'].forEach((n) => swap(n, rimMetal));
   swap('trim', trimMetal);
   swap('glass', glassMat);
-  carModel.traverse((o) => { if (o.isMesh) o.castShadow = o.name !== 'glass'; });
 
   const box    = new THREE.Box3().setFromObject(carModel);
   const size   = box.getSize(new THREE.Vector3());
@@ -3019,7 +3007,6 @@ setInterval(tickSessionClock, 30000);
     [padSide, new THREE.MeshStandardMaterial({ map: padTex, metalness: 0.45, roughness: 0.42, envMapIntensity: 0.5 }), padSide]
   );
   pad.position.y = -0.06;   // top face lands exactly on y=0, where the tyres sit
-  pad.receiveShadow = true;
   carGroup.add(pad);
 
   // Soft contact shadow under the tires — cheap to draw, reads as expensive.
@@ -3117,7 +3104,13 @@ setInterval(tickSessionClock, 30000);
   function animate() {
     requestAnimationFrame(animate);
     if (!visible) return;   // no GPU work spent on a layer nobody can see
-    const dt = Math.min(clock.getDelta(), 0.05);
+    // Capped so a long stall (tab backgrounded, a slow frame) can't make the
+    // car jump or the suspension-breathing sine spike, but high enough that
+    // an ordinary momentary hitch still lets the turntable visibly catch up
+    // rather than crawl — the actual cause of the car looking "frozen" was
+    // this clamp combined with the real-time shadow map above starving the
+    // frame rate, not a bug in the rotation logic itself.
+    const dt = Math.min(clock.getDelta(), 0.1);
     const t  = clock.elapsedTime;
 
     // Hand control wins while it is happening: the idle turntable is there
@@ -3139,7 +3132,7 @@ setInterval(tickSessionClock, 30000);
     // Aiming below the car's own centre lifts it in frame; centred on the
     // hero's full height it otherwise sat low enough to graze the bottom
     // edge of its column.
-    camera.lookAt(camX, LOOK_Y - 0.52 + smy * 0.12, 0);
+    camera.lookAt(camX, LOOK_Y - 0.78 + smy * 0.12, 0);
 
     renderer.render(scene, camera);
   }
