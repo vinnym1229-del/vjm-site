@@ -8,35 +8,10 @@ something every day they stay undone.
 
 ---
 
-## 0. Change the GitHub default branch to `pj` — one dropdown
+## 0. ~~Change the GitHub default branch to `pj`~~ — done
 
-**This is the single highest-value click available, and it takes ten seconds.**
-
-The repository's default branch is `claude/nlm-fvg-ifvg-bpr-2l0bhm`, which
-contains exactly two files: `NLM.pine` and `README.md`. It is an old Pine
-Script branch with no website in it. All the site code, and all four GitHub
-Actions workflows, live on `pj`.
-
-GitHub only registers and runs workflows that exist **on the default branch**.
-Verified against the API just now: this repository reports
-`total_count: 0` workflows. So:
-
-- The **research refresh has never run**, not once — every scheduled snapshot
-  the research engine is supposed to serve has never been generated.
-- The **morning automation has never run**.
-- The **content sync** (item 6) will not run either, no matter what secrets
-  are set.
-- `workflow_dispatch` does not even appear in the Actions tab, so there is no
-  "Run workflow" button to press.
-
-Setting the Actions secrets first would have changed nothing. This is the
-blocker underneath all of it.
-
-**Fix:** GitHub → repo Settings → General → Default branch → switch to `pj`.
-Cloudflare Pages already deploys from `pj`, so nothing about the live site
-changes. The Pine branch is not deleted; it just stops being the default.
-
-Do this before item 6, or item 6 cannot work.
+Default branch is `pj`. All four GitHub Actions workflows are registered and
+running (content sync confirmed live 2026-09-02 — see item 6).
 
 ## 1. Indexing — now automatic, nothing to do
 
@@ -154,58 +129,28 @@ format, and the `List-Unsubscribe` headers to set.
 - [ ] **Session durations.** The countdown assumes 90 minutes for trading
       sessions and 60 for classes. If those are wrong the "live now" state is
       wrong.
-- [ ] **Turn on the sheet sync — this is the big one.** The schedule, the
-      prop-firm directory, the team, the FAQs, the bundles and the stats are
-      all already wired to read from a Google Sheet. The Apps Script bridge is
-      written (`apps-script/content-sync/Code.gs`), the endpoint is written
-      (`/api/content-sync`), and the hourly GitHub Action now exists. It has
-      simply never been switched on, which is why `site_content` is empty and
-      the prop-firm page shows "not connected yet" to real visitors.
+- [x] **Turn on the sheet sync — done and confirmed live (2026-09-02).** The
+      schedule, the prop-firm directory, the team, the FAQs, the bundles and
+      the stats all read from the Google Sheet ("PJ Trades — Site Content"),
+      via the Apps Script bridge (`apps-script/content-sync/Code.gs`) and the
+      hourly GitHub Action. A live run against the real domain upserted all
+      16 Schedule rows with no errors — `{"schedule":{"received":16,
+      "upserted":16,"skipped":0}}`. Two real bugs stood between "written" and
+      "working" and both are now fixed: the Apps Script project's
+      `CONTENT_BRIDGE_SECRET` had to be regenerated (`setUp()` re-run) and
+      re-pasted into Cloudflare, and a stray leftover Worker (`vjm-site`,
+      predating the Pages migration, unrelated code) was deleted from the
+      Cloudflare account.
 
-      Once it runs, **you edit a spreadsheet and the site updates itself within
-      the hour** — no deploy, no code edit, nobody in the loop. That is the
-      answer to "who updates the schedule every week".
+      **You edit a spreadsheet and the site updates itself within the hour**
+      — no deploy, no code edit, nobody in the loop. That is the answer to
+      "who updates the schedule every week". Every tab except Schedule is
+      still empty (0 rows) — that's expected, not broken; fill in
+      announcements, team, FAQs, bundles, prop firms, stats, or results
+      whenever you're ready and they'll appear on the next hourly sync.
 
-      **Where this actually stands right now (2026-09-01):** items 0, the
-      spreadsheet, and the Apps Script deployment are done. Two things are
-      still blocking a working sync, both confirmed by running the workflow
-      against the live site rather than guessed at:
-
-      - **`setUp()` needs to be run again, in the Apps Script project behind
-        the CURRENT `/exec` deployment URL.** The bridge itself is now
-        answering "not configured" — that's `Code.gs` reporting its Script
-        Properties have no `CONTENT_BRIDGE_SECRET`, which only happens if
-        `setUp()` was never run successfully in *that* project (creating a
-        new deployment to fix the earlier 403 does not carry the secret over
-        if it was a new Apps Script project rather than a new deployment of
-        the same one). Open the Apps Script editor for the project that
-        serves the URL currently in Cloudflare's `CONTENT_BRIDGE_URL`, run
-        `setUp`, and it will print a secret — put that exact value into
-        Cloudflare's `CONTENT_BRIDGE_SECRET`, replacing whatever is there now.
-      - **The live domain 502s on this one endpoint specifically, separately
-        from the above.** `POST /api/content-sync` on
-        `not-financial-advice-vjm.com` returns a bare `error code: 502` with
-        no JSON body — an edge-level failure, not the Function running and
-        answering. Confirmed NOT domain-wide: the homepage ("/") and another
-        API route (`GET /api/content`) both return normal 200s on the same
-        domain. Confirmed NOT the deployment: the identical POST against
-        `vjm.pages.dev` (same Production deployment) returns the Function's
-        real JSON response. So something scoped to exactly this one path is
-        intercepting the request before it reaches the Pages Function.
-        Likeliest cause: a **Workers Route** or a **Rule** (Redirect/
-        Transform/WAF custom rule) bound to a pattern matching
-        `/api/content-sync` on this zone — check Cloudflare dashboard →
-        Workers & Pages → **Workers Routes**, and separately **Rules**, for
-        anything matching that path and remove or fix it. `.pages.dev` is
-        outside this zone, which is exactly why it's unaffected.
-
-      Fix the Apps Script secret first — it's the one blocking every sync
-      attempt, custom domain or not. The domain 502 only matters once the
-      hourly cron (which hits the custom domain, not `.pages.dev`) has
-      something working to reach.
-
-      Four steps (for a from-scratch setup — most of this is already done,
-      see above):
+      Reference — how this was set up, kept here for adding a new tab later
+      or if the secret ever needs rotating:
       1. **The spreadsheet already exists** — "PJ Trades — Site Content" is in
          your Drive, with the Schedule tab filled in with this week:
          https://docs.google.com/spreadsheets/d/1kqp-qoEU5v9ygV8PpgpVnOvxtyGNsFbgR86t9zDNuUY/edit
@@ -238,10 +183,9 @@ format, and the `List-Unsubscribe` headers to set.
          `CONTENT_BRIDGE_SECRET` (same value), `RESEARCH_CRON_SECRET`.
       3. GitHub → repo Settings → Secrets → Actions: `RESEARCH_REFRESH_URL`
          (the site origin) and `RESEARCH_CRON_SECRET` (same value as above).
-      4. **Item 0 first** — until the default branch is `pj`, this workflow is
-         not registered and there is no Run workflow button. Then:
-         Actions → "Sync site content from the owner's sheet" → Run workflow,
-         and check the log prints row counts rather than an error.
+      4. GitHub → Actions → "Sync site content from the owner's sheet" →
+         Run workflow, and check the log prints row counts rather than an
+         error.
 
       **Schedule tab columns:** `id | day | session | time_et | host | note |
       active`. `day` is Mon–Fri, `session` is one of `NYAM`, `NYPM`, `CLASS`,
