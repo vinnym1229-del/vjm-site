@@ -420,9 +420,11 @@
      no reason to spend the download or the GPU time there. If the model or
      the WebGL context fails to load for any reason, the whole layer removes
      itself — nothing about the rest of the page depends on it. -->
+<noscript><style>#ferrari-showcase{display:none;}</style></noscript>
 <section id="ferrari-showcase" aria-label="3D Ferrari">
   <div class="fs-track" id="fsTrack">
     <div class="fs-stage" id="fsStage">
+      <div class="fs-loading" id="fsLoading" aria-hidden="true"><span class="fs-loading-pulse"></span></div>
       <canvas id="fsCanvas" aria-hidden="true"></canvas>
       <p class="fs-caption">Futures pay for real things.</p>
     </div>
@@ -2797,11 +2799,20 @@ setInterval(tickSessionClock, 30000);
   var canvas = document.getElementById('fsCanvas');
   if (reduced || !section || !track || !stage || !canvas || window.innerWidth <= 1080) return;
 
-  const mods = await Promise.all([
+  // A blocked or silently-dropped request (ad blockers, some corporate
+  // firewalls) never calls onerror -- it just never resolves -- so without a
+  // hard ceiling here a failed load leaves the 240vh track blank forever
+  // instead of failing fast like every other error path in this file does.
+  const withTimeout = (promise, ms) => Promise.race([
+    promise,
+    new Promise((_, rej) => setTimeout(() => rej(new Error('timed out')), ms)),
+  ]);
+
+  const mods = await withTimeout(Promise.all([
     import('three'),
     import('three/addons/loaders/GLTFLoader.js'),
     import('three/addons/loaders/DRACOLoader.js'),
-  ]).catch(() => null);
+  ]), 8000).catch(() => null);
   if (!mods) { section.remove(); return; }
   const [THREE, { GLTFLoader }, { DRACOLoader }] = mods;
 
@@ -2887,13 +2898,13 @@ setInterval(tickSessionClock, 30000);
   ];
   let carModel;
   try {
-    const gltf = await new Promise((res, rej) => {
+    const gltf = await withTimeout(new Promise((res, rej) => {
       const attempt = (i) => {
         if (i >= MODEL_URLS.length) return rej(new Error('load failed'));
         gltfLoader.load(MODEL_URLS[i], res, undefined, () => attempt(i + 1));
       };
       attempt(0);
-    });
+    }), 12000);
     carModel = gltf.scene.children[0] || gltf.scene;
   } catch (e) { section.remove(); return; }
 

@@ -644,19 +644,23 @@ footer { background:#0c0c0d; border-top:1px solid var(--border); padding:32px 24
 @media (max-width: 768px) { .mega-bolt { width: min(66vw, 280px); opacity: calc(var(--mega-bolt-base, .5) * .85); } }
 
 /* Light mode: the bolt art is built white-core-on-dark, so on a white hero
-   only its dark red glow survived and the strike itself vanished. Invert the
-   core/highlight to near-black and let the red glow carry the color, keeping
-   the same layer structure, filters and sweep animation. */
-body.light-mode .mega-bolt .bolt-core .c-trunk,
+   only its dark red glow survived and the strike itself vanished. The small
+   underline bolt (under the "PJ" wordmark) inverts to near-black, since it
+   sits directly on light text and needs the contrast. The mega-bolt on the
+   right of the hero stays red instead -- a near-black bolt there just read
+   as a smudge, and red is the theme's own accent color. */
 body.light-mode .bolt-underline .bc-trunk { stroke: #26262a; }
-body.light-mode .mega-bolt .bolt-core .c-twig,
 body.light-mode .bolt-underline .bc-twig { stroke: #4a4a50; }
-body.light-mode .mega-bolt .bolt-highlight path,
 body.light-mode .bolt-underline .bolt-highlight path { stroke: #141416; }
-body.light-mode .mega-bolt .bh-trunk { filter: drop-shadow(0 0 5px rgba(20,20,22,.45)) drop-shadow(0 0 12px var(--gold)); }
-body.light-mode .mega-bolt .bh-twig,
 body.light-mode .bolt-underline .bh-twig { filter: drop-shadow(0 0 4px rgba(20,20,22,.35)); }
 body.light-mode .bolt-underline .bh-trunk { filter: drop-shadow(0 0 4px rgba(20,20,22,.4)) drop-shadow(0 0 9px var(--gold)); }
+
+body.light-mode .mega-bolt .bolt-core .c-trunk { stroke: #a63333; }
+body.light-mode .mega-bolt .bolt-core .c-twig { stroke: #d14343; }
+body.light-mode .mega-bolt .bolt-highlight path { stroke: #d14343; }
+body.light-mode .mega-bolt .bh-trunk { filter: drop-shadow(0 0 6px #d14343) drop-shadow(0 0 14px rgba(166,51,51,.6)); }
+body.light-mode .mega-bolt .bh-twig { filter: drop-shadow(0 0 4px rgba(209,67,67,.7)); }
+body.light-mode .mega-bolt { opacity: calc(var(--mega-bolt-base, .5) * 1.3); }
 .win-card:hover { box-shadow: 0 12px 40px rgba(0,0,0,0.45); }
 .premium-box { box-shadow: 0 0 80px rgba(0,0,0,0.5), 0 0 30px rgba(209,67,67,0.04); transition: box-shadow 0.4s; }
 .premium-box:hover { box-shadow: 0 0 120px rgba(0,0,0,0.55), 0 0 50px rgba(209,67,67,0.05); }
@@ -1157,6 +1161,32 @@ body.light-mode #stream-countdown-bar .cd-live-dot{background:var(--gold);}
   opacity: 0; transition: opacity 1.2s ease .4s;
 }
 .fs-stage.fs-ready .fs-caption { opacity: 1; }
+.fs-loading {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(160deg, var(--bg2), var(--bg));
+  transition: opacity .5s ease;
+}
+.fs-loading-pulse {
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 3px solid rgba(209,67,67,.25); border-top-color: var(--gold, #d14343);
+  animation: fsSpin 1s linear infinite;
+}
+@keyframes fsSpin { to { transform: rotate(360deg); } }
+.fs-stage.fs-ready .fs-loading { opacity: 0; pointer-events: none; }
 @media (max-width: 1080px), (prefers-reduced-motion: reduce) {
   #ferrari-showcase { display: none; }
 }
+
+/* The sitewide ambient lightning (assets/lightning-bg.js) ships a red art
+   asset for light mode on both edges, but the left strike is thin/sparse
+   enough at that seed that it reads as a pale, near-invisible smudge on a
+   white page instead of a bolt. Rather than keep tuning a procedural asset
+   to look right at one specific seed, drop it in light mode and keep only
+   the right-edge strike, which is the one dense enough to actually read. */
+body.light-mode #site-bolt-layer .sbl-l { display: none !important; }
+
+/* TradingView's own light-theme ticker renders the raw price in a muted
+   gray that a wrapper background color can't touch (it's baked into the
+   widget's own styling, not ours) -- a CSS filter on the iframe box is the
+   only lever available for a cross-origin embed. */
+body.light-mode #ticker-wrap iframe { filter: contrast(1.55) brightness(.92) !important; }
