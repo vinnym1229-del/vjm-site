@@ -73,7 +73,7 @@
 <!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
      than _headers declares -- bump this ?v= on every edit to site.css or
      it can take hours to show up live even after a hard refresh. -->
-<link rel="stylesheet" href="assets/site.css?v=6">
+<link rel="stylesheet" href="assets/site.css?v=7">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -232,7 +232,7 @@
 })();
 </script>
 <!-- HERO -->
-<section class="hero" id="home">
+<section class="hero has-car" id="home">
   <!-- FERRARI — a real-time 3D render (Three.js + WebGL), not a photo or a
        video, filling the empty left column the centred hero copy leaves on a
        wide screen. It turns on the hero's own scroll progress rather than a
@@ -2817,6 +2817,13 @@ setInterval(tickSessionClock, 30000);
   var canvas = document.getElementById('fsCanvas');
   if (reduced || !section || !track || !stage || !canvas || window.innerWidth <= 1080) return;
 
+  // Every failure path below removes the section, but the hero's two-column
+  // grid (assets/site.css, .hero.has-car) also needs to come off at the same
+  // time -- otherwise a failed load leaves the grid's first column empty and
+  // the hero copy sitting off-centre in the second column, rather than
+  // collapsing cleanly back to the single-column centered layout.
+  function fail() { section.remove(); document.querySelector('.hero')?.classList.remove('has-car'); }
+
   // A blocked or silently-dropped request (ad blockers, some corporate
   // firewalls) never calls onerror -- it just never resolves -- so without a
   // hard ceiling here a failed load leaves the 240vh track blank forever
@@ -2831,13 +2838,13 @@ setInterval(tickSessionClock, 30000);
     import('three/addons/loaders/GLTFLoader.js'),
     import('three/addons/loaders/DRACOLoader.js'),
   ]), 8000).catch(() => null);
-  if (!mods) { section.remove(); return; }
+  if (!mods) { fail(); return; }
   const [THREE, { GLTFLoader }, { DRACOLoader }] = mods;
 
   let renderer;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
-  } catch (e) { section.remove(); return; }
+  } catch (e) { fail(); return; }
 
   renderer.outputColorSpace    = THREE.SRGBColorSpace;
   renderer.toneMapping         = THREE.ACESFilmicToneMapping;
@@ -2952,7 +2959,7 @@ setInterval(tickSessionClock, 30000);
       gltfLoader.load('assets/models/ferrari.glb', res, undefined, rej);
     }), 12000);
     carModel = gltf.scene.children[0] || gltf.scene;
-  } catch (e) { section.remove(); return; }
+  } catch (e) { fail(); return; }
 
   const swap = (name, mat) => { const o = carModel.getObjectByName(name); if (o) o.material = mat; };
   swap('body', paint);

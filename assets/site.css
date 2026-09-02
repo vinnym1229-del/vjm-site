@@ -341,19 +341,27 @@ body.light-mode .nav-drop a:hover { color: #141416; }
    horizontal space at some viewport widths (a centered 820px text block's
    left edge can fall well inside a "car gets the left 48vw" box) -- actual
    grid columns cannot overlap by construction, so this is fixed for every
-   width above the breakpoint, not just the one this was tuned against. */
+   width above the breakpoint, not just the one this was tuned against.
+   This used to key off .hero:has(#ferrari-showcase) instead of the plain
+   class below -- :has() has real gaps in older browser versions still in
+   use, and on any browser where it doesn't apply this whole rule silently
+   never matched, leaving the OLD absolute-positioned, overlapping layout
+   in effect with no error or fallback of any kind. The markup always ships
+   #ferrari-showcase server-side (only its JS-driven WebGL content can fail
+   later), so there was never a need to feature-detect its presence in CSS
+   at all -- a plain class the server always sends is enough. */
 @media (min-width: 1081px) {
-  .hero:has(#ferrari-showcase) {
+  .hero.has-car {
     display: grid; grid-template-columns: minmax(320px, 44%) 1fr;
     align-items: center; text-align: left; column-gap: clamp(20px, 4vw, 60px);
   }
-  .hero:has(#ferrari-showcase) #ferrari-showcase {
+  .hero.has-car #ferrari-showcase {
     position: relative; inset: auto; width: 100%;
     /* A grid row sized to its (auto) content can't resolve a percentage
        height on a child, so this needs an explicit length rather than a %. */
     height: min(58vh, 560px);
   }
-  .hero:has(#ferrari-showcase) .hero-inner { text-align: center; margin: 0 auto; }
+  .hero.has-car .hero-inner { text-align: center; margin: 0 auto; }
 }
 .hero::before {
   content:'';
@@ -1203,7 +1211,15 @@ body.light-mode #stream-countdown-bar .cd-live-dot{background:var(--gold);}
   z-index: 2; pointer-events: none;
 }
 .fs-track { position: absolute; inset: 0; }
-.fs-stage { position: absolute; inset: 0; overflow: hidden; }
+/* A framed panel like every other content block on the page, rather than
+   the car floating directly on the bare hero background with nothing to
+   say where the "display" ends and the rest of the page begins. */
+.fs-stage {
+  position: absolute; inset: 0; overflow: hidden;
+  border: 1px solid var(--border); border-radius: 20px;
+  background: var(--bg2);
+}
+body.light-mode .fs-stage { box-shadow: 0 1px 2px rgba(16,16,20,.04), 0 6px 18px rgba(16,16,20,.06); }
 /* The layer is pointer-events:none so it never swallows a click meant for
    the hero copy; the canvas alone opts back in so the car can be grabbed and
    spun. .hero-inner sits above it (z-index 3), so where the two overlap the

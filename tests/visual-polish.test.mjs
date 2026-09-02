@@ -249,11 +249,16 @@ test('ferrari showcase loads Three.js and the model from this repo, not a third-
 
   // Every failure path — WebGL unsupported, a corrupt local file, whatever —
   // must still remove the section rather than leave a broken canvas or an
-  // unhandled rejection on the page.
-  assert.match(index, /if \(!mods\) \{ section\.remove\(\); return; \}/, 'a failed Three.js import must remove the section');
-  assert.match(index, /catch \(e\) \{ section\.remove\(\); return; \}/, 'a WebGL context failure must remove the section');
-  assert.match(index, /catch \(e\) \{ section\.remove\(\); return; \}\s*\n\s*const swap/,
-    'a model load failure must also remove the section, not proceed to material swaps on an undefined model');
+  // unhandled rejection on the page. fail() also strips .hero's has-car
+  // class, so a failed load collapses the two-column grid back to a
+  // centered single column instead of leaving the copy off-centre in an
+  // empty grid column.
+  assert.match(index, /function fail\(\) \{ section\.remove\(\); document\.querySelector\('\.hero'\)\?\.classList\.remove\('has-car'\); \}/,
+    'the failure helper must remove both the section and the hero grid class');
+  assert.match(index, /if \(!mods\) \{ fail\(\); return; \}/, 'a failed Three.js import must call fail()');
+  assert.match(index, /catch \(e\) \{ fail\(\); return; \}/, 'a WebGL context failure must call fail()');
+  assert.match(index, /catch \(e\) \{ fail\(\); return; \}\s*\n\s*const swap/,
+    'a model load failure must also call fail(), not proceed to material swaps on an undefined model');
 });
 
 test('the intro video points at the file that actually exists', () => {
