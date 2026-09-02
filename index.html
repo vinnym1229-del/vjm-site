@@ -70,7 +70,10 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="assets/tokens.css">
 <link rel="stylesheet" href="assets/newsletter.css">
-<link rel="stylesheet" href="assets/site.css?v=9751680">
+<!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
+     than _headers declares -- bump this ?v= on every edit to site.css or
+     it can take hours to show up live even after a hard refresh. -->
+<link rel="stylesheet" href="assets/site.css?v=2">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -2769,7 +2772,21 @@ setInterval(tickSessionClock, 30000);
       if (el.classList.contains('reveal-init') && el.getBoundingClientRect().bottom < 0) show(el);
     });
   }
-  targets.forEach(function (el) { el.classList.add('reveal-init'); io.observe(el); });
+  // Anything already inside the initial viewport gets shown immediately
+  // instead of hidden-then-revealed. This script runs late in body parsing,
+  // by which point above-the-fold content (hero, proof bar) has already
+  // painted visible -- hiding it here and waiting on the IntersectionObserver
+  // callback to re-show it produces a real, visible blank flash whenever the
+  // main thread is at all busy right after (e.g. the Ferrari WebGL setup
+  // that follows this script doing synchronous scene/geometry work). Only
+  // elements that actually need to animate in on a later scroll are worth
+  // hiding at all.
+  var vh = window.innerHeight;
+  targets.forEach(function (el) {
+    if (el.getBoundingClientRect().top < vh) { el.classList.add('reveal-in'); return; }
+    el.classList.add('reveal-init');
+    io.observe(el);
+  });
   sweep();
   window.addEventListener('scroll', sweep, { passive: true });
 })();
