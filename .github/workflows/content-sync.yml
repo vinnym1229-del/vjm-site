@@ -96,6 +96,28 @@ jobs:
           echo ""
           echo "------------"
 
+      # TEMPORARY: settle whether Cloudflare and Apps Script actually agree on
+      # the secret, after several careful re-pastes of CONTENT_BRIDGE_SECRET
+      # still produced "unauthorized". Hits the debug fingerprint branch added
+      # to doGet() in apps-script/content-sync/Code.gs, which reveals only the
+      # stored secret's length and first/last 4 characters — never the whole
+      # value. Remove this step (and the debug branch in Code.gs) once the
+      # mismatch, or lack of one, is confirmed.
+      - name: Diagnostic — Apps Script secret fingerprint
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -uo pipefail
+          code="$(curl --silent --show-error -L --retry 2 --max-time 30 \
+            -o /tmp/fingerprint.json -w '%{http_code}' \
+            "https://script.google.com/macros/s/AKfycbyNEZ-qkLS2rUKEADTcQcL7eEgCnFrF9BzW00tioPSZPXOkMtJsoelLVJeUbKyIOyQj/exec?debug=fingerprint")"
+          echo "Fingerprint check HTTP status: $code"
+          echo "--- body ---"
+          cat /tmp/fingerprint.json || true
+          echo ""
+          echo "------------"
+
       - name: Pull the sheet into D1
         shell: bash
         run: |
