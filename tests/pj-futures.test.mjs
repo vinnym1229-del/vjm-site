@@ -201,7 +201,7 @@ test('whop links normalized without trailing slash', () => {
 });
 
 test('premarket page carries PJ futures branding', () => {
-  assert.match(premarket, /<title>Pre-Market Brief \| PJ Trades x St/);
+  assert.match(premarket, /<title>Pre-Market Brief \| PJ Trades/);
   assert.match(premarket, /NQ\/ES/);
   assert.doesNotMatch(premarket, /VJM \/ St Trades/);
 });
@@ -270,7 +270,7 @@ test('PWA manifest + theme color + PJ 404', () => {
   assert.ok([LIGHT_BG, '#0c0c0d'].includes(metaTheme[1].toLowerCase()),
     `theme-color meta is ${metaTheme[1]}; it must be ${LIGHT_BG} to match the manifest`);
   const notFound = readFileSync(join(ROOT, '404.html'), 'utf8');
-  assert.match(notFound, /PJ Trades x St/);
+  assert.match(notFound, /PJ Trades/);
   assert.match(notFound, /discord\.gg\/pjtrades/);
   assert.match(notFound, /noindex/);
 });

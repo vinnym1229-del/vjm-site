@@ -143,7 +143,7 @@ test('no generator artifacts in course prose', () => {
 // Incident: homepage CSS was extracted to assets/site.css; a typo'd link
 // would ship an unstyled homepage that tests reading raw HTML would miss.
 test('homepage links its extracted stylesheet and the file is substantial', () => {
-  assert.match(read('index.html'), /<link rel="stylesheet" href="assets\/site\.css">/);
+  assert.match(read('index.html'), /<link rel="stylesheet" href="assets\/site\.css(\?v=[\w.-]+)?">/);
   assert.ok(existsSync(join(ROOT, 'assets', 'site.css')), 'assets/site.css missing');
   assert.ok(read('assets/site.css').length > 50000, 'site.css suspiciously small — extraction broken?');
 });
