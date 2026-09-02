@@ -31,6 +31,8 @@ const {
   barCloseTime,
   studyProvenance,
   TIMING_CONVENTION,
+  buildSmtEvents,
+  confirmedSmtEvent,
 } = __test;
 
 function bar(t, o, h, l, c, v = 1000) {
@@ -249,6 +251,11 @@ const modelBars = [
   bar('2026-08-20T13:34:00Z', 100.3, 100.65, 100.25, 100.6),
 ];
 assert.equal(detectContinuationModel(modelBars, 0, 'high'), true);
+assert.equal(detectContinuationModel([
+  bar('2026-08-20T13:30:00Z', 100, 100.1, 99.9, 100),
+  bar('2026-08-20T13:31:00Z', 100, 100.1, 99.9, 100),
+  bar('2026-08-20T13:32:00Z', 100, 100.1, 99.9, 100),
+], 0, 'high'), false, 'flat bars that never gap must fall through every candidate and report no continuation model');
 
 const summarized = summarizeConditions([
   { condition: 'PDH', continuation: true, reversal: false, continuationModel: true, mfe: 0.01, mae: -0.002 },
@@ -844,3 +851,115 @@ assert.equal(ld['@id'], CANONICAL + '#app');
 assert.equal(ld.isAccessibleForFree, false, 'the research engine is not free — do not mark a paid tool free');
 assert.match(ld.disclaimer, /not achieved or live-tradable/i, 'structured data must not claim more than the page does');
 assert.match(clientHtml, /<meta name="robots" content="noindex/i, 'the research engine stays noindexed');
+
+// --- SMT divergence: confirmedSmtEvent / buildSmtEvents ---------------------
+// Neither function had a single test before this. They decide whether one
+// instrument breaking its prior-day range while a correlated instrument does
+// NOT (or does so late) counts as a real SMT divergence, using a 5-minute
+// confirmation window so two symbols that simply moved together in the same
+// minute never get mislabeled as diverging. The risk is in the index/time
+// arithmetic, not the outcome math (classifyDirectionalOutcome already has
+// its own coverage), so these fixtures hold the outcome computation fixed
+// and only vary which side swept and when.
+
+const smtBars = Array.from({ length: 13 }, (_, i) =>
+  bar(`2026-08-25T13:${String(30 + i).padStart(2, '0')}:00Z`, 100 + i, 101 + i, 99 + i, 100.5 + i)
+);
+// The bar the 5-minute window resolves to whenever the confirmation clock
+// starts at 13:30 (primary or comparison alike): index 5 is 13:35, the first
+// bar at-or-after that instant.
+const expectedFromThirteenThirty = classifyDirectionalOutcome(smtBars, 5, 'up', 'SMT test', '2026-08-25');
+assert.ok(expectedFromThirteenThirty, 'the fixture must itself produce an outcome, or the comparisons below prove nothing');
+
+// Neither side swept: no divergence to confirm, whatever the bars contain.
+assert.equal(confirmedSmtEvent(smtBars, [], -1, -1, 'up', 'SMT test', '2026-08-25'), null);
+
+// Only the primary side swept (comparison never broke its own range): the
+// confirmation clock starts at the primary's sweep time alone.
+assert.deepEqual(
+  confirmedSmtEvent(smtBars, [], 0, -1, 'up', 'SMT test', '2026-08-25'),
+  expectedFromThirteenThirty,
+  'an unconfirmed comparison side must still resolve from the primary sweep time',
+);
+
+// Only the comparison side swept (primary never broke its range): the clock
+// still starts from the comparison's sweep time, and the outcome is still
+// read off the primary bars.
+assert.deepEqual(
+  confirmedSmtEvent(smtBars, [bar('2026-08-25T13:30:00Z', 1, 1, 1, 1)], -1, 0, 'up', 'SMT test', '2026-08-25'),
+  expectedFromThirteenThirty,
+  'a comparison-only sweep must still resolve from its own sweep time against the primary bars',
+);
+
+// Both sides swept, three minutes apart: inside the 5-minute window, so the
+// two instruments moved together and this is NOT a divergence.
+assert.equal(
+  confirmedSmtEvent(smtBars, [bar('2026-08-25T13:33:00Z', 1, 1, 1, 1)], 0, 0, 'up', 'SMT test', '2026-08-25'),
+  null,
+  'a comparison sweep within 5 minutes of the primary must not be confirmed as a divergence',
+);
+
+// Both sides swept, seven minutes apart, primary first: outside the window,
+// so this IS a confirmed divergence, still resolved from the earlier
+// (primary) sweep time.
+assert.deepEqual(
+  confirmedSmtEvent(smtBars, [bar('2026-08-25T13:37:00Z', 1, 1, 1, 1)], 0, 0, 'up', 'SMT test', '2026-08-25'),
+  expectedFromThirteenThirty,
+  'a comparison sweep more than 5 minutes after the primary must confirm, resolved from the primary\'s own sweep time',
+);
+
+// Both sides swept, comparison first this time: the confirmation clock must
+// start from whichever side swept first, not always the primary.
+const expectedFromThirteenThirtyOne = classifyDirectionalOutcome(smtBars, 6, 'up', 'SMT test', '2026-08-25');
+assert.deepEqual(
+  confirmedSmtEvent(smtBars, [bar('2026-08-25T13:31:00Z', 1, 1, 1, 1)], 12, 0, 'up', 'SMT test', '2026-08-25'),
+  expectedFromThirteenThirtyOne,
+  'when the comparison sweeps first, the confirmation clock must start at its time, not the later primary sweep',
+);
+
+// buildSmtEvents wires the above through real sessions: a prior day's RTH
+// range, split via groupProxyTradeDays/splitSession exactly as the live
+// options/daily modules feed it, not hand-picked indices.
+const smtPrimaryDay1Bars = [bar('2026-08-24T13:30:00Z', 100.5, 101, 99, 100.5)];
+const smtComparisonDay1Bars = [bar('2026-08-24T13:30:00Z', 50.5, 51, 49, 50.5)];
+
+// Day 2: primary breaks day 1's high (101) alone; comparison stays inside
+// its own day-1 range the whole time. A genuine, confirmed divergence.
+const smtPrimaryDay2Bars = Array.from({ length: 11 }, (_, i) =>
+  bar(`2026-08-25T13:${String(30 + i).padStart(2, '0')}:00Z`, 100.5 + i, 101.5 + i, 100 + i, 101 + i)
+);
+// Offset from the primary's bar times on purpose: comparison never sweeps
+// here, so this offset is inert for a correct implementation, but it makes
+// the fixture sensitive to a primary/comparison argument-order bug in the
+// caller (identical timestamps on both sides would hide exactly that bug).
+const smtComparisonDay2Bars = Array.from({ length: 5 }, (_, i) =>
+  bar(`2026-08-25T13:${String(32 + i).padStart(2, '0')}:00Z`, 50, 50.5, 49.5, 50)
+);
+
+// Day 3: both sides break their (now day-2) prior high in the same minute —
+// moving together, so it must NOT be reported as a divergence.
+const smtPrimaryDay2High = Math.max(...smtPrimaryDay2Bars.map((b) => b.h));
+const smtComparisonDay2High = Math.max(...smtComparisonDay2Bars.map((b) => b.h));
+const smtPrimaryDay3Bars = [bar('2026-08-26T13:30:00Z', smtPrimaryDay2High - 1, smtPrimaryDay2High + 1, smtPrimaryDay2High - 1.5, smtPrimaryDay2High + 0.5)];
+const smtComparisonDay3Bars = [bar('2026-08-26T13:30:00Z', smtComparisonDay2High - 1, smtComparisonDay2High + 1, smtComparisonDay2High - 1.5, smtComparisonDay2High + 0.5)];
+
+const smtPrimary = groupProxyTradeDays([...smtPrimaryDay1Bars, ...smtPrimaryDay2Bars, ...smtPrimaryDay3Bars], []);
+const smtComparison = groupProxyTradeDays([...smtComparisonDay1Bars, ...smtComparisonDay2Bars, ...smtComparisonDay3Bars], []);
+
+const smtEvents = buildSmtEvents(smtPrimary, smtComparison, 'TEST1', 'TEST2', 2);
+assert.equal(smtEvents.length, 1, 'day 2\'s solo break must confirm, and day 3\'s simultaneous break on both sides must not');
+assert.equal(smtEvents[0].condition, 'TEST1/TEST2 PDH/PDL SMT high');
+assert.equal(smtEvents[0].direction, 'down', 'a primary-only break of the prior high expects mean reversion, hence the "down" label');
+assert.equal(smtEvents[0].date, '2026-08-25');
+// The confirmation clock must run from the PRIMARY's own sweep (13:30, so
+// resolved at 13:35 -> index 5), not the comparison side's -- pins the
+// argument order into confirmedSmtEvent, not just that some event exists.
+assert.deepEqual(
+  smtEvents[0],
+  classifyDirectionalOutcome(smtPrimaryDay2Bars, 5, 'down', 'TEST1/TEST2 PDH/PDL SMT high', '2026-08-25'),
+);
+
+// limitDays bounds how far back the date list reaches: with only the single
+// most recent date in scope, there is no "previous day" to diff against and
+// the loop never runs.
+assert.deepEqual(buildSmtEvents(smtPrimary, smtComparison, 'TEST1', 'TEST2', 0), []);
