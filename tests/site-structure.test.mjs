@@ -45,6 +45,25 @@ const propFirms = readFileSync(resolve(root, 'prop-firms.html'), 'utf8');
 assert.doesNotMatch(propFirms, /<h3>/, 'prop-firms firm cards must not skip a heading level from h1 to h3');
 assert.match(propFirms, /'<h2>' \+ esc\(f\.name\) \+ '<\/h2>'/, 'prop-firms firm cards must render as h2');
 
+// Every course page carries the same 19-link, four-dropdown nav. Without a
+// skip link, a keyboard or screen-reader visitor has to tab through all of
+// it on every visit before reaching the lesson content. options-lab.html
+// was missing one — its wrapper is a <div class="curr"> rather than
+// <body class="curr"> like its siblings, which is likely why it slipped
+// past review as "structurally different" instead of "incomplete".
+for (const [page, targetId] of [
+  ['futures-dissection.html', 'curriculum'],
+  ['stock-breakdown.html', 'curriculum'],
+  ['psychology-enhancer.html', 'curriculum'],
+  ['options-lab.html', 'tabs'],
+]) {
+  const source = readFileSync(resolve(root, page), 'utf8');
+  assert.match(source, new RegExp(`<a class="skip" href="#${targetId}">`),
+    `${page} must offer a skip link past its full nav`);
+  assert.match(source, new RegExp(`id="${targetId}"`),
+    `${page}'s skip link target #${targetId} must exist`);
+}
+
 assert.match(html, /meta name="robots" content="noindex,nofollow"/);
 assert.match(html, /Educational research only—not financial advice/);
 // Sessions travel via HttpOnly cookies; no Bearer tokens in client code.
