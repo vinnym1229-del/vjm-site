@@ -206,8 +206,6 @@ export async function onRequestPost(context) {
     ).bind(evt.eventId).run().catch(() => {});
     return json({ ok: true, action: 'revoke', revoked: (res && res.meta && res.meta.changes) || 0 });
   }
-
-  return json({ ok: true, ignored: true });
 }
 
 async function hmacHex(secret, message) {
