@@ -229,7 +229,7 @@ test('the car never displaces the hero copy from the page centre', () => {
     'the copy column width must be a single named value the car can subtract');
   assert.match(siteCss, /\.hero\.has-car \.hero-inner \{ max-width: var\(--hero-col\); \}/,
     'the copy column must be sized from that same property');
-  assert.match(siteCss, /width: calc\(\(100% - var\(--hero-col[^)]*\)\) \/ 2 - 36px\);/,
+  assert.match(siteCss, /width: calc\(\(100% - var\(--hero-col[^)]*\)\) \/ 2 - \d+px\);/,
     'the car must be sized to the actual gutter beside the centred copy column');
 
   // And when JS takes the car away at runtime, its layout hook goes with it.

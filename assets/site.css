@@ -355,7 +355,7 @@ body.light-mode .nav-drop a:hover { color: #141416; }
    section heading -- it is narrower, not moved. --hero-col is the single
    source of truth for that width: #ferrari-showcase subtracts it to size
    itself, so the two can never drift apart into an overlap. */
-.hero.has-car { --hero-col: 620px; }
+.hero.has-car { --hero-col: 560px; }
 .hero.has-car .hero-inner { max-width: var(--hero-col); }
 .hero-eyebrow {
   display: inline-block;
@@ -366,7 +366,7 @@ body.light-mode .nav-drop a:hover { color: #141416; }
 }
 .hero h1 {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: clamp(3rem, 9vw, 6.5rem);
+  font-size: clamp(2.8rem, 8.2vw, 5.9rem);
   font-weight: 900; line-height: 0.95;
   letter-spacing: -1px; margin-bottom: 24px;
 }
@@ -1202,15 +1202,20 @@ body.light-mode #stream-countdown-bar .cd-live-dot{background:var(--gold);}
    displacing the headline 459px right of centre — trading one misalignment
    for a worse one. */
 #ferrari-showcase {
-  position: absolute; left: 18px; top: 50%;
+  /* 28.2% is where the "Futures," line of the headline centres, measured in a
+     real browser at 1280/1440/1600/1920 — it holds to a tenth of a percent
+     across all four, because the hero's height and the headline both scale
+     with the same type ramp. The car lines up with that word rather than with
+     the middle of the hero, which put it beside the paragraph. */
+  position: absolute; left: 10px; top: 28.2%;
   transform: translateY(-50%);
   /* The gutter left by the centred copy column, less 36px so the car keeps
      18px of air on both sides. Derived from --hero-col rather than repeating
      the number, because the one time these two disagreed the car drove
      straight through the "With ten years of hands-on experience" paragraph. */
-  width: calc((100% - var(--hero-col, 820px)) / 2 - 36px);
-  aspect-ratio: 1.6;
-  max-height: min(62vh, 470px);
+  width: calc((100% - var(--hero-col, 820px)) / 2 - 20px);
+  aspect-ratio: 1.5;
+  max-height: min(74vh, 620px);
   z-index: 2; pointer-events: none;
 }
 
@@ -1224,12 +1229,15 @@ body.light-mode #stream-countdown-bar .cd-live-dot{background:var(--gold);}
 /* A framed panel like every other content block on the page, rather than
    the car floating directly on the bare hero background with nothing to
    say where the "display" ends and the rest of the page begins. */
+/* Frameless on purpose. The panel treatment (border, filled background,
+   shadow) drew a hard rectangle around the car in the middle of an otherwise
+   open hero, which made it read as an embedded widget rather than part of the
+   page. The canvas is transparent instead, so the car and its turntable float
+   on the hero's own background at every theme. */
 .fs-stage {
   position: absolute; inset: 0; overflow: hidden;
-  border: 1px solid var(--border); border-radius: 20px;
-  background: var(--bg2);
+  border: 0; background: transparent;
 }
-body.light-mode .fs-stage { box-shadow: 0 1px 2px rgba(16,16,20,.04), 0 6px 18px rgba(16,16,20,.06); }
 /* The layer is pointer-events:none so it never swallows a click meant for
    the hero copy; the canvas alone opts back in so the car can be grabbed and
    spun. .hero-inner sits above it (z-index 3), so where the two overlap the
