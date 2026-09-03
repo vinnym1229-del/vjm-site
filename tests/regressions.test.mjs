@@ -461,3 +461,23 @@ test('each course lock names the plan that actually unlocks that course', () => 
     }
   }
 });
+
+test('the vendored Three.js/model files get a long, cache-header path of their own', () => {
+  // assets/vendor/three and assets/models/ferrari.glb were vendored once and
+  // never edited in place, unlike site.css/lightning-bg.js which rely on a
+  // manual ?v= bump to bust the blanket 5-minute /assets/* cache. Without a
+  // more specific rule, repeat visitors re-fetch ~3.9MB of unchanged bytes
+  // every 5 minutes. Guards against that rule quietly being dropped, and
+  // against it regressing to a max-age shorter than the general default.
+  const headers = read('_headers');
+  const blanket = /\/assets\/\*\n\s*Cache-Control: public, max-age=(\d+)/.exec(headers);
+  assert.ok(blanket, '_headers must still set a blanket /assets/* Cache-Control');
+  const blanketMaxAge = Number(blanket[1]);
+
+  for (const path of ['/assets/vendor/*', '/assets/models/*']) {
+    const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rule = new RegExp(`${escaped}\\n\\s*Cache-Control: public, max-age=(\\d+), immutable`).exec(headers);
+    assert.ok(rule, `_headers has no long-cache rule for ${path}`);
+    assert.ok(Number(rule[1]) > blanketMaxAge, `${path}'s max-age must exceed the general /assets/* default`);
+  }
+});

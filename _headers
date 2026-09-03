@@ -36,6 +36,21 @@
 /assets/*
   Cache-Control: public, max-age=300, must-revalidate
 
+# assets/vendor/three (Three.js + its addons/DRACO decoder) and
+# assets/models/ferrari.glb were vendored into the repo once (see the
+# "Vendor Three.js and the Ferrari model" commit) and have never been edited
+# in place since — unlike site.css/lightning-bg.js, which change often and
+# lean on a manual ?v= bump in the referencing <link>/<script> tag to bust
+# the 5-minute cache above. A future Three.js/model upgrade is a deliberate
+# re-vendoring step, not a silent overwrite, so these two paths get a much
+# longer cache than the rest of /assets/* — repeat visitors to the homepage
+# stop re-fetching ~3.9MB of unchanged bytes every 5 minutes.
+/assets/vendor/*
+  Cache-Control: public, max-age=604800, immutable
+
+/assets/models/*
+  Cache-Control: public, max-age=604800, immutable
+
 # ── PERMANENT noindex — survives lifting the switch above ──
 # Member/app tools, the research engine, premium guidance, API and video
 # routes, and the /pj/* static preview copies must never be indexed at any
