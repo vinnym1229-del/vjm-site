@@ -77,6 +77,35 @@ async function sessionCookie(mr = 'abcd1234abcd1234') {
   assert.deepEqual(calls[0].args, ['logout', 'ok', 'abcd1234abcd1234']);
 }
 
+// Valid session with only RESEARCH_DB bound (no RATELIMIT_DB): the audit
+// write must still land via the fallback, not silently skip. Every other
+// test in this file binds RATELIMIT_DB, so this branch of
+// `RATELIMIT_DB || RESEARCH_DB` had never actually run.
+{
+  const calls = [];
+  const env = {
+    SESSION_SIGNING_SECRET: SECRET,
+    RESEARCH_DB: {
+      prepare(sql) {
+        return {
+          bind(...args) {
+            calls.push({ sql, args });
+            return { run: async () => ({ success: true }) };
+          },
+        };
+      },
+    },
+  };
+  const cookie = await sessionCookie('abcd1234abcd1234extra');
+  const { status, data, setCookie } = await logout(env, cookie);
+  assert.equal(status, 200);
+  assert.equal(data.ok, true);
+  assert.equal(setCookie, buildClearCookie());
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].sql, /INSERT INTO audit_events/);
+  assert.deepEqual(calls[0].args, ['logout', 'ok', 'abcd1234abcd1234']);
+}
+
 // Valid session but the DB write itself fails (e.g. table missing, D1
 // outage): logout is best-effort logging, never a blocked logout.
 {
@@ -100,6 +129,17 @@ async function sessionCookie(mr = 'abcd1234abcd1234') {
 {
   const env = { SESSION_SIGNING_SECRET: SECRET };
   const { status, data, setCookie } = await logout(env, '__Host-vjm_session=not-a-real-token');
+  assert.equal(status, 200);
+  assert.equal(data.ok, true);
+  assert.equal(setCookie, buildClearCookie());
+}
+
+// Valid session but neither DB binding is present: the audit write must be
+// skipped outright, not attempted against an undefined `db`.
+{
+  const env = { SESSION_SIGNING_SECRET: SECRET };
+  const cookie = await sessionCookie();
+  const { status, data, setCookie } = await logout(env, cookie);
   assert.equal(status, 200);
   assert.equal(data.ok, true);
   assert.equal(setCookie, buildClearCookie());
