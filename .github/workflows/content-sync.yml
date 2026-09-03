@@ -40,6 +40,32 @@ jobs:
           test -n "$RESEARCH_REFRESH_URL" || { echo "RESEARCH_REFRESH_URL secret is not set"; exit 1; }
           test -n "$RESEARCH_CRON_SECRET" || { echo "RESEARCH_CRON_SECRET secret is not set"; exit 1; }
 
+      # ONE-OFF: this run's maintenance session has no egress to
+      # pj.vjm.pages.dev (org network policy blocks it; confirmed via the
+      # agent proxy status endpoint). Same borrowed-runner pattern as prior
+      # runs. Delete this step once its output is read.
+      - name: One-off — smoke-test the live deployment
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -uo pipefail
+          BASE="${RESEARCH_REFRESH_URL%/}"
+          echo "== pages =="
+          for p in / /futures-dissection.html /prop-firms.html /research-engine.html /stock-lab.html /options-lab.html /premarket.html /premium-guidance.html /forex-calendar.html /psychology-enhancer.html /stock-breakdown.html; do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$BASE$p")"
+            echo "$p -> $code"
+          done
+          echo "== JSON endpoints =="
+          for ep in "/api/ticker" "/api/yahoo-news?symbol=AAPL" "/api/stock-research?symbol=AAPL" "/api/content?type=schedule"; do
+            body="$(curl -s --max-time 20 "$BASE$ep")"
+            ok="$(RESPONSE="$body" node -e 'try{console.log(JSON.parse(process.env.RESPONSE).ok===true)}catch{console.log("PARSE_FAIL")}')"
+            echo "$ep -> ok=$ok"
+          done
+          echo "== verify-premium bot protection (bad code, no turnstileToken) =="
+          resp="$(curl -s --max-time 20 -X POST -H 'Content-Type: application/json' -d '{"code":"BAD-CODE-0000"}' "$BASE/api/verify-premium")"
+          echo "$resp"
+
       - name: Pull the sheet into D1
         shell: bash
         run: |
