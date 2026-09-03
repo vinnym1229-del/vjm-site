@@ -113,6 +113,29 @@ test('light is the default theme; only an explicit "dark" opts out', () => {
   assert.match(read('options-lab.html'), /stored !== 'dark'/, 'options-lab toggle must default to light');
 });
 
+test('ticker down/closed states clear WCAG AA against the light-mode ticker background', () => {
+  // The "up" green got a light-mode retune (TICKER_UP_GREEN above) but its
+  // sibling "down" percentage and the CLOSED session badge did not: both kept
+  // the dark-tuned #d14343, which only clears 4.23:1 against the light-mode
+  // ticker background (--bg2 #f6f6f7) -- under the 4.5:1 AA floor for text
+  // this size. Pin the light-mode overrides to the site's own light-mode red
+  // (tokens.css --vjm-red / --vjm-red-soft) so this can't regress silently.
+  const ticker = read('assets/live-ticker.js');
+  const site = read('assets/site.css');
+  const lightBlock = site.match(/body\.light-mode\s*\{([^}]*)\}/)[1];
+  const bg2 = hexToRgb(lightBlock.match(/--bg2:\s*(#[0-9a-fA-F]{6})/)[1]);
+
+  const pct = ticker.match(/body\.light-mode #ticker-wrap \.lt-pct\.down\{color:(#[0-9a-fA-F]{6})/);
+  assert.ok(pct, 'no light-mode override for .lt-pct.down in assets/live-ticker.js');
+  assert.ok(contrast(hexToRgb(pct[1]), bg2) >= 4.5,
+    `light-mode .lt-pct.down (${pct[1]}) on --bg2 is ${contrast(hexToRgb(pct[1]), bg2).toFixed(2)}:1`);
+
+  const sess = ticker.match(/body\.light-mode #ticker-wrap \.lt-sess\.sess-cl\{color:(#[0-9a-fA-F]{6})/);
+  assert.ok(sess, 'no light-mode override for .lt-sess.sess-cl in assets/live-ticker.js');
+  assert.ok(contrast(hexToRgb(sess[1]), bg2) >= 4.5,
+    `light-mode .lt-sess.sess-cl (${sess[1]}) on --bg2 is ${contrast(hexToRgb(sess[1]), bg2).toFixed(2)}:1`);
+});
+
 test('core text/background pairs clear WCAG AA in both themes', () => {
   const css = read('assets/site.css');
   const block = (sel) => {
