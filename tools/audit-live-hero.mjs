@@ -68,6 +68,28 @@ for (const width of WIDTHS) {
       out.overlapWithCopyPx = Math.round(ox * oy);
       out.showcaseRect = { x: Math.round(a.x), y: Math.round(a.y), w: Math.round(a.width), h: Math.round(a.height) };
     }
+
+    // How far each block sits from the page's centre line. Every section on
+    // this homepage is a centred column, so these should all be 0 — and when
+    // one is not, that block is the one that looks wrong, however tidy it
+    // looks measured against itself. A two-column hero once put the headline
+    // 459px right of centre while every check still passed, because nothing
+    // compared the hero to the rest of the page.
+    const vw = document.documentElement.clientWidth;
+    const centreOffset = (sel) => {
+      const el = document.querySelector(sel);
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return Math.round(r.left + r.width / 2 - vw / 2);
+    };
+    out.centreOffsets = {
+      heroHeadline: centreOffset('.hero h1'),
+      heroCopy: centreOffset('.hero-sub'),
+      heroCtas: centreOffset('.hero-ctas'),
+      featuresHeading: centreOffset('#features .section-title'),
+      premiumHeading: centreOffset('#premium .section-title'),
+    };
+    out.horizontalOverflowPx = document.documentElement.scrollWidth - vw;
     return out;
   });
   console.log(JSON.stringify(dom, null, 2));
@@ -79,8 +101,15 @@ for (const width of WIDTHS) {
 
   check('car section survived load', dom.showcasePresent);
   check('WebGL scene reached ready state', String(dom.stageClass).includes('fs-ready'), dom.stageClass);
-  check('hero is a two-column grid', dom.heroDisplay === 'grid', `display:${dom.heroDisplay}`);
   check('car does not overlap the hero copy', dom.overlapWithCopyPx === 0, `${dom.overlapWithCopyPx}px²`);
+  check('page does not scroll sideways', dom.horizontalOverflowPx <= 0, `${dom.horizontalOverflowPx}px`);
+
+  // The check that was missing while the hero sat 459px off-centre and every
+  // other check passed: the hero has to line up with the rest of the page.
+  for (const [name, off] of Object.entries(dom.centreOffsets)) {
+    if (off === null) continue;
+    check(`${name} is centred on the page`, Math.abs(off) <= 8, `${off > 0 ? '+' : ''}${off}px from centre`);
+  }
 
   if (dom.showcasePresent && String(dom.stageClass).includes('fs-ready')) {
     const box = await page.$eval('#fsStage', (el) => {

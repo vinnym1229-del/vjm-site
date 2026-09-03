@@ -197,29 +197,38 @@ test('ferrari showcase (WebGL) never loads on phones or under reduced motion', (
   // decoration. Both bail-out paths must hold, in CSS (so the section takes
   // up no space even if the script never runs) and in JS (so the import()
   // calls — and the network requests they trigger — never fire at all).
-  assert.match(siteCss, /@media \(max-width: 1080px\), \(prefers-reduced-motion: reduce\) \{[\s\S]*?#ferrari-showcase \{ display: none; \}/,
+  assert.match(siteCss, /@media \(max-width: 1499px\), \(prefers-reduced-motion: reduce\) \{[\s\S]*?#ferrari-showcase \{ display: none; \}/,
     'narrow screens and reduced motion must collapse the whole section, not just hide the canvas');
 
   assert.match(index, /var reduced = window\.matchMedia && window\.matchMedia\('\(prefers-reduced-motion: reduce\)'\)\.matches;/);
-  assert.match(index, /if \(reduced \|\| !section \|\| !track \|\| !stage \|\| !canvas \|\| window\.innerWidth <= 1080\) \{ unGrid\(\); return; \}/,
+  assert.match(index, /if \(reduced \|\| !section \|\| !track \|\| !stage \|\| !canvas \|\| window\.innerWidth <= 1499\) \{ unGrid\(\); return; \}/,
     'the module script must bail out, before importing Three.js, under any of these conditions — and drop the grid class on the way out');
 });
 
-test('the hero grid and the car appear under exactly the same conditions', () => {
-  // The car is hidden under reduced motion, and a display:none grid item
-  // generates no box — so a two-column grid that applies under conditions the
-  // car does NOT is a grid holding a single item, which auto-places into the
-  // narrow first column and strands the hero copy beside an empty half-page.
-  // That shipped, and no amount of resizing a normal browser would reveal it:
-  // it only appears with an OS accessibility setting turned on.
-  const grid = /@media \(min-width: 1081px\) and \(prefers-reduced-motion: no-preference\) \{\s*\.hero\.has-car \{/;
-  assert.match(siteCss, grid,
-    'the hero grid must be gated on reduced-motion too, not just width, or it outlives the car it was sized for');
+test('the car never displaces the hero copy from the page centre', () => {
+  // Every section on this homepage is a centred column. An earlier attempt at
+  // keeping the car clear of the text made the hero a two-column grid, which
+  // stopped the overlap by moving the headline 459px right of page centre —
+  // so the hero became the only block on the page that did not line up with
+  // the rest of it, and it read as "the whole homepage isn't centred".
+  // The car is a positioned layer in the gutter instead, so it cannot push
+  // anything. tools/audit-live-hero.mjs measures the resulting offsets in a
+  // real browser; this pins the mechanism that keeps them at zero.
+  assert.doesNotMatch(siteCss, /\.hero(\.has-car)?\s*\{[^}]*display:\s*grid/,
+    'the hero must not become a grid — that is what displaced the copy');
+  assert.match(siteCss, /#ferrari-showcase \{[\s\S]*?position: absolute;[\s\S]*?\}/,
+    'the car must be a positioned layer, so it takes no space in the flow');
 
-  // And when JS takes the car away at runtime, the class goes with it.
+  // Width derived from the gutter the centred 820px column leaves, so overlap
+  // is impossible by arithmetic rather than by a magic number that happened to
+  // work at whichever viewport width it was last eyeballed against.
+  assert.match(siteCss, /width: calc\(\(100% - 820px\) \/ 2 - 40px\);/,
+    'the car must be sized to the actual gutter beside the centred copy column');
+
+  // And when JS takes the car away at runtime, its layout hook goes with it.
   assert.match(index, /const unGrid = \(\) => document\.querySelector\('\.hero'\)\?\.classList\.remove\('has-car'\);/);
   assert.match(index, /function fail\(\) \{ section\.remove\(\); unGrid\(\); \}/,
-    'every failure path must collapse the grid, not just remove the section');
+    'every failure path must drop the layout hook, not just remove the section');
 });
 
 test('ferrari showcase loads Three.js and the model from this repo, not a third-party CDN, and fails silently', () => {

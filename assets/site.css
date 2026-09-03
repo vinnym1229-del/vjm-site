@@ -334,48 +334,14 @@ body.light-mode .nav-drop a:hover { color: #141416; }
               linear-gradient(180deg, #0c0c0d 0%, #131315 100%);
   position: relative; overflow: hidden;
 }
-/* Above the car's own visibility breakpoint, the hero becomes an explicit
-   two-column grid instead of a centered block with the car absolutely
-   positioned over it. Independent centering + absolute positioning is what
-   let the car and the "With ten years..." paragraph occupy the same
-   horizontal space at some viewport widths (a centered 820px text block's
-   left edge can fall well inside a "car gets the left 48vw" box) -- actual
-   grid columns cannot overlap by construction, so this is fixed for every
-   width above the breakpoint, not just the one this was tuned against.
-   This used to key off .hero:has(#ferrari-showcase) instead of the plain
-   class below -- :has() has real gaps in older browser versions still in
-   use, and on any browser where it doesn't apply this whole rule silently
-   never matched, leaving the OLD absolute-positioned, overlapping layout
-   in effect with no error or fallback of any kind. The markup always ships
-   #ferrari-showcase server-side (only its JS-driven WebGL content can fail
-   later), so there was never a need to feature-detect its presence in CSS
-   at all -- a plain class the server always sends is enough. */
-/* The reduced-motion clause matters as much as the width one. The car is
-   hidden under (prefers-reduced-motion: reduce) further down this file, and a
-   display:none grid item generates no box at all — so without this condition
-   the grid still declared two columns while holding a single item, and the
-   hero copy auto-placed into the narrow 44% column with the entire right half
-   of the page left empty. Every reduced-motion desktop visitor got that, and
-   no amount of resizing a normal browser would ever reveal it. The grid and
-   the car must appear under exactly the same conditions. */
-@media (min-width: 1081px) and (prefers-reduced-motion: no-preference) {
-  .hero.has-car {
-    display: grid; grid-template-columns: minmax(320px, 44%) 1fr;
-    align-items: center; text-align: left; column-gap: clamp(20px, 4vw, 60px);
-  }
-  .hero.has-car #ferrari-showcase {
-    position: relative; inset: auto; width: 100%;
-    /* A grid row sized to its (auto) content can't resolve a percentage
-       height on a child, so this needs an explicit length rather than a %.
-       Landscape on purpose: a car on a turntable is roughly 2.5x wider than
-       it is tall, so a near-square frame (this was min(58vh, 560px)) can only
-       ever fill about a third of its own height no matter how the camera is
-       fitted — the car ends up dead-centred and marooned in empty space,
-       which reads as "not centred" even when it is centred to the pixel. */
-    height: clamp(240px, 23vw, 400px);
-  }
-  .hero.has-car .hero-inner { text-align: center; margin: 0 auto; }
-}
+/* The hero copy stays centred on the PAGE, exactly like every other section
+   heading on this site. An earlier attempt at keeping the car clear of the
+   text made the hero a two-column grid — which fixed the overlap by shoving
+   the headline 459px to the right of page centre, so the hero was the only
+   block on the whole homepage that did not line up with the rest of it.
+   The car instead lives in the empty gutter the centred 820px copy column
+   leaves beside it, sized to exactly that gutter, so it cannot overlap the
+   copy and cannot displace it either. See #ferrari-showcase further down. */
 .hero::before {
   content:'';
   position: absolute; inset: 0;
@@ -1218,9 +1184,21 @@ body.light-mode #stream-countdown-bar .cd-live-dot{background:var(--gold);}
    band of its own further down the page. It is a sibling of .hero-inner
    inside .hero, absolutely positioned and pointer-events:none so it never
    intercepts a click meant for the CTAs. */
+/* Sized to the gutter, not to a guess. .hero-inner is a centred 820px column,
+   so the empty space to its left is exactly (100% - 820px) / 2 — deriving the
+   width from that same number is what makes overlap impossible at EVERY
+   viewport width rather than at the one a magic number was tuned against.
+   The 20px on each side keeps it off the page edge and off the copy.
+   Absolute, so the hero copy stays centred on the page like every other
+   section heading; the previous fix used a grid, which stopped the overlap by
+   displacing the headline 459px right of centre — trading one misalignment
+   for a worse one. */
 #ferrari-showcase {
-  position: absolute; left: 0; top: 0; bottom: 0;
-  width: min(48vw, 760px);
+  position: absolute; left: 20px; top: 50%;
+  transform: translateY(-50%);
+  width: calc((100% - 820px) / 2 - 40px);
+  aspect-ratio: 1.9;
+  max-height: min(52vh, 400px);
   z-index: 2; pointer-events: none;
 }
 .fs-track { position: absolute; inset: 0; }
@@ -1254,7 +1232,12 @@ body.light-mode .fs-stage { box-shadow: 0 1px 2px rgba(16,16,20,.04), 0 6px 18px
 }
 @keyframes fsSpin { to { transform: rotate(360deg); } }
 .fs-stage.fs-ready .fs-loading { opacity: 0; pointer-events: none; }
-@media (max-width: 1080px), (prefers-reduced-motion: reduce) {
+/* Below this the gutter beside the centred 820px copy column is too narrow
+   to hold a car at a sensible size — (1500 - 820) / 2 - 40 is about 300px —
+   so it goes rather than squeezing the copy or shrinking to a speck. The JS
+   guard in index.html uses the same number; they must agree, or the script
+   spends a multi-megabyte download building a scene inside a hidden box. */
+@media (max-width: 1499px), (prefers-reduced-motion: reduce) {
   #ferrari-showcase { display: none; }
 }
 
