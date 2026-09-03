@@ -355,6 +355,11 @@ body.light-mode .nav-drop a:hover { color: #141416; }
    section heading -- it is narrower, not moved. --hero-col is the single
    source of truth for that width: #ferrari-showcase subtracts it to size
    itself, so the two can never drift apart into an overlap. */
+/* 560px is a floor, not a preference: at 548 the two primary CTAs stop
+   sharing a row and stack into three, and at 520 the headline gains a fifth
+   line (which also breaks the car's alignment below, since that is anchored
+   to a four-line headline). Measured, not guessed. Widen the car by trimming
+   its own margins instead of taking more from here. */
 .hero.has-car { --hero-col: 560px; }
 .hero.has-car .hero-inner { max-width: var(--hero-col); }
 .hero-eyebrow {
@@ -1207,13 +1212,13 @@ body.light-mode #stream-countdown-bar .cd-live-dot{background:var(--gold);}
      across all four, because the hero's height and the headline both scale
      with the same type ramp. The car lines up with that word rather than with
      the middle of the hero, which put it beside the paragraph. */
-  position: absolute; left: 10px; top: 28.2%;
+  position: absolute; left: 4px; top: 28.2%;
   transform: translateY(-50%);
   /* The gutter left by the centred copy column, less 36px so the car keeps
      18px of air on both sides. Derived from --hero-col rather than repeating
      the number, because the one time these two disagreed the car drove
      straight through the "With ten years of hands-on experience" paragraph. */
-  width: calc((100% - var(--hero-col, 820px)) / 2 - 20px);
+  width: calc((100% - var(--hero-col, 820px)) / 2 - 8px);
   aspect-ratio: 1.5;
   max-height: min(74vh, 620px);
   z-index: 2; pointer-events: none;
