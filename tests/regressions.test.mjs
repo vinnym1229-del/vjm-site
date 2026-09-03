@@ -30,6 +30,26 @@ test('every same-site fragment link resolves to a real id', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: research-engine.html's premium access-code field carried
+// autocomplete="current-password" while every other copy of the same gate
+// (stock-lab, premium-guidance, futures-dissection, psychology-enhancer,
+// stock-breakdown, options-lab) used "off" -- a copy-paste divergence that
+// invited browsers to offer saved account passwords for autofill into a
+// one-time access code field.
+test('every premium/member access-code input opts out of password autofill', () => {
+  const offenders = [];
+  for (const p of PAGES) {
+    const html = read(p);
+    for (const m of html.matchAll(/<input\b[^>]*\btype="password"[^>]*>/g)) {
+      const tag = m[0];
+      if (!/placeholder="[^"]*access code"/i.test(tag)) continue;
+      if (!/autocomplete="off"/.test(tag)) offenders.push(`${p}: ${tag}`);
+    }
+  }
+  assert.deepEqual(offenders, [], `access-code inputs without autocomplete="off":\n  ${offenders.join('\n  ')}`);
+});
+
+// ---------------------------------------------------------------------------
 // Incident: replacing a quiz question without re-pointing the JSON answer key
 // (a sibling <script type="application/json"> keyed by choice index) would
 // silently grade the quiz wrong.
