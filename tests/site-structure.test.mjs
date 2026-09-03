@@ -64,6 +64,23 @@ for (const [page, targetId] of [
     `${page}'s skip link target #${targetId} must exist`);
 }
 
+// The same gap turned up again outside the curriculum pages: prop-firms.html
+// and forex-calendar.html carry the identical six-dropdown Markets/Tools nav
+// as premarket.html and stock-lab.html, but had no way to skip past it.
+// Their siblings use two different skip-link markups (premarket.html's is an
+// inline-styled class="skip-link"; stock-lab.html's is a CSS class="skip"),
+// so each page is checked against the pattern its own sibling uses.
+for (const [page, className, targetId] of [
+  ['prop-firms.html', 'skip-link', 'main'],
+  ['forex-calendar.html', 'skip', 'main'],
+]) {
+  const source = readFileSync(resolve(root, page), 'utf8');
+  assert.match(source, new RegExp(`<a class="${className}" href="#${targetId}"`),
+    `${page} must offer a skip link past its full nav`);
+  assert.match(source, new RegExp(`id="${targetId}"`),
+    `${page}'s skip link target #${targetId} must exist`);
+}
+
 assert.match(html, /meta name="robots" content="noindex,nofollow"/);
 assert.match(html, /Educational research only—not financial advice/);
 // Sessions travel via HttpOnly cookies; no Bearer tokens in client code.
