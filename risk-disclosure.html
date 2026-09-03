@@ -55,6 +55,8 @@ body.light-mode .eyebrow{color:var(--gold);background:rgba(179,37,29,.07);border
 <script src="assets/theme.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#main" style="position:absolute;left:-999px;top:0;background:#b3251d;color:#fff;padding:10px 14px;border-radius:8px;z-index:99"
+   onfocus="this.style.left='16px'" onblur="this.style.left='-999px'">Skip to content</a>
 <nav class="nav" aria-label="Main navigation">
   <a class="brand" href="index.html">PJ TRADES</a>
   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -65,7 +67,7 @@ body.light-mode .eyebrow{color:var(--gold);background:rgba(179,37,29,.07);border
     <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener noreferrer" style="color:var(--muted);text-decoration:none;border:1px solid var(--border);background:rgba(22,22,24,.72);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;">Discord</a>
   </div>
 </nav>
-<main>
+<main id="main">
 <div class="eyebrow">PJ Trades</div>
 <h1>Risk <span>Disclosure</span></h1>
 <p>Last updated: August 31, 2026. Contact: pjtradesofficial@gmail.com.</p>

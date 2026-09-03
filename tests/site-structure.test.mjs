@@ -81,6 +81,20 @@ for (const [page, className, targetId] of [
     `${page}'s skip link target #${targetId} must exist`);
 }
 
+// The three legal pages (privacy/risk-disclosure/terms) share the identical
+// nav markup as premarket.html/prop-firms.html — smaller (5 links, one row)
+// but WCAG 2.4.1 "bypass blocks" has no link-count exemption, and the site's
+// own convention (every other nav-bearing page) is to offer one. They use
+// premarket.html's inline-styled skip-link markup since, like it, they have
+// no dedicated <style> block for a CSS-only .skip class.
+for (const page of ['privacy.html', 'risk-disclosure.html', 'terms.html']) {
+  const source = readFileSync(resolve(root, page), 'utf8');
+  assert.match(source, /<a class="skip-link" href="#main"/,
+    `${page} must offer a skip link past its nav`);
+  assert.match(source, /<main id="main">/,
+    `${page}'s skip link target #main must exist`);
+}
+
 // index.html itself had the same gap — its 19-link, six-dropdown nav plus a
 // duplicate 19-link mobile menu, with no way to skip either one. It carries
 // its own external stylesheet (assets/site.css) rather than an inline
