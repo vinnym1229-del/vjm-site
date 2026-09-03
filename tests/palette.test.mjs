@@ -97,13 +97,9 @@ test('theme-color meta matches the manifest and the light default background', (
   const manifest = JSON.parse(read('manifest.json'));
   assert.equal(manifest.theme_color, LIGHT_BG);
   assert.equal(manifest.background_color, LIGHT_BG);
-  // TRANSITIONAL (2026-09-01): index.html is being edited in a parallel lane
-  // this cycle, so its meta tag is swept there rather than here. Once it ships
-  //   <meta name="theme-color" content="#ffffff">
-  // delete the '#0c0c0d' alternative below and pin the meta to LIGHT_BG.
   const meta = read('index.html').match(/<meta name="theme-color" content="(#[0-9a-f]{6})">/i);
   assert.ok(meta, 'theme-color meta missing from index.html');
-  assert.ok([LIGHT_BG, '#0c0c0d'].includes(meta[1].toLowerCase()),
+  assert.equal(meta[1].toLowerCase(), LIGHT_BG,
     `unexpected theme-color ${meta[1]} — it should be ${LIGHT_BG}`);
 });
 
