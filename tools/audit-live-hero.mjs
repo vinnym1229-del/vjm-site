@@ -112,6 +112,11 @@ for (const width of WIDTHS) {
   }
 
   if (dom.showcasePresent && String(dom.stageClass).includes('fs-ready')) {
+    // Scroll it into view first. The render loop deliberately pauses while the
+    // car is off-screen, so screenshotting it where it sits would capture a
+    // frozen car and report "not rotating" for a car that rotates fine.
+    await page.$eval('#fsStage', (el) => el.scrollIntoView({ block: 'center' }));
+    await page.waitForTimeout(1500);
     const box = await page.$eval('#fsStage', (el) => {
       const r = el.getBoundingClientRect();
       return { x: r.x, y: r.y + window.scrollY, width: r.width, height: r.height };

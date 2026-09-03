@@ -73,7 +73,7 @@
 <!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
      than _headers declares -- bump this ?v= on every edit to site.css or
      it can take hours to show up live even after a hard refresh. -->
-<link rel="stylesheet" href="assets/site.css?v=10">
+<link rel="stylesheet" href="assets/site.css?v=11">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -2822,7 +2822,7 @@ setInterval(tickSessionClock, 30000);
   // that will never arrive and the copy sits off-centre beside a void.
   const unGrid = () => document.querySelector('.hero')?.classList.remove('has-car');
 
-  if (reduced || !section || !track || !stage || !canvas || window.innerWidth <= 1499) { unGrid(); return; }
+  if (reduced || !section || !track || !stage || !canvas || window.innerWidth <= 1099) { unGrid(); return; }
 
   function fail() { section.remove(); unGrid(); }
 

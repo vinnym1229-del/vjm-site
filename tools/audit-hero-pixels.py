@@ -22,6 +22,14 @@ TOL_Y = 16
 MIN_FILL_W = 0.70
 MIN_FILL_H = 0.55
 
+# The stage is a CSS box with a 1px border and a 20px radius, and the
+# screenshot clips to that box, so its own rounded corners land inside the
+# image. Those corner pixels are dark and reddish, which is exactly what this
+# tool looks for -- a single antialiased pixel at (659,2) once dragged the
+# bounding box 23px right and reported a visibly centred car as off-centre.
+# Measure only what WebGL drew, not the frame drawn around it.
+CHROME_INSET = 6
+
 
 def content_bbox(path):
     im = Image.open(path).convert('RGB')
@@ -29,8 +37,8 @@ def content_bbox(path):
     px = im.load()
     minx, maxx, miny, maxy = w, 0, h, 0
     found = False
-    for y in range(0, h):
-        for x in range(0, w):
+    for y in range(CHROME_INSET, h - CHROME_INSET):
+        for x in range(CHROME_INSET, w - CHROME_INSET):
             r, g, b = px[x, y]
             dark = r < 100 and g < 100 and b < 100
             red = r > 100 and r - g > 40 and r - b > 40

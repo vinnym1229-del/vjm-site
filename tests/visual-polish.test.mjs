@@ -197,11 +197,11 @@ test('ferrari showcase (WebGL) never loads on phones or under reduced motion', (
   // decoration. Both bail-out paths must hold, in CSS (so the section takes
   // up no space even if the script never runs) and in JS (so the import()
   // calls — and the network requests they trigger — never fire at all).
-  assert.match(siteCss, /@media \(max-width: 1499px\), \(prefers-reduced-motion: reduce\) \{[\s\S]*?#ferrari-showcase \{ display: none; \}/,
+  assert.match(siteCss, /@media \(max-width: 1099px\), \(prefers-reduced-motion: reduce\) \{[\s\S]*?#ferrari-showcase \{ display: none; \}/,
     'narrow screens and reduced motion must collapse the whole section, not just hide the canvas');
 
   assert.match(index, /var reduced = window\.matchMedia && window\.matchMedia\('\(prefers-reduced-motion: reduce\)'\)\.matches;/);
-  assert.match(index, /if \(reduced \|\| !section \|\| !track \|\| !stage \|\| !canvas \|\| window\.innerWidth <= 1499\) \{ unGrid\(\); return; \}/,
+  assert.match(index, /if \(reduced \|\| !section \|\| !track \|\| !stage \|\| !canvas \|\| window\.innerWidth <= 1099\) \{ unGrid\(\); return; \}/,
     'the module script must bail out, before importing Three.js, under any of these conditions — and drop the grid class on the way out');
 });
 
