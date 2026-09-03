@@ -172,6 +172,22 @@ test('no page still shows the pre-rebrand ST TRADES brand name', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: a later sweep (602b6f2) cleared "ST TRADES" from titles, og:title,
+// JSON-LD, footers, and copyright lines but assumed the nav brand was already
+// clean — it had actually been left as PJ TRADES <span>× ST</span> on five
+// pages (futures-dissection, premium-guidance, stock-breakdown,
+// psychology-enhancer, stock-lab). The regex above only matches a bare
+// "ST TRADES" string, so it never saw this trailing "× ST" fragment and
+// passed while the leftover branding stayed live.
+test('the nav brand carries no leftover "x ST" suffix', () => {
+  const stale = PAGES.filter((p) => {
+    const m = /class="(?:brand|nav-brand)"[^>]*>([\s\S]*?)<\/a>/.exec(read(p));
+    return m && /(?:x|×)\s*ST\b/i.test(m[1]);
+  });
+  assert.deepEqual(stale, [], `pages with a leftover "x ST" brand suffix:\n  ${stale.join('\n  ')}`);
+});
+
+// ---------------------------------------------------------------------------
 // Incident: 96 of 100 quiz answers were the longest option, so a member who
 // never opened a lesson scored 96% by always picking the longest. Chance is
 // 25%; this pins the leak closed.
