@@ -24,6 +24,33 @@ async function fetchNews(query) {
   return { status: res.status, data: await res.json() };
 }
 
+// The 30/min rate-limit guard (keyed by scope+ip only, no symbol) is the
+// first thing onRequestGet does -- it must trip before the 31st request
+// from one IP ever reaches Yahoo, this route's own third-party call.
+{
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => { calls += 1; return Response.json({ news: [] }); };
+  try {
+    const ip = '10.8.0.1';
+    const req = () => onRequestGet({
+      request: new Request('https://example.com/api/yahoo-news?symbol=AAPL', {
+        headers: { 'CF-Connecting-IP': ip },
+      }),
+      env: {},
+    });
+    for (let i = 0; i < 30; i++) await req();
+    assert.equal(calls, 30);
+    const limited = await req();
+    assert.equal(limited.status, 429);
+    const limitedData = await limited.json();
+    assert.equal(limitedData.ok, false);
+    assert.equal(calls, 30, 'the limited request must never reach Yahoo');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
 // Neither a symbol nor a recognized topic: rejected before any upstream call.
 {
   const originalFetch = globalThis.fetch;

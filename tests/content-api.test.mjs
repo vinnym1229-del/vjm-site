@@ -62,6 +62,33 @@ async function getContent(env, qs) {
   return { status: res.status, data: await res.json() };
 }
 
+// The 120/min rate-limit guard trips before the RESEARCH_DB check -- it's
+// the first thing onRequestGet does, ahead of even the type validation, so
+// a fixed IP must see its 121st request in one minute rejected regardless
+// of what it's asking for.
+{
+  const ip = '10.6.0.1';
+  let last;
+  for (let i = 0; i < 120; i++) {
+    last = await onRequestGet({
+      request: new Request('https://example.com/api/content?type=schedule', {
+        headers: { 'CF-Connecting-IP': ip },
+      }),
+      env: {},
+    });
+  }
+  assert.equal(last.status, 503, 'sanity: the 120th request still reaches the RESEARCH_DB check');
+  const limited = await onRequestGet({
+    request: new Request('https://example.com/api/content?type=schedule', {
+      headers: { 'CF-Connecting-IP': ip },
+    }),
+    env: {},
+  });
+  assert.equal(limited.status, 429);
+  const limitedData = await limited.json();
+  assert.equal(limitedData.ok, false);
+}
+
 // Unknown type rejected before any RESEARCH_DB check.
 {
   const { status, data } = await getContent({}, 'type=bogus');
