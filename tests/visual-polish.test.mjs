@@ -219,10 +219,17 @@ test('the car never displaces the hero copy from the page centre', () => {
   assert.match(siteCss, /#ferrari-showcase \{[\s\S]*?position: absolute;[\s\S]*?\}/,
     'the car must be a positioned layer, so it takes no space in the flow');
 
-  // Width derived from the gutter the centred 820px column leaves, so overlap
+  // Width derived from the gutter the centred copy column leaves, so overlap
   // is impossible by arithmetic rather than by a magic number that happened to
-  // work at whichever viewport width it was last eyeballed against.
-  assert.match(siteCss, /width: calc\(\(100% - 820px\) \/ 2 - 40px\);/,
+  // work at whichever viewport width it was last eyeballed against. Both
+  // halves must reference the SAME custom property: the one time the car's
+  // width and the column's width were written as two independent numbers,
+  // they drifted and the car drove through the hero paragraph.
+  assert.match(siteCss, /\.hero\.has-car \{ --hero-col: \d+px; \}/,
+    'the copy column width must be a single named value the car can subtract');
+  assert.match(siteCss, /\.hero\.has-car \.hero-inner \{ max-width: var\(--hero-col\); \}/,
+    'the copy column must be sized from that same property');
+  assert.match(siteCss, /width: calc\(\(100% - var\(--hero-col[^)]*\)\) \/ 2 - 36px\);/,
     'the car must be sized to the actual gutter beside the centred copy column');
 
   // And when JS takes the car away at runtime, its layout hook goes with it.

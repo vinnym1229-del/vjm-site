@@ -73,7 +73,7 @@
 <!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
      than _headers declares -- bump this ?v= on every edit to site.css or
      it can take hours to show up live even after a hard refresh. -->
-<link rel="stylesheet" href="assets/site.css?v=11">
+<link rel="stylesheet" href="assets/site.css?v=12">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -2987,13 +2987,23 @@ setInterval(tickSessionClock, 30000);
   const R = PC / 2;
   px.save();
   px.beginPath(); px.arc(R, R, R - 2, 0, Math.PI * 2); px.clip();
+  // Dark ground first: the mark is letterboxed onto it rather than filling
+  // the disc, so this is what the visitor actually sees most of.
+  px.fillStyle = '#0c0c0d'; px.fillRect(0, 0, PC, PC);
   if (logoImg) {
-    // object-fit: cover into the circle, cropping to a centred square first
-    // so a non-square source still fills the disc without distorting.
-    const s = Math.min(logoImg.width, logoImg.height);
-    px.drawImage(logoImg, (logoImg.width - s) / 2, (logoImg.height - s) / 2, s, s, 0, 0, PC, PC);
-  } else {
-    px.fillStyle = '#0c0c0d'; px.fillRect(0, 0, PC, PC);
+    // object-fit: CONTAIN, not cover. The logo is a wide wordmark, so cropping
+    // it to a centred square kept only the middle few letters — the turntable
+    // read "ES" in giant type, which looks like a mistake rather than a brand.
+    // Fit the whole mark instead, scaled to the disc's width.
+    //
+    // Placed on the front arc rather than the middle: the car stands on the
+    // centre of the platform and hides it completely, so a centred mark is a
+    // mark nobody ever sees. 0.72 of the way down the texture puts it on the
+    // apron between the front wheels and the rim, which is the part of the
+    // disc actually facing the camera.
+    const fit = PC * 0.52 / Math.max(logoImg.width, logoImg.height);
+    const dw = logoImg.width * fit, dh = logoImg.height * fit;
+    px.drawImage(logoImg, (PC - dw) / 2, PC * 0.72 - dh / 2, dw, dh);
   }
   px.restore();
   px.strokeStyle = 'rgba(209,67,67,.85)'; px.lineWidth = 10;
