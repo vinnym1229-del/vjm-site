@@ -81,6 +81,20 @@ for (const [page, className, targetId] of [
     `${page}'s skip link target #${targetId} must exist`);
 }
 
+// index.html itself had the same gap — its 19-link, six-dropdown nav plus a
+// duplicate 19-link mobile menu, with no way to skip either one. It carries
+// its own external stylesheet (assets/site.css) rather than an inline
+// <style> block like its siblings, so the .skip/.skip:focus rules live
+// there instead of in the page.
+{
+  const source = readFileSync(resolve(root, 'index.html'), 'utf8');
+  assert.match(source, /<a class="skip" href="#home">/,
+    'index.html must offer a skip link past its full nav');
+  assert.match(source, /id="home"/, "index.html's skip link target #home must exist");
+  const css = readFileSync(resolve(root, 'assets/site.css'), 'utf8');
+  assert.match(css, /\.skip\{[^}]*\}/, 'assets/site.css must style .skip so it is invisible until focused');
+}
+
 assert.match(html, /meta name="robots" content="noindex,nofollow"/);
 assert.match(html, /Educational research only—not financial advice/);
 // Sessions travel via HttpOnly cookies; no Bearer tokens in client code.
