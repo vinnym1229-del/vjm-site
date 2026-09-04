@@ -104,6 +104,22 @@ test('free tier is exactly the futures starter course + the essay', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the discipline essay's Robinhood-attention citation read
+// "(2, 3141)" -- a stray numbered-citation-style "2" spliced onto the real
+// MLA page number (3141, Barber et al.'s Journal of Finance article, cited
+// correctly elsewhere on the same page). "2" isn't a page in that article's
+// own 3141-3190 range and doesn't match any citation convention the essay
+// uses anywhere else. This is the site's free, citation-backed essay --
+// unlike its paid siblings, a reader can actually check the sourcing, and
+// this citation didn't parse.
+test("psychology essay's Robinhood citation matches its own MLA convention", () => {
+  const psych = read('psychology-enhancer.html');
+  assert.doesNotMatch(psych, /\(2, 3141\)/, 'stray numbered-citation index spliced onto an MLA page number');
+  assert.match(psych, /most-bought stocks averaging &minus;4\.7% over the following 20 days \(Barber et al\. 3141\)/,
+    'Robinhood attention-trading claim must cite Barber et al. by name and page, like every other citation of this source on the page');
+});
+
+// ---------------------------------------------------------------------------
 // Incident: four API routes shipped without rate limiting; one exposed a
 // brute-forceable shared secret.
 test('every API route is rate limited (webhook + logout excepted)', () => {
