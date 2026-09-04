@@ -27,17 +27,31 @@ function extractBundlePeriods(src) {
 const money = (s) => Number(String(s).replace(/[^0-9.]/g, ''));
 const MONTHS_IN_PERIOD = { sixmo: 6, yearly: 12 };
 
+// Most tiers' period entries show the period's own TOTAL in `amt` (futures'
+// yearly: amt '$1,000', per ' /yr'). The ifvg tier's yearly entry instead
+// shows a per-month equivalent in `amt` (per '/mo') with the real billed
+// total spelled out in `sub` ("$671.40 billed yearly · ..."), so the "what
+// did they actually pay" figure has to come from wherever it actually lives.
+function paidAmountForPeriod(tier, period, entry) {
+  if (/\/mo/.test(entry.per || '')) {
+    const m = String(entry.sub || '').match(/\$([0-9,.]+)\s+billed/);
+    assert.ok(m, `${tier}/${period}: amt is a /mo rate but no "$X billed ..." total found in sub`);
+    return money(m[1]);
+  }
+  return money(entry.amt);
+}
+
 test('bundle period "% off" badges match the tier\'s own monthly rate x months', () => {
   const periods = extractBundlePeriods(index);
   const checked = [];
-  for (const tier of ['futures', 'allmarkets']) {
+  for (const tier of ['futures', 'allmarkets', 'ifvg']) {
     const monthly = money(periods[tier].monthly.amt);
     assert.ok(monthly > 0, `${tier}: could not parse a monthly amount`);
     for (const period of Object.keys(MONTHS_IN_PERIOD)) {
       const entry = periods[tier][period];
       if (!entry) continue; // period not offered for this tier — fine
       const months = MONTHS_IN_PERIOD[period];
-      const paid = money(entry.amt);
+      const paid = paidAmountForPeriod(tier, period, entry);
       const fullPrice = monthly * months;
       const actualPct = Math.round(((fullPrice - paid) / fullPrice) * 100);
       const labelMatch = String(entry.sub || '').match(/(\d+)% off/);
