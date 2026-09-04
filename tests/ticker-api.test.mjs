@@ -8,8 +8,9 @@
 // error so it doesn't spam the console on every visit, a successful pull
 // merges the equity snapshots with the separate BTC lookup into one list,
 // a failed/empty BTC lookup degrades gracefully (equities alone still ship
-// if there are enough of them), and too few usable snapshots overall (< 4)
-// is treated as a failure rather than shipping a half-empty tape.
+// if there are enough of them) whether Alpaca answers non-200 or the fetch
+// itself throws, and too few usable snapshots overall (< 4) is treated as
+// a failure rather than shipping a half-empty tape.
 import assert from 'node:assert/strict';
 import { onRequestGet } from '../functions/api/ticker.js';
 
@@ -119,6 +120,23 @@ try {
   {
     globalThis.fetch = async (url) => {
       if (String(url).includes('crypto')) return new Response('down', { status: 500 });
+      return Response.json(fullEquitySnapshots());
+    };
+    const { status, data } = await call(configuredEnv(), nextIp());
+    assert.equal(status, 200);
+    assert.equal(data.ok, true);
+    assert.equal(data.items.length, ALL_SYMBOLS.length, 'BTC dropped, equities still ship');
+    assert.ok(!data.items.some((it) => it.asset === 'crypto'));
+  }
+
+  // BTC lookup throws (network error/timeout, not just a non-200 response):
+  // cryptoBtc's own catch must degrade the same way as the !res.ok branch
+  // above, not let the throw escape and crash the whole ticker. The
+  // AbortSignal.timeout() on this call means a stalled upstream throws
+  // rather than resolving with a bad status.
+  {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes('crypto')) throw new Error('network error');
       return Response.json(fullEquitySnapshots());
     };
     const { status, data } = await call(configuredEnv(), nextIp());
