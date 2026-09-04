@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 // Homepage CSS lives in assets/site.css (extracted from the old inline
@@ -242,6 +243,45 @@ test('futures calculators: real contract math + prop risk guard', () => {
   assert.match(index, /value="ES">ES — E-mini S&amp;P \(\$50\/pt\)</);
   assert.match(index, /calcPropRisk/);
   assert.match(index, /Trailing Drawdown/);
+});
+
+test('sizing simulator floors, never forces a one-contract minimum over budget', () => {
+  // The widget converts a $ risk budget into a contract count. Every other
+  // sizing tool on the site — the free futures-dissection lesson 17
+  // ("if one micro still exceeds risk, the correct size is zero"), the
+  // psychology essay's ⌊budget ÷ risk-per-unit⌋ formula, and
+  // stock-breakdown.html's own Math.floor — rounds DOWN and allows zero.
+  // This one used to Math.ceil() and Math.max(1, …), so a budget that fit
+  // fewer contracts than the stop required got told to take MORE risk than
+  // it typed in (e.g. a $150 budget on a $200-per-contract stop said "1
+  // contract" — 33% over). Extract the live function so a future edit that
+  // reintroduces ceil/max(1, …) fails this test instead of shipping.
+  const specsSrc = index.match(/const TICK_SIM_SPECS = \{[^}]*\};/)[0];
+  const fnSrc = index.match(/function calcSizingSim\(\) \{[\s\S]*?\n\}\n/)[0];
+  const els = {};
+  const el = (id) => (els[id] ||= { value: '0', textContent: '', style: {} });
+  const sandbox = { document: { getElementById: el } };
+  vm.createContext(sandbox);
+  vm.runInContext(specsSrc + '\n' + fnSrc + '\nthis.calcSizingSim = calcSizingSim;', sandbox);
+
+  // $150 budget, 10pt NQ stop = $200/contract: fits zero, not one.
+  el('size-contract').value = 'NQ';
+  el('size-pts').value = '10';
+  el('size-target').value = '150';
+  el('size-contracts').value = '0';
+  sandbox.calcSizingSim();
+  assert.equal(els['size-output'].textContent, '0 contracts');
+  assert.match(els['size-interpret'].textContent, /correct size is zero/);
+
+  // $250 budget, same stop: fits exactly one, must not round up to two.
+  el('size-target').value = '250';
+  sandbox.calcSizingSim();
+  assert.equal(els['size-output'].textContent, '1 contract');
+
+  // $450 budget: fits two, with $50 left over — never rounds up to three.
+  el('size-target').value = '450';
+  sandbox.calcSizingSim();
+  assert.equal(els['size-output'].textContent, '2 contracts');
 });
 
 test('session clock lives in the schedule section', () => {

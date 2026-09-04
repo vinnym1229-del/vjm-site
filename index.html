@@ -2254,9 +2254,15 @@ function calcSizingSim() {
   if (!perPt || pts <= 0) return;
   let output, interpret;
   if (target > 0) {
-    const needed = Math.max(1, Math.ceil(target / (pts * perPt)));
-    output = needed + ' contract' + (needed === 1 ? '' : 's');
-    interpret = 'Needed for ~$' + Math.round(target).toLocaleString() + ' at risk on a ' + pts + ' pt ' + contract + ' stop';
+    const perContract = pts * perPt;
+    const needed = Math.floor(target / perContract);
+    if (needed < 1) {
+      output = '0 contracts';
+      interpret = 'A ' + pts + ' pt ' + contract + ' stop risks $' + Math.round(perContract).toLocaleString() + ' — over the $' + Math.round(target).toLocaleString() + ' budget, so the correct size is zero, not one';
+    } else {
+      output = needed + ' contract' + (needed === 1 ? '' : 's');
+      interpret = 'Fits ~$' + Math.round(target).toLocaleString() + ' at risk on a ' + pts + ' pt ' + contract + ' stop';
+    }
   } else if (contracts > 0) {
     const total = contracts * pts * perPt;
     output = '$' + Math.round(total).toLocaleString();
