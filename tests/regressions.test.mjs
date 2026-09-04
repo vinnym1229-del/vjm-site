@@ -119,6 +119,23 @@ test("psychology essay's Robinhood citation matches its own MLA convention", () 
     'Robinhood attention-trading claim must cite Barber et al. by name and page, like every other citation of this source on the page');
 });
 
+// Incident: two more citations to Barber, Lee, Liu, and Odean's 2017 paper
+// ("Do Day Traders Rationally Learn About Their Ability?") gave specific
+// pages -- "(Barber et al. 2)" and "(Barber et al. 2, 19)" -- but that
+// paper's own Works Cited entry lists no page range at all (it's a working
+// paper, unlike the 2022 Journal of Finance article cited elsewhere on the
+// page, which does have pages and is cited with them). A reader following
+// the citation to check page 2 or 19 has nothing to check it against. MLA
+// omits the page number entirely when a source has none; the fix drops the
+// fabricated pages rather than inventing a page range this repo can't verify.
+test("psychology essay's 2017 Barber et al. citations don't cite pages its own bibliography doesn't give", () => {
+  const psych = read('psychology-enhancer.html');
+  assert.doesNotMatch(psych, /\(Barber et al\. 2\)/, 'page cited against a source with no page range');
+  assert.doesNotMatch(psych, /\(Barber et al\. 2, 19\)/, 'page range cited against a source with no page range');
+  const worksCited = psych.match(/Barber, Brad M\., Yi-Tsung Lee[^<]*<\/li>/)?.[0] || '';
+  assert.doesNotMatch(worksCited, /pp?\.\s*\d/, 'this Works Cited entry has no pagination -- if that ever changes, the in-text citations above should cite the real pages instead of none');
+});
+
 // ---------------------------------------------------------------------------
 // Incident: four API routes shipped without rate limiting; one exposed a
 // brute-forceable shared secret.
