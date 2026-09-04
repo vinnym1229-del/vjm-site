@@ -95,6 +95,17 @@ async function callAuth(env, body) {
 
 const originalFetch = globalThis.fetch;
 try {
+  // tokeninfo itself unreachable (network error, timeout). verifyGoogleIdToken
+  // must swallow the throw and return null rather than letting it escape to
+  // the outer catch-all — a Google-side outage should read as "could not
+  // verify," a 401, not a 502 that implies our own deployment is broken.
+  globalThis.fetch = async () => { throw new Error('network unreachable'); };
+  {
+    const { status, data } = await callAuth(baseEnv(), { credential: 'tok' });
+    assert.equal(status, 401);
+    assert.equal(data.ok, false);
+  }
+
   // The regression: tokeninfo says 'false' as a string. Must be rejected.
   globalThis.fetch = async () => Response.json({
     aud: CLIENT_ID,
@@ -291,6 +302,17 @@ try {
     const claims = sessionClaims((await callAuth(env, { credential: 'tok' })).res);
     assert.equal(claims.sv, 7);
     assert.equal(claims.src, 'd1');
+  }
+
+  // A synchronous throw from RESEARCH_DB.prepare() — not the rejected promise
+  // the row query's own .catch() already absorbs — must still fail closed to
+  // the outer catch-all's generic 502, never leak a stack trace or crash the
+  // isolate uncaught.
+  {
+    const env = { ...baseEnv(), RESEARCH_DB: { prepare() { throw new Error('boom'); } } };
+    const { status, data } = await callAuth(env, { credential: 'tok' });
+    assert.equal(status, 502);
+    assert.equal(data.ok, false);
   }
 } finally {
   globalThis.fetch = originalFetch;
