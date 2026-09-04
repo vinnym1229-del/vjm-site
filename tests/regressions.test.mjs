@@ -224,6 +224,17 @@ test('the nav brand carries no leftover "x ST" suffix', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the same two brand-cleanup sweeps (602b6f2, a96acd9) only ever
+// grepped .html files, so manifest.json's own "name" field -- what a visitor
+// who installs the site as a PWA sees on their home screen and splash
+// screen -- kept the pre-rebrand "PJ Trades x St" suffix while every HTML
+// brand surface was already clean.
+test('the PWA manifest name carries no leftover "x St" suffix', () => {
+  const manifest = JSON.parse(read('manifest.json'));
+  assert.ok(!/(?:x|×)\s*St\b/i.test(manifest.name), `manifest.json name still has a leftover brand suffix: "${manifest.name}"`);
+});
+
+// ---------------------------------------------------------------------------
 // Incident: 96 of 100 quiz answers were the longest option, so a member who
 // never opened a lesson scored 96% by always picking the longest. Chance is
 // 25%; this pins the leak closed.
