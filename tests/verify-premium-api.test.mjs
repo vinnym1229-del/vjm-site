@@ -83,6 +83,33 @@ async function callVerify(env, body) {
   assert.equal(data.error, GENERIC_BAD_CODE);
 }
 
+// The 10/min 'verify' rate-limit guard -- this is the code-entry endpoint the
+// hard rule "never remove rate limiting" protects most directly, since a code
+// is a brute-forceable secret. It trips before the 11th request from the same
+// IP reaches the signing-secret check (or Turnstile, or the bridge), keyed
+// only by scope+ip (no per-code identifier, so a fixed code across all 10
+// calls still shares one bucket).
+{
+  const ip = '10.9.0.1';
+  const req = () => onRequestPost({
+    request: new Request('https://example.com/api/verify-premium', {
+      method: 'POST',
+      headers: { 'CF-Connecting-IP': ip },
+      body: JSON.stringify({ code: 'ABCD-1234' }),
+    }),
+    env: baseEnv(),
+  });
+  for (let i = 0; i < 10; i++) {
+    const res = await req();
+    assert.notEqual(res.status, 429, `request ${i + 1} of 10 must not be rate-limited yet`);
+  }
+  const limited = await req();
+  assert.equal(limited.status, 429);
+  const data = await limited.json();
+  assert.equal(data.ok, false);
+  assert.equal(data.error, 'Too many attempts. Wait a minute and try again.');
+}
+
 const originalFetch = globalThis.fetch;
 try {
   // Turnstile not configured (no TURNSTILE_SECRET_KEY): the check is skipped
@@ -162,6 +189,60 @@ try {
     assert.equal(JSON.stringify(data).includes(cookie.split('=')[1].split(';')[0]), false,
       'the signed session token must never appear in the JSON body');
   }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // lookupViaLegacyBridge's own failure modes. The secure bridge
+  // (lookupViaSecureBridge, below) already has this same class of coverage;
+  // this deprecated MEMBERS_STATUS_URL full-map bridge -- still the one every
+  // pre-migration member's code resolves through -- did not. Unlike the
+  // secure bridge, this one THROWS on bad JSON instead of catching it to
+  // null, so all three modes land on the outer onRequestPost catch (500), not
+  // a misleading "bad code" -- a member with a genuinely valid code must
+  // never be told their code is wrong just because the owner's Sheet timed
+  // out or briefly served garbage.
+  {
+    const LEGACY_ENV = {
+      ...baseEnv(),
+      TURNSTILE_SECRET_KEY: 'secret',
+      MEMBERS_STATUS_URL: 'https://example.com/status.json',
+    };
+
+    // Sheet unreachable (network error/timeout).
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        throw new Error('network down');
+      };
+      const { status, data } = await callVerify(LEGACY_ENV, { code: 'ABCD-7777', turnstileToken: 'tok' });
+      assert.equal(status, 500);
+      assert.equal(data.ok, false);
+    }
+
+    // Sheet responds with a body that isn't valid JSON (a bad deploy, an
+    // HTML error page from the Apps Script endpoint).
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return new Response('not json', { status: 200 });
+      };
+      const { status, data } = await callVerify(LEGACY_ENV, { code: 'ABCD-8888', turnstileToken: 'tok' });
+      assert.equal(status, 500);
+      assert.equal(data.ok, false);
+    }
+
+    // Sheet responds with valid JSON but ok !== true (the Apps Script's own
+    // documented rejection shape).
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return Response.json({ ok: false, error: 'sheet locked' });
+      };
+      const { status, data } = await callVerify(LEGACY_ENV, { code: 'ABCD-9990', turnstileToken: 'tok' });
+      assert.equal(status, 500);
+      assert.equal(data.ok, false);
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────────────
   // Entitlement tier on the issued session.
   //
