@@ -289,6 +289,68 @@ test('session clock lives in the schedule section', () => {
   assert.match(index, /tickSessionClock/);
 });
 
+test('CMS schedule merge keeps each day\'s own start time for a session, not one collapsed value', () => {
+  // The owner's schedule sheet is genuinely row-per-{day,session,time}, so
+  // the same named session (e.g. NYAM) can legitimately start at a
+  // different clock time on different days — a shortened pre-holiday Friday,
+  // say. The CMS merge in loadCmsSections() used to key its lookup by
+  // session name alone and keep only the first row's time it saw, so every
+  // other day sharing that name silently inherited that one time — feeding
+  // wrong values straight into the two most visible real-time widgets on the
+  // page, the "Next up" session clock and the live stream countdown. Extract
+  // the live PJ_SESSIONS/pjNextSession logic and the live CMS-merge snippet
+  // and drive both directly so a future edit that re-collapses per-day times
+  // fails this test instead of shipping silently wrong.
+  const sessionsSrc = index.match(/const PJ_SESSIONS = \[[\s\S]*?\n\];/)[0];
+  const nextSessionSrc = index.match(/function pjNextSession\(\) \{[\s\S]*?\n\}\n/)[0];
+  const parseTimeSrc = index.match(/function parseTimeET\(s\) \{[\s\S]*?\n {2}\}/)[0];
+  const mergeSrc = index.match(/const byName = \{\};[\s\S]*?PJ_SESSIONS\.forEach\(\(sess\) => \{[\s\S]*?\n {6}\}\);/)[0];
+
+  function dateForDow(dow, hour, min) {
+    const d = new Date();
+    d.setHours(hour, min, 0, 0);
+    while (d.getDay() !== dow) d.setDate(d.getDate() + 1);
+    return d;
+  }
+
+  const sandbox = { __FAKE_NOW__: null };
+  vm.createContext(sandbox);
+  vm.runInContext(
+    sessionsSrc + '\n' +
+    // Stand-in for pjEtNow() that returns a controllable "now" instead of
+    // doing the real America/New_York conversion — this test is about the
+    // per-day start-time logic, not timezone handling.
+    'function pjEtNow(){ const n = __FAKE_NOW__; return new Date(n.y, n.m, n.d, n.h, n.min); }\n' +
+    nextSessionSrc +
+    parseTimeSrc + '\n' +
+    "const DAY_NUM = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5 };\n" +
+    'function runMerge(active) {\n' + mergeSrc + '\n}\n' +
+    'this.pjNextSession = pjNextSession; this.PJ_SESSIONS = PJ_SESSIONS; this.runMerge = runMerge;',
+    sandbox,
+  );
+
+  sandbox.runMerge([
+    { day: 'Tue', session: 'NYAM', timeET: '9:30 AM', host: 'PJ' },
+    { day: 'Fri', session: 'NYAM', timeET: '8:00 AM', host: 'PJ' },
+  ]);
+  const nyam = sandbox.PJ_SESSIONS.find((s) => s.name === 'NYAM');
+  assert.equal(nyam.days[2], 9 * 60 + 30, "Tuesday's own start time must survive the merge");
+  assert.equal(nyam.days[5], 8 * 60,
+    "Friday's own (different) start time must survive the merge, not be dropped or overwritten by Tuesday's");
+
+  const tue = dateForDow(2, 8, 0); // before 9:30 on a Tuesday
+  sandbox.__FAKE_NOW__ = { y: tue.getFullYear(), m: tue.getMonth(), d: tue.getDate(), h: tue.getHours(), min: tue.getMinutes() };
+  const nextTue = sandbox.pjNextSession();
+  assert.equal(nextTue.session.name, 'NYAM');
+  assert.equal(nextTue.session.start, 9 * 60 + 30, "pjNextSession must surface Tuesday's own start time");
+
+  const fri = dateForDow(5, 7, 0); // before 8:00 on a Friday
+  sandbox.__FAKE_NOW__ = { y: fri.getFullYear(), m: fri.getMonth(), d: fri.getDate(), h: fri.getHours(), min: fri.getMinutes() };
+  const nextFri = sandbox.pjNextSession();
+  assert.equal(nextFri.session.name, 'NYAM');
+  assert.equal(nextFri.session.start, 8 * 60, "pjNextSession must surface Friday's own (earlier) start time, not Tuesday's");
+});
+
 test('PWA manifest + theme color + PJ 404', () => {
   const manifest = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
   // Updated 2026-09-01: light became the default theme, so the manifest and the

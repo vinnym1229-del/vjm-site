@@ -1768,13 +1768,19 @@ function toggleTheme() {
 // schedule graphic, week of Aug 31 - Sep 4 2026). Live-window lengths are
 // estimates —
 // TODO: owner to confirm typical session durations.
+// `days` maps ISO-ish day-of-week (0=Sun..6=Sat) to that day's own start
+// time in minutes-since-midnight-ET, not just a list of days — the CMS
+// schedule sheet is genuinely row-per-{day,session,time}, so the same named
+// session can legitimately start at a different clock time on different
+// days (e.g. an early Friday before a holiday). A day absent from the map
+// means that session doesn't run that day.
 const PJ_SESSIONS = [
-  { name: 'NYAM',  days: [1, 2, 3, 4, 5], start: 9 * 60 + 30,  mins: 90 },
+  { name: 'NYAM',  days: { 1: 9 * 60 + 30, 2: 9 * 60 + 30, 3: 9 * 60 + 30, 4: 9 * 60 + 30, 5: 9 * 60 + 30 }, mins: 90 },
   // Tue-Fri only: Monday 2:30 is off on the current schedule, and a countdown
   // ticking down to a session nobody runs is worse than no countdown.
-  { name: 'NYPM',  days: [2, 3, 4, 5],    start: 14 * 60 + 30, mins: 90 },
-  { name: 'CLASS', days: [2, 4],          start: 17 * 60 + 30, mins: 60 },
-  { name: 'ASIA',  days: [1, 2, 3, 4],    start: 20 * 60,      mins: 90 },
+  { name: 'NYPM',  days: { 2: 14 * 60 + 30, 3: 14 * 60 + 30, 4: 14 * 60 + 30, 5: 14 * 60 + 30 }, mins: 90 },
+  { name: 'CLASS', days: { 2: 17 * 60 + 30, 4: 17 * 60 + 30 }, mins: 60 },
+  { name: 'ASIA',  days: { 1: 20 * 60, 2: 20 * 60, 3: 20 * 60, 4: 20 * 60 }, mins: 90 },
 ];
 const PJ_DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -1789,13 +1795,14 @@ function pjNextSession() {
     probe.setDate(probe.getDate() + offset);
     const dow = probe.getDay();
     for (const s of PJ_SESSIONS) {
-      if (!s.days.includes(dow)) continue;
+      const start = s.days[dow];
+      if (start == null) continue;
       if (offset === 0) {
         const minsNow = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
-        if (minsNow >= s.start && minsNow < s.start + s.mins) return { live: true, session: s, dayOffset: 0 };
-        if (minsNow >= s.start) continue;
+        if (minsNow >= start && minsNow < start + s.mins) return { live: true, session: { ...s, start }, dayOffset: 0 };
+        if (minsNow >= start) continue;
       }
-      return { live: false, session: s, dayOffset: offset };
+      return { live: false, session: { ...s, start }, dayOffset: offset };
     }
   }
   return null;
@@ -2564,8 +2571,11 @@ setInterval(tickSessionClock, 30000);
     return h * 60 + parseInt(m[2], 10);
   }
 
-  // 1) Weekly schedule — replaces .week-grid; also updates PJ_SESSIONS start
-  //    times/days for the live countdown (durations stay as coded estimates).
+  // 1) Weekly schedule — replaces .week-grid; also updates PJ_SESSIONS'
+  //    per-day start times for the live countdown (durations stay as coded
+  //    estimates). Each session's days map is rebuilt from scratch below, so
+  //    a day that's off this week (no host row) correctly drops out rather
+  //    than keeping a stale start time from the hard-coded default.
   fetch('/api/content?type=schedule', { cache: 'no-store' })
     .then((r) => r.json().catch(() => ({})))
     .then((d) => {
@@ -2615,12 +2625,17 @@ setInterval(tickSessionClock, 30000);
         const mins = parseTimeET(s.timeET);
         if (mins == null) return;
         const dow = DAY_NUM[s.day];
-        if (!byName[s.session]) byName[s.session] = { start: mins, days: [] };
-        if (!byName[s.session].days.includes(dow)) byName[s.session].days.push(dow);
+        if (!byName[s.session]) byName[s.session] = {};
+        // Keyed by day, not just collected into a list, so a session that
+        // genuinely starts at a different clock time on different days (an
+        // early Friday before a holiday, say) keeps each day's own time
+        // instead of every day silently inheriting whichever row happened
+        // to be seen first.
+        byName[s.session][dow] = mins;
       });
       PJ_SESSIONS.forEach((sess) => {
         const upd = byName[sess.name];
-        if (upd) { sess.start = upd.start; sess.days = upd.days.sort(); }
+        if (upd) sess.days = upd;
       });
     })
     .catch(() => {});
