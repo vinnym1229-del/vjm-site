@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const read = (p) => readFileSync(join(ROOT, p), 'utf8');
@@ -503,6 +504,60 @@ test('each course lock names the plan that actually unlocks that course', () => 
         assert.match(gate, /Futures Core does not/, `${page}: a Complete-only course must say Futures Core does not include it`);
       }
     }
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Incident: the free futures-dissection Level-1 tool's "Compare an E-mini
+// against its Micro" chart paired contracts by stripping a literal 'M' from
+// both symbols and comparing what was left
+// (`s[0].replace('M','')===sym.replace('M','')`). That happens to work for
+// ES/MES and NQ/MNQ (neither root contains an 'M'), but YM already contains
+// an 'M' ('YM'.replace('M','')='Y' vs 'MYM'.replace('M','')='YM' -- no
+// match) and RTY/M2K don't share a root string at all -- so a visitor
+// selecting YM, MYM, RTY, or M2K (exactly the two pairs Lesson 2's product
+// map, right above the tool, is teaching) silently got a flat single-bar
+// chart instead of the promised side-by-side 10x comparison. Fixed by giving
+// each spec row its own family key instead of deriving one from the symbol
+// string. Extracted the live IIFE so a future edit that reintroduces
+// string-based pairing fails this test instead of shipping quietly.
+test("futures-dissection tool: E-mini/Micro comparison chart pairs every contract family, not just ones without an 'M'", () => {
+  const html = read('futures-dissection.html');
+  const iife = html.match(/\(function\(\)\{\s*var wrapId='fut-tool';[\s\S]*?\}\)\(\);/)[0];
+  const els = {};
+  const el = (id) => (els[id] ||= { value: '', textContent: '', style: {}, addEventListener(_evt, fn) { this._handler = fn; } });
+  const sandbox = {
+    document: { getElementById: el, querySelector: () => null, readyState: 'complete', addEventListener() {} },
+    window: { addEventListener() {}, currDrawBars: null },
+    setTimeout: () => {},
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(iife, sandbox);
+
+  const cases = [
+    ['ES', ['ES', 'MES']],
+    ['MYM', ['YM', 'MYM']],
+    ['RTY', ['RTY', 'M2K']],
+    ['M2K', ['RTY', 'M2K']],
+  ];
+  for (const [sym, expectedFamily] of cases) {
+    let bars = null;
+    sandbox.window.currDrawBars = (_canvas, b) => { bars = b; };
+    el('fu-contract').value = sym;
+    el('fu-entry').value = '0';
+    el('fu-exit').value = '10';
+    el('fu-contracts').value = '1';
+    els['fu-contract']._handler();
+    // bars is an array/objects created inside the vm sandbox realm, so copy
+    // its labels out via Array.from (not vm-array .map/.sort, which stay
+    // cross-realm and fail deepStrictEqual against a plain local array even
+    // when the contents are identical).
+    const labels = Array.from(bars || [], (b) => String(b.label)).sort();
+    assert.deepEqual(
+      labels,
+      [...expectedFamily].sort(),
+      `selecting ${sym} must chart its whole E-mini/Micro family, got ${labels}`,
+    );
   }
 });
 
