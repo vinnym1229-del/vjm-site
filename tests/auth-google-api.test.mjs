@@ -93,6 +93,32 @@ async function callAuth(env, body) {
   assert.equal(status, 400);
 }
 
+// The 10/min 'auth-google' rate-limit guard -- checked before GOOGLE_CLIENT_ID,
+// the signing secret, or the credential body are ever looked at, so a flood of
+// bogus credentials can't be used to hammer Google's tokeninfo endpoint or
+// probe RESEARCH_DB. Own bucket, independent of verify-premium.js's 'verify'
+// scope, so it needs its own fixed-IP trip test.
+{
+  const ip = '10.2.0.1';
+  const req = () => onRequestPost({
+    request: new Request('https://example.com/api/auth-google', {
+      method: 'POST',
+      headers: { 'CF-Connecting-IP': ip },
+      body: JSON.stringify({ credential: 'tok' }),
+    }),
+    env: baseEnv(),
+  });
+  for (let i = 0; i < 10; i++) {
+    const res = await req();
+    assert.notEqual(res.status, 429, `request ${i + 1} of 10 must not be rate-limited yet`);
+  }
+  const limited = await req();
+  assert.equal(limited.status, 429);
+  const data = await limited.json();
+  assert.equal(data.ok, false);
+  assert.equal(data.error, 'Too many attempts. Wait a minute and try again.');
+}
+
 const originalFetch = globalThis.fetch;
 try {
   // tokeninfo itself unreachable (network error, timeout). verifyGoogleIdToken
