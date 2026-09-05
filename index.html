@@ -199,19 +199,29 @@
    click. Touch devices below 1000px use the hamburger menu instead. */
 (function(){
   var items = document.querySelectorAll('.nav-item');
+  // A member tabbing into an open panel and pressing Escape (or clicking
+  // elsewhere) must not lose focus into the now-hidden (visibility:hidden)
+  // panel: return it to the trigger button first, before the panel closes.
+  function closeAllNavItems(){
+    var openItem = null;
+    items.forEach(function(o){ if(o.classList.contains('open')) openItem = o; });
+    if(openItem && openItem.contains(document.activeElement)){
+      var openBtn = openItem.querySelector('.nav-top');
+      if(openBtn) openBtn.focus();
+    }
+    items.forEach(function(o){ o.classList.remove('open'); o.querySelector('.nav-top').setAttribute('aria-expanded','false'); });
+  }
   items.forEach(function(item){
     var btn = item.querySelector('.nav-top');
     if(!btn) return;
     btn.addEventListener('click', function(e){
       e.stopPropagation();
       var wasOpen = item.classList.contains('open');
-      items.forEach(function(o){ o.classList.remove('open'); o.querySelector('.nav-top').setAttribute('aria-expanded','false'); });
+      closeAllNavItems();
       if(!wasOpen){ item.classList.add('open'); btn.setAttribute('aria-expanded','true'); }
     });
   });
-  document.addEventListener('click', function(){
-    items.forEach(function(o){ o.classList.remove('open'); o.querySelector('.nav-top').setAttribute('aria-expanded','false'); });
-  });
+  document.addEventListener('click', closeAllNavItems);
   // Widening past the breakpoint brings the desktop menus back; a panel left
   // open would then overlay the page, so close it on the way through.
   window.addEventListener('resize', function(){
@@ -228,7 +238,7 @@
       var hb = document.getElementById('hamburger');
       if(mm) mm.classList.remove('open');
       if(hb){ hb.classList.remove('open'); hb.setAttribute('aria-expanded','false'); }
-      items.forEach(function(o){ o.classList.remove('open'); o.querySelector('.nav-top').setAttribute('aria-expanded','false'); });
+      closeAllNavItems();
     }
   });
 })();

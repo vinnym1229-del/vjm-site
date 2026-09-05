@@ -806,6 +806,15 @@ body.light-mode .curr .vjm-miss{background:rgba(0,0,0,.03);}
     var items = document.querySelectorAll('.nav-item');
     if (!items.length) return;
     function closeAll() {
+      // A member tabbing into an open panel and pressing Escape must not lose
+      // focus into the now-hidden (visibility:hidden) panel: return it to the
+      // trigger button first, before the panel disappears out from under it.
+      var openItem = null;
+      items.forEach(function (o) { if (o.classList.contains('open')) openItem = o; });
+      if (openItem && openItem.contains(document.activeElement)) {
+        var openBtn = openItem.querySelector('.nav-top');
+        if (openBtn) openBtn.focus();
+      }
       items.forEach(function (o) {
         o.classList.remove('open');
         var b = o.querySelector('.nav-top');

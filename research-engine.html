@@ -206,7 +206,7 @@
   function initNavDropdowns(){
     var items = document.querySelectorAll('.nav .nav-item');
     if (!items.length) return;
-    function closeAll(){ items.forEach(function(o){ o.classList.remove('open'); var b = o.querySelector('.nav-top'); if (b) b.setAttribute('aria-expanded','false'); }); }
+    function closeAll(){ var openItem = null; items.forEach(function(o){ if (o.classList.contains('open')) openItem = o; }); if (openItem && openItem.contains(document.activeElement)) { var openBtn = openItem.querySelector('.nav-top'); if (openBtn) openBtn.focus(); } items.forEach(function(o){ o.classList.remove('open'); var b = o.querySelector('.nav-top'); if (b) b.setAttribute('aria-expanded','false'); }); }
     items.forEach(function(item){
       var btn = item.querySelector('.nav-top');
       if (!btn) return;
