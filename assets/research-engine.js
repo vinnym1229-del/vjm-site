@@ -2,7 +2,14 @@
   'use strict';
 
   const $ = (id) => document.getElementById(id);
-  const state = { module: 'options', data: {}, loading: false };
+  // loadingModules is per-module (a Set), not one shared flag: the four load*
+  // functions below each fetch independently, so switching tabs while one
+  // module's fetch is still in flight must not block the newly-selected
+  // module from starting its own load. A single shared boolean used to do
+  // exactly that -- loadCurrent() saw ANY module loading and silently
+  // dropped the tab switch, leaving the new tab stuck on its empty
+  // placeholder forever with no retry.
+  const state = { module: 'options', data: {}, loadingModules: new Set() };
   // Chart colours follow the stylesheet's own tokens instead of freezing the
   // dark values: these are SVG attribute values, not CSS, so a literal here
   // would keep painting near-white lines onto the light theme's white canvas.
@@ -157,7 +164,6 @@
     loadCurrent();
   }
   function loading(button, active, label) {
-    if (!active) state.loading = false;
     if (!button) return;
     if (active) {
       // A second call while already loading must not capture the spinner text
@@ -268,7 +274,8 @@
   }
 
   async function loadOptions() {
-    if (state.loading) return; state.loading = true;
+    if (state.loadingModules.has('options')) return;
+    state.loadingModules.add('options');
     const button = $('loadOptions'); loading(button, true, 'Scanning');
     $('optionsSourceStatus').textContent = 'Loading current chain and intraday bars…';
     try {
@@ -281,7 +288,7 @@
       ]);
       state.data.options = {options, intraday}; renderOptions(options, intraday); updateGlobal(options);
     } catch (err) { showModuleError('optionsSourceStatus', err); }
-    finally { loading(button, false); }
+    finally { state.loadingModules.delete('options'); loading(button, false); }
   }
   function renderOptions(response, intradayResponse) {
     const d = response.data || {}, intra = intradayResponse.data || {};
@@ -338,7 +345,8 @@
   }
 
   async function loadStock() {
-    if (state.loading) return; state.loading = true;
+    if (state.loadingModules.has('stocks')) return;
+    state.loadingModules.add('stocks');
     const button = $('loadStock'); loading(button, true, 'Testing'); $('stockSourceStatus').textContent = 'Downloading adjusted daily bars…';
     try {
       const symbol = $('stockSymbol').value.trim().toUpperCase();
@@ -346,7 +354,7 @@
       const response = await jsonFetch(`/api/research-engine?module=stock&symbol=${encodeURIComponent(symbol)}&lookback=${encodeURIComponent(lookback)}&horizon=${encodeURIComponent(horizon)}&timeframe=${encodeURIComponent(timeframe)}&pivot=5`);
       state.data.stocks = response; renderStock(response); updateGlobal(response);
     } catch (err) { showModuleError('stockSourceStatus', err); }
-    finally { loading(button, false); }
+    finally { state.loadingModules.delete('stocks'); loading(button, false); }
   }
   function renderStock(response) {
     const d = response.data || {}, s = d.summary || {};
@@ -365,11 +373,12 @@
   }
 
   async function loadSectors() {
-    if (state.loading) return; state.loading = true;
+    if (state.loadingModules.has('sectors')) return;
+    state.loadingModules.add('sectors');
     const button = $('loadSectors'); loading(button, true, 'Refreshing'); $('sectorSourceStatus').textContent = 'Loading sector ETFs…';
     try { const response = await jsonFetch('/api/research-engine?module=sectors'); state.data.sectors = response; renderSectors(response); updateGlobal(response); }
     catch (err) { showModuleError('sectorSourceStatus', err); }
-    finally { loading(button, false); }
+    finally { state.loadingModules.delete('sectors'); loading(button, false); }
   }
   function renderSectors(response) {
     const d = response.data || {}, rows = d.rows || [];
@@ -386,11 +395,12 @@
   }
 
   async function loadBiotech() {
-    if (state.loading) return; state.loading = true;
+    if (state.loadingModules.has('biotech')) return;
+    state.loadingModules.add('biotech');
     const button = $('loadBiotech'); loading(button, true, 'Refreshing'); $('biotechSourceStatus').textContent = 'Loading biotech price and volume…';
     try { const response = await jsonFetch('/api/research-engine?module=biotech'); state.data.biotech = response; renderBiotech(response); updateGlobal(response); }
     catch (err) { showModuleError('biotechSourceStatus', err); }
-    finally { loading(button, false); }
+    finally { state.loadingModules.delete('biotech'); loading(button, false); }
   }
   function renderBiotech(response) {
     const d=response.data||{}, rows=d.rows||[];
@@ -403,8 +413,8 @@
   }
 
   function loadCurrent() {
-    if (!$('engine').classList.contains('unlocked') || state.loading) return;
-    if (state.data[state.module]) return;
+    if (!$('engine').classList.contains('unlocked')) return;
+    if (state.data[state.module] || state.loadingModules.has(state.module)) return;
     if (state.module === 'options') loadOptions();
     if (state.module === 'stocks') loadStock();
     if (state.module === 'sectors') loadSectors();
@@ -500,5 +510,11 @@
     // Quietly auto-restore when a valid session cookie exists.
     restore(true);
   }
+  // Test seam: the per-module loading-state bookkeeping is unit-tested from
+  // node (tests/research-engine.test.mjs) without a browser.
+  if (typeof window !== 'undefined') {
+    window.__researchEngineInternals = { state, setModule, loadCurrent, loadOptions, loadStock, loadSectors, loadBiotech };
+  }
+
   document.addEventListener('DOMContentLoaded',wire);
 })();

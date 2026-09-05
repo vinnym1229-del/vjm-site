@@ -504,6 +504,7 @@ assert.equal(bullishSummary.medianMinutesToRetest, 10, 'the untested row\'s null
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const clientJs = readFileSync(resolve(projectRoot, 'assets/research-engine.js'), 'utf8');
@@ -527,6 +528,62 @@ assert.ok(planBranchStart > 0, 'showModuleError must branch on the plan-locked s
 const planBranch = clientJs.slice(planBranchStart, clientJs.indexOf('return;', planBranchStart));
 assert.doesNotMatch(planBranch, /#[0-9a-fA-F]{3,8}/, 'the plan state must not add a new colour literal');
 assert.ok(planBranch.includes('var(--amber)'), 'the plan state reuses an existing palette token');
+
+// ---------------------------------------------------------------------------
+// Tab-switch-during-load: the four module loaders (Options/Stocks/Sectors/
+// Biotech) used to share ONE "loading" flag, so clicking a second tab while
+// the first tab's fetch was still in flight made loadCurrent() silently
+// no-op -- the newly-selected tab never fetched anything and had no retry,
+// leaving it stuck on its empty placeholder forever. Loading must now be
+// tracked per module so switching tabs mid-fetch still starts the new
+// module's own load.
+// ---------------------------------------------------------------------------
+function loadResearchEngineClient() {
+  function fakeEl() {
+    return {
+      value: '', disabled: false, hidden: false, style: {}, dataset: {}, textContent: '', innerHTML: '',
+      classList: { add(){}, remove(){}, toggle(){}, contains(){ return false; } },
+      addEventListener(){}, setAttribute(){}, removeAttribute(){}, getAttribute(){ return null; },
+      closest(){ return null; }, querySelector(){ return null; }, querySelectorAll(){ return []; },
+      appendChild(){}, append(){}, scrollIntoView(){},
+    };
+  }
+  const elCache = new Map();
+  const getElementById = (id) => { if (!elCache.has(id)) elCache.set(id, fakeEl()); return elCache.get(id); };
+  const fetchLog = [];
+  const sandbox = {
+    console,
+    document: { getElementById, querySelectorAll: () => [], addEventListener(){}, body: {} },
+    getComputedStyle: () => ({ getPropertyValue: () => '' }),
+    fetch: async (url) => { fetchLog.push(String(url)); throw new Error('simulated network failure'); },
+    requestAnimationFrame(){}, URL: { createObjectURL(){ return ''; }, revokeObjectURL(){} }, Blob: function(){}, alert(){},
+  };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(clientJs, sandbox, { filename: 'research-engine.sandboxed.js' });
+  getElementById('engine').classList.contains = () => true; // simulate an unlocked, entitled session
+  return { internal: sandbox.window.__researchEngineInternals, fetchLog };
+}
+
+{
+  const { internal, fetchLog } = loadResearchEngineClient();
+
+  internal.state.module = 'options';
+  internal.loadCurrent(); // fires loadOptions(); both its fetches are issued synchronously, then reject
+  assert.equal(internal.state.loadingModules.has('options'), true, 'the options fetch must be marked in flight');
+
+  internal.setModule('stocks'); // simulates clicking the Stocks tab mid-fetch
+  assert.equal(internal.state.module, 'stocks');
+  assert.ok(
+    fetchLog.some((u) => u.includes('module=stock')),
+    'switching tabs while another module is still loading must start the new tab\'s own fetch, not silently no-op',
+  );
+
+  // Let the rejected fetches settle so both loaders' finally blocks run.
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(internal.state.loadingModules.has('options'), false, 'a settled fetch must clear its own module from the in-flight set');
+  assert.equal(internal.state.loadingModules.has('stocks'), false, 'a settled fetch must clear its own module from the in-flight set');
+}
 
 
 // ---------------------------------------------------------------------------
