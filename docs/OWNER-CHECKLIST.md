@@ -8,33 +8,40 @@ something every day they stay undone.
 
 ---
 
-## Sign-in is broken right now — no member can log in
+## Access-code sign-in is fixed — Google Sign-In still needs one variable
 
-A 2026-09-02 smoke test against the live site found **every** call to
-`POST /api/verify-premium` returning:
+Every smoke test from 2026-09-02 through 2026-09-04 found `SESSION_SIGNING_SECRET`
+unset, which made `POST /api/verify-premium` fail closed for everyone
+(`resolveSigningSecret()` in `functions/api/_lib/session.js`, by design the
+safe failure mode). A 2026-09-05 live probe found that fixed: the same
+bad-code request now reaches the Turnstile check and returns
+`{"ok":false,"error":"Verification failed. Refresh the page and try again."}`
+instead of the old "Sign-in is not configured" error — that message is only
+reachable once `resolveSigningSecret()` has already succeeded, so
+`SESSION_SIGNING_SECRET` is set in Production and access-code sign-in is
+live again. No code change was needed or made; this section is just catching
+up to the fix. (Confirm any real member still lands the
+`__Host-vjm_session` cookie per "Verifying after a deploy" below — this was
+a Cloudflare Actions probe, not a full user-flow test.)
 
-```json
-{"ok":false,"error":"Sign-in is not configured. Contact the admin."}
-```
-
-That's `resolveSigningSecret()` in `functions/api/_lib/session.js` failing
-closed — by design, this is the safe failure mode, not a bug — because
-`SESSION_SIGNING_SECRET` isn't set to a string ≥32 characters in Cloudflare
-Pages (and there's no `LEGACY_ALLOW_CODES_AS_KEY` fallback configured
-either). A code being right or wrong never even gets checked; nobody can get
-in with a valid code either.
-
-This looks like a recent regression, not a persistent gap: item 2 below
-notes seven `verify_code` audit rows from 28–29 August, and that audit call
-only happens *after* `resolveSigningSecret()` succeeds — so sign-in was
-working within the last week.
+The same probe found the newer convenience path still broken: `POST
+/api/auth-google` returns `{"ok":false,"error":"Google Sign-In is not
+configured on this deployment."}` for every request, because
+`functions/api/auth-google.js` checks its own `env.GOOGLE_CLIENT_ID` first
+and that's unset in Cloudflare — separately from `SESSION_SIGNING_SECRET`,
+which this path also needs. The frontend doesn't know that: `premium-guidance.html`
+has a real OAuth Web Client ID hardcoded
+(`488024261423-k5at8987glj1pp9t59eecet7banqr3ld.apps.googleusercontent.com`)
+and renders the "Sign in with Google" button unconditionally, so a member
+who taps it gets a rejection instead of a config-gated blank state. Access
+codes still work as the primary path — this only affects the Google
+shortcut on top of it.
 
 **To fix:** Cloudflare Pages → Settings → Variables → Production (and
-Preview, if you use it) → set `SESSION_SIGNING_SECRET` to a fresh random
-string ≥32 characters, never reused elsewhere (see `docs/SECURITY.md` item
-S2 and `docs/DEPLOYMENT.md`). Then sign in with a real code and confirm the
-`__Host-vjm_session` cookie appears (see "Verifying after a deploy" at the
-bottom of this file).
+Preview, if you use it) → set `GOOGLE_CLIENT_ID` to that same Client ID
+value. Then tap "Sign in with Google" on `premium-guidance.html` with an
+account whose email matches a recorded Whop purchase and confirm the
+`__Host-vjm_session` cookie appears.
 
 ## 0. ~~Change the GitHub default branch to `pj`~~ — done
 
