@@ -597,3 +597,58 @@ test('the vendored Three.js/model files get a long, cache-header path of their o
     assert.ok(Number(rule[1]) > blanketMaxAge, `${path}'s max-age must exceed the general /assets/* default`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Incident: psychology-enhancer.html grew from 59 to 62 lesson-card entries
+// over time, but its own hero stat ("59 Lessons"), index.html's curriculum
+// card for it ("59 lessons · 4 modules"), and index.html's section headline
+// ("206 Lessons. Start Free.") -- an aggregate of all four course pages'
+// counts (50+51+46+59=206) -- were never updated alongside it. The section's
+// own comment says "Lesson counts mirror each page's own hero stats", so this
+// is that promise silently breaking. premium-guidance.html's sign-in trust
+// badge ("206 Curriculum lessons") carried the identical stale aggregate.
+// Every course page's own self-reported count now has to match its actual
+// lesson-card count, and every place that quotes the four-course total has
+// to match their live sum, so a future lesson addition/removal gets caught
+// here instead of drifting again.
+test('every course page quotes its own real lesson count, and every aggregate quotes the real total', () => {
+  const COURSES = {
+    'futures-dissection.html': 'futures-dissection',
+    'stock-breakdown.html': 'stock-breakdown',
+    'options-lab.html': 'options-lab',
+    'psychology-enhancer.html': 'psychology-enhancer',
+  };
+  const counts = {};
+  for (const page of Object.keys(COURSES)) {
+    counts[page] = (read(page).match(/class="lesson-card"/g) || []).length;
+    assert.ok(counts[page] > 0, `${page}: expected at least one lesson-card`);
+  }
+
+  // Each page with a "<n><span>Lessons</span>" hero stat must match its own count.
+  for (const page of ['futures-dissection.html', 'stock-breakdown.html', 'psychology-enhancer.html']) {
+    const hero = /<div>(\d+)<span>Lessons<\/span><\/div>/.exec(read(page));
+    assert.ok(hero, `${page}: expected a "<n>Lessons" hero stat`);
+    assert.equal(Number(hero[1]), counts[page], `${page}: hero stat lesson count is stale`);
+  }
+  // options-lab.html states its count in prose instead of a hero stat.
+  const optionsLead = /All (\d+) lessons across four levels/.exec(read('options-lab.html'));
+  assert.ok(optionsLead, 'options-lab.html: expected "All <n> lessons across four levels" copy');
+  assert.equal(Number(optionsLead[1]), counts['options-lab.html'], 'options-lab.html: lead-copy lesson count is stale');
+
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+
+  const index = read('index.html');
+  const headline = /<h2 class="section-title">(\d+) Lessons\.\s/.exec(index);
+  assert.ok(headline, 'index.html: expected the curriculum section\'s "<n> Lessons. Start Free." headline');
+  assert.equal(Number(headline[1]), total, 'index.html: curriculum headline lesson total is stale');
+
+  for (const [page, slug] of Object.entries(COURSES)) {
+    const card = new RegExp(`data-vjm-course="${slug}"[\\s\\S]*?<div class="course-meta">(\\d+) lessons`).exec(index);
+    assert.ok(card, `index.html: expected a "${slug}" curriculum card with an "<n> lessons" meta line`);
+    assert.equal(Number(card[1]), counts[page], `index.html: ${slug} curriculum card lesson count is stale`);
+  }
+
+  const trust = /<b>(\d+)<\/b><span>Curriculum lessons<\/span>/.exec(read('premium-guidance.html'));
+  assert.ok(trust, 'premium-guidance.html: expected the "<n> Curriculum lessons" trust badge');
+  assert.equal(Number(trust[1]), total, 'premium-guidance.html: curriculum lessons trust badge total is stale');
+});
