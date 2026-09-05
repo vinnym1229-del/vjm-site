@@ -92,7 +92,7 @@ re-authenticate once, set `STRICT_LEGACY_SESSIONS=true`.
 
 - **Paid lesson bodies are still in the public GitHub repository.** The edge
   middleware strips `.gated-content` from anonymous HTML responses, but anyone
-  can read all 206 lessons straight from source. Tier enforcement is not a
+  can read all 209 lessons straight from source. Tier enforcement is not a
   paywall while that is true — moving paid content into private storage is a
   separate piece of work that needs infrastructure decisions.
 - **Cancellation and expiry still have more than one source of truth** (Whop

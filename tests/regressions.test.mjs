@@ -652,3 +652,20 @@ test('every course page quotes its own real lesson count, and every aggregate qu
   assert.ok(trust, 'premium-guidance.html: expected the "<n> Curriculum lessons" trust badge');
   assert.equal(Number(trust[1]), total, 'premium-guidance.html: curriculum lessons trust badge total is stale');
 });
+
+// Incident: docs/ENTITLEMENTS.md quotes the same four-course lesson total
+// ("can read all 206 lessons straight from source", describing the
+// public-repo lesson-body exposure) as the HTML pages fixed above, but this
+// doc is not an HTML page, so that fix never reached it -- it kept the stale
+// 206 (50+51+46+59) even after every on-site number was corrected to the
+// true 209 (50+51+46+62). Re-derives the same total independently so a
+// future lesson addition/removal is caught here too, not just on-site.
+test('docs/ENTITLEMENTS.md quotes the real four-course lesson total', () => {
+  const COURSES = ['futures-dissection.html', 'stock-breakdown.html', 'options-lab.html', 'psychology-enhancer.html'];
+  const total = COURSES.reduce((sum, page) => sum + (read(page).match(/class="lesson-card"/g) || []).length, 0);
+  assert.ok(total > 0, 'expected a positive combined lesson-card count across all four course pages');
+
+  const entitlementsDoc = /can read all (\d+) lessons straight from source/.exec(read('docs/ENTITLEMENTS.md'));
+  assert.ok(entitlementsDoc, 'docs/ENTITLEMENTS.md: expected the "can read all <n> lessons" line');
+  assert.equal(Number(entitlementsDoc[1]), total, 'docs/ENTITLEMENTS.md: lesson total is stale');
+});
