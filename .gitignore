@@ -9,6 +9,7 @@ node_modules/
 .wrangler/
 dist/
 .DS_Store
+coverage/
 
 # Local tooling scratch
 .opencode/
