@@ -1,0 +1,43 @@
+name: TEMP smoke test (auto-removed)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SITE: https://pj.vjm.pages.dev
+    steps:
+      - name: HTML pages return 200
+        run: |
+          set -euo pipefail
+          for p in / /index.html /futures-dissection.html /options-lab.html /stock-breakdown.html /psychology-enhancer.html /premium-guidance.html /prop-firms.html /forex-calendar.html; do
+            code="$(curl -s -o /dev/null -w '%{http_code}' -L "$SITE$p")"
+            echo "$p -> $code"
+          done
+
+      - name: JSON endpoints return ok:true
+        run: |
+          set -euo pipefail
+          for p in /api/ticker "/api/yahoo-news?symbol=AAPL" "/api/stock-research?symbol=AAPL" "/api/content?type=schedule"; do
+            body="$(curl -s "$SITE$p")"
+            echo "$p -> $body" | head -c 500
+            echo ""
+            echo "$body" | node -e '
+              let d="";process.stdin.on("data",c=>d+=c);process.stdin.on("end",()=>{
+                let j; try { j = JSON.parse(d); } catch(e){ console.error("NOT JSON"); process.exit(1); }
+                if (j.ok !== true) { console.error("ok is not true"); process.exit(1); }
+                console.log("ok:true confirmed");
+              });'
+          done
+
+      - name: verify-premium rejects bad code without turnstile token
+        run: |
+          set -euo pipefail
+          body="$(curl -s -X POST "$SITE/api/verify-premium" -H 'Content-Type: application/json' -d '{"code":"BADCODE123"}')"
+          echo "response: $body"
