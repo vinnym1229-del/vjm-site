@@ -1142,7 +1142,7 @@
   <div class="section-inner">
     <div style="text-align:center;margin-bottom:40px;" data-reveal>
       <div class="section-tag">Stream Schedule</div>
-      <h2 class="section-title">Live Futures, <span class="gold">15 Sessions a Week</span></h2>
+      <h2 class="section-title">Live Futures, <span class="gold" id="sched-freq">15 Sessions a Week</span></h2>
       <p class="section-sub" style="margin:0 auto 20px;">All times ET. Sessions run inside the Discord — the <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold-ink);">#announcements channel</a> is always the source of truth for week-to-week changes.</p>
       <div id="session-clock" style="display:inline-flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:9px 22px;font-size:.88rem;font-weight:700;color:var(--text);"></div>
     </div>
@@ -2588,6 +2588,14 @@ setInterval(tickSessionClock, 30000);
     return h * 60 + parseInt(m[2], 10);
   }
 
+  // Real (non-off) session count for the "N Sessions a Week" headline above
+  // #week-grid, kept in step with the same items the grid itself renders from
+  // (a hostless row is a marked-off slot, not a session — see the .session-row
+  // vs .session-row-off split below).
+  function countLiveSessions(items) {
+    return items.filter((s) => String(s.host || '').trim()).length;
+  }
+
   // 1) Weekly schedule — replaces .week-grid; also updates PJ_SESSIONS'
   //    per-day start times for the live countdown (durations stay as coded
   //    estimates). Each session's days map is rebuilt from scratch below, so
@@ -2633,6 +2641,8 @@ setInterval(tickSessionClock, 30000);
         }).join('');
       if (!html) return;
       document.getElementById('week-grid').innerHTML = html;
+      const freqEl = document.getElementById('sched-freq');
+      if (freqEl) freqEl.textContent = countLiveSessions(active) + ' Sessions a Week';
 
       const byName = {};
       active.forEach((s) => {

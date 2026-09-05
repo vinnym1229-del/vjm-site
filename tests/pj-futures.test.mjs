@@ -423,6 +423,37 @@ test('pjNextSession returns the soonest session of the day, not the first one in
   assert.equal(next.session.start, 8 * 60);
 });
 
+test('schedule headline count updates from the CMS feed instead of staying hardcoded to 15', () => {
+  // #schedule's "Live Futures, 15 Sessions a Week" headline sits directly
+  // above #week-grid, but until now nothing recomputed it when the CMS
+  // schedule changed — loadCmsSections() rebuilt the grid itself and even
+  // PJ_SESSIONS' per-day start times from the fetched rows, but the headline
+  // span stayed a static literal. An owner adding or cutting a session through
+  // the sheet this system was built for would change the visible grid while
+  // the headline right above it, still reading "15", quietly went false.
+  // Extract the live counting function and prove it derives the real count
+  // from CMS rows, not the current week's coincidental total.
+  const countSrc = index.match(/function countLiveSessions\(items\) \{[\s\S]*?\n {2}\}/)[0];
+  const sandbox = {};
+  vm.createContext(sandbox);
+  vm.runInContext(countSrc + '\nthis.countLiveSessions = countLiveSessions;', sandbox);
+
+  const hosted = (n) => Array.from({ length: n }, (_, i) => ({ day: 'Mon', session: 'NYAM' + i, host: 'PJ' }));
+  assert.equal(sandbox.countLiveSessions(hosted(20)), 20, 'a sheet with 20 real sessions must count as 20, not 15');
+  assert.equal(sandbox.countLiveSessions(hosted(9)), 9, 'a sheet cut down to 9 real sessions must count as 9, not 15');
+  // Hostless rows are marked-off slots (rendered as .session-row-off, not
+  // .session-row) and must not inflate the count.
+  const mixed = [...hosted(5), { day: 'Mon', session: 'NYPM', host: '' }, { day: 'Tue', session: 'NYPM', host: '  ' }];
+  assert.equal(sandbox.countLiveSessions(mixed), 5, 'off slots (blank host) must not be counted as live sessions');
+
+  // The headline span must actually be wired to that count, not just have a
+  // same-named function sitting unused nearby.
+  assert.match(indexMarkup, /<span class="gold" id="sched-freq">15 Sessions a Week<\/span>/,
+    'headline span needs a stable id for the CMS handler to update');
+  assert.match(index, /getElementById\('sched-freq'\)[\s\S]{0,80}countLiveSessions\(active\)/,
+    'the schedule fetch handler must write the live count into #sched-freq');
+});
+
 test('PWA manifest + theme color + PJ 404', () => {
   const manifest = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
   // Updated 2026-09-01: light became the default theme, so the manifest and the
