@@ -88,6 +88,10 @@
     document.querySelectorAll('.lock-gate').forEach((gate) => {
       const content = gate.nextElementSibling;
       gate.style.display = 'none';
+      // The gate node itself is never removed, only hidden — nextLevelInfo()
+      // reads this stamp to tell an unlocked-but-still-present gate from a
+      // genuinely locked one.
+      if (gate.setAttribute) gate.setAttribute('data-vjm-lock', 'entitled');
       if (content && content.classList.contains('gated-content')) content.hidden = false;
     });
     document.querySelectorAll('.level-tab .lock').forEach((l) => (l.textContent = ''));
@@ -706,7 +710,12 @@ body.light-mode .curr .vjm-miss{background:rgba(0,0,0,.03);}
     if (!next) return null;
     const tab = qs(`.level-tab[data-pair="${pair}"][data-level="${level + 1}"]`);
     const label = tab ? (tab.textContent || '').replace(/🔒/g, '').trim() : 'Level ' + (level + 1);
-    return { panel: next, tab, label, locked: !!qs('.lock-gate', next) };
+    const gate = qs('.lock-gate', next);
+    // unlockAll() hides an entitled member's gate rather than removing it, so
+    // its mere presence can't mean "still locked" — only the absence of the
+    // 'entitled' stamp it leaves behind does.
+    const locked = !!gate && gate.getAttribute('data-vjm-lock') !== 'entitled';
+    return { panel: next, tab, label, locked };
   }
 
   function renderCompletion(quiz, course, panel, result) {

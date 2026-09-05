@@ -375,7 +375,8 @@ test('a missed question comes back with targeted remediation, not just a score',
 
 test('the end of the free level points at the plan that actually contains the next one', () => {
   // Level 2 of Futures Dissection is Futures Core ($100/mo) — not Complete.
-  const lockedNext = { querySelector: (sel) => (sel === '.lock-gate' ? {} : null) };
+  const lockedGate = { getAttribute: () => null };
+  const lockedNext = { querySelector: (sel) => (sel === '.lock-gate' ? lockedGate : null) };
   const q = renderQuiz({
     lookup: {
       '.level-panel[data-pair="futures"][data-level="2"]': lockedNext,
@@ -393,6 +394,31 @@ test('the end of the free level points at the plan that actually contains the ne
     panel.links.some((h) => h.includes('whop.com/pjtradespremium') && h.includes('free-level-complete-futures_core')),
     `a plan CTA must be present: ${panel.links.join(', ')}`,
   );
+});
+
+test('an entitled member finishing the free level gets a Next button, not a repeat upsell', () => {
+  // unlockAll() hides an unlocked level's .lock-gate rather than removing it
+  // (functions/_middleware.js already stripped the paid markup server-side
+  // for anyone else, so the node has to stay for a signed-out/under-tier
+  // visitor). It stamps data-vjm-lock="entitled" on the gate as the only
+  // record that this member's own copy is unlocked. Before this stamp
+  // existed, nextLevelInfo() treated the gate's mere presence as "still
+  // locked", so a paying member who just finished Level 1 was told to buy
+  // Futures Core again and to "sign in" while already signed in.
+  const unlockedGate = { getAttribute: (k) => (k === 'data-vjm-lock' ? 'entitled' : null) };
+  const unlockedNext = { querySelector: (sel) => (sel === '.lock-gate' ? unlockedGate : null) };
+  const q = renderQuiz({
+    lookup: {
+      '.level-panel[data-pair="futures"][data-level="2"]': unlockedNext,
+      '.level-tab[data-pair="futures"][data-level="2"]': { textContent: '2. Intermediate' },
+    },
+  });
+  q.pick(1);
+  q.submitQuiz();
+  const panel = q.completion();
+  assert.match(panel.html, /Next: 2\. Intermediate/, 'an unlocked next level must offer to go there');
+  assert.doesNotMatch(panel.html, /Futures Core|\$100\/mo/, 'an entitled member must not be upsold the plan they already have');
+  assert.doesNotMatch(panel.html, /Already a member\?/, 'a signed-in member must not be told to sign in');
 });
 
 test('a device that cannot store progress still grades, renders and reports', () => {
