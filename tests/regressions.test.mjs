@@ -344,6 +344,20 @@ test('setup docs point automation at the real canonical domain, not the un-hyphe
   }
 });
 
+// Incident: the same un-hyphenated/hyphenated mixup above was also fixed in
+// INSTALL-FIRST.md and docs/research-engine-setup.md on 2026-09-05, but
+// docs/API.md and docs/ARCHITECTURE.md were never checked — both still
+// declared the un-hyphenated notfinancialadvicevjm.com "canonical" (backwards
+// from what indexing.js/robots.txt/sitemap.xml/tests/indexing.test.mjs all
+// settled on), actively misdirecting a developer following API.md or an
+// owner reading ARCHITECTURE.md's domain section.
+test('reference docs declare the real canonical domain, not the un-hyphenated one', () => {
+  for (const doc of ['docs/API.md', 'docs/ARCHITECTURE.md']) {
+    assert.doesNotMatch(read(doc), /notfinancialadvicevjm\.com/,
+      `${doc} references the un-hyphenated, non-canonical domain`);
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Incident: gating was purely cosmetic. `.gated-content` used `hidden` +
 // client-side JS to reveal paid lessons after /api/verify-premium succeeded,

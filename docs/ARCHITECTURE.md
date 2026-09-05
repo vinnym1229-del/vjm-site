@@ -51,9 +51,12 @@ the next step (D1 `sessions` table designed in MASTER-AUDIT §14 target model).
 
 ## Domain
 
-Canonical: `notfinancialadvicevjm.com` (matches CNAME). The hyphenated variant
-in INSTALL-FIRST.md is flagged; owner confirms which domain Cloudflare serves
-and sets `RESEARCH_REFRESH_URL` accordingly (see DEPLOYMENT).
+Canonical: `not-financial-advice-vjm.com` (hyphenated) — pinned by
+`functions/api/_lib/indexing.js`'s `CANONICAL_HOST`, robots.txt's
+`canonical-origin:` line, sitemap.xml, and every page's canonical/OG tags.
+`tests/indexing.test.mjs` explicitly rejects the un-hyphenated variant as a
+non-canonical host. Set `RESEARCH_REFRESH_URL` to the hyphenated form (see
+DEPLOYMENT).
 
 ## Target IA (post-rebuild phases)
 

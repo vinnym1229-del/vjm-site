@@ -1,6 +1,9 @@
 # API Reference
 
-Base URL: `https://notfinancialadvicevjm.com` (canonical; see MASTER-AUDIT §F-BR4).
+Base URL: `https://not-financial-advice-vjm.com` (canonical; matches
+`functions/api/_lib/indexing.js`'s `CANONICAL_HOST`, robots.txt, and
+sitemap.xml — see MASTER-AUDIT §F-BR4 for the historical ambiguity this
+settled).
 All responses are JSON with `Cache-Control: no-store`. Errors use stable shapes:
 `{ "ok": false, "error": "<public message>" }` — internal details are never leaked.
 
