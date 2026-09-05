@@ -1795,6 +1795,14 @@ function pjNextSession() {
     const probe = new Date(now);
     probe.setDate(probe.getDate() + offset);
     const dow = probe.getDay();
+    // Collect every not-yet-passed session for this day and keep the one
+    // that actually starts soonest — PJ_SESSIONS is written in the usual
+    // NYAM/NYPM/CLASS/ASIA reading order, not sorted by start time, and the
+    // CMS schedule merge above can rewrite any session's time for any day
+    // independently. Returning the first array match instead of the true
+    // minimum showed the wrong "next up" session whenever a CMS update left
+    // an earlier-in-the-array session starting later than one behind it.
+    let best = null;
     for (const s of PJ_SESSIONS) {
       const start = s.days[dow];
       if (start == null) continue;
@@ -1803,8 +1811,9 @@ function pjNextSession() {
         if (minsNow >= start && minsNow < start + s.mins) return { live: true, session: { ...s, start }, dayOffset: 0 };
         if (minsNow >= start) continue;
       }
-      return { live: false, session: { ...s, start }, dayOffset: offset };
+      if (!best || start < best.start) best = { ...s, start };
     }
+    if (best) return { live: false, session: best, dayOffset: offset };
   }
   return null;
 }

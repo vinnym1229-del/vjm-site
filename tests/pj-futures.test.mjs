@@ -380,6 +380,49 @@ test('CMS schedule merge keeps each day\'s own start time for a session, not one
   assert.equal(nextFri.session.start, 8 * 60, "pjNextSession must surface Friday's own (earlier) start time, not Tuesday's");
 });
 
+test('pjNextSession returns the soonest session of the day, not the first one in array order', () => {
+  // PJ_SESSIONS is written NYAM/NYPM/CLASS/ASIA — today's own reading order,
+  // which also happens to be chronological with the site's current schedule.
+  // But the CMS merge above can set any session's per-day time independently
+  // (that is the whole point of the fix above), so a schedule change that
+  // leaves an earlier-in-the-array session starting LATER than one behind it
+  // (a holiday-shifted NYAM pushed past a normally-later NYPM, say) must
+  // still surface the actually-soonest session — not whichever one the
+  // literal array happens to list first.
+  const sessionsSrc = index.match(/const PJ_SESSIONS = \[[\s\S]*?\n\];/)[0];
+  const nextSessionSrc = index.match(/function pjNextSession\(\) \{[\s\S]*?\n\}\n/)[0];
+
+  function dateForDow(dow, hour, min) {
+    const d = new Date();
+    d.setHours(hour, min, 0, 0);
+    while (d.getDay() !== dow) d.setDate(d.getDate() + 1);
+    return d;
+  }
+
+  const sandbox = { __FAKE_NOW__: null };
+  vm.createContext(sandbox);
+  vm.runInContext(
+    sessionsSrc + '\n' +
+    'function pjEtNow(){ const n = __FAKE_NOW__; return new Date(n.y, n.m, n.d, n.h, n.min); }\n' +
+    nextSessionSrc +
+    'this.pjNextSession = pjNextSession; this.PJ_SESSIONS = PJ_SESSIONS;',
+    sandbox,
+  );
+
+  // NYAM (array index 0) pushed to 3:00pm on Tuesday; NYPM (array index 1,
+  // normally the later afternoon session) moved to 8:00am the same day.
+  const nyam = sandbox.PJ_SESSIONS.find((s) => s.name === 'NYAM');
+  const nypm = sandbox.PJ_SESSIONS.find((s) => s.name === 'NYPM');
+  nyam.days[2] = 15 * 60;
+  nypm.days[2] = 8 * 60;
+
+  const tue = dateForDow(2, 7, 0); // 7:00am Tuesday — both sessions still upcoming
+  sandbox.__FAKE_NOW__ = { y: tue.getFullYear(), m: tue.getMonth(), d: tue.getDate(), h: tue.getHours(), min: tue.getMinutes() };
+  const next = sandbox.pjNextSession();
+  assert.equal(next.session.name, 'NYPM', 'the 8:00am session is genuinely next, even though NYAM is checked first');
+  assert.equal(next.session.start, 8 * 60);
+});
+
 test('PWA manifest + theme color + PJ 404', () => {
   const manifest = JSON.parse(readFileSync(join(ROOT, 'manifest.json'), 'utf8'));
   // Updated 2026-09-01: light became the default theme, so the manifest and the
