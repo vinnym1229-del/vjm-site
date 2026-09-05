@@ -36,7 +36,7 @@ Without D1, the dashboard still works, but historical snapshots and last-good-re
 
 In GitHub repository secrets, add:
 
-- `RESEARCH_REFRESH_URL` = `https://notfinancialadvicevjm.com`
+- `RESEARCH_REFRESH_URL` = `https://not-financial-advice-vjm.com`
 - `RESEARCH_CRON_SECRET` = the same value configured in Cloudflare
 
 The included workflow at `.github/workflows/research-refresh.yml` then refreshes the saved research data automatically.

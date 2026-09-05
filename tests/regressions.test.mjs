@@ -328,6 +328,23 @@ test('course and member pages agree on one canonical origin and path shape', () 
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the canonical-origin decision (robots.txt, sitemap.xml, every
+// page's canonical/OG tags, and functions/api/_lib/indexing.js's
+// CANONICAL_HOST) settled on the hyphenated not-financial-advice-vjm.com, and
+// tests/indexing.test.mjs even pins the un-hyphenated form as a rejected,
+// non-canonical host. INSTALL-FIRST.md never got the memo: it told a fresh
+// owner to set the GitHub Actions RESEARCH_REFRESH_URL secret to
+// notfinancialadvicevjm.com, a host research-refresh.yml/morning-automation.yml/
+// audit-live-hero.yml would then curl against instead of the live site,
+// silently failing the automation those workflows exist to run.
+test('setup docs point automation at the real canonical domain, not the un-hyphenated one', () => {
+  for (const doc of ['INSTALL-FIRST.md', 'docs/research-engine-setup.md']) {
+    assert.doesNotMatch(read(doc), /notfinancialadvicevjm\.com/,
+      `${doc} references the un-hyphenated, non-canonical domain`);
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Incident: gating was purely cosmetic. `.gated-content` used `hidden` +
 // client-side JS to reveal paid lessons after /api/verify-premium succeeded,
 // but the full lesson text (including quiz answer keys) was always present
