@@ -284,6 +284,35 @@ test('sizing simulator floors, never forces a one-contract minimum over budget',
   assert.equal(els['size-output'].textContent, '2 contracts');
 });
 
+test('prop payout projector reads its own Starting Balance field, not just target/days', () => {
+  // The Prop-mode panel has a "Starting Balance ($)" input (#sim-prop-start)
+  // identical in label to the Trading-mode panel's #sim-start, which really
+  // does drive runGrowthSim()'s output. Prop mode's own runPropPayout()
+  // never read #sim-prop-start at all — a visitor changing it saw the exact
+  // same total every time. Extract the live function so a future edit that
+  // drops this read again fails this test instead of shipping an inert field.
+  const fnSrc = index.match(/function runPropPayout\(\) \{[\s\S]*?\n\}\n/)[0];
+  const els = {};
+  const el = (id) => (els[id] ||= { value: '0', textContent: '', style: {} });
+  const sandbox = { document: { getElementById: el } };
+  vm.createContext(sandbox);
+  vm.runInContext(fnSrc + '\nthis.runPropPayout = runPropPayout;', sandbox);
+
+  el('sim-prop-daily').value = '200';
+  el('sim-prop-days').value = '30';
+
+  el('sim-prop-start').value = '1200';
+  sandbox.runPropPayout();
+  assert.equal(els['sim-prop-end-val'].textContent, '$6,000', 'payout total must not move with starting balance');
+  assert.equal(els['sim-prop-balance'].textContent, 'Projected account balance: $7,200');
+
+  el('sim-prop-start').value = '50000';
+  sandbox.runPropPayout();
+  assert.equal(els['sim-prop-end-val'].textContent, '$6,000', 'payout total is still just daily x days');
+  assert.equal(els['sim-prop-balance'].textContent, 'Projected account balance: $56,000',
+    'changing Starting Balance must change the projected balance');
+});
+
 test('session clock lives in the schedule section', () => {
   assert.match(index, /id="session-clock"/);
   assert.match(index, /tickSessionClock/);

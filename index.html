@@ -705,6 +705,7 @@
               <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Hypothetical Total &mdash; Not A Payout Forecast</div>
               <div id="sim-prop-end-val" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
               <div id="sim-prop-weekly" style="font-size:0.9rem;color:var(--emerald);margin-top:4px;">~$X per week / ~$Y per month</div>
+              <div id="sim-prop-balance" style="font-size:0.8rem;color:var(--muted);margin-top:6px;"></div>
             </div>
             <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> Arithmetic on the numbers you entered, with no losing days, fees or slippage. Results are not typical.</p>
           </div>
@@ -2213,6 +2214,7 @@ function runGrowthSim() {
 
 // ─── PROP FIRM PAYOUT PROJECTOR ───
 function runPropPayout() {
+  const start = parseFloat(document.getElementById('sim-prop-start').value) || 0;
   const daily = parseFloat(document.getElementById('sim-prop-daily').value) || 0;
   const days = parseInt(document.getElementById('sim-prop-days').value) || 0;
   if (daily <= 0 || days <= 0) return;
@@ -2222,6 +2224,12 @@ function runPropPayout() {
   document.getElementById('sim-prop-end-val').textContent = '$' + Math.round(total).toLocaleString();
   document.getElementById('sim-prop-weekly').textContent =
     '~$' + Math.round(weekly).toLocaleString() + ' per week / ~$' + Math.round(monthly).toLocaleString() + ' per month';
+  // Starting Balance ($) feeds this projected-balance line, not the payout
+  // total above — a $0/unset value just omits the line rather than showing
+  // a bogus "$0 + payout" figure.
+  document.getElementById('sim-prop-balance').textContent = start > 0
+    ? 'Projected account balance: $' + Math.round(start + total).toLocaleString()
+    : '';
   document.getElementById('sim-prop-result').style.display = 'block';
 }
 
