@@ -205,10 +205,17 @@
       const data = await res.json().catch(() => ({ ok: false }));
       thinking.remove();
       if (res.status === 409 && lesson) {
-        // The lesson text changed under us; drop the stale copy and re-fetch.
+        // The lesson text changed under us. The picker row that got the member
+        // into lesson mode is long gone (removed on click, and greet() never
+        // runs twice) \u2014 telling them to "reopen the lesson list" would point
+        // at a control that doesn't exist, so render a fresh one instead.
         lesson = null;
         lessonsForPage = null;
-        addMsg('That lesson was updated \u2014 reopen the lesson list and ask again.', 'bot');
+        input.placeholder = 'Ask about the market\u2026';
+        addMsg('That lesson was updated \u2014 pick it again from the fresh list below.', 'bot');
+        fetchLessonsForPage().then((lessons) => {
+          if (lessons.length) addLessonPicker(lessons);
+        });
       } else if (!res.ok || !data.ok) {
         addMsg(data.error || 'The assistant is unavailable right now.', 'bot');
       } else if (data.narrative) {
