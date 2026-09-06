@@ -10,7 +10,7 @@
 
 import { checkRateLimit } from './_lib/http.js';
 
-const FEED_URL = 'https://nfs.faireconomy.media/ff_calendar_thisweek.json';
+const DEFAULT_FEED_URL = 'https://nfs.faireconomy.media/ff_calendar_thisweek.json';
 const ALLOWED_CURRENCIES = new Set(['USD', 'ALL']);
 const MAX_EVENTS = 120;
 
@@ -29,6 +29,10 @@ export async function onRequestGet(context) {
     return json({ ok: false, error: 'Unsupported impact filter.' }, 400);
   }
 
+  // Page copy tells the owner they can swap in a paid/private feed via this
+  // var without rebuilding — honor that, falling back to the free public feed.
+  const feedUrl = env.FOREX_CALENDAR_SOURCE_URL || DEFAULT_FEED_URL;
+
   // Last-good-copy cache: faireconomy throttles Cloudflare's shared egress
   // IPs for stretches, and cf.cacheTtl cannot serve on upstream error. A
   // weekly calendar tolerates staleness, so a good fetch is stored for a day
@@ -40,7 +44,7 @@ export async function onRequestGet(context) {
   let stale = false;
   let staleFrom = null;
   try {
-    const res = await fetch(FEED_URL, {
+    const res = await fetch(feedUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PJTradesBot/1.0)', Accept: 'application/json' },
       cf: { cacheTtl: 1800, cacheEverything: true },
       signal: AbortSignal.timeout(9000),

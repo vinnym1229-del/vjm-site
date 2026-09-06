@@ -153,4 +153,27 @@ try {
   }
 }
 
+// The page's own "API note" tells the owner a paid/private feed can be
+// swapped in via FOREX_CALENDAR_SOURCE_URL "without rebuilding" -- prove the
+// handler actually reads it instead of always hitting the hardcoded public
+// feed the env var would silently fail to override.
+{
+  const originalFetch5 = globalThis.fetch;
+  const originalCaches5 = globalThis.caches;
+  let requestedUrl = null;
+  globalThis.fetch = async (url) => { requestedUrl = url; return Response.json(FIXTURE); };
+  globalThis.caches = { default: { put: async () => {}, match: async () => null } };
+  try {
+    const res = await onRequestGet({
+      request: new Request('https://example.com/api/forex-calendar?impact=major', { headers: { 'CF-Connecting-IP': '10.5.0.5' } }),
+      env: { FOREX_CALENDAR_SOURCE_URL: 'https://example.com/private-feed.json' },
+    });
+    assert.equal(res.status, 200);
+    assert.equal(requestedUrl, 'https://example.com/private-feed.json', 'FOREX_CALENDAR_SOURCE_URL must override the default feed, matching the page copy\'s promise');
+  } finally {
+    globalThis.fetch = originalFetch5;
+    globalThis.caches = originalCaches5;
+  }
+}
+
 console.log('VJM forex-calendar API tests passed.');
