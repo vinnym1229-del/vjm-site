@@ -136,6 +136,36 @@ test('ticker down/closed states clear WCAG AA against the light-mode ticker back
     `light-mode .lt-sess.sess-cl (${sess[1]}) on --bg2 is ${contrast(hexToRgb(sess[1]), bg2).toFixed(2)}:1`);
 });
 
+test('the "LIVE" badge fades into the light-mode ticker background, not the dark one', () => {
+  // injectStyles() paints the pulsing "LIVE" badge with a gradient that fades
+  // from an opaque swatch to transparent so it blends into #ticker-wrap
+  // behind it -- but that swatch was hardcoded to the dark-mode ticker
+  // background (#0c0c0d) with no `body.light-mode` restatement, unlike every
+  // other selector in this same injected block (.lt-cell/.lt-label/.lt-price
+  // /.lt-pct/.lt-sess all got one). site.css repaints #ticker-wrap itself to
+  // --bg2 in light mode (line ~1135), so the badge sat as a solid black box
+  // with light-gray text at the left edge of an otherwise white/light tape
+  // on every light-mode visit -- confirmed by rendering the real markup in a
+  // headless browser before this fix landed. Pin both the swatch and the dot
+  // to the site's own light-mode tokens so this can't regress silently.
+  const ticker = read('assets/live-ticker.js');
+  const site = read('assets/site.css');
+  const lightBlock = site.match(/body\.light-mode\s*\{([^}]*)\}/)[1];
+  const bg2Hex = lightBlock.match(/--bg2:\s*(#[0-9a-fA-F]{6})/)[1];
+
+  const badge = ticker.match(/body\.light-mode #ticker-wrap \.lt-live\{background:([^;]+);color:(#[0-9a-fA-F]{6})/);
+  assert.ok(badge, 'no light-mode override for .lt-live in assets/live-ticker.js');
+  assert.ok(badge[1].toLowerCase().includes(bg2Hex.toLowerCase()),
+    `light-mode .lt-live background (${badge[1]}) does not fade from site.css's own --bg2 (${bg2Hex}) -- it is still the dark-mode swatch`);
+  assert.doesNotMatch(badge[1], /#0c0c0d/i,
+    'light-mode .lt-live still carries the dark-mode #0c0c0d swatch');
+  assert.ok(contrast(hexToRgb(badge[2]), hexToRgb(bg2Hex)) >= 4.5,
+    `light-mode .lt-live text (${badge[2]}) on --bg2 is ${contrast(hexToRgb(badge[2]), hexToRgb(bg2Hex)).toFixed(2)}:1`);
+
+  const dot = ticker.match(/body\.light-mode #ticker-wrap \.lt-live \.dot\{background:(#[0-9a-fA-F]{6})/);
+  assert.ok(dot, 'no light-mode override for .lt-live .dot in assets/live-ticker.js');
+});
+
 test('core text/background pairs clear WCAG AA in both themes', () => {
   const css = read('assets/site.css');
   const block = (sel) => {

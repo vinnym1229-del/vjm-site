@@ -138,6 +138,14 @@
 #ticker-wrap .lt-sess.sess-on{color:#9a9aa0;background:rgba(255,255,255,.07);}
 #ticker-wrap .lt-sess.sess-cl{color:#d14343;background:rgba(209,67,67,.10);}
 #ticker-wrap .lt-sess.sess-247{color:#9a9aa0;background:rgba(255,255,255,.07);}
+/* The fade-to-transparent "LIVE" badge hardcodes the dark-mode ticker
+   background (#0c0c0d) so it blends into #ticker-wrap behind it — site.css's
+   #ticker-wrap itself repaints to --bg2 (#f6f6f7) in light mode, but this
+   overlay never did, so it sat as a solid black box with light-gray text on
+   the left edge of an otherwise white tape. Restate both the gradient and
+   the dot to the light-mode tokens the rest of this block already uses. */
+body.light-mode #ticker-wrap .lt-live{background:linear-gradient(90deg,#f6f6f7 72%,rgba(246,246,247,0));color:#6b6b70;}
+body.light-mode #ticker-wrap .lt-live .dot{background:#b3251d;box-shadow:0 0 8px rgba(179,37,29,.35);}
 body.light-mode #ticker-wrap .lt-cell{border-right-color:rgba(0,0,0,.08);}
 body.light-mode #ticker-wrap .lt-cell:hover .lt-label{color:#141416;}
 body.light-mode #ticker-wrap .lt-label{color:#6b6b70;}
