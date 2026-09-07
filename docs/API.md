@@ -43,9 +43,11 @@ quote:{price,change,changePercent,volume,vwap,prevClose,marketCap:null} }`
 
 Same payload shape as above but requires a premium session (cookie or legacy Bearer). 401 otherwise.
 
-## GET /api/yahoo-news?symbol=TSLA
+## GET /api/yahoo-news?symbol=TSLA (or ?topic=forex|futures|market)
 
-Yahoo Finance RSS headlines (≤12), sanitized/deduped, cached ~5 min server-side.
+Yahoo Finance JSON search-endpoint headlines (≤12), sanitized/deduped, cached ~5 min server-side.
+Not RSS — Yahoo retired its RSS feed; `symbol` and `topic` are mutually exclusive, `topic` is a
+closed allowlist mapped to a fixed query (used by forex-calendar.html's headline panel).
 `{ ok, items:[{title,link,publisher,pubDate,description}], source, fetchedAt }`
 502 with explicit unavailable state on feed failure — no placeholder items.
 

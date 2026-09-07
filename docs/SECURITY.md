@@ -35,5 +35,5 @@ Threat model in one line: anonymous visitors, premium members with codes, and th
 
 - Enumeration: unknown code vs inactive code return identical bodies/status.
 - Timing: signature comparisons are constant-time; length-mismatch path burns comparable cycles.
-- SSRF: outbound calls use fixed allowlisted hosts (Alpaca, faireconomy feed, Yahoo RSS host, owner-configured bridge URL). Symbols validated by regex before any URL construction.
+- SSRF: outbound calls use fixed allowlisted hosts (Alpaca, faireconomy feed, query1.finance.yahoo.com, owner-configured bridge URL). Symbols validated by regex before any URL construction.
 - Caching: all API responses `Cache-Control: no-store`; personalized pages revalidate.

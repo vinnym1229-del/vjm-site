@@ -24,7 +24,7 @@ functions/api/
   check-member-status.js public membership probe (generic answers)
   stock-research.js    public quote snapshot (Alpaca IEX)
   premium-stock-research.js gated quote snapshot
-  yahoo-news.js        sanitized RSS headlines
+  yahoo-news.js        sanitized headlines (Yahoo JSON search endpoint, not RSS — retired)
   forex-calendar.js    weekly economic calendar w/ explicit unavailability
   research-engine.js   (codex) premium research modules + snapshots
 apps-script/member-sync/  authenticated single-record sheet bridge

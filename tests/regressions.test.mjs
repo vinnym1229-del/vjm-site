@@ -358,6 +358,26 @@ test('reference docs declare the real canonical domain, not the un-hyphenated on
   }
 });
 
+// Incident: functions/api/yahoo-news.js's own header comment documents that
+// it dropped Yahoo's RSS feed (retired -- 404s/429s now) for the
+// query1.finance.yahoo.com JSON search endpoint, but docs/API.md,
+// docs/ARCHITECTURE.md, and docs/SECURITY.md all still called it "RSS"
+// headlines / a "Yahoo RSS host", describing a host the deployment no longer
+// calls and never naming the one it does -- exactly what docs/SECURITY.md's
+// SSRF allowlist note exists to get right. docs/API.md also never documented
+// the `topic` parameter at all, even though forex-calendar.html's headline
+// panel calls the route with `?topic=forex` against a real, closed TOPICS
+// allowlist in the handler.
+test('yahoo-news docs describe the real JSON endpoint and the topic parameter, not RSS', () => {
+  for (const doc of ['docs/API.md', 'docs/ARCHITECTURE.md', 'docs/SECURITY.md']) {
+    assert.doesNotMatch(read(doc), /\bRSS headlines\b|\bRSS host\b|sanitized RSS/i,
+      `${doc} still claims yahoo-news.js serves RSS`);
+  }
+  assert.match(read('docs/API.md'), /topic=/, 'docs/API.md must document the topic= parameter');
+  assert.match(read('docs/SECURITY.md'), /query1\.finance\.yahoo\.com/,
+    'docs/SECURITY.md must name the actual allowlisted Yahoo host');
+});
+
 // ---------------------------------------------------------------------------
 // Incident: gating was purely cosmetic. `.gated-content` used `hidden` +
 // client-side JS to reveal paid lessons after /api/verify-premium succeeded,
