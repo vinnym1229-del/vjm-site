@@ -156,3 +156,27 @@ test('the repo-exposure figure quoted in docs/PAYWALL.md is still the real one',
   const doc = read(join('docs', 'PAYWALL.md'));
   assert.match(doc, /49,967/, 'PAYWALL.md must quote the measured word count');
 });
+
+// The "page source" column is the whole file, not just the paid markup — it
+// includes the free essay copy, nav, and page scripts, none of which
+// paidBytes/paidWords track. It can drift on its own (a page grows for
+// reasons unrelated to the paywall) without the word-count test above ever
+// noticing, which is exactly what happened to psychology-enhancer.html: the
+// row and the table's own **total** both quoted a page size the working tree
+// no longer matched, and the total didn't even sum its own displayed rows.
+test('the per-page and total "page source" KB figures in docs/PAYWALL.md match the working tree', () => {
+  const doc = read(join('docs', 'PAYWALL.md'));
+  const kbOf = (bytes) => Math.round(bytes / 1024);
+  for (const r of rows) {
+    const lineMatch = doc.match(new RegExp('^\\|\\s*`' + r.path.replace(/\./g, '\\.') + '`.*$', 'm'));
+    assert.ok(lineMatch, `docs/PAYWALL.md has no table row for ${r.path}`);
+    const cells = lineMatch[0].split('|').map((c) => c.trim()).filter(Boolean);
+    const stated = Number(cells[cells.length - 1].replace(/[^\d]/g, ''));
+    assert.equal(stated, kbOf(r.bytes), `${r.path}: PAYWALL.md says ${stated} KB of page source, working tree is ${kbOf(r.bytes)} KB`);
+  }
+  const totalMatch = doc.match(/^\|\s*\*\*total\*\*.*$/m);
+  assert.ok(totalMatch, 'docs/PAYWALL.md has no **total** row');
+  const totalCells = totalMatch[0].split('|').map((c) => c.trim()).filter(Boolean);
+  const statedTotal = Number(totalCells[totalCells.length - 1].replace(/[^\d]/g, ''));
+  assert.equal(statedTotal, kbOf(totals.bytes), `PAYWALL.md's total page source is ${statedTotal} KB, working tree is ${kbOf(totals.bytes)} KB`);
+});
