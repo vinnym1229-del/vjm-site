@@ -45,7 +45,10 @@ test('scroll-reveal is progressive enhancement (no-JS keeps content visible)', (
 });
 
 test('scroll-reveal animation stays subtle', () => {
-  assert.match(index, /\.reveal-init\{opacity:0;transform:translateY\(12px\);\}/);
+  // The rule also carries --reveal-y so the 3D-tilted cards can fold the
+  // slide-in into their own transform (assets/tilt.js); the 12px offset and
+  // .4s timing this test protects are unchanged.
+  assert.match(index, /\.reveal-init\{opacity:0;transform:translateY\(12px\);(--reveal-y:12px;)?\}/);
   assert.match(index, /transition:opacity \.4s ease-out, transform \.4s ease-out/);
 });
 
