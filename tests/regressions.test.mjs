@@ -51,6 +51,31 @@ test('every premium/member access-code input opts out of password autofill', () 
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the premium/course unlock flow posts its result text ("Enter
+// your access code", "Incorrect code.", "Premium unlocked...") into a plain
+// div with no role or aria-live -- on stock-lab.html's #premiumMsg, and on
+// the four curriculum pages' shared .lock-msg (set via assets/curriculum.js's
+// setMsg()) -- while the identical flow on premium-guidance.html
+// (#guidance-msg) and research-engine.html (#gateMessage) both mark their
+// status node role="status" aria-live="polite". A screen-reader user who
+// submits a right or wrong access code on the affected pages hears nothing
+// happen; on the two unaffected pages they hear the result.
+test('every premium/course unlock status message is an announced live region', () => {
+  const offenders = [];
+  for (const p of PAGES) {
+    const html = read(p);
+    for (const m of html.matchAll(/<div class="lock-msg"[^>]*>/g)) {
+      if (!/role="status"/.test(m[0]) || !/aria-live="polite"/.test(m[0])) offenders.push(`${p}: ${m[0]}`);
+    }
+    const premiumMsg = html.match(/<div[^>]*\bid="premiumMsg"[^>]*>/);
+    if (premiumMsg && (!/role="status"/.test(premiumMsg[0]) || !/aria-live="polite"/.test(premiumMsg[0]))) {
+      offenders.push(`${p}: ${premiumMsg[0]}`);
+    }
+  }
+  assert.deepEqual(offenders, [], `unlock status messages missing role="status"/aria-live="polite":\n  ${offenders.join('\n  ')}`);
+});
+
+// ---------------------------------------------------------------------------
 // Incident: replacing a quiz question without re-pointing the JSON answer key
 // (a sibling <script type="application/json"> keyed by choice index) would
 // silently grade the quiz wrong.
