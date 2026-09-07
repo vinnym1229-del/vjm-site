@@ -119,6 +119,20 @@ test('member results wall ships hidden until real cards exist', () => {
   assert.match(index, /Results vary and are never typical or guaranteed/);
 });
 
+// Every rendered card used to hard-code alt="Member milestone" on the image,
+// identical on every card, so a screen reader tabbing the wall announced the
+// same three words N times with no way to tell cards apart until it also
+// reached the visible-only figcaption. The figcaption already carries the
+// real per-card text (the caption), so the fix is the same pattern already
+// used for team-grid avatars just above: alt="" on the image and let the
+// adjacent visible text (here, the figcaption) be the one accessible name.
+test('results wall image alt is empty, not a static string, so the figcaption is the only per-card text', () => {
+  const cardMarkup = index.match(/const cards = d\.items[\s\S]*?<\/figure>'/)[0];
+  assert.match(cardMarkup, /<img src="[^"]*" alt=""/, 'result card image must use alt="", not a static caption');
+  assert.doesNotMatch(cardMarkup, /alt="Member milestone"/, 'a static alt string must not ship again');
+  assert.match(cardMarkup, /<figcaption>/, 'the figcaption must remain the real text alternative');
+});
+
 // The FAQ is Whop-verbatim ("I go live 3 to 5 times a week"), so 3-5 is the
 // only supported session frequency. A "10+ times a week" claim used to sit in
 // the meta description, the JSON-LD, the hero bullet list and the futures tier

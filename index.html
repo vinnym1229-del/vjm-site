@@ -1118,7 +1118,7 @@
        b) drop images into assets/results/ (create the folder), paste cards into
           .results-grid, and delete the hidden attribute on this section:
             <figure class="result-card">
-              <img src="assets/results/YOUR_IMAGE.jpg" alt="Member milestone" loading="lazy">
+              <img src="assets/results/YOUR_IMAGE.jpg" alt="" loading="lazy">
               <figcaption>Short factual caption (e.g., "Passed 50K — funded")</figcaption>
             </figure>
      Keep captions factual; results always vary — never guarantee outcomes.
@@ -2764,7 +2764,11 @@ setInterval(tickSessionClock, 30000);
       const grid = document.getElementById('results-grid');
       if (!section || !grid) return;
       const cards = d.items.filter((item) => item && item.imageUrl).map((item) =>
-        '<figure class="result-card"><img src="' + esc(item.imageUrl) + '" alt="Member milestone" loading="lazy"><figcaption>' +
+        // alt="" here, not a static string: the figcaption right below is the
+        // real text alternative, and a screen reader on a wall of N cards
+        // should not hear "Member milestone" N times in a row (see team-grid
+        // above, same pattern with the name as the adjacent visible text).
+        '<figure class="result-card"><img src="' + esc(item.imageUrl) + '" alt="" loading="lazy"><figcaption>' +
         esc(item.caption || '') + '</figcaption></figure>'
       );
       if (!cards.length) return;
