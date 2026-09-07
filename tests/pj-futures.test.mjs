@@ -259,6 +259,80 @@ test('futures calculators: real contract math + prop risk guard', () => {
   assert.match(index, /Trailing Drawdown/);
 });
 
+test('calcFutures computes real P&L per contract, not a flat per-point rate', () => {
+  // The above test only greps for the function's name — it would stay green
+  // even if the per-contract math regressed. YM has already done this once:
+  // its perPt was shipped as $1/pt (a copy-paste from ticks-are-$1 minis)
+  // when the real E-mini Dow rate is $5/pt, so every YM result rendered 5x
+  // too small (see the comment above calcFutures). Extract the live function
+  // and actually run it, the same way the sizing-simulator test does, so a
+  // reintroduced per-point error fails here instead of only being caught by
+  // eyeballing the widget.
+  const fnSrc = index.match(/function calcFutures\(\) \{[\s\S]*?\n\}\n/)[0];
+  const els = {};
+  const el = (id) => (els[id] ||= { value: '0', textContent: '', style: {} });
+  const sandbox = { document: { getElementById: el } };
+  vm.createContext(sandbox);
+  vm.runInContext(fnSrc + '\nthis.calcFutures = calcFutures;', sandbox);
+
+  // YM: 5pt move, 1 contract, at the real $5/pt rate must be $25, not $5.
+  el('fc-contract').value = 'YM';
+  el('fc-entry').value = '100';
+  el('fc-exit').value = '105';
+  el('fc-contracts').value = '1';
+  sandbox.calcFutures();
+  assert.equal(els['fc-pnl'].textContent, '+$25');
+  assert.equal(els['fc-details'].textContent, '5.00 points (5 ticks) × 1 contract × $5/pt');
+
+  // NQ winner, 2 contracts: 68pt x $20/pt x 2 = $2,720, plural "contracts".
+  el('fc-contract').value = 'NQ';
+  el('fc-entry').value = '21500';
+  el('fc-exit').value = '21568';
+  el('fc-contracts').value = '2';
+  sandbox.calcFutures();
+  assert.equal(els['fc-pnl'].textContent, '+$2,720');
+  assert.equal(els['fc-details'].textContent, '68.00 points (272 ticks) × 2 contracts × $20/pt');
+
+  // ES loser: negative P&L renders with the minus glyph, not a plain hyphen,
+  // and magnitude is never dropped from the sign flip.
+  el('fc-contract').value = 'ES';
+  el('fc-entry').value = '21568';
+  el('fc-exit').value = '21500';
+  el('fc-contracts').value = '1';
+  sandbox.calcFutures();
+  assert.equal(els['fc-pnl'].textContent, '−$3,400');
+});
+
+test('calcPropRisk floors the trade count and keys its cushion color off it', () => {
+  const fnSrc = index.match(/function calcPropRisk\(\) \{[\s\S]*?\n\}\n/)[0];
+  const els = {};
+  const el = (id) => (els[id] ||= { value: '0', textContent: '', innerHTML: '', style: {} });
+  const sandbox = { document: { getElementById: el } };
+  vm.createContext(sandbox);
+  vm.runInContext(fnSrc + '\nthis.calcPropRisk = calcPropRisk;', sandbox);
+
+  // $10,000 account, 5% risk/trade = $500/trade, $1,000 drawdown -> 2 trades
+  // of cushion. Under 5: red, "thin cushion".
+  el('pr-account').value = '10000';
+  el('pr-drawdown').value = '1000';
+  el('pr-risk').value = '5';
+  sandbox.calcPropRisk();
+  assert.equal(els['pr-trades'].textContent, '2 trades');
+  assert.equal(els['pr-trades'].style.color, 'var(--red)');
+  assert.match(els['pr-details'].innerHTML, /Thin cushion/);
+
+  // $50,000 account, 0.5% risk/trade = $250/trade, $6,000 drawdown -> 24
+  // trades. At/above 10: green, "healthy cushion" — never floored to 1 like
+  // the sizing simulator's old bug, and never rounded up past the real count.
+  el('pr-account').value = '50000';
+  el('pr-drawdown').value = '6000';
+  el('pr-risk').value = '0.5';
+  sandbox.calcPropRisk();
+  assert.equal(els['pr-trades'].textContent, '24 trades');
+  assert.equal(els['pr-trades'].style.color, 'var(--green)');
+  assert.match(els['pr-details'].innerHTML, /Healthy cushion/);
+});
+
 test('sizing simulator floors, never forces a one-contract minimum over budget', () => {
   // The widget converts a $ risk budget into a contract count. Every other
   // sizing tool on the site — the free futures-dissection lesson 17
