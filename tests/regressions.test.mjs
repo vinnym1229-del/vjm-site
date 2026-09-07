@@ -703,3 +703,27 @@ test('docs/ENTITLEMENTS.md quotes the real four-course lesson total', () => {
   assert.ok(entitlementsDoc, 'docs/ENTITLEMENTS.md: expected the "can read all <n> lessons" line');
   assert.equal(Number(entitlementsDoc[1]), total, 'docs/ENTITLEMENTS.md: lesson total is stale');
 });
+
+// Incident: docs/NEWSLETTER.md described the three forms feeding
+// newsletter_subscribers as "the homepage section, the prop-firms page, and
+// the 'where should I start' quiz result" -- but no quiz-based newsletter
+// form was ever built (docs/BRAINSTORM-BACKLOG.md still lists a placement
+// quiz as an unbuilt idea), and the real third source, the homepage's
+// prop-firm giveaway entry form (data-source="giveaway"), was never
+// mentioned at all. An owner reading the doc to explain the `source` column
+// would see "quiz" rows that never appear and unexplained "giveaway" rows
+// that do. Derives the real sources from the markup so a future form
+// addition/removal is caught here too, not just re-read by eye.
+test('docs/NEWSLETTER.md names the real newsletter form sources, not a nonexistent quiz', () => {
+  const sources = new Set();
+  for (const page of ['index.html', 'prop-firms.html']) {
+    for (const m of read(page).matchAll(/class="nl-signup"[^>]*data-source="([^"]+)"/g)) sources.add(m[1]);
+  }
+  assert.ok(sources.size > 0, 'expected at least one nl-signup form with a data-source attribute');
+
+  const doc = read('docs/NEWSLETTER.md');
+  for (const source of sources) {
+    assert.match(doc, new RegExp('`' + source + '`'), `docs/NEWSLETTER.md: missing mention of the "${source}" source`);
+  }
+  assert.doesNotMatch(doc, /quiz/i, 'docs/NEWSLETTER.md: no newsletter form is fed by a quiz');
+});

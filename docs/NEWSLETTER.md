@@ -4,8 +4,10 @@
 
 The site now collects newsletter signups into **your own D1 database**
 (`vjm-content`, table `newsletter_subscribers`). Three forms feed it: the
-homepage section, the prop-firms page, and the "where should I start" quiz
-result. All three post to `/api/newsletter/subscribe`.
+homepage newsletter section, the homepage's prop-firm giveaway entry form,
+and the prop-firms page. All three post to `/api/newsletter/subscribe` and
+are distinguished in the `source` column by `home`, `giveaway`, and
+`prop-firms` respectively.
 
 What is **not** built: sending. There is no email provider wired into this
 repository and no credential for one, so nothing here can put a message in an
