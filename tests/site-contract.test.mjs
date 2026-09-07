@@ -245,6 +245,35 @@ test('indexing stays off, coherently, in one place', () => {
   }
 });
 
+// Cloudflare Pages serves 404.html's content for ANY unmatched path while
+// leaving that original (nonexistent) path in the address bar — it does not
+// redirect to /404.html the way an app-router 404 boundary might. Every
+// other HTML page on the site is only ever reached at its own known
+// top-level path, so a relative asset reference there always resolves
+// against "/". 404.html has no such guarantee: it can be served for a
+// request at any depth (an old deep link, a typo'd nested path), so a
+// relative "assets/x.js" would resolve against that broken path instead of
+// site root and 404 a second time, silently, with the script never loading.
+test('404.html only ever references its own assets by root-absolute path', () => {
+  const html = read('404.html');
+  const localRefs = [...html.matchAll(/<(?:script|link)\b[^>]*\b(?:src|href)="([^"]+)"/g)]
+    .map((m) => m[1])
+    .filter((v) => !/^(?:https?:)?\/\//.test(v)); // drop cross-origin font/CDN links
+  assert.ok(localRefs.length > 0, 'expected at least one local asset reference to check');
+  for (const ref of localRefs) {
+    assert.ok(ref.startsWith('/'), `404.html asset "${ref}" must be root-absolute (start with "/"), since a` +
+      ' relative path resolves against whatever broken URL the visitor actually hit, not against site root');
+  }
+  // Prove the failure mode directly: the browser resolves a relative src
+  // against the document's actual (unmatched, arbitrarily deep) URL.
+  const deepRequestUrl = 'https://not-financial-advice-vjm.com/some/old/deep-link';
+  assert.notEqual(
+    new URL('assets/theme.js', deepRequestUrl).pathname,
+    '/assets/theme.js',
+    'sanity check: a relative reference really does resolve to the wrong path from a nested 404 URL',
+  );
+});
+
 // stock-lab.html's premium gate only checks "is there an active session" (any
 // tier), but the /api/premium-stock-research call it makes once unlocked is
 // Complete-tier gated (see functions/api/_lib/entitlements.js). A Futures Core
