@@ -125,6 +125,21 @@ test('stock-lab.html basic-research status regions are announced', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the same silent-status-change pattern once more, on the Lesson
+// Assistant's own coverage line. premium-guidance.html's #lesson-coverage
+// <p> is rewritten by loadLessonCatalogue() between a sign-in/no-lessons
+// error and a "N lessons available to your membership" summary, with no
+// role or aria-live -- a screen-reader user opening the assistant hears
+// nothing when the lesson list finishes loading or fails to load at all.
+test('premium-guidance.html lesson-coverage status region is announced', () => {
+  const html = read('premium-guidance.html');
+  const m = html.match(/<p[^>]*\bid="lesson-coverage"[^>]*>/);
+  assert.ok(m, '#lesson-coverage not found');
+  assert.match(m[0], /role="status"/, `missing role="status": ${m[0]}`);
+  assert.match(m[0], /aria-live="polite"/, `missing aria-live="polite": ${m[0]}`);
+});
+
+// ---------------------------------------------------------------------------
 // Incident: the same silent-status-change pattern again, on the site's paid
 // flagship tool. research-engine.html's #storageStatus and its four
 // #*SourceStatus spans (loadOptions/loadStock/loadSectors/loadBiotech,

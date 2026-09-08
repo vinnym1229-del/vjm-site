@@ -194,7 +194,7 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
     <div style="background:rgba(22,22,24,.72);border:1px solid var(--bdr);border-radius:14px;padding:16px;">
       <label for="lesson-select" style="display:block;font-size:.72rem;color:var(--m2);text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:6px;">Lesson</label>
       <select class="field" id="lesson-select" style="margin:0 0 6px;width:100%;"><option value="">Loading your lessons…</option></select>
-      <p id="lesson-coverage" style="color:var(--muted);font-size:.72rem;margin:0 0 12px;"></p>
+      <p id="lesson-coverage" role="status" aria-live="polite" style="color:var(--muted);font-size:.72rem;margin:0 0 12px;"></p>
       <div id="lesson-log" aria-live="polite" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:12px;"></div>
       <form id="lesson-form" style="display:flex;gap:8px;flex-wrap:wrap;">
         <input class="field" id="lesson-question" type="text" maxlength="500" placeholder="Ask about this lesson…" aria-label="Your lesson question" style="margin:0;flex:1;min-width:200px;">
