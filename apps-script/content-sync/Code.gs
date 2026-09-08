@@ -186,18 +186,22 @@ var TABS = [
 
 // The schedule the website currently ships hard-coded, so the first sync does
 // not blank the page or quietly disagree with it. Copied from index.html's
-// week grid; a blank host is how an off slot is expressed (Monday 2:30), and
-// it renders struck through rather than disappearing.
+// week grid; a blank host is how an off slot is expressed, and it renders
+// struck through rather than disappearing. Current week is a Labor Day week
+// (Monday fully off, not just its usual NYPM slot) — the next hand update to
+// index.html's schedule should update this seed in the same commit, exactly
+// as it did this time. Rows s2 and s9 changed from the previous seed:
+// Monday NYAM/ASIA went from live to off, and Wednesday NYPM dropped Gainz.
 var SCHEDULE_SEED = [
-    ['s1', 'Mon', 'NYAM', '9:30 AM ET', 'Live trading with Caleb & Fin', ''],
+    ['s1', 'Mon', 'NYAM', '9:30 AM ET', '', 'No live trading'],
     ['s2', 'Mon', 'NYPM', '2:30 PM ET', '', 'No live trading'],
-    ['s3', 'Mon', 'ASIA', '8:00 PM ET', 'Live trading with Caleb & Fin', ''],
+    ['s3', 'Mon', 'ASIA', '8:00 PM ET', '', 'No live trading'],
     ['s4', 'Tue', 'NYAM', '9:30 AM ET', 'Live trading with PJTrades', ''],
     ['s5', 'Tue', 'NYPM', '2:30 PM ET', 'Order flow session with Gainz', ''],
     ['s6', 'Tue', 'CLASS', '5:30 PM ET', 'Night class with Caleb', ''],
     ['s7', 'Tue', 'ASIA', '8:00 PM ET', 'Live trading with Caleb & Fin', ''],
     ['s8', 'Wed', 'NYAM', '9:30 AM ET', 'Live trading with PJTrades', ''],
-    ['s9', 'Wed', 'NYPM', '2:30 PM ET', 'Live trading with KWT & Gainz', ''],
+    ['s9', 'Wed', 'NYPM', '2:30 PM ET', 'Live trading with KWT', ''],
     ['s10', 'Wed', 'ASIA', '8:00 PM ET', 'Live trading with Caleb & Fin', ''],
     ['s11', 'Thu', 'NYAM', '9:30 AM ET', 'Live trading with PJTrades', ''],
     ['s12', 'Thu', 'NYPM', '2:30 PM ET', 'Live trading with KWT', ''],

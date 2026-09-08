@@ -55,7 +55,7 @@ body.light-mode .hero { background: radial-gradient(ellipse at 50% 0%,rgba(179,3
 body.light-mode .proof-bar { background: var(--bg2); }
 body.light-mode #big-win { background: linear-gradient(135deg,#f6f6f7,#fafafa); border-color: #cfcfd4; }
 body.light-mode .win-card, body.light-mode .account-card, body.light-mode .testimonial,
-body.light-mode .insight-card, body.light-mode .service-card, body.light-mode .review-card { background: var(--card); border-color: var(--border); }
+body.light-mode .insight-card, body.light-mode .service-card { background: var(--card); border-color: var(--border); }
 body.light-mode .premium-box { background: linear-gradient(135deg,#ffffff,#f6f6f7); }
 body.light-mode .referral-box { background: linear-gradient(135deg,#ffffff,#f6f6f7); }
 body.light-mode .mentor-box { background: linear-gradient(135deg,#fafafa,#f6f6f7); }
@@ -981,21 +981,6 @@ body.light-mode .tier-card.hot::before{
 .social-btn svg{width:16px;height:16px;fill:currentColor;}
 
 /* ─── LATEST FROM THE DESK ─── */
-.lean-chip{display:inline-flex;align-items:center;gap:8px;background:var(--emerald-glow);border:1px solid var(--border);color:var(--emerald);border-radius:999px;padding:8px 20px;font-size:.84rem;font-weight:800;}
-.ann-card{background:var(--card);border:1px solid var(--border);border:1px solid var(--border);border-radius:12px;padding:16px 20px;text-align:left;}
-.ann-card h3{font-size:.95rem;font-weight:800;margin-bottom:4px;}
-.ann-card p{color:var(--muted);font-size:.85rem;line-height:1.6;}
-.ann-card .ann-date{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
-.review-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:left;}
-.review-card .rv-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;}
-.review-card .rv-ticker{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:900;}
-.rv-dir{font-size:.66rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;border-radius:20px;padding:3px 10px;}
-.rv-long{background:rgba(255,255,255,.07);color:var(--green);}
-.rv-short{background:rgba(209,67,67,.12);color:var(--red);}
-.rv-r{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.15rem;}
-.rv-win{color:var(--green);}.rv-loss{color:var(--red);}.rv-scratch,.rv-be,.rv-unclassified{color:var(--muted);}
-.review-card p{color:var(--muted);font-size:.82rem;line-height:1.55;}
-.review-card .rv-date{font-size:.7rem;color:var(--muted);margin-top:8px;text-transform:uppercase;letter-spacing:1px;}
 
 /* ─── SESSION CLOCK ─── */
 #session-clock .sc-dot{width:8px;height:8px;border-radius:50%;background:var(--emerald);animation:pulseDot 2s infinite;}
@@ -1133,7 +1118,6 @@ body.light-mode .feature-card,
 body.light-mode .course-card,
 body.light-mode .service-card,
 body.light-mode .tier-card,
-body.light-mode .review-card,
 body.light-mode .win-card,
 body.light-mode .nl{
   box-shadow: 0 1px 2px rgba(16,16,20,.04), 0 6px 18px rgba(16,16,20,.06);

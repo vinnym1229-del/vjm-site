@@ -151,13 +151,18 @@ test('the stated session frequency matches the schedule table itself', () => {
   // template literal, and counting that as a session inflates the total by one.
   const staticMarkup = indexMarkup.replace(/<script[\s\S]*?<\/script>/gi, '');
   const realRows = [...staticMarkup.matchAll(/<div class="session-row">/g)].length;
-  assert.equal(realRows, 15, 'schedule table changed — update the copy and this number together');
+  // 13, not the usual 15: the current schedule table mirrors a Labor Day week
+  // (Monday fully off) — see the comment above #schedule in index.html. This
+  // is expected to move back to 15 once a non-holiday week's graphic replaces
+  // it; update this number and the copy together when that happens, exactly
+  // as this message says.
+  assert.equal(realRows, 13, 'schedule table changed — update the copy and this number together');
 
   // Every claim about the team's cadence must state that same figure.
   assert.match(index, new RegExp(`${realRows} (Sessions|sessions|team sessions|a week)`),
     `copy must state the ${realRows} sessions the schedule actually lists`);
   assert.doesNotMatch(index, /3–5x|3&ndash;5 times each week|3–5 times each week/,
-    'the team cadence is 15 a week, not 3-5 — that was PJ personally');
+    `the team cadence is far higher than 3-5 (currently ${realRows} this week) — that was PJ personally`);
 
   // …while PJ's own Whop-verbatim line is preserved untouched.
   assert.match(index, /3 to 5 times a week/, "PJ's own FAQ wording is Whop-verbatim and must stay");
@@ -165,10 +170,11 @@ test('the stated session frequency matches the schedule table itself', () => {
   // "10+ times a week" was never sourced from anything; it must not come back.
   assert.doesNotMatch(index, /10\+ times/, 'unsourced claim');
 
-  // A slot the owner's graphic marks as off (Monday 2:30) is shown, because a
-  // silent gap reads as an oversight rather than as "nothing today". It must
-  // carry .session-row-off, never .session-row: counted as a session it would
-  // inflate the figure above by one and the copy would overstate the week.
+  // Slots the owner's graphic marks as off (this week: all three of Monday's,
+  // for Labor Day) are shown, because a silent gap reads as an oversight
+  // rather than as "nothing today". They must carry .session-row-off, never
+  // .session-row: counted as sessions they would inflate the figure above and
+  // the copy would overstate the week.
   assert.match(staticMarkup, /class="session-row-off"/, 'the off slot must be shown, not silently dropped');
   const offRows = [...staticMarkup.matchAll(/<div class="session-row-off">/g)].length;
   assert.equal(offRows + realRows, 16, 'every schedule row is either a session or an explicit off slot');
@@ -240,15 +246,6 @@ test('sticky mobile CTA appears after hero and never covers the chat FAB', () =>
   const cta = new URL(m[1]);
   assert.equal(cta.origin + cta.pathname, 'https://whop.com/pjtradespremium', 'CTA must link to the Whop product');
   assert.ok(cta.searchParams.get('utm_content'), 'CTA must carry utm_content so the source is attributable');
-});
-
-test('latest-from-the-desk: CMS feeds + AI lean chip, hidden until data exists', () => {
-  assert.match(index, /id="latest"[^>]*display:none;/, 'section must start hidden');
-  assert.match(index, /\/api\/content\?type=announcements/);
-  assert.match(index, /\/api\/content\?type=trade_reviews/);
-  assert.match(index, /\/api\/market-brief/, 'lean chip fetch missing');
-  assert.match(index, /low-confidence ETF proxy/);
-  assert.match(index, /not trade signals/i, 'trade-review disclaimer missing');
 });
 
 test('futures calculators: real contract math + prop risk guard', () => {
@@ -511,32 +508,34 @@ test('pjNextSession returns the soonest session of the day, not the first one in
   assert.equal(next.session.start, 8 * 60);
 });
 
-test('schedule headline count updates from the CMS feed instead of staying hardcoded to 15', () => {
-  // #schedule's "Live Futures, 15 Sessions a Week" headline sits directly
+test('schedule headline count updates from the CMS feed instead of staying hardcoded', () => {
+  // #schedule's "Live Futures, N Sessions a Week" headline sits directly
   // above #week-grid, but until now nothing recomputed it when the CMS
   // schedule changed — loadCmsSections() rebuilt the grid itself and even
   // PJ_SESSIONS' per-day start times from the fetched rows, but the headline
   // span stayed a static literal. An owner adding or cutting a session through
   // the sheet this system was built for would change the visible grid while
-  // the headline right above it, still reading "15", quietly went false.
-  // Extract the live counting function and prove it derives the real count
-  // from CMS rows, not the current week's coincidental total.
+  // the headline right above it, still reading the old number, quietly went
+  // false. Extract the live counting function and prove it derives the real
+  // count from CMS rows, not the current week's coincidental total.
   const countSrc = index.match(/function countLiveSessions\(items\) \{[\s\S]*?\n {2}\}/)[0];
   const sandbox = {};
   vm.createContext(sandbox);
   vm.runInContext(countSrc + '\nthis.countLiveSessions = countLiveSessions;', sandbox);
 
   const hosted = (n) => Array.from({ length: n }, (_, i) => ({ day: 'Mon', session: 'NYAM' + i, host: 'PJ' }));
-  assert.equal(sandbox.countLiveSessions(hosted(20)), 20, 'a sheet with 20 real sessions must count as 20, not 15');
-  assert.equal(sandbox.countLiveSessions(hosted(9)), 9, 'a sheet cut down to 9 real sessions must count as 9, not 15');
+  assert.equal(sandbox.countLiveSessions(hosted(20)), 20, 'a sheet with 20 real sessions must count as 20');
+  assert.equal(sandbox.countLiveSessions(hosted(9)), 9, 'a sheet cut down to 9 real sessions must count as 9');
   // Hostless rows are marked-off slots (rendered as .session-row-off, not
   // .session-row) and must not inflate the count.
   const mixed = [...hosted(5), { day: 'Mon', session: 'NYPM', host: '' }, { day: 'Tue', session: 'NYPM', host: '  ' }];
   assert.equal(sandbox.countLiveSessions(mixed), 5, 'off slots (blank host) must not be counted as live sessions');
 
   // The headline span must actually be wired to that count, not just have a
-  // same-named function sitting unused nearby.
-  assert.match(indexMarkup, /<span class="gold" id="sched-freq">15 Sessions a Week<\/span>/,
+  // same-named function sitting unused nearby. The starting literal tracks
+  // whatever the static fallback grid currently lists (13, for the present
+  // Labor Day week) — this assertion is about the wiring, not that number.
+  assert.match(indexMarkup, /<span class="gold" id="sched-freq">13 Sessions a Week<\/span>/,
     'headline span needs a stable id for the CMS handler to update');
   assert.match(index, /getElementById\('sched-freq'\)[\s\S]{0,80}countLiveSessions\(active\)/,
     'the schedule fetch handler must write the live count into #sched-freq');
@@ -660,7 +659,7 @@ test('the sheet-driven schedule can express an off slot, like the hard-coded one
   // …and must not feed the live countdown, which would tick down to a session
   // nobody runs.
   assert.match(index, /Hostless rows are cancelled slots/);
-  // The off row keeps its own class so the "15 sessions" count stays honest.
+  // The off row keeps its own class so the schedule's session count stays honest.
   assert.doesNotMatch(index, /session-row-off[^]{0,40}sess-name[^]{0,200}host host-/,
     'an off row must not carry a host colour class');
 });

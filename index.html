@@ -535,22 +535,6 @@
   </div>
 </section>
 
-<!-- LATEST FROM THE DESK — live data, owner-driven. Announcements + trade
-     reviews come from the Google Sheet CMS (/api/content); the lean chip comes
-     from the AI pre-market brief (/api/market-brief). The whole section stays
-     hidden until real data exists — never rendered empty to visitors. -->
-<section id="latest" style="background:var(--bg2);padding:70px 24px;display:none;">
-  <div class="section-inner">
-    <div style="text-align:center;margin-bottom:34px;" data-reveal>
-      <div class="section-tag">Latest from the Desk</div>
-      <h2 class="section-title">Live From <span class="gold">PJ's Desk</span></h2>
-      <a id="lean-chip" href="premarket.html" style="display:none;text-decoration:none;" rel="noopener"></a>
-    </div>
-    <div id="latest-ann" style="display:grid;gap:12px;max-width:820px;margin:0 auto 30px;"></div>
-    <div id="latest-reviews" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;max-width:960px;margin:0 auto;"></div>
-  </div>
-</section>
-
 <!-- INTRO VIDEO — sits above the bundle options (owner request).
      The file IS committed, at assets/pj-intro.mp4 (17MB, under the 25MB
      per-file limit). data-video-mp4 pointed at /video/pj-intro.mp4 — a path
@@ -1137,34 +1121,43 @@
 </section>
 
 <!-- WEEKLY STREAM SCHEDULE — mirrored from the owner's "PJ's Stream Schedule"
-     graphic for the week of Aug 31 – Sep 4, 2026. Sessions recur weekly; hosts
+     graphic for the week of Sep 7 – Sep 11, 2026. Sessions recur weekly; hosts
      can shift week to week — TODO: move to the schedule CMS tab so the owner
      updates this from the Google Sheet without code, instead of this being a
      hand edit every Monday.
 
-     Changes from the Aug 24–28 week: Monday 2:30 is off (the graphic says so
-     explicitly, so the page does too rather than leaving a silent gap),
-     Wednesday 2:30 gains Gainz alongside KWT, and Thursday's Asia session is
-     Caleb AND Fin. Session count is unchanged at 15 — see the test in
-     tests/pj-futures.test.mjs that derives the "15 a week" copy from these
-     rows rather than trusting it. -->
+     Changes from the Aug 31 – Sep 4 week: Monday is Labor Day, so all three
+     sessions (NYAM/NYPM/ASIA) are off, not just the usual NYPM slot — the
+     graphic's own "HAPPY LABOR DAY" banner is why, and the day heading below
+     notes it rather than leaving three off-rows unexplained. Wednesday 2:30
+     drops back to KWT alone (no Gainz). That takes the real session count
+     from 15 to 13 for this one week — #sched-freq and the test in
+     tests/pj-futures.test.mjs that derives the "N a week" copy from these
+     rows both follow it down; next week's normal (non-holiday) Monday
+     restores 15 and both should follow back up. This is a temporary,
+     date-specific exception to the standing "15 sessions a week, every
+     weekday" claim made elsewhere on the site (meta description, hero,
+     tier card) — those describe the typical cadence and are deliberately
+     left alone, not this one week's holiday closure. -->
 <section id="schedule" style="background:var(--bg2);">
   <div class="section-inner">
     <div style="text-align:center;margin-bottom:40px;" data-reveal>
       <div class="section-tag">Stream Schedule</div>
-      <h2 class="section-title">Live Futures, <span class="gold" id="sched-freq">15 Sessions a Week</span></h2>
+      <h2 class="section-title">Live Futures, <span class="gold" id="sched-freq">13 Sessions a Week</span></h2>
       <p class="section-sub" style="margin:0 auto 20px;">All times ET. Sessions run inside the Discord — the <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold-ink);">#announcements channel</a> is always the source of truth for week-to-week changes.</p>
       <div id="session-clock" style="display:inline-flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:9px 22px;font-size:.88rem;font-weight:700;color:var(--text);"></div>
     </div>
     <div class="week-grid" id="week-grid" data-reveal>
       <div class="day-card">
-        <h3>Monday</h3>
-        <div class="session-row"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
-        <!-- Deliberately class="session-row-off", not "session-row": this is the
-             absence of a session, and counting it would inflate the "15 a week"
-             figure that tests/pj-futures.test.mjs derives from these rows. -->
+        <h3>Monday <span style="color:var(--muted);font-weight:700;font-size:0.68rem;text-transform:uppercase;letter-spacing:.5px;">— Labor Day</span></h3>
+        <!-- Deliberately class="session-row-off", not "session-row", on all three:
+             this is the absence of a session, and counting any of them would
+             inflate the "N a week" figure that tests/pj-futures.test.mjs derives
+             from these rows. Every other week Monday runs NYAM + ASIA; this is a
+             one-week holiday closure, not a permanent schedule change. -->
+        <div class="session-row-off"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host">No live trading</span></div>
         <div class="session-row-off"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host">No live trading</span></div>
-        <div class="session-row"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
+        <div class="session-row-off"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host">No live trading</span></div>
       </div>
       <div class="day-card">
         <h3>Tuesday</h3>
@@ -1176,7 +1169,7 @@
       <div class="day-card">
         <h3>Wednesday</h3>
         <div class="session-row"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host host-pj">Live trading with PJTrades</span></div>
-        <div class="session-row"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host host-kwt">Live trading with KWT &amp; Gainz</span></div>
+        <div class="session-row"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host host-kwt">Live trading with KWT</span></div>
         <div class="session-row"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
       </div>
       <div class="day-card">
@@ -2509,79 +2502,6 @@ function tickSessionClock() {
 }
 tickSessionClock();
 setInterval(tickSessionClock, 30000);
-
-// ─── LATEST FROM THE DESK (CMS + AI brief) ───
-// Section stays display:none until real data arrives — never rendered empty.
-(function loadLatest() {
-  'use strict';
-  const section = document.getElementById('latest');
-  const esc = (s) => String(s == null ? '' : s).replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
-  let hasContent = false;
-
-  // 1) Today's AI futures lean (public GET; 404 until today's brief exists).
-  fetch('/api/market-brief', { cache: 'no-store' })
-    .then((r) => r.json().catch(() => ({})))
-    .then((d) => {
-      if (!d.ok || !d.lean || !d.lean.lean) return;
-      hasContent = true;
-      section.style.display = 'block';
-      const chip = document.getElementById('lean-chip');
-      chip.className = 'lean-chip';
-      chip.style.display = 'inline-flex';
-      chip.textContent = 'Today\u2019s futures lean: ' + String(d.lean.lean).toUpperCase() + ' (low-confidence ETF proxy) — read the brief \u2192';
-    })
-    .catch(() => {});
-
-  // 2) Owner announcements (Google Sheet CMS).
-  fetch('/api/content?type=announcements', { cache: 'no-store' })
-    .then((r) => r.json().catch(() => ({})))
-    .then((d) => {
-      if (!d.ok || !Array.isArray(d.items) || !d.items.length) return;
-      hasContent = true;
-      section.style.display = 'block';
-      const box = document.getElementById('latest-ann');
-      d.items.slice(0, 3).forEach((a) => {
-        const card = document.createElement('article');
-        card.className = 'ann-card';
-        let html = '';
-        if (a.title) html += '<h3>' + esc(a.title) + '</h3>';
-        if (a.body) html += '<p>' + esc(String(a.body).slice(0, 220)) + (String(a.body).length > 220 ? '…' : '') + '</p>';
-        html += '<span class="ann-date">' + esc(a.createdAt || '') + (a.pinned ? ' · 📌 pinned' : '') + '</span>';
-        if (a.link) html += ' <a href="' + esc(a.link) + '" target="_blank" rel="noopener" style="color:var(--gold-ink);font-size:.8rem;font-weight:700;">Open \u2197</a>';
-        card.innerHTML = html;
-        box.appendChild(card);
-      });
-    })
-    .catch(() => {});
-
-  // 3) Recent trade reviews (owner-curated examples, not signals).
-  fetch('/api/content?type=trade_reviews', { cache: 'no-store' })
-    .then((r) => r.json().catch(() => ({})))
-    .then((d) => {
-      if (!d.ok || !Array.isArray(d.items) || !d.items.length) return;
-      hasContent = true;
-      section.style.display = 'block';
-      const box = document.getElementById('latest-reviews');
-      d.items.slice(0, 3).forEach((t) => {
-        const card = document.createElement('article');
-        card.className = 'review-card';
-        const rCls = t.rMultiple != null && t.rMultiple >= 0 ? 'rv-win' : 'rv-loss';
-        const rTxt = t.rMultiple != null ? ((t.rMultiple >= 0 ? '+' : '') + t.rMultiple + 'R') : (t.result || '—');
-        let html = '<div class="rv-head"><span class="rv-ticker">' + esc(t.ticker) +
-          '</span><span class="rv-dir ' + (t.direction === 'short' ? 'rv-short' : 'rv-long') + '">' + esc(t.direction || 'long') + '</span></div>' +
-          '<div class="rv-r ' + rCls + '">' + esc(rTxt) + ' <span style="color:var(--muted);font-size:.72rem;font-weight:600;">' + esc(t.result || '') + '</span></div>';
-        if (t.notes) html += '<p>' + esc(String(t.notes).slice(0, 140)) + (String(t.notes).length > 140 ? '…' : '') + '</p>';
-        html += '<div class="rv-date">' + esc(t.tradedAt || '') + '</div>';
-        card.innerHTML = html;
-        box.appendChild(card);
-      });
-      const note = document.createElement('p');
-      note.style.cssText = 'grid-column:1/-1;text-align:center;color:var(--muted);font-size:.7rem;';
-      note.textContent = 'Owner-curated examples for education — not trade signals. Results vary and are never typical.';
-      box.appendChild(note);
-    })
-    .catch(() => {});
-})();
 
 // ─── OWNER CMS SECTIONS (schedule/team/faq/bundles/stats/results) ───
 // Each section keeps its static fallback markup until the CMS fetch returns
