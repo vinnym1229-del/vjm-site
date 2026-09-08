@@ -301,6 +301,33 @@
 .vjm-chat-send:disabled{opacity:.5;cursor:wait;}
 .vjm-chat-foot{padding:7px 12px;text-align:center;font-size:.68rem;color:#6f6f76;border-top:1px solid #2a2a2e;}
 @media (prefers-reduced-motion:reduce){.vjm-chat-fab{transition:none;}}
+/* Light is the site's default theme (assets/theme.js), and this widget loads
+ * on 15 of the site's 16 pages, but every color above was tuned for dark mode
+ * only -- no body.light-mode restatement anywhere in this file, unlike every
+ * other themed component (site.css, curriculum.css, tokens.css, this file's
+ * own sibling assets/live-ticker.js). Two concrete results on a default,
+ * unmodified visit: the whole panel rendered as an opaque dark island over
+ * an otherwise white page, and the FAB's own :focus-visible outline (#d9d9dd,
+ * a near-white light gray) sat at ~1.4:1 contrast against a light page --
+ * under WCAG 1.4.11/2.4.7's 3:1 floor for a visible focus indicator, so a
+ * keyboard user tabbing to the assistant button on any page had no visible
+ * confirmation it was focused. Restated every selector here using the site's
+ * own established light-mode literals (--border #e3e3e6, --text #141416,
+ * --muted #5f5f66, --bg2 #f6f6f7, the "neutral" accent #26262a) so this file
+ * is self-contained the same way live-ticker.js's fix was, independent of
+ * whether the current page happens to load tokens.css. */
+body.light-mode .vjm-chat-fab:focus-visible{outline-color:#26262a;}
+body.light-mode .vjm-chat-panel{background:#ffffff;border-color:#e3e3e6;}
+body.light-mode .vjm-chat-head{background:rgba(0,0,0,.03);border-bottom-color:#e3e3e6;color:#141416;}
+body.light-mode .vjm-chat-close{color:#5f5f66;}
+body.light-mode .vjm-msg-bot{background:rgba(0,0,0,.045);border-color:#e3e3e6;color:#141416;}
+body.light-mode .vjm-msg-bot.data{color:#5f5f66;}
+body.light-mode .vjm-topic-btn{background:rgba(0,0,0,.045);border-color:#e3e3e6;color:#141416;}
+body.light-mode .vjm-cite{color:#6b6b70;}
+body.light-mode .vjm-support-links a{color:#26262a;}
+body.light-mode .vjm-chat-form{border-top-color:#e3e3e6;background:rgba(0,0,0,.02);}
+body.light-mode .vjm-chat-input{background:#f6f6f7;border-color:#e3e3e6;color:#141416;}
+body.light-mode .vjm-chat-foot{border-top-color:#e3e3e6;}
 `;
     const style = document.createElement('style');
     style.textContent = css;

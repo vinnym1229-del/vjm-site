@@ -184,3 +184,78 @@ test('core text/background pairs clear WCAG AA in both themes', () => {
     assert.ok(contrast(muted, bg) >= 4.5, `${label}: --muted on --bg is ${contrast(muted, bg).toFixed(2)}:1`);
   }
 });
+
+// The Market Assistant widget (assets/chatbot.js) loads on 15 of the site's
+// 16 pages and, unlike every other themed component (site.css, curriculum.css,
+// tokens.css, this file's own sibling assets/live-ticker.js), shipped with no
+// `body.light-mode` restatement anywhere -- every color in its injected style
+// block was tuned for dark mode only, on a site whose own default theme is
+// light. Two concrete, testable results on a default, unmodified visit: the
+// whole panel rendered as an opaque dark island over an otherwise white page,
+// and the FAB button's own `:focus-visible` outline (#d9d9dd, a near-white
+// light gray) sat at ~1.4:1 contrast against a light page -- under WCAG
+// 1.4.11/2.4.7's 3:1 floor for a visible non-text focus indicator, so a
+// keyboard user tabbing to the assistant button on any page got no visible
+// confirmation it was focused. These tests pin the fix at both levels: every
+// selector that carries a hardcoded color in the dark block must have a
+// `body.light-mode` counterpart, and the specific outline/text colors chosen
+// must actually clear WCAG AA/the 3:1 UI-component floor, not just exist.
+test('the chatbot widget FAB focus outline is visible against a light-mode page', () => {
+  const chatbot = read('assets/chatbot.js');
+  const m = chatbot.match(/body\.light-mode \.vjm-chat-fab:focus-visible\{outline-color:(#[0-9a-fA-F]{6})/);
+  assert.ok(m, 'no light-mode outline-color override for .vjm-chat-fab:focus-visible in assets/chatbot.js');
+  const ratio = contrast(hexToRgb(m[1]), hexToRgb('#ffffff'));
+  assert.ok(ratio >= 3,
+    `light-mode .vjm-chat-fab:focus-visible outline (${m[1]}) on white is ${ratio.toFixed(2)}:1 -- ` +
+    'under the WCAG 1.4.11/2.4.7 3:1 floor for a visible focus indicator');
+});
+
+test('every hardcoded chatbot widget selector has a light-mode restatement', () => {
+  const chatbot = read('assets/chatbot.js');
+  // Selectors from the dark-tuned block above the light-mode section that
+  // carry a literal color (background/border/color), each of which must
+  // reappear as `body.light-mode <selector>{...}` further down the file.
+  const SELECTORS = [
+    '.vjm-chat-panel', '.vjm-chat-head', '.vjm-chat-close', '.vjm-msg-bot',
+    '.vjm-msg-bot.data', '.vjm-topic-btn', '.vjm-cite', '.vjm-support-links a',
+    '.vjm-chat-form', '.vjm-chat-input', '.vjm-chat-foot',
+  ];
+  const missing = SELECTORS.filter((sel) => {
+    const re = new RegExp(`body\\.light-mode ${sel.replace(/[.]/g, '\\.')}\\{`);
+    return !re.test(chatbot);
+  });
+  assert.deepEqual(missing, [], `no body.light-mode restatement for: ${missing.join(', ')}`);
+});
+
+test('chatbot widget light-mode text colors clear WCAG AA against their own backgrounds', () => {
+  const chatbot = read('assets/chatbot.js');
+  const white = hexToRgb('#ffffff');
+  // .vjm-chat-panel/.vjm-chat-head/.vjm-msg-bot/.vjm-topic-btn all resolve to
+  // an (almost imperceptible) black-overlay-on-white background in light
+  // mode, so white is the correct backdrop to check every text color against.
+  const CASES = [
+    { sel: '.vjm-chat-head', prop: 'color' },
+    { sel: '.vjm-chat-close', prop: 'color' },
+    { sel: '.vjm-msg-bot', prop: 'color' },
+    { sel: '.vjm-msg-bot\\.data', prop: 'color' },
+    { sel: '.vjm-topic-btn', prop: 'color' },
+    { sel: '.vjm-cite', prop: 'color' },
+    { sel: '.vjm-support-links a', prop: 'color' },
+    { sel: '.vjm-chat-input', prop: 'color' },
+    { sel: '.vjm-chat-foot', prop: 'color' },
+  ];
+  for (const { sel, prop } of CASES) {
+    const block = chatbot.match(new RegExp(`body\\.light-mode ${sel}\\{([^}]*)\\}`));
+    assert.ok(block, `no body.light-mode block for ${sel}`);
+    const m = block[1].match(new RegExp(`(?<![-\\w])${prop}:(#[0-9a-fA-F]{6})`));
+    if (!m) continue; // .vjm-chat-foot only restates its border in this block; color was already AA-clean unchanged
+    const ratio = contrast(hexToRgb(m[1]), white);
+    assert.ok(ratio >= 4.5, `light-mode ${sel} ${prop} (${m[1]}) on white is ${ratio.toFixed(2)}:1`);
+  }
+  // .vjm-chat-foot's color was left at its original dark-mode literal
+  // (#6f6f76) because it already clears AA on white (4.99:1) -- pin that so a
+  // future edit to either value can't silently drop it back under the floor.
+  const footColor = chatbot.match(/\.vjm-chat-foot\{[^}]*color:(#[0-9a-fA-F]{6})/)[1];
+  assert.ok(contrast(hexToRgb(footColor), white) >= 4.5,
+    `.vjm-chat-foot's unchanged color (${footColor}) no longer clears AA on a light-mode background`);
+});
