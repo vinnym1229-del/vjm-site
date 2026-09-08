@@ -146,7 +146,7 @@ body.light-mode .footer{border-top-color:var(--line);color:var(--muted)}
       <div><h2>Yahoo Finance News Reel</h2><p>Market and currency headlines refresh through the site API when available. The direct Yahoo link always remains available.</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" onclick="loadYahooNews(true)">Refresh News</button><a class="btn ghost" href="https://finance.yahoo.com/news/" target="_blank" rel="noopener noreferrer">Open Yahoo</a></div>
     </div>
-    <div id="finance-news-status" style="color:var(--muted);font-size:.86rem">Loading market headlines...</div>
+    <div id="finance-news-status" role="status" aria-live="polite" style="color:var(--muted);font-size:.86rem">Loading market headlines...</div>
     <div id="finance-news" class="news"><div class="empty">Loading Yahoo Finance headlines...</div></div>
   </section>
 
@@ -156,7 +156,7 @@ body.light-mode .footer{border-top-color:var(--line);color:var(--muted)}
     <select class="control" id="range" aria-label="Filter by date range"><option value="week" selected>This week</option><option value="today">Today only</option><option value="next24">Next 24 hours</option><option value="future">Future only</option></select>
   </section>
   <div class="quick"><button class="active" data-impact="major" data-range="week">USD Red + Orange · Week</button><button data-impact="High" data-range="week">Red Folder Only</button><button data-impact="Medium" data-range="week">Orange Folder Only</button><button data-impact="major" data-range="today">Today</button><button data-impact="major" data-range="next24">Next 24h</button></div>
-  <div class="status"><div id="calendar-status"><strong>Loading</strong> calendar...</div><button class="btn" onclick="loadCalendar(true)">Refresh Now</button></div>
+  <div class="status"><div id="calendar-status" role="status" aria-live="polite"><strong>Loading</strong> calendar...</div><button class="btn" onclick="loadCalendar(true)">Refresh Now</button></div>
   <section class="table" id="calendar-table"></section>
 
   <div class="note"><strong style="color:var(--gold-ink)">API note:</strong> this page uses <code>/api/forex-calendar?currency=USD&amp;impact=major</code>. No key is required for the included public Forex Factory/Fair Economy feed. If the feed is blocked, this page intentionally shows no dated fallback events instead of guessing. If you ever get a paid or private calendar feed, add it as <code>FOREX_CALENDAR_SOURCE_URL</code> in Cloudflare and the Worker will use it without rebuilding. Risk rule: news can create spreads, slippage, fakeouts, and instant reversals. This calendar is risk awareness, not a trade signal.</div>

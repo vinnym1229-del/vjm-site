@@ -76,6 +76,30 @@ test('every premium/course unlock status message is an announced live region', (
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the same silent-status-change defect as the unlock-message fix
+// above, on a different flow. forex-calendar.html's #calendar-status and
+// #finance-news-status divs, and premarket.html's #statusRow chip, all get
+// their text swapped by inline-script fetches (loadCalendar(),
+// loadYahooNews(), statusChip()) with no role or aria-live anywhere on the
+// page -- e.g. a throttled feed silently relabels "Live" as "Cached" and a
+// screen-reader user hears nothing change.
+test('live-refreshing calendar/premarket status regions are announced', () => {
+  const offenders = [];
+  const checks = [
+    ['forex-calendar.html', 'calendar-status'],
+    ['forex-calendar.html', 'finance-news-status'],
+    ['premarket.html', 'statusRow'],
+  ];
+  for (const [page, id] of checks) {
+    const html = read(page);
+    const m = html.match(new RegExp(`<div[^>]*\\bid="${id}"[^>]*>`));
+    if (!m) { offenders.push(`${page}: #${id} not found`); continue; }
+    if (!/role="status"/.test(m[0]) || !/aria-live="polite"/.test(m[0])) offenders.push(`${page}: ${m[0]}`);
+  }
+  assert.deepEqual(offenders, [], `status regions missing role="status"/aria-live="polite":\n  ${offenders.join('\n  ')}`);
+});
+
+// ---------------------------------------------------------------------------
 // Incident: replacing a quiz question without re-pointing the JSON answer key
 // (a sibling <script type="application/json"> keyed by choice index) would
 // silently grade the quiz wrong.
