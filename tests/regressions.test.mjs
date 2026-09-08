@@ -916,3 +916,16 @@ test('docs/NEWSLETTER.md states the correct count of newsletter form sources', (
   assert.match(read('docs/NEWSLETTER.md'), new RegExp(`\\b${word} forms feed it\\b`, 'i'),
     `docs/NEWSLETTER.md: expected "${word} forms feed it" for the ${count} real sources found`);
 });
+
+// Incident: privacy.html, terms.html and risk-disclosure.html each carry a
+// small nav strip that links to stock-lab.html, but the link text still read
+// "Stock Tracker" -- the tool's name before it became "Stock Lab" everywhere
+// else on the site (nav dropdowns, footers, premium-guidance.html). A visitor
+// on a legal page saw a tool name that appears nowhere else on the site.
+test('the legal pages\' nav strip calls the stock tool "Stock Lab", not its old name', () => {
+  for (const page of ['privacy.html', 'terms.html', 'risk-disclosure.html']) {
+    const html = read(page);
+    assert.doesNotMatch(html, /Stock Tracker/, `${page}: stale "Stock Tracker" label`);
+    assert.match(html, /href="stock-lab\.html"[^>]*>Stock Lab</, `${page}: nav strip missing the "Stock Lab" link`);
+  }
+});
