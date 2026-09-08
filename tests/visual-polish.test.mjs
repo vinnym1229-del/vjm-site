@@ -157,7 +157,7 @@ test('light mode: text that was painted for a dark surface stays repainted', () 
 });
 
 test('light mode: the featured card and the page bolts are actually visible', () => {
-  // The ring around the Complete card was still the DARK art — a white-hot
+  // The ring around the Trifecta card was still the DARK art — a white-hot
   // filament fading to red — which on a white page loses its brightest half.
   assert.match(siteCss, /body\.light-mode \.tier-card\.hot::before\{[\s\S]{0,200}?background-image:/,
     'the featured card needs all-red bolt art in light mode');
@@ -174,7 +174,7 @@ test('light mode: the featured card and the page bolts are actually visible', ()
 });
 
 test('the billing tabs clear the featured card\'s bolt ring', () => {
-  // The ring bleeds outside the Complete card on purpose, and it reaches
+  // The ring bleeds outside the Trifecta card on purpose, and it reaches
   // upwards by (the card's lift + the bleed). If the gap below the billing
   // tabs is smaller than that reach, the bolts are drawn on top of the tabs —
   // which is exactly what happened at a 36px gap.

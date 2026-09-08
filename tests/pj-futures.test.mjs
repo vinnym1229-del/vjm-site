@@ -17,16 +17,16 @@ const premarket = readFileSync(join(ROOT, 'premarket.html'), 'utf8');
 const indexMarkup = index.replace(/<!--[\s\S]*?-->/g, '');
 const guidance = readFileSync(join(ROOT, 'premium-guidance.html'), 'utf8');
 
-test('bundles: $100 futures core with 6mo/1yr options, $129 complete tier', () => {
+test('bundles: $100 futures core with 6mo/1yr options, $129 Trifecta tier', () => {
   assert.match(index, /\$100<span>\/mo<\/span>/, '$100/mo futures tier missing');
   assert.match(index, /\$529/, '6-month option missing');
   assert.match(index, /12% off/, '6-month save badge missing');
   assert.match(index, /\$1,000/, 'annual option missing');
   assert.match(index, /18% off/, 'annual save badge missing');
-  assert.match(index, /Complete Bundle/, 'complete bundle badge missing');
+  assert.match(index, /The Trifecta/, 'Trifecta badge missing');
   assert.match(index, /\$129<span>\/mo<\/span>/, '$129 all-markets price missing');
   assert.match(index, /Futures \+ Options \+ Stocks/, 'all-markets scope label missing');
-  assert.match(index, /Complete educational materials/i, 'educational materials line missing');
+  assert.match(index, /All three markets, one membership/i, 'educational materials line missing');
   assert.match(index, /Live callouts/i, 'live callouts line missing');
   // Old single-price copy must be gone.
   assert.doesNotMatch(index, /Join Premium — \$129\/mo/);
@@ -46,11 +46,11 @@ test('futures-first identity', () => {
   assert.doesNotMatch(index, /BINANCE:ETHUSDT/, 'crypto-heavy tape should be gone');
 });
 
-test('whop listing facts showcased (owner screenshots, 2026-08-24)', () => {
-  assert.match(index, /2,240 reviews/);
-  assert.match(index, /49,136/, 'joined count missing');
+test('whop listing facts showcased (owner screenshots, 2026-09-08)', () => {
+  assert.match(index, /2,256 reviews/);
+  assert.match(index, /49,762/, 'joined count missing');
   assert.match(index, /2\.8K members/);
-  assert.match(index, /97% \(2167\)/, '5-star review bar missing');
+  assert.match(index, /97% \(2188\)/, '5-star review bar missing');
   assert.match(index, /win up to \$50,000/i, 'giveaway line missing');
 });
 

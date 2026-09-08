@@ -198,7 +198,7 @@ test('each tier has its own CTA carrying its plan', () => {
   assert.match(indexMarkup, /id="cta-futures-core"[^>]*data-vjm-plan="futures_core"/);
   assert.match(indexMarkup, /id="cta-complete"[^>]*data-vjm-plan="complete"/);
   assert.match(indexMarkup, /Join Futures Core — \$100\/mo/);
-  assert.match(indexMarkup, /Get Complete — \$129\/mo/);
+  assert.match(indexMarkup, /Get The Trifecta — \$129\/mo/);
   // The per-plan checkout URLs are not invented — they ship empty and TODO'd.
   assert.match(index, /const WHOP_PLAN_URLS = \{/);
   assert.match(index, /futures_core: '', \/\/ TODO: owner to confirm/);

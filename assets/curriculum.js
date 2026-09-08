@@ -310,14 +310,14 @@
   // Mirrors RESOURCE_TIERS in functions/api/_lib/entitlements.js, which is
   // the authority. This copy grants nothing; it exists so a locked page can
   // say which plan contains it and what that plan costs, instead of the old
-  // "Futures or Complete" line that was wrong on two of the four courses.
+  // "Futures or Complete" line (now "Futures or The Trifecta") that was wrong on two of the four courses.
   const PLANS = {
     futures_core: {
       key: 'futures_core', name: 'Futures Core', price: 100,
       includes: 'Futures Dissection and Psychology Enhancer',
     },
     complete: {
-      key: 'complete', name: 'Complete', price: 129,
+      key: 'complete', name: 'The Trifecta', price: 129,
       includes: 'everything in Futures Core plus Stock Breakdown, Options Lab and the premium research tools',
     },
   };
@@ -496,9 +496,9 @@ body.light-mode .curr .vjm-miss{background:rgba(0,0,0,.03);}
   //                 middleware stripped .gated-content even though the
   //                 session is valid), so showing them an "enter your access
   //                 code" box is nonsense: they have a code, it works, it
-  //                 just does not buy this course. On a Complete-only page
-  //                 the only paid tier below Complete is Futures Core, so
-  //                 the gap is exactly Complete minus Futures Core.
+  //                 just does not buy this course. On a Trifecta-only page
+  //                 the only paid tier below The Trifecta is Futures Core, so
+  //                 the gap is exactly The Trifecta minus Futures Core.
   //   entitled    — handled by unlockAll().
   //
   // All of this renders INSIDE .lock-gate, which is a sibling of
@@ -554,7 +554,7 @@ body.light-mode .curr .vjm-miss{background:rgba(0,0,0,.03);}
     const isUpgrade = !!held && course.plan === 'complete';
     const cta = planCtaButton(
       course.plan,
-      isUpgrade ? `Upgrade to Complete — ${money(need.price - held.price)}/mo more` : `Get ${need.name} — ${money(need.price)}/mo`,
+      isUpgrade ? `Upgrade to The Trifecta — ${money(need.price - held.price)}/mo more` : `Get ${need.name} — ${money(need.price)}/mo`,
       isUpgrade ? 'core-to-complete-upgrade' : 'under-tier-' + course.plan,
       'course_lock_under_tier',
       isUpgrade ? { name: 'core_to_complete_upgrade', props: { course: pageKey(), from: 'futures_core', to: 'complete', delta: need.price - held.price } } : null,
@@ -574,7 +574,7 @@ body.light-mode .curr .vjm-miss{background:rgba(0,0,0,.03);}
   function renderSignedOutGate(gate, course) {
     const need = PLANS[course.plan];
     const lead = qs('p', gate);
-    if (lead && !/\b(Futures Core|Complete)\b/.test(lead.textContent || '')) {
+    if (lead && !/\b(Futures Core|Trifecta)\b/.test(lead.textContent || '')) {
       lead.textContent = `${course.title} is part of the ${need.name} plan. Enter your member access code below, or join to unlock it.`;
     }
     const panel = makeEl('div', 'vjm-panel vjm-plan-cta');

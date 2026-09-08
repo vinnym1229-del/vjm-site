@@ -670,8 +670,8 @@ test('each course lock names the plan that actually unlocks that course', () => 
   const expected = {
     'futures-dissection.html': ['Futures Core', '$100/mo'],
     'psychology-enhancer.html': ['Futures Core', '$100/mo'],
-    'stock-breakdown.html': ['Complete', '$129/mo'],
-    'options-lab.html': ['Complete', '$129/mo'],
+    'stock-breakdown.html': ['The Trifecta', '$129/mo'],
+    'options-lab.html': ['The Trifecta', '$129/mo'],
   };
   for (const [page, [plan, price]] of Object.entries(expected)) {
     const html = read(page);
@@ -681,7 +681,7 @@ test('each course lock names the plan that actually unlocks that course', () => 
       assert.ok(gate.includes(plan) && gate.includes(price), `${page}: a lock gate does not name ${plan} at ${price}`);
       assert.doesNotMatch(gate, /Futures or Complete membership/, `${page}: stale ambiguous plan copy`);
     }
-    if (plan === 'Complete') {
+    if (plan === 'The Trifecta') {
       for (const gate of gates) {
         assert.match(gate, /Futures Core does not/, `${page}: a Complete-only course must say Futures Core does not include it`);
       }
