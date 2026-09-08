@@ -979,15 +979,6 @@ body.light-mode .tier-card.hot::before{
 .social-btn{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:999px;padding:8px 18px;color:var(--muted);text-decoration:none;font-size:.82rem;font-weight:700;transition:all .2s;}
 .social-btn:hover{border-color:var(--muted);color:var(--text);transform:translateY(-2px);}
 .social-btn svg{width:16px;height:16px;fill:currentColor;}
-/* Latest-video card: a small preview strip, not a full player -- it is a
-   link to YouTube, not an embed, so it costs nothing to load and never
-   pulls in YouTube's own tracking scripts for a visitor who never clicks. */
-.yt-latest-card{display:flex;align-items:center;gap:12px;margin-top:14px;padding:10px;max-width:420px;background:var(--card);border:1px solid var(--border);border-radius:12px;text-decoration:none;transition:border-color .2s,transform .2s;}
-.yt-latest-card:hover{border-color:var(--muted);transform:translateY(-2px);}
-.yt-latest-card img{width:120px;height:68px;border-radius:8px;object-fit:cover;background:var(--bg2);flex-shrink:0;}
-.yt-latest-body{display:flex;flex-direction:column;gap:4px;min-width:0;}
-.yt-latest-label{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
-.yt-latest-title{font-size:.86rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 
 /* ─── LATEST FROM THE DESK ─── */
 

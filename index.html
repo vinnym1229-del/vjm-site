@@ -1228,18 +1228,6 @@
             Instagram
           </a>
         </div>
-        <!-- Latest-video card: filled in by loadLatestVideo() below from
-             /api/youtube-latest (a public YouTube RSS feed — no login or API
-             key needed from the owner). Stays hidden if that endpoint has no
-             channel configured or the feed is unreachable, exactly like the
-             other live-data sections on this page — never rendered empty. -->
-        <a id="yt-latest" href="#" target="_blank" rel="noopener" class="yt-latest-card" hidden>
-          <img id="yt-latest-thumb" src="" alt="" width="120" height="68" loading="lazy">
-          <div class="yt-latest-body">
-            <span class="yt-latest-label">Latest on YouTube</span>
-            <span id="yt-latest-title" class="yt-latest-title"></span>
-          </div>
-        </a>
       </div>
 
       <div data-reveal>
@@ -1720,23 +1708,6 @@ const SocialStats = (function () {
       reviews: fmt(data.whop.reviewCount),
     });
   }
-})();
-
-// ─── LATEST YOUTUBE VIDEO — card stays hidden until a real video loads ───
-(async function loadLatestVideo() {
-  let data;
-  try {
-    const res = await fetch('/api/youtube-latest', { credentials: 'same-origin' });
-    data = await res.json();
-  } catch { return; }
-  if (!data || !data.ok || !data.video) return;
-  const card = document.getElementById('yt-latest');
-  if (!card) return;
-  card.href = data.video.url;
-  document.getElementById('yt-latest-thumb').src = data.video.thumbnail;
-  document.getElementById('yt-latest-thumb').alt = data.video.title;
-  document.getElementById('yt-latest-title').textContent = data.video.title;
-  card.hidden = false;
 })();
 
 
