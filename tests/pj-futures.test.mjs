@@ -606,6 +606,37 @@ test('CMS Phase 3: schedule/team/faqs/bundles/stats/results wired with fallbacks
   assert.match(index, /grid\.appendChild\(card\)/, 'team CMS must append real cards');
 });
 
+test('CMS-rendered bundle CTAs carry the same funnel attribution as the static tier cards', () => {
+  // The static cta-futures-core/cta-complete anchors tag their href with
+  // data-vjm-event="plan_cta" plus -plan/-location/-props so funnel.js can
+  // tell which tier a checkout click came from. Once an owner curates real
+  // bundles through the CMS, loadCmsSections() replaces #tier-grid's whole
+  // innerHTML with a freshly-built anchor — which used to carry none of
+  // those attributes, so every CMS-managed bundle's clicks fell back to the
+  // generic whop_checkout stage with no plan or price attached, silently
+  // losing per-tier conversion data (funnel.js's own analytics comment says
+  // this is exactly the metric the whole event layer exists to produce).
+  // Extract the live bundle-render map and drive it directly.
+  const escSrc = index.match(/const esc = \(s\) => [^\n]*;/)[0];
+  const mapSrc = index.match(/document\.getElementById\('tier-grid'\)\.innerHTML = d\.items\.map\(\(b\) => \{[\s\S]*?\}\)\.join\(''\);/)[0]
+    .replace("document.getElementById('tier-grid').innerHTML = ", 'return ');
+  const sandbox = {};
+  vm.createContext(sandbox);
+  vm.runInContext(escSrc + '\nfunction buildBundlesHtml(d) {\n' + mapSrc + '\n}\nthis.buildBundlesHtml = buildBundlesHtml;', sandbox);
+
+  const html = sandbox.buildBundlesHtml({ items: [
+    { name: 'Futures Core', price: '$100', period: 'mo', whopUrl: 'https://whop.com/x', features: [] },
+  ] });
+  assert.match(html, /data-vjm-event="plan_cta"/, 'CMS bundle CTA must fire plan_cta, not just the generic whop_checkout fallback');
+  assert.match(html, /data-vjm-plan="futures_core"/, 'plan must be derived from the CMS row\'s own name');
+  assert.match(html, /data-vjm-location="bundles"/);
+  // esc() HTML-entity-encodes the embedded JSON's quotes (browsers decode them
+  // back before funnel.js's propsFrom() ever sees the attribute), so match the
+  // encoded form actually shipped, not raw JSON quoting.
+  assert.match(html, /data-vjm-props='[^']*&quot;price&quot;:&quot;\$100\/mo&quot;[^']*'/,
+    'price/period must reach funnel.js as a prop, mirroring the static cards');
+});
+
 test('apps-script content bridge reads the new CMS tabs', () => {
   const gs = readFileSync(join(ROOT, 'apps-script', 'content-sync', 'Code.gs'), 'utf8');
   for (const tab of ['Schedule', 'Team', 'Faqs', 'Bundles', 'Stats', 'Results']) {

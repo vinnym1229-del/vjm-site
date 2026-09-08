@@ -2725,11 +2725,19 @@ setInterval(tickSessionClock, 30000);
           .map((f) => '<li><span class="tick">✓</span><span>' + esc(f) + '</span></li>').join('');
         const sub = b.saveBadge ? '<div class="tier-sub"><span class="tier-save">' + esc(b.saveBadge) + '</span></div>' : '';
         const url = b.whopUrl || 'https://whop.com/pjtradespremium';
+        // The static cards this replaces tag their CTA with data-vjm-event/-plan/
+        // -location/-props so funnel.js's plan_cta stage can tell tiers apart;
+        // without the same attributes here, a CMS-curated bundle's checkout click
+        // would fall through to the generic whop_checkout stage with no plan or
+        // price attached, silently losing per-tier conversion data.
+        const plan = String(b.name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'bundle';
+        const props = esc(JSON.stringify({ price: (b.price || '') + (b.period ? '/' + b.period : '') }));
         return '<div class="tier-card' + (b.highlight ? ' hot' : '') + '">' +
           '<div class="tier-name">' + esc(b.name) + '</div>' +
           '<div class="tier-price">' + esc(b.price || '') + (b.period ? '<span>/' + esc(b.period) + '</span>' : '') + '</div>' +
           sub + '<ul>' + feats + '</ul>' +
-          '<a href="' + esc(url) + '" target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;font-size:1.02rem;padding:15px;">Join on Whop ⭐</a>' +
+          '<a href="' + esc(url) + '" target="_blank" rel="noopener" class="btn btn-gold" style="width:100%;font-size:1.02rem;padding:15px;"' +
+          ' data-vjm-event="plan_cta" data-vjm-plan="' + esc(plan) + '" data-vjm-location="bundles" data-vjm-props=\'' + props + '\'>Join on Whop ⭐</a>' +
           '</div>';
       }).join('');
     })
