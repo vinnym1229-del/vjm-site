@@ -2813,10 +2813,19 @@ setInterval(tickSessionClock, 30000);
   // to take the class off, or the grid keeps a column reserved for something
   // that will never arrive and the copy sits off-centre beside a void.
   const unGrid = () => document.querySelector('.hero')?.classList.remove('has-car');
+  // Optional chaining: this can run before Three.js is ever touched, from the
+  // guard right below, where `section` itself may be the very thing missing.
+  function fail() { section?.remove(); unGrid(); }
 
-  if (reduced || !section || !track || !stage || !canvas || window.innerWidth <= 1099) { unGrid(); return; }
-
-  function fail() { section.remove(); unGrid(); }
+  // The narrow-screen/reduced-motion skip is a bail-out, not a special case:
+  // it must remove the section exactly like fail() does below, not just drop
+  // the grid class. Leaving #ferrari-showcase (and its .fs-loading spinner)
+  // in the DOM here meant a later resize past 1099px -- or turning off
+  // Reduce Motion in the OS while the tab stayed open, e.g. rotating a
+  // tablet from portrait to landscape -- made the CSS media query stop
+  // hiding it and revealed a spinner over a blank canvas that spins forever,
+  // since this IIFE already returned and nothing re-initializes it.
+  if (reduced || !section || !track || !stage || !canvas || window.innerWidth <= 1099) { fail(); return; }
 
   // A blocked or silently-dropped request (ad blockers, some corporate
   // firewalls) never calls onerror -- it just never resolves -- so without a

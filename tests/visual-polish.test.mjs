@@ -204,8 +204,25 @@ test('ferrari showcase (WebGL) never loads on phones or under reduced motion', (
     'narrow screens and reduced motion must collapse the whole section, not just hide the canvas');
 
   assert.match(index, /var reduced = window\.matchMedia && window\.matchMedia\('\(prefers-reduced-motion: reduce\)'\)\.matches;/);
-  assert.match(index, /if \(reduced \|\| !section \|\| !track \|\| !stage \|\| !canvas \|\| window\.innerWidth <= 1099\) \{ unGrid\(\); return; \}/,
-    'the module script must bail out, before importing Three.js, under any of these conditions — and drop the grid class on the way out');
+  assert.match(index, /if \(reduced \|\| !section \|\| !track \|\| !stage \|\| !canvas \|\| window\.innerWidth <= 1099\) \{ fail\(\); return; \}/,
+    'the module script must bail out, before importing Three.js, under any of these conditions — removing the section via fail(), not merely dropping the grid class, or a later resize/motion-setting change reveals a permanently-loading placeholder (see the dedicated test below)');
+});
+
+test('the narrow-screen / reduced-motion bail-out removes the section, not just the hero grid class', () => {
+  // The comment right above this guard says the whole point of skipping is
+  // that "nothing about the rest of the page depends on it" — but the skip
+  // used to call only unGrid(), leaving #ferrari-showcase (and its
+  // .fs-loading spinner, never marked fs-ready) sitting in the DOM, hidden
+  // solely by the CSS media query above. That query is re-evaluated live:
+  // resize the window back past 1099px, or turn off Reduce Motion in the OS
+  // while the tab stays open (e.g. rotating a tablet portrait->landscape),
+  // and the section reappears exactly as it was left — a spinner over a
+  // blank canvas that spins forever, because this async IIFE already
+  // returned and nothing ever re-initializes it. fail() must be null-safe
+  // here: this is the one call site where `section` itself can be the thing
+  // that's missing.
+  assert.match(index, /function fail\(\) \{ section\?\.remove\(\); unGrid\(\); \}/,
+    'fail() must tolerate a missing section, since the bail-out guard can call it before section is known to exist');
 });
 
 test('the car never displaces the hero copy from the page centre', () => {
@@ -237,7 +254,7 @@ test('the car never displaces the hero copy from the page centre', () => {
 
   // And when JS takes the car away at runtime, its layout hook goes with it.
   assert.match(index, /const unGrid = \(\) => document\.querySelector\('\.hero'\)\?\.classList\.remove\('has-car'\);/);
-  assert.match(index, /function fail\(\) \{ section\.remove\(\); unGrid\(\); \}/,
+  assert.match(index, /function fail\(\) \{ section\?\.remove\(\); unGrid\(\); \}/,
     'every failure path must drop the layout hook, not just remove the section');
 });
 
