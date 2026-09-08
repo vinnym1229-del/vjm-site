@@ -129,7 +129,7 @@ async function authorize(request, env) {
       body: {
         ok: false,
         code: 'upgrade_required',
-        error: 'Your plan does not include the Research Engine. It is part of the Complete membership.',
+        error: 'Your plan does not include the Research Engine. It is part of The Trifecta membership.',
         requiredTier: entitlement.required,
         heldTier: entitlement.held,
       },

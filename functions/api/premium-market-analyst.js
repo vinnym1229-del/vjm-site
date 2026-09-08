@@ -8,7 +8,7 @@
 //
 // Auth: HttpOnly premium session cookie (issued by /api/verify-premium),
 // verified with the shared session lib, then checked against RESOURCE_TIERS —
-// this tool is part of the Complete membership. No session at all is a 401;
+// this tool is part of The Trifecta membership. No session at all is a 401;
 // an authenticated member below the required tier is a 403 so the UI can say
 // "your plan does not include this" instead of asking them to sign in again.
 // This endpoint is served to the members' hub (premium-guidance.html) and to
@@ -218,7 +218,7 @@ async function isAuthorized(request, env) {
     body: {
       ok: false,
       code: 'upgrade_required',
-      error: 'Your plan does not include the premium market analyst. It is part of the Complete membership.',
+      error: 'Your plan does not include the premium market analyst. It is part of The Trifecta membership.',
       requiredTier: entitlement.required,
       heldTier: entitlement.held,
     },

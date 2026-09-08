@@ -690,6 +690,40 @@ test('each course lock names the plan that actually unlocks that course', () => 
 });
 
 // ---------------------------------------------------------------------------
+// Incident: commit 05a2ede renamed the $129/mo "Complete" tier to "The
+// Trifecta" across the hero, bundle cards, and stock-breakdown/options-lab's
+// lock gates, but missed every other place the same tier name is spoken to a
+// visitor: futures-dissection.html and psychology-enhancer.html's own
+// (differently-worded) "Futures Core or Complete membership" lock-gate
+// sentence, three backend 403 upgrade_required error strings
+// (research-engine.js, premium-stock-research.js, premium-market-analyst.js),
+// research-engine.html's static #planNotice fallback and its client-side
+// assets/research-engine.js PLAN_LOCKED_TEXT mirror, and stock-lab.html's
+// planLocked message. A Futures Core member hitting any of those paid tools
+// was told to look for a "Complete membership" that no longer exists
+// anywhere else on the site. Worse, curriculum.js's renderSignedOutGate only
+// rewrites a lock-gate paragraph when it does NOT already contain
+// /\b(Futures Core|Trifecta)\b/ — since the stale futures-dissection.html /
+// psychology-enhancer.html text already said "Futures Core", that guard
+// silently protected the stale copy from being client-side corrected too.
+test('the "Complete" tier name was fully retired, not just renamed in the obvious spots', () => {
+  for (const page of ['futures-dissection.html', 'psychology-enhancer.html', 'stock-breakdown.html', 'options-lab.html']) {
+    const html = read(page);
+    assert.doesNotMatch(html, /\bComplete membership\b/, `${page}: stale "Complete membership" lock-gate copy`);
+  }
+  for (const file of [
+    'functions/api/research-engine.js',
+    'functions/api/premium-stock-research.js',
+    'functions/api/premium-market-analyst.js',
+  ]) {
+    assert.doesNotMatch(read(file), /Complete membership/, `${file}: stale upgrade_required error text`);
+  }
+  assert.doesNotMatch(read('research-engine.html'), /Complete membership/, 'research-engine.html: stale #planNotice fallback');
+  assert.doesNotMatch(read('assets/research-engine.js'), /Complete membership/, 'assets/research-engine.js: stale PLAN_LOCKED_TEXT');
+  assert.doesNotMatch(read('stock-lab.html'), /Complete membership/, 'stock-lab.html: stale planLocked message');
+});
+
+// ---------------------------------------------------------------------------
 // Incident: the free futures-dissection Level-1 tool's "Compare an E-mini
 // against its Micro" chart paired contracts by stripping a literal 'M' from
 // both symbols and comparing what was left

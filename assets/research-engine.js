@@ -249,7 +249,7 @@
     }
   }
 
-  const PLAN_LOCKED_TEXT = 'Your plan does not include the Research Engine. It is part of the Complete membership.';
+  const PLAN_LOCKED_TEXT = 'Your plan does not include the Research Engine. It is part of The Trifecta membership.';
   function showPlanNotice(message) {
     const node = $('planNotice');
     if (!node) return;
