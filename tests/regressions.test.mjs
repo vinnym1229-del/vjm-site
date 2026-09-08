@@ -766,23 +766,47 @@ test('docs/ENTITLEMENTS.md quotes the real four-course lesson total', () => {
 // Incident: docs/NEWSLETTER.md described the three forms feeding
 // newsletter_subscribers as "the homepage section, the prop-firms page, and
 // the 'where should I start' quiz result" -- but no quiz-based newsletter
-// form was ever built (docs/BRAINSTORM-BACKLOG.md still lists a placement
-// quiz as an unbuilt idea), and the real third source, the homepage's
-// prop-firm giveaway entry form (data-source="giveaway"), was never
-// mentioned at all. An owner reading the doc to explain the `source` column
-// would see "quiz" rows that never appear and unexplained "giveaway" rows
-// that do. Derives the real sources from the markup so a future form
-// addition/removal is caught here too, not just re-read by eye.
-test('docs/NEWSLETTER.md names the real newsletter form sources, not a nonexistent quiz', () => {
+// form existed yet, and the real third source, the homepage's prop-firm
+// giveaway entry form (data-source="giveaway"), was never mentioned at all.
+// That was fixed by naming the three real sources -- but a fourth, genuinely
+// real one existed all along and this fix's own detection missed it: the
+// homepage quiz's own lead-capture box (renderQuizLead -> vjmLead.submit(),
+// source 'homepage-quiz') is a real, working signup path, just not a static
+// <form class="nl-signup" data-source="..."> the markup regex could see --
+// it is built with document.createElement/innerHTML at runtime and its
+// source is a JS object literal, not an HTML attribute. So the fix that
+// stopped the doc from naming a quiz that didn't exist also asserted the doc
+// must never mention "quiz" again, which quietly kept it wrong once one did.
+// Derives sources from both shapes so a future form addition/removal in
+// either shape is caught here, not just re-read by eye.
+function realNewsletterSources() {
   const sources = new Set();
   for (const page of ['index.html', 'prop-firms.html']) {
-    for (const m of read(page).matchAll(/class="nl-signup"[^>]*data-source="([^"]+)"/g)) sources.add(m[1]);
+    const html = read(page);
+    for (const m of html.matchAll(/class="nl-signup"[^>]*data-source="([^"]+)"/g)) sources.add(m[1]);
+    for (const m of html.matchAll(/vjmLead\.submit\([^)]*?source:\s*['"]([^'"]+)['"]/gs)) sources.add(m[1]);
   }
-  assert.ok(sources.size > 0, 'expected at least one nl-signup form with a data-source attribute');
+  return sources;
+}
+
+test('docs/NEWSLETTER.md names every real newsletter form source', () => {
+  const sources = realNewsletterSources();
+  assert.ok(sources.size > 0, 'expected at least one real newsletter lead source');
 
   const doc = read('docs/NEWSLETTER.md');
   for (const source of sources) {
     assert.match(doc, new RegExp('`' + source + '`'), `docs/NEWSLETTER.md: missing mention of the "${source}" source`);
   }
-  assert.doesNotMatch(doc, /quiz/i, 'docs/NEWSLETTER.md: no newsletter form is fed by a quiz');
+});
+
+// A form could be added/removed with its backtick mention kept in sync (the
+// test above) while the opening line's spelled-out count ("Three forms feed
+// it") is left stale -- exactly how the quiz form above went unnoticed, just
+// one field over. Pins the two counts together so they can't drift apart.
+test('docs/NEWSLETTER.md states the correct count of newsletter form sources', () => {
+  const count = realNewsletterSources().size;
+  const WORDS = ['zero', 'one', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven'];
+  const word = WORDS[count] || String(count);
+  assert.match(read('docs/NEWSLETTER.md'), new RegExp(`\\b${word} forms feed it\\b`, 'i'),
+    `docs/NEWSLETTER.md: expected "${word} forms feed it" for the ${count} real sources found`);
 });
