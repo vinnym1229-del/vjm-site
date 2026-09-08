@@ -100,6 +100,31 @@ test('live-refreshing calendar/premarket status regions are announced', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the identical silent-status-change pattern as the two checks
+// above, one flow over -- and missed by that run because it isn't a
+// calendar/premarket page. stock-lab.html's free "Basic Stock Research" tool
+// has its own status() helper (distinct from #premiumMsg's unlock flow,
+// already covered by the first test in this file) that rewrites #basicStatus
+// and #newsStatus between "Loading...", a success line, and a "feed
+// unavailable" line via runBasicResearch()/loadNews(), with no role or
+// aria-live on either node. A screen-reader user researching a free ticker
+// hears nothing when the Yahoo feed falls back to "unavailable here."
+test('stock-lab.html basic-research status regions are announced', () => {
+  const offenders = [];
+  const checks = [
+    ['stock-lab.html', 'basicStatus'],
+    ['stock-lab.html', 'newsStatus'],
+  ];
+  for (const [page, id] of checks) {
+    const html = read(page);
+    const m = html.match(new RegExp(`<div[^>]*\\bid="${id}"[^>]*>`));
+    if (!m) { offenders.push(`${page}: #${id} not found`); continue; }
+    if (!/role="status"/.test(m[0]) || !/aria-live="polite"/.test(m[0])) offenders.push(`${page}: ${m[0]}`);
+  }
+  assert.deepEqual(offenders, [], `status regions missing role="status"/aria-live="polite":\n  ${offenders.join('\n  ')}`);
+});
+
+// ---------------------------------------------------------------------------
 // Incident: replacing a quiz question without re-pointing the JSON answer key
 // (a sibling <script type="application/json"> keyed by choice index) would
 // silently grade the quiz wrong.
