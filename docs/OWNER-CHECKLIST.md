@@ -180,9 +180,12 @@ format, and the `List-Unsubscribe` headers to set.
       **You edit a spreadsheet and the site updates itself within the hour**
       — no deploy, no code edit, nobody in the loop. That is the answer to
       "who updates the schedule every week". Every tab except Schedule is
-      still empty (0 rows) — that's expected, not broken; fill in
-      announcements, team, FAQs, bundles, prop firms, stats, or results
-      whenever you're ready and they'll appear on the next hourly sync.
+      still empty (0 rows) — that's expected, not broken; fill in team,
+      FAQs, bundles, prop firms, stats, or results whenever you're ready
+      and they'll appear on the next hourly sync. (Announcements and
+      TradeReviews still sync into the API the same way, but nothing on
+      the site displays them since the homepage's "Live From PJ's Desk"
+      section was removed — rows there won't appear anywhere.)
 
       Reference — how this was set up, kept here for adding a new tab later
       or if the secret ever needs rotating:

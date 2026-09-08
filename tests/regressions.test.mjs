@@ -403,6 +403,40 @@ test('yahoo-news docs describe the real JSON endpoint and the topic parameter, n
     'docs/SECURITY.md must name the actual allowlisted Yahoo host');
 });
 
+// Incident: removing the homepage's "Live From PJ's Desk" section (2026-09-08)
+// deleted the site's only consumer of the announcements/trade_reviews CMS
+// content types (loadLatest(), #latest, .ann-card/.review-card), but
+// docs/OWNER-CHECKLIST.md's sheet-sync section -- the line an owner reads to
+// learn what filling in a tab actually does -- still promised "fill in
+// announcements, team, FAQs, bundles, prop firms, stats, or results whenever
+// you're ready and they'll appear on the next hourly sync." Team/FAQs/
+// bundles/prop firms/stats/results still render live; announcements no
+// longer render anywhere, so an owner following that line would fill in rows
+// that sync into the API and then see nothing on the site with no error to
+// explain why. Derives which content types actually still have a page-side
+// consumer instead of just pinning the prose, so a future page re-adding (or
+// removing) a type's renderer is caught here too.
+test('docs/OWNER-CHECKLIST.md does not promise a CMS content type the site no longer renders', () => {
+  const CONTENT_TYPES = ['announcements', 'trade_reviews', 'prop_firms', 'schedule', 'team', 'faqs', 'bundles', 'stats', 'results'];
+  const rendered = new Set();
+  for (const page of PAGES) {
+    const src = read(page);
+    for (const type of CONTENT_TYPES) {
+      if (src.includes(`type=${type}`)) rendered.add(type);
+    }
+  }
+  assert.ok(!rendered.has('announcements'),
+    'test assumption stale: some page now fetches type=announcements again -- docs/OWNER-CHECKLIST.md can promise it once more');
+  assert.ok(!rendered.has('trade_reviews'),
+    'test assumption stale: some page now fetches type=trade_reviews again');
+
+  const flat = read('docs/OWNER-CHECKLIST.md').replace(/\s+/g, ' ');
+  const promise = /fill in ([^.]*?) whenever you're ready and they'll appear on the next hourly sync/i.exec(flat);
+  assert.ok(promise, "docs/OWNER-CHECKLIST.md: expected the sheet-sync tab-fill-in promise");
+  assert.doesNotMatch(promise[1], /\bannouncements\b/,
+    'docs/OWNER-CHECKLIST.md promises announcements will "appear" but no page renders that content type any more');
+});
+
 // ---------------------------------------------------------------------------
 // Incident: gating was purely cosmetic. `.gated-content` used `hidden` +
 // client-side JS to reveal paid lessons after /api/verify-premium succeeded,
