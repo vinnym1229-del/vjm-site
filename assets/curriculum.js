@@ -19,6 +19,27 @@
     m.classList.toggle('open');
     h?.setAttribute('aria-expanded', m.classList.contains('open'));
   }
+
+  // options-lab.html shipped the site's only #theme-toggle button, with its
+  // own self-contained toggleTheme()/onclick — the other three curriculum
+  // pages (futures-dissection, stock-breakdown, psychology-enhancer) load the
+  // same assets/theme.js default-light bootstrap and the same curriculum.css
+  // light-mode overrides but never got a control to actually reach dark mode.
+  // Wire up any #theme-toggle this shared script finds, skipping one that
+  // already has its own onclick (options-lab.html's) so it isn't double-bound.
+  function initThemeToggle() {
+    const btn = document.getElementById('theme-toggle');
+    if (!btn || btn.hasAttribute('onclick')) return;
+    const sync = (isLight) => {
+      btn.innerHTML = (isLight ? '☀️' : '🌙') + ' <span id="theme-label">' + (isLight ? 'Light' : 'Dark') + '</span>';
+    };
+    btn.addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('light-mode');
+      try { localStorage.setItem('st-theme', isLight ? 'light' : 'dark'); } catch { /* storage blocked */ }
+      sync(isLight);
+    });
+    sync(document.body.classList.contains('light-mode'));
+  }
   window.currToggleMenu = toggleMenu;
 
   function initGroupTabs() {
@@ -837,6 +858,7 @@ body.light-mode .curr .vjm-miss{background:rgba(0,0,0,.03);}
 
   async function init() {
     initNavDropdowns();
+    try { initThemeToggle(); } catch { /* ignore */ }
     initGroupTabs();
     initLevelTabs();
     injectTurnstileWidgets();
