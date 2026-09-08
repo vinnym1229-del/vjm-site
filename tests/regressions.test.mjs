@@ -125,6 +125,29 @@ test('stock-lab.html basic-research status regions are announced', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the same silent-status-change pattern again, on the site's paid
+// flagship tool. research-engine.html's #storageStatus and its four
+// #*SourceStatus spans (loadOptions/loadStock/loadSectors/loadBiotech,
+// plus the shared showModuleError() helper) rewrite between "Waiting to
+// load"/"Checking", a loading message, a success summary, and an error or
+// "Locked on your current plan." with no role or aria-live anywhere --
+// distinct from #gateMessage/#planNotice (the entitlement-gate messages,
+// already covered) since these are the module data-load status nodes. A
+// Complete-tier member using a screen reader gets no announcement that a
+// module finished loading, failed, or is plan-locked.
+test('research-engine.html module status regions are announced', () => {
+  const offenders = [];
+  const ids = ['storageStatus', 'optionsSourceStatus', 'stockSourceStatus', 'sectorSourceStatus', 'biotechSourceStatus'];
+  const html = read('research-engine.html');
+  for (const id of ids) {
+    const m = html.match(new RegExp(`<[a-z]+[^>]*\\bid="${id}"[^>]*>`));
+    if (!m) { offenders.push(`${id}: not found`); continue; }
+    if (!/role="status"/.test(m[0]) || !/aria-live="polite"/.test(m[0])) offenders.push(`research-engine.html: ${m[0]}`);
+  }
+  assert.deepEqual(offenders, [], `status regions missing role="status"/aria-live="polite":\n  ${offenders.join('\n  ')}`);
+});
+
+// ---------------------------------------------------------------------------
 // Incident: replacing a quiz question without re-pointing the JSON answer key
 // (a sibling <script type="application/json"> keyed by choice index) would
 // silently grade the quiz wrong.
