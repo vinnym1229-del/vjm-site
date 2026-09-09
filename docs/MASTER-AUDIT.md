@@ -84,7 +84,7 @@ Data-classification rule adopted repo-wide: every dynamic value carries `{source
 
 ## 5. Structural/performance audit
 
-- index.html = **2,496,321 bytes (~2.4 MB)**, 2,865 lines, minified CSS+JS inline, as measured at this audit's own commit (`6b5f811`, 2026-08-23). Confirmed monolith. This is a point-in-time figure, not a live one — the site was rebuilt substantially afterward (fabricated widgets removed, research engine merged in, ongoing maintenance since) and the `pj` branch's current index.html is **222,060 bytes (~217 KB)**, 3,353 lines. Do not read the 2.4 MB figure as describing the file today.
+- index.html = **2,496,321 bytes (~2.4 MB)**, 2,865 lines, minified CSS+JS inline, as measured at this audit's own commit (`6b5f811`, 2026-08-23). Confirmed monolith. This is a point-in-time figure, not a live one — the site was rebuilt substantially afterward (fabricated widgets removed, research engine merged in, ongoing maintenance since) and the `pj` branch's current index.html is **222,225 bytes (~217 KB)**, 3,353 lines. Do not read the 2.4 MB figure as describing the file today.
 - Duplicate IDs (verified by extraction): index.html `theme-label`×4, `member-wins`×2; options-lab.html `theme-label`×4; premium-guidance.html `signin-title`×2. Fixed in this branch.
 - Broken internal reference: `/premium-screener.html` (stock-lab) — no such file anywhere in history.
 - Emoji-as-icon dependency throughout; base64/photographic weight concentrated in index.html hero/wins imagery.

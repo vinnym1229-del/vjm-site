@@ -1311,3 +1311,211 @@ body.light-mode #site-bolt-layer .sbl-l { display: none !important; }
    widget's own styling, not ours) -- a CSS filter on the iframe box is the
    only lever available for a cross-origin embed. */
 body.light-mode #ticker-wrap iframe { filter: contrast(1.55) brightness(.92) !important; }
+
+
+/* PJ homepage refinement. Opt-in only; all preceding shared rules are preserved.
+   Keep the Ferrari geometry and rendering untouched. The original dark theme
+   is :root; body.light-mode overrides these private visual tokens. */
+:root {
+  --pj-ink: #f5f2f4;
+  --pj-muted: #b8b0b7;
+  --pj-red: #ff7b91;
+  --pj-red-deep: #c32443;
+  --pj-button-start: #c72b49;
+  --pj-button-end: #951a36;
+  --pj-on-red: #ffffff;
+  --pj-surface: #19171d;
+  --pj-surface-end: #231a22;
+  --pj-line: #47313e;
+  --pj-line-active: #c34b68;
+  --pj-wash: rgba(207, 43, 78, .09);
+  --pj-clear: rgba(207, 43, 78, 0);
+  --pj-highlight: rgba(255, 232, 239, .07);
+  --pj-shadow: rgba(0, 0, 0, .22);
+  --pj-glow: rgba(199, 43, 73, .19);
+}
+body.light-mode {
+  --pj-ink: #211b23;
+  --pj-muted: #655965;
+  --pj-red: #ad2040;
+  --pj-red-deep: #861b39;
+  --pj-button-start: #c72b49;
+  --pj-button-end: #951a36;
+  --pj-on-red: #ffffff;
+  --pj-surface: #ffffff;
+  --pj-surface-end: #fff5f7;
+  /* This block originally hardcoded a lavender-leaning line color and a
+     maroon-tinted shadow, both of which fell just outside the site's
+     enforced red hue band (see tests/palette.test.mjs -- it scans literal
+     color values, comments included, so a retired value can't even be
+     quoted here). Reused the site's own already-approved red-line token
+     for the line, and the same neutral tone the rest of the light-mode
+     card shadows already use for the shadow, instead of one-off hues. */
+  --pj-line: var(--red-line);
+  --pj-line-active: #b63b59;
+  --pj-wash: rgba(184, 36, 69, .045);
+  --pj-clear: rgba(184, 36, 69, 0);
+  --pj-highlight: rgba(255, 255, 255, .85);
+  --pj-shadow: rgba(16, 16, 20, .07);
+  --pj-glow: rgba(184, 36, 69, .13);
+}
+body.pj-home {
+  --pj-gap-sm: 12px;
+  --pj-gap: 24px;
+  --pj-gap-lg: 40px;
+  --pj-pad: clamp(24px, 2.6vw, 36px);
+  --pj-radius: 20px;
+  --pj-card-shadow: 0 8px 28px var(--pj-shadow), inset 0 1px 0 var(--pj-highlight);
+  --pj-card-hover: 0 16px 36px var(--pj-shadow), 0 0 0 1px var(--pj-glow);
+  --pj-gradient: linear-gradient(125deg, var(--pj-button-start), var(--pj-button-end));
+}
+body.pj-home > section:not(.hero) {
+  padding: clamp(64px, 7vw, 112px) clamp(20px, 3vw, 40px) !important;
+  background-image: linear-gradient(180deg, var(--pj-clear), var(--pj-wash)) !important;
+  border-top: 1px solid var(--border);
+}
+body.pj-home .section-tag { color: var(--pj-red); letter-spacing: .12em; }
+body.pj-home :is(.section-title, .nl-title) {
+  font-size: clamp(2.2rem, 4.2vw, 3.4rem);
+  line-height: 1.08;
+  letter-spacing: -.025em;
+  font-weight: 800;
+  text-wrap: balance;
+  margin-bottom: 20px;
+}
+body.pj-home .section-title .gold { color: var(--pj-red); }
+body.pj-home .section-sub {
+  font-size: 1.04rem;
+  line-height: 1.75;
+  color: var(--pj-muted);
+  max-width: 640px;
+}
+body.pj-home :is(.features-grid, .pj-course-grid, .pj-tool-grid) {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)) !important;
+  gap: var(--pj-gap) !important;
+}
+body.pj-home :is(.tier-grid, .team-grid, .insights-grid, .week-grid, .results-grid) { gap: var(--pj-gap); }
+body.pj-home :is(.feature-card, .course-card, .tier-card, .pj-tool-card, #quiz-box,
+  .team-card, .day-card, .review-summary, .buffett-card, .insight-card) {
+  background: linear-gradient(145deg, var(--pj-surface), var(--pj-surface-end)) !important;
+  border: 1px solid var(--pj-line);
+  border-radius: var(--pj-radius) !important;
+  box-shadow: var(--pj-card-shadow);
+  color: var(--pj-ink);
+  min-width: 0;
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+body.pj-home :is(.feature-card, .course-card, .tier-card, .pj-tool-card, #quiz-box,
+  .team-card, .day-card, .review-summary, .buffett-card, .insight-card-body) { padding: var(--pj-pad) !important; }
+body.pj-home :is(.feature-card, .course-card, .team-card) h3 {
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: .015em;
+  margin-bottom: var(--pj-gap-sm);
+  text-wrap: balance;
+}
+body.pj-home :is(.feature-card, .course-card, .insight-card) p {
+  color: var(--pj-muted);
+  font-size: .95rem;
+  line-height: 1.75;
+}
+body.pj-home .feature-icon {
+  background: linear-gradient(135deg, var(--pj-wash), var(--pj-glow));
+  border-color: var(--pj-line);
+  color: var(--pj-red);
+  margin-bottom: 20px;
+}
+body.pj-home :is(.course-card.free-course, .tier-card.hot) {
+  border-color: var(--pj-line-active);
+  box-shadow: var(--pj-card-shadow), 0 0 36px var(--pj-glow);
+}
+/* Replace the featured tier's decorative lightning with a quiet accent edge. */
+body.pj-home .tier-card.hot::before {
+  inset: 0;
+  background: none;
+  border-top: 3px solid var(--pj-line-active);
+  border-radius: inherit;
+  animation: none;
+  filter: none;
+}
+body.pj-home :is(.course-badge.free, .hero-badge) {
+  background: var(--pj-wash);
+  border-color: var(--pj-line);
+  color: var(--pj-red);
+}
+body.pj-home .course-card .course-cta { color: var(--pj-red); }
+body.pj-home .tier-card .tier-badge {
+  background: var(--pj-gradient);
+  border-color: var(--pj-line-active);
+  color: var(--pj-on-red);
+  box-shadow: 0 4px 14px var(--pj-glow);
+}
+body.pj-home .btn {
+  border-radius: 12px;
+  line-height: 1.45;
+  font-weight: 700;
+  text-align: center;
+}
+body.pj-home :is(.btn-gold, .period-tab.active, #mobile-cta .mc-btn) {
+  background: var(--pj-gradient);
+  color: var(--pj-on-red);
+  box-shadow: 0 6px 18px var(--pj-glow), inset 0 1px 0 var(--pj-highlight);
+}
+body.pj-home .btn-outline {
+  background: var(--pj-surface);
+  border-color: var(--pj-line);
+  color: var(--pj-ink);
+  box-shadow: 0 2px 6px var(--pj-shadow);
+}
+/* Remote bundle data may render every CTA with btn-gold. Keep nonfeatured
+   bundle actions secondary without changing their classes or event hooks. */
+body.pj-home .tier-card:not(.hot) .btn {
+  background: var(--pj-surface);
+  border: 1px solid var(--pj-line-active);
+  color: var(--pj-red);
+  box-shadow: none;
+}
+body.pj-home .faq-list { gap: 16px; }
+body.pj-home .faq-list details {
+  background: var(--pj-surface);
+  border-color: var(--pj-line);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px var(--pj-shadow);
+}
+body.pj-home .faq-list summary { padding: 22px 24px; line-height: 1.6; }
+body.pj-home .faq-list details p { padding: 0 24px 24px; }
+body.pj-home .quiz-btn { border-radius: 12px; padding: 16px 18px; line-height: 1.6; }
+body.pj-home :is(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--pj-red) !important;
+  outline-offset: 4px;
+}
+@media (hover: hover) and (pointer: fine) {
+  body.pj-home :is(.feature-card, .course-card, .tier-card, .team-card, .insight-card):hover {
+    border-color: var(--pj-line-active);
+    box-shadow: var(--pj-card-hover);
+    --lift: -4px;
+  }
+  body.pj-home .btn-gold:hover { filter: brightness(1.05); box-shadow: 0 10px 24px var(--pj-glow); }
+  body.pj-home :is(.btn-outline, .quiz-btn):hover { background: var(--pj-surface-end); border-color: var(--pj-line-active); }
+}
+@media (max-width: 640px) {
+  body.pj-home { --pj-gap: 20px; --pj-radius: 16px; }
+  body.pj-home .hero-ctas .btn { width: 100%; }
+  body.pj-home .about-grid { grid-template-columns: minmax(0, 1fr) !important; gap: var(--pj-gap) !important; }
+  body.pj-home .review-bars { min-width: 0; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.pj-home :is(.feature-card, .course-card, .tier-card, .pj-tool-card, #quiz-box,
+    .team-card, .day-card, .review-summary, .buffett-card, .insight-card,
+    .btn, .period-tab, .quiz-btn, .feature-icon, .faq-list summary)::before,
+  body.pj-home :is(.feature-card, .course-card, .tier-card, .pj-tool-card, #quiz-box,
+    .team-card, .day-card, .review-summary, .buffett-card, .insight-card,
+    .btn, .period-tab, .quiz-btn, .feature-icon, .faq-list summary),
+  body.pj-home .feature-card::after {
+    transition: none !important;
+    animation: none !important;
+  }
+  body.pj-home :is(.feature-card, .course-card, .tier-card, .team-card, .insight-card,
+    .btn, .feature-icon):hover { transform: none !important; --lift: 0px; }
+}
