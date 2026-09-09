@@ -960,3 +960,29 @@ test('index.html "Am I Active" status result is an announced live region', () =>
   assert.match(m[0], /role="status"/, `missing role="status": ${m[0]}`);
   assert.match(m[0], /aria-live="polite"/, `missing aria-live="polite": ${m[0]}`);
 });
+
+// ---------------------------------------------------------------------------
+// Incident: the same silent-status-change defect once more, one level up
+// from the already-fixed .lock-msg sibling. Every .lock-gate block on the
+// four curriculum pages (futures-dissection, options-lab, psychology-
+// enhancer, stock-breakdown) opens with a placeholder <h3>/<p> pair --
+// "Members-only content" / "Level N is part of the full curriculum..." --
+// that assets/curriculum.js's renderUnderTierGate()/renderSignedOutGate()
+// rewrite in place with the visitor's actual entitlement state (which plan
+// they're short of, the price gap, or the sign-in prompt) once an async
+// checkPremium() fetch resolves after page load. Neither node carried any
+// role or aria-live, so a screen-reader user who lands on a locked level
+// before that fetch resolves hears the generic placeholder and nothing else
+// -- never their actual gap-to-unlock or sign-in message.
+test('every curriculum lock-gate heading/lead pair is an announced live region', () => {
+  const offenders = [];
+  for (const page of ['futures-dissection.html', 'options-lab.html', 'psychology-enhancer.html', 'stock-breakdown.html']) {
+    const html = read(page);
+    const gates = (html.match(/<div class="lock-gate">/g) || []).length;
+    const announced = (html.match(
+      /<div class="lock-icon">[^<]*<\/div>\s*<div role="status" aria-live="polite">\s*<h3>[^<]*<\/h3>\s*<p>[\s\S]*?<\/p><\/div>\s*<form class="lock-form">/g,
+    ) || []).length;
+    if (announced !== gates) offenders.push(`${page}: ${gates} lock-gate blocks, only ${announced} with an announced h3/p wrapper`);
+  }
+  assert.deepEqual(offenders, [], `lock-gate heading/lead pairs missing role="status"/aria-live="polite":\n  ${offenders.join('\n  ')}`);
+});
