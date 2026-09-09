@@ -1052,3 +1052,32 @@ test('docs/MASTER-AUDIT.md current-size callout for index.html matches the worki
   assert.equal(Number(m[3].replace(/,/g, '')), actualLines,
     `docs/MASTER-AUDIT.md says index.html is ${m[3]} lines, working tree is ${actualLines}`);
 });
+
+// ---------------------------------------------------------------------------
+// Incident: stock-lab.html's WATCHLIST array (the $129/mo Complete-tier
+// Premium Stock Screener's data) carried two different spellings of the
+// same sector for MSFT ("AI / Software") and PLTR ("AI Software") -- both
+// stocks already share the 'Cyber / Software' group tag, so this was never
+// two distinct categories, just a slash dropped on one entry. Every other
+// multi-word sector in the array ("AI / Semiconductors", "AI Infrastructure",
+// "Energy / Power", "Health / Bio", "Space / Defense") is spelled the same
+// way across every stock that carries it. A member scanning or searching the
+// Sector column saw what looked like two categories for one concept. This
+// test compares sectors by their letters only (spacing/slash-insensitive) so
+// it catches any future re-drift without flagging genuinely different
+// sectors that happen to share a word.
+test('stock-lab.html watchlist sector labels spell each concept one way', () => {
+  const html = read('stock-lab.html');
+  const arr = html.match(/const WATCHLIST=\[[\s\S]*?\];/);
+  assert.ok(arr, 'WATCHLIST array not found in stock-lab.html');
+  const sectors = [...arr[0].matchAll(/sector:'([^']+)'/g)].map((m) => m[1]);
+  const variantsByConcept = new Map();
+  for (const sector of sectors) {
+    const concept = sector.toLowerCase().replace(/[^a-z]/g, '');
+    if (!variantsByConcept.has(concept)) variantsByConcept.set(concept, new Set());
+    variantsByConcept.get(concept).add(sector);
+  }
+  const offenders = [...variantsByConcept.values()].filter((variants) => variants.size > 1);
+  assert.deepEqual(offenders.map((v) => [...v]), [],
+    `WATCHLIST spells the same sector inconsistently: ${offenders.map((v) => [...v].join(' vs ')).join('; ')}`);
+});
