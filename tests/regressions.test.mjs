@@ -986,3 +986,30 @@ test('every curriculum lock-gate heading/lead pair is an announced live region',
   }
   assert.deepEqual(offenders, [], `lock-gate heading/lead pairs missing role="status"/aria-live="polite":\n  ${offenders.join('\n  ')}`);
 });
+
+// ---------------------------------------------------------------------------
+// Incident: docs/MASTER-AUDIT.md's structural-audit section stated
+// "index.html = 2,496,321 bytes (~2.4 MB), 2,865 lines" with no date or
+// commit attached, reading as a current fact. It was a real measurement --
+// at the doc's own commit (6b5f811, 2026-08-23) index.html genuinely was
+// that size -- but the site has been rebuilt since (fabricated widgets
+// removed, research engine merged in, ongoing maintenance) and the number
+// is now off by more than 10x from the working tree. The fix pinned the
+// figure to that commit and added a "current size" callout instead of
+// silently updating the original claim (which would misrepresent what the
+// audit actually measured); this test keeps that callout from drifting the
+// same way the original number did.
+test('docs/MASTER-AUDIT.md current-size callout for index.html matches the working tree', () => {
+  const doc = read('docs/MASTER-AUDIT.md');
+  const m = doc.match(/current index\.html is \*\*([\d,]+) bytes \(~([\d,]+) KB\)\*\*, ([\d,]+) lines/);
+  assert.ok(m, 'docs/MASTER-AUDIT.md: expected the "current index.html is N bytes (~N KB), N lines" callout');
+  const html = read('index.html');
+  const actualBytes = Buffer.byteLength(html, 'utf8');
+  const actualLines = (html.match(/\n/g) || []).length;
+  assert.equal(Number(m[1].replace(/,/g, '')), actualBytes,
+    `docs/MASTER-AUDIT.md says index.html is ${m[1]} bytes, working tree is ${actualBytes}`);
+  assert.equal(Number(m[2].replace(/,/g, '')), Math.round(actualBytes / 1024),
+    `docs/MASTER-AUDIT.md says index.html is ~${m[2]} KB, working tree is ~${Math.round(actualBytes / 1024)} KB`);
+  assert.equal(Number(m[3].replace(/,/g, '')), actualLines,
+    `docs/MASTER-AUDIT.md says index.html is ${m[3]} lines, working tree is ${actualLines}`);
+});
