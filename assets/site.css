@@ -1240,8 +1240,13 @@ body.light-mode #stream-countdown-bar .cd-live-dot{background:var(--gold);}
      the number, because the one time these two disagreed the car drove
      straight through the "With ten years of hands-on experience" paragraph. */
   width: calc((100% - var(--hero-col, 820px)) / 2 - 8px);
-  aspect-ratio: 1.5;
-  max-height: min(74vh, 620px);
+  /* 1.5 gave a short, wide box that only used the top third of the gutter's
+     actual height — the car read small because its OWN box was small, not
+     just because of the platform padding around it (see padR in index.html).
+     1.15 lets the same width claim a taller box, which is what actually
+     makes the car itself bigger on screen at every breakpoint. */
+  aspect-ratio: 1.15;
+  max-height: min(78vh, 660px);
   z-index: 2; pointer-events: none;
 }
 

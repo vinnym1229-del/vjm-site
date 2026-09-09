@@ -3073,7 +3073,13 @@ setInterval(tickSessionClock, 30000);
   const padTex = new THREE.CanvasTexture(pc);
   padTex.colorSpace = THREE.SRGBColorSpace;
   padTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  const padR = Math.max(size.x, size.z) * 0.72;
+  // 0.72 gave the disc 44% more radius than the car's own footprint, and the
+  // frame fit below sizes itself to the DISC, not the car — so that phantom
+  // rim of empty platform around the tyres was what actually capped how big
+  // the car itself could ever read on screen. Tightened to hug the car with
+  // just enough rim to still show as a stage, which is the direct fix for
+  // "the car looks small": the box, position, and camera solve are untouched.
+  const padR = Math.max(size.x, size.z) * 0.56;
   const padSide = new THREE.MeshStandardMaterial({ color: 0x0d0d0f, metalness: 0.6, roughness: 0.45, envMapIntensity: 0.7 });
   const padTop  = new THREE.MeshStandardMaterial({ map: padTex, metalness: 0.45, roughness: 0.42, envMapIntensity: 0.5 });
   const pad = new THREE.Mesh(
