@@ -140,6 +140,30 @@ test('stock-lab.html basic-research status regions are announced', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the same silent-status-change pattern once more, on stock-lab.html's
+// actual research output panels -- distinct from #basicStatus/#newsStatus
+// above (short one-line status text) and #premiumMsg (the unlock-flow
+// message), already covered. #basicReport and #premiumReport are the result
+// panels runBasicResearch()/runPremiumResearch() rewrite with the quote and
+// research summary, triggered by a user clicking Research or selecting a
+// watchlist stock -- a direct result of a user action, the same case as
+// research-engine.html's module status spans above, not a page-load brief
+// like premarket.html's #narrative (deliberately left alone elsewhere). A
+// screen-reader user who clicks Research hears nothing when the result
+// panel updates.
+test('stock-lab.html research result panels are announced', () => {
+  const offenders = [];
+  const ids = ['basicReport', 'premiumReport'];
+  const html = read('stock-lab.html');
+  for (const id of ids) {
+    const m = html.match(new RegExp(`<div[^>]*\\bid="${id}"[^>]*>`));
+    if (!m) { offenders.push(`${id}: not found`); continue; }
+    if (!/role="status"/.test(m[0]) || !/aria-live="polite"/.test(m[0])) offenders.push(`stock-lab.html: ${m[0]}`);
+  }
+  assert.deepEqual(offenders, [], `status regions missing role="status"/aria-live="polite":\n  ${offenders.join('\n  ')}`);
+});
+
+// ---------------------------------------------------------------------------
 // Incident: the same silent-status-change pattern once more, on the Lesson
 // Assistant's own coverage line. premium-guidance.html's #lesson-coverage
 // <p> is rewritten by loadLessonCatalogue() between a sign-in/no-lessons
