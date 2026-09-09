@@ -100,6 +100,21 @@ test('live-refreshing calendar/premarket status regions are announced', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the same silent-status-change defect once more on this same
+// page, missed by the fix above because it's a second, independent status
+// widget in the hero rather than the #calendar-status/#finance-news-status
+// pair. setMode() rewrites the hero status card's #feed-mode ("Loading" ->
+// "Live feed"/"Cached feed"/"Live feed blocked") and #feed-message together
+// on every loadCalendar() run (including the manual Refresh button), with no
+// role or aria-live anywhere on either node -- a screen-reader user hits
+// Refresh and hears nothing when the feed comes back live, cached, or dead.
+test('forex-calendar.html hero feed-status pair is an announced live region', () => {
+  const html = read('forex-calendar.html');
+  const m = html.match(/<div role="status" aria-live="polite">\s*<b id="feed-mode">[^<]*<\/b>\s*<p id="feed-message">[\s\S]*?<\/p>\s*<\/div>/);
+  assert.ok(m, '#feed-mode/#feed-message not wrapped in an announced role="status" region');
+});
+
+// ---------------------------------------------------------------------------
 // Incident: the identical silent-status-change pattern as the two checks
 // above, one flow over -- and missed by that run because it isn't a
 // calendar/premarket page. stock-lab.html's free "Basic Stock Research" tool

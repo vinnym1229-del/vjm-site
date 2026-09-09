@@ -128,8 +128,10 @@ body.light-mode .footer{border-top-color:var(--line);color:var(--muted)}
   </div>
   <aside class="panel status-card">
     <span class="eyebrow">Calendar Status</span>
-    <b id="feed-mode">Loading</b>
-    <p id="feed-message">Checking the live feed. If the public feed blocks this Cloudflare location, use the official Forex Factory link below.</p>
+    <div role="status" aria-live="polite">
+      <b id="feed-mode">Loading</b>
+      <p id="feed-message">Checking the live feed. If the public feed blocks this Cloudflare location, use the official Forex Factory link below.</p>
+    </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px"><button class="btn" onclick="loadCalendar(true)">Refresh</button><a class="btn ghost" href="https://www.forexfactory.com/calendar?week=this" target="_blank" rel="noopener noreferrer">Open Forex Factory</a></div>
   </aside>
 </header>
