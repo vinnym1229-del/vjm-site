@@ -944,3 +944,19 @@ test('the legal pages\' nav strip calls the stock tool "Stock Lab", not its old 
     assert.match(html, /href="stock-lab\.html"[^>]*>Stock Lab</, `${page}: nav strip missing the "Stock Lab" link`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Incident: the same silent-status-change pattern once more, on the
+// homepage's "Am I Active" Discord status checker. checkStatus() rewrites
+// #status-result (and its #status-icon/#status-text/#status-sub children)
+// between "CHECKING...", "ACTIVE", "NOT ACTIVE" and "LOOKUP UNAVAILABLE"
+// with no role or aria-live anywhere on the container -- a screen-reader
+// user who submits their Discord username hears nothing when the lookup
+// finishes or fails.
+test('index.html "Am I Active" status result is an announced live region', () => {
+  const html = read('index.html');
+  const m = html.match(/<div[^>]*\bid="status-result"[^>]*>/);
+  assert.ok(m, '#status-result not found');
+  assert.match(m[0], /role="status"/, `missing role="status": ${m[0]}`);
+  assert.match(m[0], /aria-live="polite"/, `missing aria-live="polite": ${m[0]}`);
+});
