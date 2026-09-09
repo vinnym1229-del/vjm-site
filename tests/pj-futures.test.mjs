@@ -47,7 +47,11 @@ test('futures-first identity', () => {
 });
 
 test('whop listing facts showcased (owner screenshots, 2026-09-08)', () => {
-  assert.match(index, /2,256 reviews/);
+  // The literal contiguous "2,256 reviews" lived in the proof bar, removed
+  // 2026-09-10 for repeating the hero-badge above it -- the count still
+  // shows there, just split across the hb-reviews span and its label, same
+  // structure the badge always used.
+  assert.match(index, /id="hb-reviews">2,256<\/span> reviews/);
   assert.match(index, /49,762/, 'joined count missing');
   assert.match(index, /2\.8K members/);
   assert.match(index, /97% \(2188\)/, '5-star review bar missing');

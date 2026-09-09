@@ -52,7 +52,6 @@ body.light-mode {--gold-ink:#b3251d;
 body.light-mode { background: var(--bg); color: var(--text); }
 body.light-mode nav { background: rgba(255,255,255,0.97); border-bottom-color: var(--border); }
 body.light-mode .hero { background: radial-gradient(ellipse at 50% 0%,rgba(179,37,29,0.04) 0%,transparent 65%), linear-gradient(180deg,#ffffff 0%,#f6f6f7 100%); }
-body.light-mode .proof-bar { background: var(--bg2); }
 body.light-mode #big-win { background: linear-gradient(135deg,#f6f6f7,#fafafa); border-color: #cfcfd4; }
 body.light-mode .win-card, body.light-mode .account-card, body.light-mode .testimonial,
 body.light-mode .insight-card, body.light-mode .service-card { background: var(--card); border-color: var(--border); }
@@ -430,22 +429,10 @@ body.light-mode .nav-drop a:hover { color: #141416; }
 .scroll-hint { margin-top: 48px; color: var(--muted); font-size: 0.75rem; animation: bounce 2s infinite; }
 @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(6px)} }
 
-/* ─── SOCIAL PROOF BAR ─── */
-.proof-bar {
-  background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
-  padding: 16px 24px;
-  display: flex; align-items: center; justify-content: center; gap: 40px; flex-wrap: wrap;
-}
-.proof-item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--muted); }
-/* Four items across one flex line wrap 2/1/1 on a phone, which reads as a
-   mistake rather than a layout. Below 640px they become an even 2x2 grid. */
-@media (max-width: 640px) {
-  .proof-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; padding: 16px; }
-  .proof-item { flex-direction: column; align-items: center; text-align: center; gap: 2px; line-height: 1.3; }
-}
-.proof-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--emerald); animation: pulse 2s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-.proof-item strong { color: var(--text); }
+/* .proof-bar / .proof-item removed 2026-09-10 along with the markup that
+   used them (see index.html) -- the section repeated the hero-badge and
+   hero-trust content above it word-for-word. Not used on any other page
+   (checked before deleting), so no dead-but-shared rule is left behind. */
 
 /* ─── SECTIONS ─── */
 section { padding: 90px 24px; }
@@ -1029,7 +1016,12 @@ body.show-ctabar .vjm-chat-panel{bottom:152px;}
    counts all landed on different lines and different baselines. Normal inline
    text flow gives them one shared baseline; .hb-item keeps each figure glued
    to its own label so a break can only happen at a separator. */
-.hero-badge{display:inline-block;max-width:100%;text-align:center;background:var(--emerald-glow);border:1px solid var(--border);border-radius:999px;padding:7px 16px;font-size:.8rem;line-height:1.55;font-weight:800;color:var(--text);margin-bottom:22px;}
+/* An <a> now (owner, 2026-09-10: links to the Whop listing), so it needs its
+   own text-decoration/cursor/transition -- a class selector applies to any
+   tag, but the anchor defaults (underline, pointer, no hover state) still
+   need stating explicitly, same as .btn does. */
+.hero-badge{display:inline-block;max-width:100%;text-align:center;background:var(--emerald-glow);border:1px solid var(--border);border-radius:999px;padding:7px 16px;font-size:.8rem;line-height:1.55;font-weight:800;color:var(--text);margin-bottom:22px;text-decoration:none;cursor:pointer;transition:border-color .2s,background .2s;}
+.hero-badge:hover{border-color:var(--muted);background:var(--accent);}
 .hero-badge .hb-item{white-space:nowrap;}
 .hero-badge .hb-sep{margin:0 .45em;opacity:.55;}
 .pulse-dot{display:inline-block;vertical-align:middle;margin-right:9px;position:relative;top:-1px;width:9px;height:9px;border-radius:50%;background:var(--emerald);box-shadow:0 0 0 0 rgba(255,255,255,.25);animation:pulseDot 2s infinite;}
@@ -1674,16 +1666,22 @@ body.pj-home .pj-reference-hero #ferrari-showcase::before { display: none; }
 @media (max-width: 1099px) {
   body.pj-home .pj-reference-hero.hero.has-car { display: flex; flex-direction: column; padding: 48px 24px; }
   body.pj-home .pj-reference-hero.hero.has-car .hero-inner { max-width: 640px; order: 0; }
+  /* min(100%, 720px) claimed nearly the full content width right under the
+     CTAs on anything from a phone to a tablet -- a full-bleed close-up of
+     the car immediately below the fold, not the smaller supporting image
+     it is on desktop (owner: "the car is not to the side on the phone, it
+     is right in your face"). Capped and centered instead, so it reads as
+     a photo under the copy rather than the dominant element on the page. */
   body.pj-home .pj-reference-hero.hero.has-car #ferrari-showcase {
     display: block;
     position: relative;
     order: 1;
     inset: auto;
-    width: min(100%, 720px);
+    width: min(64%, 320px);
+    margin: 20px auto 0;
     aspect-ratio: 1.5;
     transform: none;
     max-height: none;
-    margin-top: 12px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

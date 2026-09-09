@@ -81,7 +81,7 @@
 <!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
      than _headers declares -- bump this ?v= on every edit to site.css or
      it can take hours to show up live even after a hard refresh. -->
-<link rel="stylesheet" href="assets/site.css?v=18">
+<link rel="stylesheet" href="assets/site.css?v=19">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -408,7 +408,12 @@
     </g>
   </svg>
   <div class="hero-inner" style="position:relative;z-index:2;">
-    <div class="hero-badge"><span class="hb-item"><span class="pulse-dot"></span><span id="hb-rating">5.0</span>★ on Whop</span><span class="hb-sep" aria-hidden="true">·</span><span class="hb-item"><span id="hb-reviews">2,256</span> reviews</span><span class="hb-sep" aria-hidden="true">·</span><span class="hb-item"><span id="hb-joined">49,762</span> joined</span></div>
+    <!-- Now a link, not static text (owner, 2026-09-10) -- the whole badge
+         goes to the Whop listing these numbers are pulled from, the same
+         product URL every CTA on the page uses, just with its own
+         utm_content so this click is attributable separately from the
+         buttons below it. -->
+    <a class="hero-badge" href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=hero-badge" target="_blank" rel="noopener"><span class="hb-item"><span class="pulse-dot"></span><span id="hb-rating">5.0</span>★ on Whop</span><span class="hb-sep" aria-hidden="true">·</span><span class="hb-item"><span id="hb-reviews">2,256</span> reviews</span><span class="hb-sep" aria-hidden="true">·</span><span class="hb-item"><span id="hb-joined">49,762</span> joined</span><span class="hb-sep" aria-hidden="true">·</span><span class="hb-item" id="hb-giveaways">Weekly Giveaways</span></a>
     <h1><span class="bolt-wrap">PJ<svg class="bolt-underline" viewBox="0 -10 140 44" preserveAspectRatio="none" aria-hidden="true">
       <g class="bolt-glow">
         <path class="bg-trunk" d="M2,15 L22,4 L36,20 L56,3 L72,21 L92,5 L108,17 L138,9"/>
@@ -450,20 +455,13 @@
   </div>
 </section>
 
-<!-- PROOF BAR -->
-<div class="proof-bar">
-  <!-- Source: owner's Whop listing screenshots, 2026-08-24 (a snapshot, not a
-       live count). "Joined on Whop" is a LIFETIME total and its only writer is
-       the Sheet CMS stats tab (key: joined) — the Whop API's member_count is a
-       *current members* figure and belongs to the members chip further down,
-       never to this element. See the SocialStats table in the script below.
-       TODO: owner to confirm these are still accurate, or connect the live feed.
-       None of these are performance figures and none may be presented as one. -->
-  <div class="proof-item"><strong id="pb-joined">49,762</strong><span>joined on Whop</span></div>
-  <div class="proof-item"><strong id="pb-rating">5.0 ★</strong><span id="pb-reviews-label">2,256 reviews</span></div>
-  <div class="proof-item"><strong>15</strong><span>live sessions every week</span></div>
-  <div class="proof-item"><strong>$50,000</strong><span>prop firm funding giveaways</span></div>
-</div>
+<!-- The proof bar that used to live here (joined/rating/reviews, "15 live
+     sessions a week", "$50,000 prop firm funding giveaways") repeated the
+     hero-badge above the headline and the checkmark row under the CTAs
+     word-for-word -- owner (2026-09-10): "remove the line since it repeats
+     from the top left of the home page." The one thing it said that wasn't
+     already stated elsewhere (weekly giveaways) moved into the hero-badge
+     itself; see hb-giveaways below. -->
 
 
 <!-- WHAT YOU GET — futures-first feature showcase (recreated from the owner's Whop carousel, 2026-08-24) -->
@@ -1684,10 +1682,13 @@ document.addEventListener('DOMContentLoaded', async function () {
 const SocialStats = (function () {
   const RANK = { live: 2, cms: 1 };
   const STATS = {
-    joined:  [['hb-joined', (v) => v], ['pb-joined', (v) => v]],
+    // pb-* (the proof bar) removed 2026-09-10 -- see index.html and the
+    // .proof-bar comment in site.css. hb-* (the hero badge) is the only
+    // surviving target for each of these.
+    joined:  [['hb-joined', (v) => v]],
     members: [['hb-joined-chip', (v) => v + ' members']],
-    reviews: [['hb-reviews', (v) => v], ['pb-reviews-label', (v) => v + ' reviews']],
-    rating:  [['hb-rating', (v) => v], ['pb-rating', (v) => v + ' ★']],
+    reviews: [['hb-reviews', (v) => v]],
+    rating:  [['hb-rating', (v) => v]],
   };
   const writtenRank = {};
   return function applyStats(source, values) {
