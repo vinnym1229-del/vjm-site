@@ -1081,3 +1081,37 @@ test('stock-lab.html watchlist sector labels spell each concept one way', () => 
   assert.deepEqual(offenders.map((v) => [...v]), [],
     `WATCHLIST spells the same sector inconsistently: ${offenders.map((v) => [...v].join(' vs ')).join('; ')}`);
 });
+
+// Incident: docs/DISCORD-INTEGRATION.md's Status line read "designed, not
+// wired. No Discord calls are made anywhere on this branch" -- but
+// functions/api/_lib/discord.js's postEmbed() was already live and called
+// from three places (purchase-code delivery, market-brief announcements,
+// content-sync announcements), each posting the instant its own webhook env
+// var is set, no separate "enable" step needed. Only the OAuth/role-sync/
+// slash-command design further down the doc was still unbuilt. Derives the
+// real call sites from the source so a future one added without a doc
+// update, or the doc drifting back to the blanket "no calls" claim, is
+// caught here instead of by a reader trusting a stale contract.
+function discordWebhookCallSites() {
+  const sites = new Set();
+  for (const file of ['functions/api/whop-webhook.js', 'functions/api/market-brief.js', 'functions/api/content-sync.js']) {
+    if (/\bpostEmbed\(/.test(read(file))) sites.add(file);
+  }
+  return sites;
+}
+
+test('docs/DISCORD-INTEGRATION.md does not claim no Discord calls exist while postEmbed() call sites do', () => {
+  assert.ok(discordWebhookCallSites().size > 0, 'expected at least one real postEmbed() call site');
+  assert.doesNotMatch(read('docs/DISCORD-INTEGRATION.md'), /no discord calls are made/i,
+    'docs/DISCORD-INTEGRATION.md: status line falsely claims no Discord calls happen while postEmbed() call sites do');
+});
+
+test('docs/DISCORD-INTEGRATION.md names every real postEmbed() call site', () => {
+  const sites = discordWebhookCallSites();
+  assert.ok(sites.size > 0, 'expected at least one real postEmbed() call site');
+  const doc = read('docs/DISCORD-INTEGRATION.md');
+  for (const site of sites) {
+    const base = site.split('/').pop();
+    assert.match(doc, new RegExp(base.replace('.', '\\.')), `docs/DISCORD-INTEGRATION.md: missing mention of ${site}`);
+  }
+});

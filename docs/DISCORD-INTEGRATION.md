@@ -1,8 +1,23 @@
 # Discord Integration Design
 
-Status: **designed, not wired.** No Discord calls are made anywhere on this
-branch. Nothing posts, roles, or syncs until the owner supplies credentials and
-explicitly enables dry-run mode. This document is the implementation contract.
+Status: **webhook posting is live; the bot is not.** `functions/api/_lib/discord.js`'s
+`postEmbed()` (sanitizes mentions, enforces embed limits, times out, never
+logs the URL) is already called from three places, each gated by its own env
+var -- it posts the instant the owner sets that var, with no separate "enable"
+step required:
+- `functions/api/whop-webhook.js` -- delivers a purchaser's access code via
+  `DISCORD_WHOP_CODES_WEBHOOK`.
+- `functions/api/market-brief.js` -- posts the daily brief via
+  `DISCORD_ANNOUNCEMENTS_WEBHOOK` on every cron regeneration.
+- `functions/api/content-sync.js` -- forwards new sheet announcements to the
+  same webhook, the only one of the three with an explicit dry-run toggle
+  (`CONTENT_DISCORD_DRYRUN`, defaults to true).
+
+Everything below this line -- OAuth account linking, premium role sync, and
+slash commands -- is still just a design: no `DISCORD_BOT_TOKEN`,
+`DISCORD_GUILD_ID`, or `DISCORD_PREMIUM_ROLE_ID` reference exists anywhere in
+`functions/`. This document is the implementation contract for that
+remaining work.
 
 ## Principles
 
