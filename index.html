@@ -1780,10 +1780,19 @@ function toggleTheme() {
   window.addEventListener('vjm:themechange', build);
 })();
 (function() {
-  if (localStorage.getItem('st-theme') === 'light') {
-    document.body.classList.add('light-mode');
-    document.getElementById('theme-toggle').innerHTML = themeButtonHtml(true);
-  }
+  // Light is the DEFAULT (owner request, 2026-09-01): only an explicit stored
+  // 'dark' opts out, same rule assets/theme.js already applied to <body>
+  // before first paint. This block re-states it (harmless, idempotent) and is
+  // what syncs the toggle's own label/icon to the live state — options-lab.html
+  // carries the identical block. Before this fix, index.html only synced the
+  // label when 'light' was explicitly stored, so a fresh visitor (nothing
+  // stored) landed on the correct light-mode page with a button that still
+  // read "Dark", unable to advertise which way one click would go.
+  let stored = null;
+  try { stored = localStorage.getItem('st-theme'); } catch (e) { /* storage blocked */ }
+  const isLight = stored !== 'dark';
+  document.body.classList.toggle('light-mode', isLight);
+  document.getElementById('theme-toggle').innerHTML = themeButtonHtml(isLight);
 })();
 
 // ─── STREAM COUNTDOWN ───
