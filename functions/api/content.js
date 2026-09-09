@@ -41,13 +41,20 @@ export async function onRequestGet(context) {
     // ticker returned count:0 even though its rows were in the table. Push
     // the match into SQL (json_extract keeps it parameterized) so the LIMIT
     // applies to matching rows.
+    //
+    // content-sync.js assigns position = rows.length - i, so the sheet's
+    // first row gets the highest position and its last row gets 1 (matching
+    // the idx_site_content_listing index, built DESC for this exact scheme).
+    // ORDER BY position with no DESC returned sheet-last-row-first — the
+    // opposite of the owner's sheet order — for every type without its own
+    // `order` field (prop_firms, bundles).
     const stmt = tickerFilter
       ? env.RESEARCH_DB.prepare(
         "SELECT payload, source_updated_at FROM site_content WHERE content_type = ?1"
-        + " AND json_extract(payload, '$.ticker') = ?2 ORDER BY position LIMIT 60"
+        + " AND json_extract(payload, '$.ticker') = ?2 ORDER BY position DESC LIMIT 60"
       ).bind(type, tickerFilter)
       : env.RESEARCH_DB.prepare(
-        'SELECT payload, source_updated_at FROM site_content WHERE content_type = ?1 ORDER BY position LIMIT 60'
+        'SELECT payload, source_updated_at FROM site_content WHERE content_type = ?1 ORDER BY position DESC LIMIT 60'
       ).bind(type);
     const { results } = await stmt.all();
     const items = (results || [])

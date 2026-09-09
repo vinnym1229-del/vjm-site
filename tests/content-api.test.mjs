@@ -18,12 +18,13 @@ import { onRequestGet } from '../functions/api/content.js';
 
 // Fake D1 mirroring exactly the two query shapes content.js issues: a plain
 // per-type SELECT, and the ticker-filtered SELECT using json_extract. Rows
-// carry a `position` (SQL ORDER BY position) and a JSON `payload` string
-// (parsed the same way the real column is). The ticker-filtered branch
-// matches BEFORE limiting, exactly like the real parameterized SQL would --
-// if content.js regresses to filtering by ticker only in JS after an
-// unfiltered LIMIT 60, this fake takes the "else" branch instead and the
-// truncation-order regression test below fails.
+// carry a `position` (sorted by the real ORDER BY clause text, DESC or
+// ASC, not an assumed direction) and a JSON `payload` string (parsed the
+// same way the real column is). The ticker-filtered branch matches BEFORE
+// limiting, exactly like the real parameterized SQL would -- if content.js
+// regresses to filtering by ticker only in JS after an unfiltered LIMIT 60,
+// this fake takes the "else" branch instead and the truncation-order
+// regression test below fails.
 function makeDb(rows) {
   return {
     prepare(sql) {
@@ -36,7 +37,11 @@ function makeDb(rows) {
               if (sql.includes('json_extract')) {
                 matched = matched.filter((r) => JSON.parse(r.payload).ticker === ticker);
               }
-              matched.sort((a, b) => a.position - b.position);
+              // Mirrors the real SQL text, not just an assumed order: if
+              // content.js's ORDER BY ever drops DESC, this sorts ascending
+              // too, same as real D1 would, so the sheet-order test below
+              // actually pins the query text and not just the mock's own guess.
+              matched.sort((a, b) => sql.includes('ORDER BY position DESC') ? b.position - a.position : a.position - b.position);
               return { results: matched.slice(0, 60) };
             },
           };
@@ -128,6 +133,19 @@ async function getContent(env, qs) {
   ]);
   const { data } = await getContent({ RESEARCH_DB: db }, 'type=team');
   assert.deepEqual(data.items.map((i) => i.name), ['First', 'Second']);
+}
+
+// Types with no `order` field of their own (prop_firms, bundles) rely
+// entirely on SQL row position to reflect the owner's sheet order.
+// content-sync.js assigns position = rows.length - i (sheet row 0 gets the
+// highest position), so the API must read it back DESC -- position ASC
+// would hand prop-firms.html and index.html's CMS bundle tiers the sheet's
+// rows in exact reverse of how the owner arranged them.
+{
+  const sheetRows = ['First Firm', 'Second Firm', 'Third Firm'];
+  const db = makeDb(sheetRows.map((name, i) => row('prop_firms', sheetRows.length - i, { name })));
+  const { data } = await getContent({ RESEARCH_DB: db }, 'type=prop_firms');
+  assert.deepEqual(data.items.map((i) => i.name), sheetRows, 'prop_firms must come back in the owner\'s sheet order, not reversed');
 }
 
 // Announcements sort pinned-first, regardless of the order field (which
