@@ -73,7 +73,7 @@
 <!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
      than _headers declares -- bump this ?v= on every edit to site.css or
      it can take hours to show up live even after a hard refresh. -->
-<link rel="stylesheet" href="assets/site.css?v=15">
+<link rel="stylesheet" href="assets/site.css?v=16">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -460,27 +460,27 @@
     </div>
     <div class="features-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">
       <div class="feature-card" data-reveal>
-        <div class="feature-num">01</div>
+        <div class="feature-head"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 4 8-8"/><path d="M14 8h6v6"/></svg></span><div class="feature-num">01</div></div>
         <h3>Live Futures Trading &amp; Analysis</h3>
         <p>Watch PJ trade in real time and learn his exact model.</p>
       </div>
       <div class="feature-card" data-reveal>
-        <div class="feature-num">02</div>
+        <div class="feature-head"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M20 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/></svg></span><div class="feature-num">02</div></div>
         <h3>Exclusive Education &amp; Market Insights</h3>
         <p>Daily trade reviews, exclusive education, market insight, and prop firm guidance.</p>
       </div>
       <div class="feature-card" data-reveal>
-        <div class="feature-num">03</div>
+        <div class="feature-head"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5a5 5 0 0 1 6 5"/></svg></span><div class="feature-num">03</div></div>
         <h3>Live Group Classes 2x/Month</h3>
         <p>Educational group classes twice a month — deep dives into key trading strategies and answers to your questions.</p>
       </div>
       <div class="feature-card" data-reveal>
-        <div class="feature-num">04</div>
+        <div class="feature-head"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5z"/><path d="M6 12v5c3 2.5 9 2.5 12 0v-5"/><path d="M22 10v6"/></svg></span><div class="feature-num">04</div></div>
         <h3>1HR+ Starter Crash Course, IFVG Model &amp; More</h3>
         <p>Chart setup and the full IFVG model, start to finish.</p>
       </div>
       <div class="feature-card" data-reveal>
-        <div class="feature-num">05</div>
+        <div class="feature-head"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 5M17 6h3a3 3 0 0 1-3 5"/></svg></span><div class="feature-num">05</div></div>
         <h3>Exclusive Prop Firm Giveaways</h3>
         <p>Get a chance to win up to $50,000 in funding with the top trading prop firms.</p>
       </div>
@@ -2890,11 +2890,15 @@ setInterval(tickSessionClock, 30000);
   // broad panels read as soft highlight bands along the body, the way an
   // actual product shoot lights a car. Cranking these up is what makes a
   // render look like toy plastic instead of lacquered steel.
-  function buildEnv() {
+  // Theme-aware: on the white page the surround is a bright studio (light
+  // grey sphere + pale floor) so the clearcoat carries broad, believable
+  // reflections instead of the black-void mirror the dark rig gives it.
+  const isLight = () => document.body.classList.contains('light-mode');
+  function buildEnv(light) {
     const env = new THREE.Scene();
     env.add(new THREE.Mesh(
       new THREE.SphereGeometry(20, 32, 16),
-      new THREE.MeshBasicMaterial({ side: THREE.BackSide, color: 0x0a0a0d })
+      new THREE.MeshBasicMaterial({ side: THREE.BackSide, color: light ? 0xd9dce2 : 0x0a0a0d })
     ));
     const panel = (w, h, hex, intensity, pos) => {
       const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial());
@@ -2909,7 +2913,7 @@ setInterval(tickSessionClock, 30000);
     panel(1.1, 6,  0xd7e4ff, 1.7, [7.5, 1.6, 0]);      // cool side blade
     panel(7,  2.6, 0xffffff, 1.2, [0, 2, 8.5]);        // gentle front fill
     panel(10, 0.7, 0xffffff, 3.4, [0, 2.6, -8.5]);     // rear rim streak
-    panel(14, 14,  0x232120, 0.6, [0, -8, 0]);         // floor bounce
+    panel(14, 14,  light ? 0xc9ccd2 : 0x232120, light ? 0.9 : 0.6, [0, -8, 0]); // floor bounce
     // Two narrow blades low on the flanks. A car body is mostly a vertical
     // surface, and the rig above is almost all overhead — without these the
     // door and sill panels fall into flat shadow and the whole thing reads
@@ -2919,8 +2923,12 @@ setInterval(tickSessionClock, 30000);
     return env;
   }
   const pmrem = new THREE.PMREMGenerator(renderer);
-  scene.environment = pmrem.fromScene(buildEnv(), 0.04).texture;
-  pmrem.dispose();
+  const setEnv = (light) => {
+    const old = scene.environment;
+    scene.environment = pmrem.fromScene(buildEnv(light), 0.04).texture;
+    if (old) old.dispose();
+  };
+  setEnv(isLight());
 
   const sun = new THREE.DirectionalLight(0xfff2e8, 1.7);
   sun.position.set(-5, 7, 4);
@@ -3006,12 +3014,40 @@ setInterval(tickSessionClock, 30000);
   pc.width = pc.height = PC;
   const px = pc.getContext('2d');
   const R = PC / 2;
+  // Drawn per theme: a black disc on a white page is the one object on the
+  // hero that ignores the theme, so on light mode the platform is brushed
+  // silver (reference: the owner's approved mockup) and keeps the same mark.
+  function drawPad(light) {
+  px.clearRect(0, 0, PC, PC);
   px.save();
   px.beginPath(); px.arc(R, R, R - 2, 0, Math.PI * 2); px.clip();
-  // Dark ground first: the mark is letterboxed onto it rather than filling
+  // Ground first: the mark is letterboxed onto it rather than filling
   // the disc, so this is what the visitor actually sees most of.
-  px.fillStyle = '#0c0c0d'; px.fillRect(0, 0, PC, PC);
-  if (logoImg) {
+  if (light) {
+    const g = px.createRadialGradient(R * 0.8, R * 0.7, R * 0.1, R, R, R);
+    g.addColorStop(0, '#f2f3f5'); g.addColorStop(0.55, '#d3d6dc'); g.addColorStop(1, '#b4b8c0');
+    px.fillStyle = g; px.fillRect(0, 0, PC, PC);
+    // Brushed grain: concentric hairlines, the way a machined disc catches light.
+    px.strokeStyle = 'rgba(255,255,255,.28)'; px.lineWidth = 1;
+    for (let rr = 40; rr < R; rr += 7) { px.beginPath(); px.arc(R, R, rr, 0, Math.PI * 2); px.stroke(); }
+    px.strokeStyle = 'rgba(0,0,0,.05)';
+    for (let rr = 44; rr < R; rr += 7) { px.beginPath(); px.arc(R, R, rr, 0, Math.PI * 2); px.stroke(); }
+  } else {
+    px.fillStyle = '#0c0c0d'; px.fillRect(0, 0, PC, PC);
+  }
+  if (light) {
+    // On the silver disc the square dark logo tile reads as a black patch,
+    // so the apron carries the wordmark as type instead (red PJ, dark
+    // TRADES) -- the same mark the nav and the reference mockup use.
+    const fs = Math.round(PC * 0.115);
+    px.font = `900 ${fs}px 'Barlow Condensed', 'Arial Narrow', sans-serif`;
+    px.textBaseline = 'middle';
+    const a = 'PJ ', b = 'TRADES';
+    const wa = px.measureText(a).width, wb = px.measureText(b).width;
+    let x0 = (PC - wa - wb) / 2; const y0 = PC * 0.72;
+    px.fillStyle = '#b3251d'; px.fillText(a, x0, y0);
+    px.fillStyle = '#1b1b1f'; px.fillText(b, x0 + wa, y0);
+  } else if (logoImg) {
     // object-fit: CONTAIN, not cover. The logo is a wide wordmark, so cropping
     // it to a centred square kept only the middle few letters — the turntable
     // read "ES" in giant type, which looks like a mistake rather than a brand.
@@ -3027,20 +3063,44 @@ setInterval(tickSessionClock, 30000);
     px.drawImage(logoImg, (PC - dw) / 2, PC * 0.72 - dh / 2, dw, dh);
   }
   px.restore();
-  px.strokeStyle = 'rgba(209,67,67,.85)'; px.lineWidth = 10;
+  px.strokeStyle = light ? 'rgba(179,37,29,.75)' : 'rgba(209,67,67,.85)'; px.lineWidth = 10;
   px.beginPath(); px.arc(R, R, R - 6, 0, Math.PI * 2); px.stroke();
+  }
+  // The wordmark face needs the display font ready before the first draw;
+  // fall back to whatever the browser has if it never arrives.
+  try { await document.fonts.load("900 40px 'Barlow Condensed'"); } catch (e) {}
+  drawPad(isLight());
   const padTex = new THREE.CanvasTexture(pc);
   padTex.colorSpace = THREE.SRGBColorSpace;
   padTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
   const padR = Math.max(size.x, size.z) * 0.72;
   const padSide = new THREE.MeshStandardMaterial({ color: 0x0d0d0f, metalness: 0.6, roughness: 0.45, envMapIntensity: 0.7 });
+  const padTop  = new THREE.MeshStandardMaterial({ map: padTex, metalness: 0.45, roughness: 0.42, envMapIntensity: 0.5 });
   const pad = new THREE.Mesh(
     new THREE.CylinderGeometry(padR, padR, 0.12, 128),
     // Cylinder material order is [side, top, bottom]; only the top is branded.
-    [padSide, new THREE.MeshStandardMaterial({ map: padTex, metalness: 0.45, roughness: 0.42, envMapIntensity: 0.5 }), padSide]
+    [padSide, padTop, padSide]
   );
   pad.position.y = -0.06;   // top face lands exactly on y=0, where the tyres sit
   carGroup.add(pad);
+  // Follow the theme toggle: redraw the disc, retint its rim, rebuild the
+  // surround. All three are one-off costs, nothing here runs per frame.
+  const applyTheme = () => {
+    const light = isLight();
+    drawPad(light); padTex.needsUpdate = true;
+    padSide.color.set(light ? 0xb9bcc3 : 0x0d0d0f);
+    padSide.metalness = light ? 1.0 : 0.6; padSide.roughness = light ? 0.3 : 0.45;
+    padTop.metalness = light ? 0.75 : 0.45; padTop.roughness = light ? 0.3 : 0.42;
+    padTop.envMapIntensity = light ? 0.9 : 0.5;
+    padSide.needsUpdate = padTop.needsUpdate = true;
+    setEnv(light);
+  };
+  let themeWas = isLight();
+  applyTheme();
+  // body's class list changes for other reasons (menus, scroll state); only
+  // an actual theme flip is worth a PMREM rebuild.
+  new MutationObserver(() => { if (isLight() !== themeWas) { themeWas = isLight(); applyTheme(); } })
+    .observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
   // Soft contact shadow under the tires — cheap to draw, reads as expensive.
   const c = document.createElement('canvas'); c.width = c.height = 256;
@@ -3273,6 +3333,6 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="assets/funnel.js" defer></script>
 <script src="assets/live-ticker.js?v=3" defer></script>
 <script src="assets/tilt.js?v=1" defer></script>
-<script src="assets/lightning-bg.js?v=9751680" defer></script>
+<script src="assets/candles-bg.js?v=1" defer></script>
 </body>
 </html>
