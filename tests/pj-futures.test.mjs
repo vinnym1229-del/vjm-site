@@ -298,6 +298,39 @@ test('calcFutures computes real P&L per contract, not a flat per-point rate', ()
   el('fc-contracts').value = '1';
   sandbox.calcFutures();
   assert.equal(els['fc-pnl'].textContent, '−$3,400');
+
+  // MNQ, MES, RTY are the other three FC_SPECS entries and were never run
+  // through this function by any test — only their static label text was
+  // checked above, which would stay green even if their per-point math (or,
+  // for RTY, its distinct 0.10 tick size) regressed the same way YM's did.
+  // MNQ: 12pt move, 1 contract, at $2/pt must be $24.
+  el('fc-contract').value = 'MNQ';
+  el('fc-entry').value = '20000';
+  el('fc-exit').value = '20012';
+  el('fc-contracts').value = '1';
+  sandbox.calcFutures();
+  assert.equal(els['fc-pnl'].textContent, '+$24');
+  assert.equal(els['fc-details'].textContent, '12.00 points (48 ticks) × 1 contract × $2/pt');
+
+  // MES: 10pt move, 3 contracts, at $5/pt must be $150.
+  el('fc-contract').value = 'MES';
+  el('fc-entry').value = '5000';
+  el('fc-exit').value = '5010';
+  el('fc-contracts').value = '3';
+  sandbox.calcFutures();
+  assert.equal(els['fc-pnl'].textContent, '+$150');
+  assert.equal(els['fc-details'].textContent, '10.00 points (40 ticks) × 3 contracts × $5/pt');
+
+  // RTY: 2pt move, 1 contract, at $50/pt must be $100. Its 0.10 tick size
+  // (the only one in FC_SPECS that isn't 0.25 or 1) means 2pt is 20 ticks,
+  // not the 8 ticks a mistaken 0.25 tick size would produce.
+  el('fc-contract').value = 'RTY';
+  el('fc-entry').value = '2000';
+  el('fc-exit').value = '2002';
+  el('fc-contracts').value = '1';
+  sandbox.calcFutures();
+  assert.equal(els['fc-pnl'].textContent, '+$100');
+  assert.equal(els['fc-details'].textContent, '2.00 points (20 ticks) × 1 contract × $50/pt');
 });
 
 test('calcPropRisk floors the trade count and keys its cushion color off it', () => {

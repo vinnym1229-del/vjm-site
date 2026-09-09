@@ -2462,7 +2462,8 @@ setBundlePeriod('monthly');
 })();
 
 // ─── FUTURES TICK CALCULATOR ───
-// Point values: MNQ $2, NQ $20, MES $5, ES $50, YM $1, RTY $50. Tick = 0.25pt.
+// Point values: MNQ $2, NQ $20, MES $5, ES $50, YM $5, RTY $50. Tick size
+// varies by contract — see FC_SPECS below, not a single "0.25pt" for all.
 function calcFutures() {
   // $/pt AND tick size are per contract: YM ticks in whole points at $5/pt
   // (the old option said $1/pt — every YM result was 5x too small), RTY in
