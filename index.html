@@ -66,14 +66,22 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://s3.tradingview.com">
-<link rel="preload" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" as="style" onload="this.rel='stylesheet'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<!-- Big Shoulders Display is the site's display font as of 2026-09-09 (owner
+     request: "not standard"). It's added here, not swapped in for Barlow
+     Condensed -- every font-family list sitewide reads
+     'Big Shoulders Display','Big Shoulders Display','Barlow Condensed',sans-serif, and only THIS
+     page loads the new family, so every other page (which still only loads
+     Barlow Condensed) falls through to the exact font it already rendered
+     in, unchanged. Loading it here alone, rather than adding it to every
+     page's <link>, is what keeps this a homepage-only visual change. -->
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Big+Shoulders+Display:wght@400;600;700;800;900&display=swap" as="style" onload="this.rel='stylesheet'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Big+Shoulders+Display:wght@400;600;700;800;900&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="assets/tokens.css">
 <link rel="stylesheet" href="assets/newsletter.css">
 <!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
      than _headers declares -- bump this ?v= on every edit to site.css or
      it can take hours to show up live even after a hard refresh. -->
-<link rel="stylesheet" href="assets/site.css?v=17">
+<link rel="stylesheet" href="assets/site.css?v=18">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -244,7 +252,7 @@
 })();
 </script>
 <!-- HERO -->
-<section class="hero has-car" id="home">
+<section class="hero has-car pj-reference-hero" id="home">
   <!-- FERRARI — a real-time 3D render (Three.js + WebGL), not a photo or a
        video, filling the empty left column the centred hero copy leaves on a
        wide screen. It turns on the hero's own scroll progress rather than a
@@ -264,6 +272,17 @@
   <div id="ferrari-showcase" aria-label="3D Ferrari">
     <div class="fs-track" id="fsTrack">
       <div class="fs-stage" id="fsStage">
+        <!-- Reference-matched photographic coupe (owner-approved reference,
+             2026-09-09): a generated studio photo, not a rotatable mesh, with
+             restrained pointer parallax instead of drag-to-spin. Two images,
+             not one recolored in CSS, because the light version needed a
+             genuinely different backdrop and floor reflection, not just an
+             inverted filter -- the exact lesson assets/lightning-bg.js
+             already documents for the bolt layer. Both are WebP, re-encoded
+             from the source PNGs (quality 90, ~140KB each vs. >1.5MB) since
+             the light one loads eagerly as the hero's LCP element. -->
+        <img class="pj-car-image pj-car-light" src="assets/ferrari-reference-light.webp" alt="" width="1536" height="1024" fetchpriority="high" decoding="async">
+        <img class="pj-car-image pj-car-dark" src="assets/ferrari-reference-dark.webp" alt="" width="1536" height="1024" decoding="async">
         <div class="fs-loading" id="fsLoading" aria-hidden="true"><span class="fs-loading-pulse"></span></div>
         <canvas id="fsCanvas" aria-hidden="true"></canvas>
       </div>
@@ -613,7 +632,7 @@
           </div>
           <div id="quiz-result" style="display:none;text-align:center;">
             <div id="quiz-result-icon" style="font-size:3rem;margin-bottom:12px;"></div>
-            <div id="quiz-result-title" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--text);margin-bottom:10px;"></div>
+            <div id="quiz-result-title" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--text);margin-bottom:10px;"></div>
             <div id="quiz-result-text" style="color:var(--text);line-height:1.7;margin-bottom:20px;font-size:0.92rem;"></div>
 
             <!-- ROUTED NEXT STEP — the quiz knows what this visitor wants; it
@@ -622,7 +641,7 @@
                  that the site does not already have. -->
             <div id="quiz-track" style="border-top:1px solid var(--border);padding-top:20px;text-align:left;">
               <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Where to start</div>
-              <div id="quiz-track-name" style="font-family:'Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:900;color:var(--text);"></div>
+              <div id="quiz-track-name" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:900;color:var(--text);"></div>
               <p id="quiz-track-why" style="color:var(--muted);font-size:0.86rem;line-height:1.6;margin:6px 0 14px;"></p>
               <a id="quiz-track-cta" class="btn btn-gold" href="futures-dissection.html" style="display:inline-block;font-size:0.95rem;padding:12px 22px;"></a>
               <p id="quiz-track-note" style="font-size:0.74rem;color:var(--muted);margin-top:10px;"></p>
@@ -647,7 +666,7 @@
 
       <!-- Growth Simulator (futures‑connected) -->
       <div class="pj-tool-card" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">📈 Growth Simulator</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">📈 Growth Simulator</h3>
         <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Repeats the daily gain you type for the number of days you set, so you can see what that arithmetic adds up to.</p>
         <p style="font-size:0.72rem;line-height:1.55;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-bottom:14px;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> This tool does arithmetic on the numbers you type. It is not a forecast, and no figure it shows has been achieved by PJ Trades, by a member, or by anyone. A fixed daily dollar target is not a trading edge: markets do not pay a set amount per day, losing days and losing weeks are normal, and the tool ignores losses, drawdown, commissions, slippage, taxes and prop-firm rules. Results are not typical and most traders lose money.</p>
 
@@ -680,7 +699,7 @@
 
           <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Trading Days: <span id="sim-days-val">20</span></label>
           <input id="sim-days" type="range" min="1" max="252" value="20" oninput="document.getElementById('sim-days-val').textContent=this.value" style="width:100%;margin-bottom:16px;" aria-label="sim days">
-          <button onclick="runGrowthSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">RUN HYPOTHETICAL</button>
+          <button onclick="runGrowthSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">RUN HYPOTHETICAL</button>
         </div>
 
         <!-- Prop mode inputs -->
@@ -693,11 +712,11 @@
           </div>
           <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Holding Period (days)</label>
           <input id="sim-prop-days" type="number" value="30" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;outline:none;" aria-label="sim prop days">
-          <button onclick="runPropPayout()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">RUN HYPOTHETICAL</button>
+          <button onclick="runPropPayout()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">RUN HYPOTHETICAL</button>
           <div id="sim-prop-result" style="margin-top:16px;display:none;">
             <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
               <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Hypothetical Total &mdash; Not A Payout Forecast</div>
-              <div id="sim-prop-end-val" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
+              <div id="sim-prop-end-val" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
               <div id="sim-prop-weekly" style="font-size:0.9rem;color:var(--emerald);margin-top:4px;">~$X per week / ~$Y per month</div>
               <div id="sim-prop-balance" style="font-size:0.8rem;color:var(--muted);margin-top:6px;"></div>
             </div>
@@ -708,7 +727,7 @@
         <div id="sim-result" style="margin-top:16px;display:none;">
           <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
             <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Hypothetical Balance &mdash; Not A Projection</div>
-            <div id="sim-end-val" style="font-family:'Barlow Condensed',sans-serif;font-size:2.5rem;font-weight:900;color:var(--green);text-shadow:0 0 16px rgba(255,255,255,0.16);"></div>
+            <div id="sim-end-val" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2.5rem;font-weight:900;color:var(--green);text-shadow:0 0 16px rgba(255,255,255,0.16);"></div>
             <div id="sim-gain-val" style="font-size:0.82rem;color:var(--emerald);margin-top:4px;"></div>
             <div id="sim-extra-val" style="font-size:0.78rem;color:var(--muted);margin-top:4px;"></div>
           </div>
@@ -718,7 +737,7 @@
 
       <!-- Tick Simulator -->
       <div class="pj-tool-card" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">🎯 Tick Simulator</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">🎯 Tick Simulator</h3>
         <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">Select a contract and input stop loss or $ risk to see total point/$ value.</p>
         <label for="tick-contract" style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
         <select id="tick-contract" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
@@ -737,10 +756,10 @@
             <input id="tick-dollars" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;" aria-label="tick dollars">
           </div>
         </div>
-        <button onclick="calcTickSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
+        <button onclick="calcTickSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
         <div id="tick-result" style="margin-top:16px;display:none;">
           <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
-            <div id="tick-output" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
+            <div id="tick-output" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
             <div id="tick-interpret" style="font-size:0.82rem;color:var(--muted);margin-top:4px;"></div>
           </div>
           <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> Contract math on the numbers you entered; your real fill, fees and slippage will differ.</p>
@@ -749,7 +768,7 @@
 
       <!-- Sizing Simulator -->
       <div class="pj-tool-card" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">📏 Sizing Simulator</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">📏 Sizing Simulator</h3>
         <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">Enter contracts and stop loss to see total $ at risk — or a $ amount to see how many contracts it buys.</p>
         <label for="size-contract" style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
         <select id="size-contract" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
@@ -770,10 +789,10 @@
         </div>
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">$ Amount (leave blank to compute from contracts)</label>
         <input id="size-target" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="size target">
-        <button onclick="calcSizingSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
+        <button onclick="calcSizingSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
         <div id="size-result" style="margin-top:16px;display:none;">
           <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
-            <div id="size-output" style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
+            <div id="size-output" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
             <div id="size-interpret" style="font-size:0.82rem;color:var(--muted);margin-top:4px;"></div>
           </div>
           <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> A stop is an order, not a guaranteed fill: gaps and thin liquidity can fill you past it, so the real loss can exceed the figure shown.</p>
@@ -782,7 +801,7 @@
 
       <!-- Futures Tick & P&L Calculator -->
       <div class="pj-tool-card" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">🎯 Futures Tick Calc</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">🎯 Futures Tick Calc</h3>
         <p style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;">NQ · ES · MNQ · MES · YM · RTY — real contract math.</p>
         <label for="fc-contract" style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
         <select id="fc-contract" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;"> <option value="MNQ">MNQ — Micro Nasdaq ($2/pt)</option> <option value="NQ">NQ — E-mini Nasdaq ($20/pt)</option> <option value="MES">MES — Micro S&amp;P ($5/pt)</option> <option value="ES">ES — E-mini S&amp;P ($50/pt)</option> <option value="YM">YM — E-mini Dow ($5/pt)</option> <option value="RTY">RTY — E-mini Russell ($50/pt)</option> </select>
@@ -792,10 +811,10 @@
         <input id="fc-exit" type="number" value="21568" step="0.25" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="fc exit">
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contracts</label>
         <input id="fc-contracts" type="number" value="2" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="fc contracts">
-        <button onclick="calcFutures()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
+        <button onclick="calcFutures()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
         <div id="fc-result" style="margin-top:16px;display:none;">
           <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
-            <div id="fc-pnl" style="font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;"></div>
+            <div id="fc-pnl" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;"></div>
             <div id="fc-details" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></div>
           </div>
           <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> Contract math on the entry and exit you typed, before commissions, exchange fees and slippage.</p>
@@ -804,7 +823,7 @@
 
       <!-- Prop Firm Risk Guard -->
       <div class="pj-tool-card" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">🛡️ Prop Risk Guard</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">🛡️ Prop Risk Guard</h3>
         <p style="font-size:0.78rem;color:var(--muted);margin-bottom:20px;">Shows how many full-size losses, at the risk you type, would use up the loss limit you type.</p>
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Account Size ($)</label>
         <input id="pr-account" type="number" value="50000" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="pr account">
@@ -812,10 +831,10 @@
         <input id="pr-drawdown" type="number" value="2000" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="pr drawdown">
         <label style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Risk Per Trade (% of account)</label>
         <input id="pr-risk" type="number" value="0.5" step="0.1" min="0.1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;" aria-label="pr risk">
-        <button onclick="calcPropRisk()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
+        <button onclick="calcPropRisk()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
         <div id="pr-result" style="margin-top:16px;display:none;">
           <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
-            <div id="pr-trades" style="font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;color:var(--green);"></div>
+            <div id="pr-trades" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;color:var(--green);"></div>
             <div id="pr-details" style="font-size:0.78rem;color:var(--muted);margin-top:6px;line-height:1.6;"></div>
           </div>
           <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> It assumes every loss is exactly the size you typed. Real losses can be larger, and each prop firm&rsquo;s own trailing-drawdown rules govern &mdash; read your firm&rsquo;s agreement.</p>
@@ -825,7 +844,7 @@
       <!-- Options Lab CTA -->
       <div style="grid-column:1/-1;background:linear-gradient(135deg,rgba(209,67,67,0.10),rgba(166,51,51,0.04));border:1px solid rgba(209,67,67,0.28);border-radius:16px;padding:28px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;" data-reveal>
         <div>
-          <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;margin-bottom:4px;">📊 Options Lab</h3>
+          <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;margin-bottom:4px;">📊 Options Lab</h3>
           <p style="font-size:0.85rem;color:var(--muted);max-width:520px;">From options basics — calls, puts, strikes, expiration — up through advanced gamma exposure (GEX): worked scenarios, where to get real-time GEX data, and how to translate it into QQQ/NQ and SPY/ES intraday.</p>
         </div>
         <a href="options-lab.html" class="btn btn-gold" style="white-space:nowrap;">Open Options Lab →</a>
@@ -957,7 +976,7 @@
 
     <!-- MEMBER TOOLS -->
     <div style="text-align:center;margin:52px 0 24px;" data-reveal>
-      <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;">Already a <span class="gold">Member?</span></h3>
+      <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;">Already a <span class="gold">Member?</span></h3>
     </div>
 
 <!-- Tab Nav -->
@@ -976,16 +995,16 @@
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px;">
           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;">
             <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your Status</div>
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--green);">✅ ACTIVE</div>
+            <div style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--green);">✅ ACTIVE</div>
           </div>
           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;">
             <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Renews / Expires</div>
-            <div id="dash-expires" style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--gold-ink);">—</div>
+            <div id="dash-expires" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--gold-ink);">—</div>
             <div style="font-size:0.7rem;color:var(--muted);">Futures from $100/mo</div>
           </div>
           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center;">
             <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Discord</div>
-            <div id="dash-access-code" style="font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--text);">Premium</div>
+            <div id="dash-access-code" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--text);">Premium</div>
           </div>
         </div>
         <button onclick="signOutPremium()" class="btn btn-outline" style="width:100%;max-width:220px;margin:0 auto 20px;display:block;font-size:0.85rem;">Sign Out</button>
@@ -1017,7 +1036,7 @@
     <div id="pcontent-status" style="display:none;max-width:500px;margin:0 auto;text-align:center;">
       <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px 28px;">
         <div style="font-size:2rem;margin-bottom:12px;">🔍</div>
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;margin-bottom:8px;">Check Your Status</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;margin-bottom:8px;">Check Your Status</h3>
         <p style="color:var(--muted);font-size:0.85rem;margin-bottom:24px;">Enter your Discord username to check if your premium is active.</p>
         <input type="text" id="status-discord-input" placeholder="Your Discord username..." style="width:100%;padding:12px 16px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);outline:none;margin-bottom:12px;box-sizing:border-box;" aria-label="Your Discord username...">
         <button onclick="checkStatus()" class="btn btn-gold" style="width:100%;">Check Status</button>
@@ -1026,7 +1045,7 @@
                  those are colour emoji and the platform paints them in its own
                  colours, which is why the failure state showed a pink X. -->
             <div id="status-icon" style="display:flex;justify-content:center;margin-bottom:8px;min-height:36px;"></div>
-          <div id="status-text" style="font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:900;"></div>
+          <div id="status-text" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:900;"></div>
           <div id="status-sub" style="font-size:0.82rem;margin-top:6px;"></div>
         </div>
         <p style="color:var(--muted);font-size:0.75rem;margin-top:20px;">If your status is wrong, contact support in <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold-ink);"><strong>Discord</strong></a> or email <a href="mailto:pjtradesofficial@gmail.com" style="color:var(--gold-ink);"><strong>pjtradesofficial@gmail.com</strong></a></p>
@@ -1238,11 +1257,11 @@
         </figure>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;">
           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--gold-ink);">10</div>
+            <div style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--gold-ink);">10</div>
             <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Years in the markets</div>
           </div>
           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--gold-ink);">49K+</div>
+            <div style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--gold-ink);">49K+</div>
             <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Traders joined on Whop</div>
           </div>
         </div>
@@ -1318,7 +1337,7 @@
       <!-- Pull quote hero -->
       <div style="background:linear-gradient(135deg,#131315,#1a1a1c);padding:36px 40px;border-bottom:1px solid var(--border);text-align:center;position:relative;overflow:hidden;">
         <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(209,67,67,0.05) 0%,transparent 65%);pointer-events:none;"></div>
-        <p style="font-family:'Barlow Condensed',sans-serif;font-size:clamp(1.3rem,3vw,1.9rem);font-weight:800;color:#ededee;text-shadow:0 0 24px rgba(255,255,255,0.10);line-height:1.35;position:relative;">"Discipline is not a personality trait or a motivational slogan. It is the ability to follow rules despite pressure — in both markets and all other aspects of life."</p>
+        <p style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:clamp(1.3rem,3vw,1.9rem);font-weight:800;color:#ededee;text-shadow:0 0 24px rgba(255,255,255,0.10);line-height:1.35;position:relative;">"Discipline is not a personality trait or a motivational slogan. It is the ability to follow rules despite pressure — in both markets and all other aspects of life."</p>
         <p style="color:#9a9aa0;font-size:0.78rem;margin-top:14px;text-transform:uppercase;letter-spacing:2px;position:relative;">— Vinny Mistretta</p>
       </div>
 
@@ -1337,7 +1356,7 @@
 
         <p>Talent, intelligence, and opportunity all matter, but none of them compensate for inconsistency under pressure. Discipline is the quality that converts knowledge into results, goals into habits, and intentions into action. It is the quality that strengthens every other trait, because without it, even the best strategy or ability can collapse the moment emotion, boredom, or discomfort arises.</p>
 
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Trading as a Pressure Chamber</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Trading as a Pressure Chamber</h3>
 
         <p>Discipline is the ability to execute a system when short-term emotion conflicts with long-term goals. Day trading is an ideal pressure chamber for studying discipline because it compresses temptation, feedback, money, uncertainty, and emotion into seconds or minutes — revealing that people often fail more from inconsistency than from lack of knowledge. Markets are noisy, short-term outcomes are often random, and factors such as fees, slippage, and informational disadvantages all increase losses. But even when a strategy has an edge, that edge collapses without disciplined execution.</p>
 
@@ -1345,7 +1364,7 @@
 
         <p style="margin-top:1.4em;">Research consistently shows that traders with documented strategies still underperform compared to their own systems due to emotional interference, impulsive decisions, and inconsistent rule adherence. The most common documented losses among retail traders are not caused by a market that is simply too difficult to beat — they are caused by behavior that directly contrasts the trader's own stated plan: revenge trading, holding losers too long, and cutting winners too early. Discipline is not being claimed to guarantee profits, but without it guarantees unnecessary losses compounded with the structural disadvantages that could already exist.</p>
 
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Self-Control vs. Grit — They're Not the Same</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Self-Control vs. Grit — They're Not the Same</h3>
 
         <p>Duckworth and Gross help explain why access does not automatically translate into execution. People often confuse wanting a long-term outcome with having the ability to resist short-term temptation. They argue that two important determinants of success are self-control and grit — defining self-control as the "capacity to regulate attention, emotion, and behavior in the presence of temptation" and grit as "the tenacious pursuit of a dominant superordinate goal despite setbacks." These concepts are related but not identical. Someone might handle short-term temptation well while struggling to stay committed long-term. Another person may deeply care about a long-term goal but struggle to regulate immediate impulses.</p>
 
@@ -1355,19 +1374,19 @@
           <p style="margin:0;color:var(--text);"><strong style="color:var(--emerald);">Key insight:</strong> Intentions alone account for only 20–30% of actual behavior. The gap between what you plan to do and what you actually do under pressure is where discipline lives.</p>
         </div>
 
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Prospect Theory — Why Losing Feels Worse Than Winning Feels Good</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Prospect Theory — Why Losing Feels Worse Than Winning Feels Good</h3>
 
         <p>In Prospect Theory, Kahneman and Tversky argue that people evaluate outcomes relative to a reference point rather than in absolute terms, and that losses feel more painful than equivalent gains feel rewarding. Because of that, a trader who is down on the day is more willing to take irrational risk in order to get back to "even," while a trader who is up may become overly quick to lock in profits for emotional relief.</p>
 
         <p style="margin-top:1.4em;">This same loss aversion also helps explain why traders cling too tightly to unrealized gains — because the pain of giving back profit can feel more immediate than the potential benefit of letting the trade develop. Traders anchor to emotionally meaningful reference points and resist exiting until the price reaches those internal thresholds. This leads to predictable patterns: after losses, traders increase their risk, and after gains, they do the opposite. Rule-breaking, then, is not random. It follows recurring psychological patterns that emerge whenever a person's short-term emotional reference point begins to overpower the longer-term system.</p>
 
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">The Disposition Effect — Real Data, Not Just Theory</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">The Disposition Effect — Real Data, Not Just Theory</h3>
 
         <p>Odean's research confirms that these conflicts — especially the tendency to cut winners and hold losers — are not just theoretical. In his study of 10,000 brokerage accounts, investors demonstrated a strong tendency to realize winners more readily than losers. More importantly, the winning trades that investors chose to sell continued to outperform the losing positions they held. This makes the disposition effect one of the clearest real-world examples of rule-breaking under pressure.</p>
 
         <p style="margin-top:1.4em;">Investors did not merely think irrationally under pressure — they behaved in ways that damaged their later performance. This matters because it shows how emotional relief can override rational decision-making. Traders frequently violate their known process by favoring comfort in the moment over better probabilities in the future.</p>
 
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">The Position-Size Paradox</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">The Position-Size Paradox</h3>
 
         <p>Emotional engagement complicates this problem further because a strategy can remain identical while its psychological difficulty changes dramatically. Bossaerts and colleagues found that heart-rate changes that anticipate mispricing events are associated with stronger earnings, while heart-rate changes that react to trades are associated with weaker earnings. Their conclusion: emotion must not disappear from trading, but the timing and regulation of emotion matter.</p>
 
@@ -1377,19 +1396,19 @@
           <p style="margin:0;font-style:italic;color:var(--text);">Experience by itself does not solve this problem. 80% of all day traders quit within two years, yet traders with a history of losses still account for over half of day-trading volume. Without honest feedback loops, experience can reinforce ego just as easily as it reinforces skill.</p>
         </div>
 
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Beginners vs. Veterans — How They Measure Themselves</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Beginners vs. Veterans — How They Measure Themselves</h3>
 
         <p>Beginners often evaluate themselves through profit and loss alone. After a profitable day, they assume they traded well; after a losing day, they assume they traded poorly. Veterans are more likely to judge performance through <em>process</em>: Did I follow my plan? Did I respect my risk rules? Did I size appropriately? Did I violate my structure?</p>
 
         <p style="margin-top:1.4em;">That shift is critical because it separates identity from immediate outcomes. A losing trade that follows a sound process can still be evidence of discipline, while a winning trade that violates a rule can still be evidence of failure. Long-term traders survive not because they predict every move correctly, but because they treat probability management, emotional regulation, and structural consistency as more important than short-term validation.</p>
 
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">The Platform Problem — When the Environment Works Against You</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">The Platform Problem — When the Environment Works Against You</h3>
 
         <p>Studies on the gamblification of investing argue that certain platforms borrow from gambling by emphasizing rapid feedback, stimulation, and repeated engagement. Barber et al. show that Robinhood's simplified attention structures guide users toward concentrated buying — and that the most purchased stocks are followed by average 20-day abnormal returns of -4.7%.</p>
 
         <p style="margin-top:1.4em;">When platforms highlight trending stocks or reward constant interaction, they eliminate the friction that could otherwise prevent impulsive executions. In that kind of setting, discipline is no longer just a private internal trait — it becomes a struggle against an external design that benefits from speed, stimulation, and repetition. The trader is not only fighting emotion; they are also fighting an environment designed to turn attention into action before reflection can intervene.</p>
 
-        <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Building Discipline as a System</h3>
+        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Building Discipline as a System</h3>
 
         <p>For that reason, discipline must be built as a system. Implementation intentions matter because they reduce the knowledge-execution gap by moving the decision from the heated moment of temptation to the earlier cold moment of planning. Rather than in-the-moment decision-making, people link a critical situation to a predetermined action:</p>
 
@@ -1406,13 +1425,13 @@
 
         <!-- Final takeaway -->
         <div style="background:linear-gradient(135deg,#131315,#1a1a1c);border:1px solid var(--border);border-radius:14px;padding:28px 32px;margin:36px 0 0;">
-          <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:#ededee;margin-bottom:12px;">The Bottom Line</h3>
+          <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:#ededee;margin-bottom:12px;">The Bottom Line</h3>
           <p style="margin:0;line-height:1.85;color:#ededee;">Ultimately, trading is a useful case study not because it is the only place where discipline matters, but because it exposes the problem more quickly than ordinary life does. In fitness, school, work, or budgeting, weak discipline can hide behind a delay. Trading eliminates that delay. It shows that modern failure is often caused not by lack of access, knowledge, or tools — but by the inability to follow a structured process once emotion begins to compete with judgment. <strong style="color:#e26060;">Discipline is the foundation that every other skill depends on. That consistency determines survival long before it determines success.</strong></p>
         </div>
 
         <!-- Works Cited -->
         <div style="margin-top:40px;padding-top:28px;border-top:1px solid var(--border);">
-          <h4 style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;">Works Cited</h4>
+          <h4 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;">Works Cited</h4>
           <div style="display:flex;flex-direction:column;gap:8px;font-size:0.78rem;color:var(--muted);line-height:1.6;">
             <p>Barber, B. M., Huang, X., Odean, T., and Schwarz, C. "Attention-Induced Trading and Returns: Evidence from Robinhood Users." <em>The Journal of Finance</em>, vol. 77, no. 6, 2022, pp. 3141-3190.</p>
             <p>Barber, B. M., Lee, Y., Liu, Y., and Odean, T. "Do Day Traders Rationally Learn About Their Ability?" 2017.</p>
@@ -2836,6 +2855,30 @@ setInterval(tickSessionClock, 30000);
   var track = document.getElementById('fsTrack');
   var stage = document.getElementById('fsStage');
   var canvas = document.getElementById('fsCanvas');
+  // Reference-matched photographic coupe (owner-approved, 2026-09-09): this
+  // branch supersedes the WebGL turntable below whenever the <img> markup is
+  // present, and returns before the code below ever reaches its `import()`
+  // calls -- so on this branch Three.js (and the car model) is never even
+  // fetched, not just unused. The old renderer stays exactly as it was,
+  // available again the moment the <img> tags are removed from the markup.
+  if (stage && stage.querySelector('.pj-car-image')) {
+    stage.classList.add('fs-ready');
+    var media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var hero = document.getElementById('home');
+    var resetTilt = () => { stage.style.transform = ''; };
+    if (hero) {
+      hero.addEventListener('pointermove', (event) => {
+        if (media.matches || event.pointerType === 'touch' || window.innerWidth < 1100) return;
+        var rect = hero.getBoundingClientRect();
+        var x = Math.max(-1, Math.min(1, (event.clientX - rect.left) / rect.width * 2 - 1));
+        var y = Math.max(-1, Math.min(1, (event.clientY - rect.top) / rect.height * 2 - 1));
+        stage.style.transform = 'perspective(1600px) rotateY(' + (x * 1.4) + 'deg) rotateX(' + (-y * 0.7) + 'deg) translate3d(' + (x * 4) + 'px, ' + (y * 2) + 'px, 0)';
+      }, { passive: true });
+      hero.addEventListener('pointerleave', resetTilt);
+    }
+    media.addEventListener('change', resetTilt);
+    return;
+  }
   // The hero's two-column grid (assets/site.css, .hero.has-car) only makes
   // sense while the car is actually there to fill the first column. Any exit
   // from this script -- the guard below, or any failure further down -- has
@@ -3049,7 +3092,7 @@ setInterval(tickSessionClock, 30000);
     // so the apron carries the wordmark as type instead (red PJ, dark
     // TRADES) -- the same mark the nav and the reference mockup use.
     const fs = Math.round(PC * 0.115);
-    px.font = `900 ${fs}px 'Barlow Condensed', 'Arial Narrow', sans-serif`;
+    px.font = `900 ${fs}px 'Big Shoulders Display','Barlow Condensed', 'Arial Narrow', sans-serif`;
     px.textBaseline = 'middle';
     const a = 'PJ ', b = 'TRADES';
     const wa = px.measureText(a).width, wb = px.measureText(b).width;
@@ -3077,7 +3120,7 @@ setInterval(tickSessionClock, 30000);
   }
   // The wordmark face needs the display font ready before the first draw;
   // fall back to whatever the browser has if it never arrives.
-  try { await document.fonts.load("900 40px 'Barlow Condensed'"); } catch (e) {}
+  try { await document.fonts.load("900 40px 'Big Shoulders Display','Barlow Condensed'"); } catch (e) {}
   drawPad(isLight());
   const padTex = new THREE.CanvasTexture(pc);
   padTex.colorSpace = THREE.SRGBColorSpace;

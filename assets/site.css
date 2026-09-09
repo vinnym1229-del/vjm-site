@@ -131,7 +131,7 @@ body.light-mode > section:not(.hero), body.light-mode > footer {
   font-size: 0.82rem; font-weight: 700;
 }
 #stream-countdown-bar .cd-time {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Big Shoulders Display','Barlow Condensed', sans-serif;
   font-size: 1.3rem; font-weight: 900; color: var(--gold-ink);
   letter-spacing: 2px;
   text-shadow: 0 0 14px rgba(209,67,67,0.28);
@@ -177,7 +177,7 @@ nav {
   min-height: 70px;
 }
 .nav-brand {
-  font-family: 'Barlow Condensed', sans-serif; font-size: 1.72rem; font-weight: 900;
+  font-family: 'Big Shoulders Display','Barlow Condensed', sans-serif; font-size: 1.72rem; font-weight: 900;
   color: var(--gold-ink); letter-spacing: 2px; text-decoration: none;
   display: flex; align-items: center; gap: 12px; white-space: nowrap; flex: 0 0 auto;
   line-height: 1;
@@ -280,7 +280,7 @@ body.light-mode .nav-drop a:hover { color: #141416; }
 .mobile-menu a:hover { color: var(--text); background: rgba(255,255,255,0.06); }
 .mobile-menu a:last-child { border-bottom: none; }
 .mm-group {
-  font-family: 'Barlow Condensed', sans-serif; font-size: 0.74rem; font-weight: 900;
+  font-family: 'Big Shoulders Display','Barlow Condensed', sans-serif; font-size: 0.74rem; font-weight: 900;
   letter-spacing: 2.4px; text-transform: uppercase; color: var(--muted);
   padding: 14px 14px 6px; opacity: .85;
 }
@@ -377,7 +377,7 @@ body.light-mode .nav-drop a:hover { color: #141416; }
   text-transform: uppercase; letter-spacing: 2px;
 }
 .hero h1 {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Big Shoulders Display','Barlow Condensed', sans-serif;
   font-size: clamp(2.8rem, 8.2vw, 5.9rem);
   font-weight: 900; line-height: 0.95;
   letter-spacing: -1px; margin-bottom: 24px;
@@ -402,7 +402,7 @@ body.light-mode .nav-drop a:hover { color: #141416; }
 }
 .hero-stat:last-child { border-right: none; }
 .hero-stat-num {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Big Shoulders Display','Barlow Condensed', sans-serif;
   font-size: 2.4rem; font-weight: 900; color: var(--text);
   line-height: 1;
 }
@@ -462,7 +462,7 @@ section { padding: 90px 24px; }
 /* Banner-scale variant: stands in for a section heading rather than sitting
    above one, so it carries the weight the <h2> used to. */
 .section-tag.xl {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Big Shoulders Display','Barlow Condensed', sans-serif;
   font-size: clamp(1.5rem, 3.6vw, 2.35rem);
   font-weight: 900; letter-spacing: 4px;
   padding: 13px 40px; border-radius: 999px; margin-bottom: 0;
@@ -472,7 +472,7 @@ section { padding: 90px 24px; }
   box-shadow: 0 0 44px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.06);
 }
 .section-title {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Big Shoulders Display','Barlow Condensed', sans-serif;
   font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 900; margin-bottom: 12px;
 }
 .section-title .gold { color: var(--text); }
@@ -495,7 +495,7 @@ section { padding: 90px 24px; }
 .about-quote-caption { padding:20px; }
 .about-quote-caption blockquote { font-style:italic; font-size:0.95rem; color:var(--text); margin-bottom:8px; }
 .about-quote-caption cite { color:var(--muted); font-size:0.78rem; font-weight:700; }
-.about-text h2 { font-family:'Barlow Condensed',sans-serif; font-size:2.6rem; font-weight:900; margin-bottom:20px; }
+.about-text h2 { font-family:'Big Shoulders Display','Barlow Condensed',sans-serif; font-size:2.6rem; font-weight:900; margin-bottom:20px; }
 .about-text p { color:var(--muted); margin-bottom:14px; font-size:0.95rem; line-height:1.75; }
 .about-text p strong { color:var(--text); }
 .about-text p.highlight { color:var(--text); background:rgba(209,67,67,0.06); border:1px solid rgba(209,67,67,.22); padding:12px 16px; border-radius:0 8px 8px 0; }
@@ -524,14 +524,14 @@ section { padding: 90px 24px; }
 .service-icon { font-size:2.2rem; margin-bottom:12px; }
 .service-card h3 { font-size:1.1rem; font-weight:700; margin-bottom:8px; }
 .service-card p { color:var(--muted); font-size:0.85rem; margin-bottom:16px; }
-.service-price { font-family:'Barlow Condensed',sans-serif; font-size:2.4rem; font-weight:900; color:var(--gold-ink); }
+.service-price { font-family:'Big Shoulders Display','Barlow Condensed',sans-serif; font-size:2.4rem; font-weight:900; color:var(--gold-ink); }
 .service-price span { font-size:0.9rem; color:var(--muted); font-family:'IBM Plex Sans',sans-serif; }
 
 /* ─── DISCORD CTA ─── */
 #discord-cta { background: linear-gradient(135deg, #131315, #0c0c0d); text-align:center; }
 .discord-box { background: rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:20px; padding:50px 40px; max-width:680px; margin:0 auto; }
 .discord-logo { font-size:3rem; margin-bottom:16px; }
-.discord-box h2 { font-family:'Barlow Condensed',sans-serif; font-size:2.6rem; font-weight:900; margin-bottom:12px; }
+.discord-box h2 { font-family:'Big Shoulders Display','Barlow Condensed',sans-serif; font-size:2.6rem; font-weight:900; margin-bottom:12px; }
 .discord-box p { color:var(--muted); margin-bottom:28px; }
 .discord-btn { display:inline-block; background:#d14343; color:#fff; padding:14px 36px; border-radius:8px; font-weight:700; text-decoration:none; font-size:1rem; transition:all .2s; }
 .discord-btn:hover { background:#a63333; transform:translateY(-2px); }
@@ -555,7 +555,7 @@ footer { background:#0c0c0d; border-top:1px solid var(--border); padding:32px 24
 .modal { background:var(--bg2); border:1px solid var(--border); border-radius:16px; max-width:800px; width:100%; padding:40px; position:relative; }
 .modal-close { position:absolute; top:16px; right:16px; background:none; border:none; color:var(--muted); font-size:1.5rem; cursor:pointer; transition:color .2s; }
 .modal-close:hover { color:var(--text); }
-.modal h2 { font-family:'Barlow Condensed',sans-serif; font-size:2rem; font-weight:900; margin-bottom:20px; }
+.modal h2 { font-family:'Big Shoulders Display','Barlow Condensed',sans-serif; font-size:2rem; font-weight:900; margin-bottom:20px; }
 .modal p { color:var(--muted); margin-bottom:14px; line-height:1.7; }
 .modal h3 { font-size:1.1rem; font-weight:700; margin:20px 0 8px; color:var(--text); }
 .modal ul { color:var(--muted); padding-left:20px; margin-bottom:14px; }
@@ -711,7 +711,7 @@ body.light-mode .mega-bolt { opacity: calc(var(--mega-bolt-base, .5) * 1.3); }
   background:var(--emerald-glow);border:1px solid var(--border);
   color:var(--text);font-size:0.8rem;font-weight:700;padding:7px 18px;
   border-radius:20px;cursor:pointer;margin-top:20px;transition:all .2s;
-  font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;
+  font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;
 }
 .expand-btn:hover { background:var(--accent); }
 .collapsible-extra { overflow:hidden;transition:max-height .4s ease; }
@@ -805,13 +805,13 @@ body.light-mode .mega-bolt { opacity: calc(var(--mega-bolt-base, .5) * 1.3); }
 .feature-icon{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:13px;background:var(--red-soft);border:1px solid var(--red-line);color:var(--gold-ink);transition:transform .2s ease,background .2s;}
 .feature-icon svg{width:24px;height:24px;}
 .feature-card:hover .feature-icon{transform:translateY(-2px) scale(1.04);}
-.feature-num{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:900;color:var(--emerald);letter-spacing:3px;margin-bottom:14px;}
+.feature-num{font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:.95rem;font-weight:900;color:var(--emerald);letter-spacing:3px;margin-bottom:14px;}
 .feature-head .feature-num{margin-bottom:0;opacity:.7;}
 /* Candlestick backdrop (assets/candles-bg.js) sits under the copy and the
    car; the vertical lightning it replaced stays in the markup but hidden. */
 #hero-candles{position:absolute;inset:0;z-index:1;pointer-events:none;}
 .hero .mega-bolt{display:none;}
-.feature-card h3{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;text-transform:uppercase;line-height:1.1;margin-bottom:10px;color:var(--text);}
+.feature-card h3{font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;text-transform:uppercase;line-height:1.1;margin-bottom:10px;color:var(--text);}
 .feature-card p{color:var(--muted);font-size:.9rem;line-height:1.65;}
 
 /* ─── CURRICULUM SHOWCASE ─── */
@@ -819,9 +819,9 @@ body.light-mode .mega-bolt { opacity: calc(var(--mega-bolt-base, .5) * 1.3); }
 .course-card:hover{border-color:var(--muted);transform:translateY(-4px);box-shadow:0 14px 40px rgba(0,0,0,.45);}
 .course-card.free-course{border-color:rgba(217,217,221,.38);box-shadow:0 0 34px rgba(255,255,255,.06);}
 .course-card.free-course:hover{border-color:#d9d9dd;}
-.course-badge{align-self:flex-start;font-family:'Barlow Condensed',sans-serif;font-size:.72rem;font-weight:900;letter-spacing:1.6px;text-transform:uppercase;padding:5px 12px;border-radius:999px;margin-bottom:14px;background:rgba(255,255,255,.07);color:#d9d9dd;border:1px solid rgba(255,255,255,.2);}
+.course-badge{align-self:flex-start;font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:.72rem;font-weight:900;letter-spacing:1.6px;text-transform:uppercase;padding:5px 12px;border-radius:999px;margin-bottom:14px;background:rgba(255,255,255,.07);color:#d9d9dd;border:1px solid rgba(255,255,255,.2);}
 .course-badge.free{background:rgba(255,255,255,.1);color:#ffffff;border-color:rgba(255,255,255,.3);}
-.course-card h3{font-family:'Barlow Condensed',sans-serif;font-size:1.45rem;font-weight:900;text-transform:uppercase;line-height:1.1;margin-bottom:8px;color:var(--text);}
+.course-card h3{font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.45rem;font-weight:900;text-transform:uppercase;line-height:1.1;margin-bottom:8px;color:var(--text);}
 .course-card p{color:var(--muted);font-size:.87rem;line-height:1.6;flex:1;margin-bottom:16px;}
 .course-meta{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:14px;}
 .course-cta{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:.86rem;color:var(--gold-ink);text-decoration:none;}
@@ -847,7 +847,7 @@ body.light-mode .mega-bolt { opacity: calc(var(--mega-bolt-base, .5) * 1.3); }
 /* Always white, in both themes: this text sits on the dark end of the poster
    gradient, not on the page background, so var(--text) made it invisible in
    light mode. The shadow keeps it readable over a bright frame of the video. */
-.video-poster-title{position:relative;margin:0;max-width:100%;text-align:center;font-family:'Barlow Condensed',sans-serif;font-size:clamp(.82rem,3.2vw,1.15rem);line-height:1.25;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.75);}
+.video-poster-title{position:relative;margin:0;max-width:100%;text-align:center;font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:clamp(.82rem,3.2vw,1.15rem);line-height:1.25;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.75);}
 body.light-mode .video-poster-title{color:#fff;}
 .video-facade iframe,.video-facade video{position:absolute;inset:0;width:100%;height:100%;border:0;}
 .video-note{display:none;text-align:center;padding:40px 20px;color:var(--muted);font-size:.9rem;}
@@ -865,7 +865,7 @@ body.light-mode .video-poster-title{color:#fff;}
 @media (max-width:900px){.period-tabs{margin-bottom:40px;}}
 .period-tab{flex:1;padding:9px 6px;border:none;border-radius:999px;background:transparent;color:var(--muted);font-weight:700;font-size:.8rem;cursor:pointer;transition:all .2s;font-family:'IBM Plex Sans',sans-serif;}
 .period-tab.active{background:linear-gradient(135deg,#d14343,#a63333);color:#fff;box-shadow:0 4px 14px rgba(209,67,67,.26),inset 0 1px 0 rgba(255,255,255,.16);}
-.tier-was{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;color:#9a9aa0;text-decoration:line-through;text-decoration-color:rgba(209,67,67,.7);text-decoration-thickness:2px;margin-right:8px;vertical-align:middle;}
+.tier-was{font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;color:#9a9aa0;text-decoration:line-through;text-decoration-color:rgba(209,67,67,.7);text-decoration-thickness:2px;margin-right:8px;vertical-align:middle;}
 .tier-off{display:inline-block;background:rgba(209,67,67,.12);border:1px solid rgba(209,67,67,.32);color:#e26060;font-size:.62rem;font-weight:900;letter-spacing:.5px;border-radius:20px;padding:2px 9px;margin-left:8px;vertical-align:middle;text-transform:uppercase;}
 .tier-note{font-size:.7rem;color:var(--muted);margin-top:4px;font-style:italic;}
 /* The tier cards stay dark in BOTH themes by design, so their text must not
@@ -908,12 +908,12 @@ body.light-mode .tier-card.hot::before{
    block, which is exactly what happened to the Complete card. */
 .tier-card.hot>*:not(.tier-badge){position:relative;z-index:1;}
 .tier-card.hot>.tier-badge{z-index:3;}
-.tier-badge{position:absolute;top:-18px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#3a3a40 0%,#2a2a2e 55%,#1d1d20 100%);color:#ededee;border:1px solid #3a3a40;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:.98rem;letter-spacing:2px;text-transform:uppercase;padding:9px 26px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.11);}
+.tier-badge{position:absolute;top:-18px;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#3a3a40 0%,#2a2a2e 55%,#1d1d20 100%);color:#ededee;border:1px solid #3a3a40;font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-weight:900;font-size:.98rem;letter-spacing:2px;text-transform:uppercase;padding:9px 26px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.11);}
 .tier-badge.alt{background:linear-gradient(180deg,#33333a,#26262a);}
 .tier-badge.red{background:linear-gradient(180deg,#d14343 0%,#b83636 52%,#8f2a2a 100%);color:#fff;border-color:rgba(226,96,96,.55);box-shadow:0 0 26px rgba(209,67,67,.3),0 5px 16px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.22);}
-.tier-name{font-family:'Barlow Condensed',sans-serif;font-size:1.08rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
+.tier-name{font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.08rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
 .tier-price,.lt-price,.lt-pct,.stat-num,.cd-time,.review-score .big{font-variant-numeric:tabular-nums lining-nums;font-feature-settings:'tnum' 1,'lnum' 1;}
-.tier-price{font-family:'Barlow Condensed',sans-serif;font-size:2.6rem;font-weight:900;color:var(--gold-ink);line-height:1;}
+.tier-price{font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2.6rem;font-weight:900;color:var(--gold-ink);line-height:1;}
 .tier-price span{font-size:1.1rem;color:var(--muted);font-family:'IBM Plex Sans',sans-serif;font-weight:600;}
 .tier-sub{font-size:.78rem;color:var(--muted);margin:7px 0 16px;}
 .tier-save{display:inline-block;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);color:var(--emerald);font-size:.72rem;font-weight:800;border-radius:20px;padding:3px 12px;margin-left:8px;vertical-align:middle;}
@@ -923,12 +923,12 @@ body.light-mode .tier-card.hot::before{
    card read as a red block, not an accent; weight already carries it. */
 .tier-card li b{color:inherit;font-weight:900;}
 .tier-card li .tick{color:var(--emerald);font-weight:900;}
-.tier-plus{font-family:'Barlow Condensed',sans-serif;font-size:.8rem;font-weight:900;letter-spacing:2px;color:var(--emerald);text-transform:uppercase;margin:-8px 0 10px;}
+.tier-plus{font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:.8rem;font-weight:900;letter-spacing:2px;color:var(--emerald);text-transform:uppercase;margin:-8px 0 10px;}
 
 /* ─── REVIEW SUMMARY (from Whop listing) ─── */
 .review-summary{max-width:960px;margin:34px auto 0;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;display:flex;gap:30px;align-items:center;flex-wrap:wrap;}
 .review-score{text-align:center;min-width:130px;}
-.review-score .big{font-family:'Barlow Condensed',sans-serif;font-size:3.2rem;font-weight:900;color:var(--text);line-height:1;}
+.review-score .big{font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:3.2rem;font-weight:900;color:var(--text);line-height:1;}
 .review-score .stars{color:var(--text);font-size:1.1rem;letter-spacing:2px;}
 .review-score .count{font-size:.75rem;color:var(--muted);margin-top:4px;}
 .review-bars{flex:1;min-width:240px;display:grid;gap:7px;}
@@ -948,7 +948,7 @@ body.light-mode .tier-card.hot::before{
 /* ─── SCHEDULE WEEK GRID ─── */
 .week-grid{display:grid;gap:18px;max-width:860px;margin:0 auto;}
 .day-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px;}
-.day-card h3{font-family:'Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:900;text-transform:uppercase;letter-spacing:1.5px;color:var(--text);margin-bottom:12px;}
+.day-card h3{font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:900;text-transform:uppercase;letter-spacing:1.5px;color:var(--text);margin-bottom:12px;}
 /* Fixed track widths (not auto/1fr) are deliberate: each .session-row is its
    own grid, so only fixed tracks make the time column land at the same x on
    every row of every day card. */
@@ -984,16 +984,16 @@ body.light-mode .tier-card.hot::before{
 .team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:18px;max-width:960px;margin:0 auto;}
 .team-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px 18px;text-align:center;transition:all .2s;}
 .team-card:hover{border-color:var(--muted);transform:translateY(-3px);}
-.team-avatar{width:76px;height:76px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:#fff;background:linear-gradient(135deg,#3a3a40,#26262a);box-shadow:0 8px 24px rgba(0,0,0,.35);}
+.team-avatar{width:76px;height:76px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:#fff;background:linear-gradient(135deg,#3a3a40,#26262a);box-shadow:0 8px 24px rgba(0,0,0,.35);}
 .team-avatar-blank{background:linear-gradient(135deg,#1d1d20,#2a2a2e);box-shadow:none;color:var(--muted);font-size:2rem;font-weight:400;}
 .results-empty{max-width:640px;margin:0 auto;text-align:center;padding:52px 24px;border:1px dashed var(--border-strong);border-radius:20px;background:rgba(255,255,255,0.02);}
-.results-empty h3{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.results-empty h3{font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
 .results-empty p{color:var(--muted);font-size:.88rem;max-width:420px;margin:0 auto;line-height:1.65;}
 .results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;}
 .result-card{margin:0;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
 .result-card img{width:100%;display:block;aspect-ratio:4/3;object-fit:cover;}
 .result-card figcaption{padding:12px 14px;font-size:.8rem;color:var(--muted);}
-.team-card h3{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;}
+.team-card h3{font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;}
 .team-card .role{font-size:.76rem;color:var(--emerald);font-weight:700;margin:6px 0 8px;text-transform:uppercase;letter-spacing:1px;}
 .team-card .bio{font-size:.8rem;color:var(--muted);line-height:1.55;}
 
@@ -1011,7 +1011,7 @@ body.light-mode .tier-card.hot::before{
 /* ─── MOBILE STICKY CTA ─── */
 #mobile-cta{display:none;position:fixed;left:0;right:0;bottom:0;z-index:9985;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(12,12,13,.97);backdrop-filter:blur(14px);border-top:1px solid var(--border);}
 #mobile-cta .mc-info{display:flex;flex-direction:column;line-height:1.2;}
-#mobile-cta .mc-price{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:900;color:var(--gold-ink);}
+#mobile-cta .mc-price{font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:900;color:var(--gold-ink);}
 #mobile-cta .mc-label{font-size:.66rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
 #mobile-cta .mc-btn{background:var(--gold);color:#fff;text-decoration:none;font-weight:800;font-size:.9rem;padding:11px 22px;border-radius:10px;}
 @media (max-width:768px){
@@ -1518,4 +1518,179 @@ body.pj-home :is(a, button, input, select, textarea, summary):focus-visible {
   }
   body.pj-home :is(.feature-card, .course-card, .tier-card, .team-card, .insight-card,
     .btn, .feature-icon):hover { transform: none !important; --lift: 0px; }
+}
+
+
+/* Showroom hero: supersedes the earlier centred gutter layout, scoped to
+   the homepage's body.pj-home class so no other page is affected. */
+body.pj-home .hero {
+  background: radial-gradient(ellipse at 78% 44%, var(--pj-wash), var(--pj-clear) 62%),
+    linear-gradient(160deg, var(--bg), var(--bg2));
+}
+body.pj-home .hero::before { opacity: .2; }
+body.pj-home .hero::after { opacity: .08; animation: none; }
+body.pj-home #hero-candles { opacity: .24; }
+body.pj-home .hero .liquid-bg { opacity: .18; }
+body.pj-home .hero .bolt-underline { opacity: .22; }
+body.pj-home .hero h1 {
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -.035em;
+  text-wrap: balance;
+}
+body.pj-home .hero h1 .gold {
+  color: var(--pj-red);
+  background: linear-gradient(115deg, var(--pj-red), var(--pj-red-deep));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+body.pj-home .hero-sub { font-size: 1.04rem; line-height: 1.8; color: var(--pj-muted); }
+body.pj-home .hero-ctas { gap: 12px; }
+body.pj-home .hero-ctas .btn { font-size: .92rem !important; padding: 15px 20px !important; }
+body.pj-home .hero-trust { line-height: 1.7; font-size: .78rem; gap: 10px 20px; }
+@media (min-width: 1100px) {
+  body.pj-home .hero.has-car {
+    min-height: 820px;
+    padding: 80px clamp(40px, 5vw, 96px);
+    justify-content: flex-start;
+    text-align: left;
+  }
+  body.pj-home .hero.has-car .hero-inner {
+    width: 43%;
+    max-width: 590px;
+    margin: 0;
+  }
+  body.pj-home .hero.has-car h1 { font-size: clamp(3.8rem, 5.25vw, 6.1rem); }
+  body.pj-home .hero.has-car .hero-sub { margin: 24px 0 28px; max-width: 520px; }
+  body.pj-home .hero.has-car :is(.hero-ctas, .hero-trust) { justify-content: flex-start; }
+  body.pj-home .hero.has-car .hero-badge { text-align: left; font-size: .74rem; padding: 8px 12px; }
+  body.pj-home .hero.has-car #ferrari-showcase {
+    left: auto;
+    right: 1%;
+    top: 48%;
+    width: 54%;
+    aspect-ratio: 1.2;
+    max-height: 700px;
+    transform: translateY(-50%);
+  }
+  body.pj-home .hero.has-car #ferrari-showcase::before {
+    content: '';
+    position: absolute;
+    inset: 67% 7% 15%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, var(--pj-shadow), var(--pj-clear) 70%);
+    filter: blur(15px);
+    pointer-events: none;
+  }
+}
+@media (max-width: 1099px) {
+  body.pj-home .hero { min-height: auto; padding: 64px 24px; }
+  body.pj-home .hero h1 { font-size: clamp(3.1rem, 8vw, 5.8rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.pj-home .hero :is(.liquid-blob, .bolt-underline, .hero-stat-num) { animation: none !important; }
+}
+
+
+/* Reference-matched coupe presentation (owner-approved reference image,
+   2026-09-09), contained entirely in the homepage via .pj-reference-hero.
+   --pj-red here intentionally overrides the redesign pass's own --pj-red
+   (defined on :root/body.light-mode above) with a brighter, more saturated
+   accent matched to the reference photo's Ferrari red -- body.pj-home's
+   higher specificity makes this the value used everywhere on the homepage. */
+body.pj-home {
+  --pj-red: #ff5360;
+  --pj-red-deep: #e41a2d;
+  --pj-button-start: #ed1829;
+  --pj-button-end: #c50d21;
+  --pj-car-bg: #0c0c0d;
+}
+body.pj-home.light-mode {
+  --pj-red: #d61123;
+  --pj-red-deep: #bd0b1c;
+  --pj-button-start: #ed1829;
+  --pj-button-end: #c50d21;
+  --pj-car-bg: #ffffff;
+}
+body.pj-home .pj-reference-hero {
+  background: var(--pj-car-bg);
+  isolation: isolate;
+}
+body.pj-home .pj-reference-hero h1 {
+  /* The redesign pass's Barlow-Condensed-based fallback chain, not the
+     original reference mockup's IBM Plex Sans -- keeps this headline
+     consistent with every other heading on the page instead of introducing
+     a third display face just for the hero. */
+  font-family: 'Big Shoulders Display', 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: clamp(2.8rem, 4.5vw, 4.5rem);
+  line-height: 1.04;
+  letter-spacing: -.02em;
+}
+body.pj-home .pj-reference-hero h1 .gold {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  color: var(--pj-red);
+}
+body.pj-home .pj-reference-hero .bolt-underline { visibility: hidden; }
+body.pj-home .pj-reference-hero .hero-sub { font-size: 1rem; line-height: 1.75; }
+body.pj-home .pj-reference-hero #hero-candles {
+  opacity: .25;
+  mask-image: linear-gradient(90deg, transparent, #000 48%, #000 90%, transparent);
+}
+body.pj-home .pj-reference-hero .liquid-bg { opacity: .06; }
+body.pj-home .pj-reference-hero .fs-stage {
+  overflow: visible;
+  transition: transform .45s ease-out;
+  transform-origin: 50% 65%;
+}
+body.pj-home .pj-reference-hero .pj-car-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  mask-image: linear-gradient(90deg, transparent, #000 3%, #000 97%, transparent);
+}
+body.pj-home .pj-reference-hero .pj-car-light { display: none; }
+body.pj-home.light-mode .pj-reference-hero .pj-car-light { display: block; mix-blend-mode: multiply; }
+body.pj-home.light-mode .pj-reference-hero .pj-car-dark { display: none; }
+body.pj-home .pj-reference-hero :is(#fsCanvas, .fs-loading) { display: none; }
+body.pj-home .pj-reference-hero #ferrari-showcase::before { display: none; }
+@media (min-width: 1100px) {
+  body.pj-home .pj-reference-hero.hero.has-car {
+    min-height: 740px;
+    padding: 64px clamp(40px, 5vw, 96px);
+  }
+  body.pj-home .pj-reference-hero.hero.has-car .hero-inner { width: 40%; max-width: 530px; }
+  body.pj-home .pj-reference-hero.hero.has-car h1 { font-size: clamp(2.8rem, 4.5vw, 4.5rem); }
+  body.pj-home .pj-reference-hero.hero.has-car #ferrari-showcase {
+    display: block;
+    top: 52%;
+    right: 0;
+    width: 57%;
+    aspect-ratio: 1.5;
+    max-height: none;
+  }
+  body.pj-home .pj-reference-hero .hero-trust { margin-top: 24px; }
+}
+@media (max-width: 1099px) {
+  body.pj-home .pj-reference-hero.hero.has-car { display: flex; flex-direction: column; padding: 48px 24px; }
+  body.pj-home .pj-reference-hero.hero.has-car .hero-inner { max-width: 640px; order: 0; }
+  body.pj-home .pj-reference-hero.hero.has-car #ferrari-showcase {
+    display: block;
+    position: relative;
+    order: 1;
+    inset: auto;
+    width: min(100%, 720px);
+    aspect-ratio: 1.5;
+    transform: none;
+    max-height: none;
+    margin-top: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.pj-home .pj-reference-hero .fs-stage { transition: none; transform: none !important; }
 }
