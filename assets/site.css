@@ -1430,15 +1430,10 @@ body.pj-home :is(.course-card.free-course, .tier-card.hot) {
   border-color: var(--pj-line-active);
   box-shadow: var(--pj-card-shadow), 0 0 36px var(--pj-glow);
 }
-/* Replace the featured tier's decorative lightning with a quiet accent edge. */
-body.pj-home .tier-card.hot::before {
-  inset: 0;
-  background: none;
-  border-top: 3px solid var(--pj-line-active);
-  border-radius: inherit;
-  animation: none;
-  filter: none;
-}
+/* The redesign pass swapped the featured tier's decorative lightning border
+   (.tier-card.hot::before, defined earlier in this file) for a quiet accent
+   edge -- owner reverted that (2026-09-09): "keep lightning around the
+   trifecta like there was." No override here means the base rule wins. */
 body.pj-home :is(.course-badge.free, .hero-badge) {
   background: var(--pj-wash);
   border-color: var(--pj-line);

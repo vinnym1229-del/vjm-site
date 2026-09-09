@@ -198,7 +198,9 @@ test('each tier has its own CTA carrying its plan', () => {
   assert.match(indexMarkup, /id="cta-futures-core"[^>]*data-vjm-plan="futures_core"/);
   assert.match(indexMarkup, /id="cta-complete"[^>]*data-vjm-plan="complete"/);
   assert.match(indexMarkup, /Join Futures Core — \$100\/mo/);
-  assert.match(indexMarkup, /Get The Trifecta — \$129\/mo/);
+  // Owner request (2026-09-09): the price wraps onto its own line with the
+  // star, so the CTA carries a manual <br> between the dash and the price.
+  assert.match(indexMarkup, /Get The Trifecta —<br>\$129\/mo/);
   // The per-plan checkout URLs are not invented — they ship empty and TODO'd.
   assert.match(index, /const WHOP_PLAN_URLS = \{/);
   assert.match(index, /futures_core: '', \/\/ TODO: owner to confirm/);
