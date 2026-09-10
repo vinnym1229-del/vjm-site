@@ -49,6 +49,15 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
    high-impact values and the CTA buttons. */
 .hero h1,.hero h1 span,.panel h2{color:var(--text)}
 
+/* This page shipped full body.light-mode CSS and assets/theme.js but no
+   control to ever reach dark mode -- same fix already applied to the tool
+   pages (stock-lab.html etc). Self-contained button + wiring, no shared
+   nav-actions wrapper exists here so it's added as its own nav child. */
+#theme-toggle{color:var(--muted);border:1px solid var(--line2);background:rgba(255,255,255,.04);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;flex:0 0 auto}
+#theme-toggle:hover{color:var(--gold-ink)}
+body.light-mode #theme-toggle{background:rgba(20,20,22,.04);color:var(--muted);border-color:var(--line2)}
+body.light-mode #theme-toggle:hover{color:var(--gold-ink)}
+
 /* ============================================================
    Light theme — body.light-mode (set from localStorage['st-theme']).
    Same variable names, light values; every dark literal, white-alpha
@@ -118,7 +127,22 @@ body.light-mode .footer{border-top-color:var(--line);color:var(--muted)}
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<nav class="nav"><a class="brand" href="index.html">PJ TRADES</a><div class="links"><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Membership<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="index.html#features">What You Get</a><a href="index.html#bundles">Bundles &amp; Pricing</a><a href="premium-guidance.html">Premium Guidance</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Curriculum<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="stock-breakdown.html">Stock Breakdown</a><a href="options-lab.html">Options Lab</a><a href="futures-dissection.html">Futures Dissection</a><a href="psychology-enhancer.html">Psychology Enhancer</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Tools<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="stock-lab.html">Stock Lab</a><a href="research-engine.html">Research Engine</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Markets<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="premarket.html">Pre-Market</a><a href="forex-calendar.html" class="on">Forex Calendar</a><a href="prop-firms.html">Prop Firms</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Live<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="index.html#schedule">Stream Schedule</a><a href="index.html#team">Meet the Team</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Community<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="index.html#about">About PJ</a><a href="index.html#wins">Member Results</a><a href="index.html#discord-cta">Discord</a></div></div></div></nav>
+<nav class="nav"><a class="brand" href="index.html">PJ TRADES</a><div class="links"><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Membership<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="index.html#features">What You Get</a><a href="index.html#bundles">Bundles &amp; Pricing</a><a href="premium-guidance.html">Premium Guidance</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Curriculum<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="stock-breakdown.html">Stock Breakdown</a><a href="options-lab.html">Options Lab</a><a href="futures-dissection.html">Futures Dissection</a><a href="psychology-enhancer.html">Psychology Enhancer</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Tools<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="stock-lab.html">Stock Lab</a><a href="research-engine.html">Research Engine</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Markets<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="premarket.html">Pre-Market</a><a href="forex-calendar.html" class="on">Forex Calendar</a><a href="prop-firms.html">Prop Firms</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Live<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="index.html#schedule">Stream Schedule</a><a href="index.html#team">Meet the Team</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Community<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="index.html#about">About PJ</a><a href="index.html#wins">Member Results</a><a href="index.html#discord-cta">Discord</a></div></div></div><button id="theme-toggle" type="button">&#127769; <span class="theme-label-text">Dark</span></button></nav>
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  function sync(isLight) {
+    btn.innerHTML = (isLight ? '☀️' : '🌙') + ' <span class="theme-label-text">' + (isLight ? 'Light' : 'Dark') + '</span>';
+  }
+  btn.addEventListener('click', function () {
+    var isLight = document.body.classList.toggle('light-mode');
+    try { localStorage.setItem('st-theme', isLight ? 'light' : 'dark'); } catch (e) { /* storage blocked */ }
+    sync(isLight);
+  });
+  sync(document.body.classList.contains('light-mode'));
+})();
+</script>
 <header class="hero">
   <div>
     <div class="eyebrow">USD News Filter</div>

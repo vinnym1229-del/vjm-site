@@ -39,6 +39,8 @@
   .nav .nav-drop a:hover,.nav .nav-drop a.on{color:var(--vjm-gold);background:rgba(255,255,255,.08)}
   .hamb{display:none;border:1px solid var(--vjm-border-strong);background:rgba(255,255,255,.03);border-radius:999px;width:44px;height:40px;align-items:center;justify-content:center;flex-direction:column;gap:5px;cursor:pointer}
   .hamb span{display:block;width:21px;height:2px;border-radius:2px;background:var(--vjm-gold)}
+  #theme-toggle{color:var(--vjm-muted);border:1px solid var(--vjm-border-strong);background:rgba(255,255,255,.03);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;flex:0 0 auto}
+  #theme-toggle:hover{color:var(--vjm-gold)}
   .mmenu{display:none;position:fixed;z-index:49;top:62px;left:0;right:0;max-height:calc(100vh - 62px);overflow-y:auto;background:rgba(12,12,13,.98);border-bottom:1px solid var(--vjm-border);padding:14px 18px;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
   .mmenu.open{display:grid}
   .mmenu a{color:var(--vjm-muted);text-decoration:none;text-transform:uppercase;letter-spacing:1.15px;font-size:.78rem;font-weight:800;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.025)}
@@ -104,6 +106,7 @@ body.light-mode .nav-top{ background:rgba(0,0,0,.05); }
 <nav class="nav">
   <a class="brand" href="/">PJ TRADES</a>
   <div class="links"><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Membership<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="index.html#features">What You Get</a><a href="index.html#bundles">Bundles &amp; Pricing</a><a href="premium-guidance.html">Premium Guidance</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Curriculum<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="stock-breakdown.html">Stock Breakdown</a><a href="options-lab.html">Options Lab</a><a href="futures-dissection.html">Futures Dissection</a><a href="psychology-enhancer.html">Psychology Enhancer</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Tools<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="stock-lab.html">Stock Lab</a><a href="research-engine.html">Research Engine</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Markets<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="premarket.html" class="on">Pre-Market</a><a href="forex-calendar.html">Forex Calendar</a><a href="prop-firms.html">Prop Firms</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Live<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="index.html#schedule">Stream Schedule</a><a href="index.html#team">Meet the Team</a></div></div><div class="nav-item"><button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Community<span class="caret" aria-hidden="true"></span></button><div class="nav-drop"><a href="index.html#about">About PJ</a><a href="index.html#wins">Member Results</a><a href="index.html#discord-cta">Discord</a></div></div></div>
+  <button id="theme-toggle" type="button">&#127769; <span class="theme-label-text">Dark</span></button>
   <button class="hamb" id="hamb" type="button" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
 </nav>
 <div class="mmenu" id="mmenu"><div class="mm-group">Membership</div><a href="index.html#features">What You Get</a><a href="index.html#bundles">Bundles &amp; Pricing</a><a href="premium-guidance.html">Premium Guidance</a><div class="mm-group">Curriculum</div><a href="stock-breakdown.html">Stock Breakdown</a><a href="options-lab.html">Options Lab</a><a href="futures-dissection.html">Futures Dissection</a><a href="psychology-enhancer.html">Psychology Enhancer</a><div class="mm-group">Tools</div><a href="stock-lab.html">Stock Lab</a><a href="research-engine.html">Research Engine</a><div class="mm-group">Markets</div><a href="premarket.html" class="on">Pre-Market</a><a href="forex-calendar.html">Forex Calendar</a><a href="prop-firms.html">Prop Firms</a><div class="mm-group">Live</div><a href="index.html#schedule">Stream Schedule</a><a href="index.html#team">Meet the Team</a><div class="mm-group">Community</div><a href="index.html#about">About PJ</a><a href="index.html#wins">Member Results</a><a href="index.html#discord-cta">Discord</a></div>
@@ -179,6 +182,21 @@ body.light-mode .nav-top{ background:rgba(0,0,0,.05); }
     document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAll(); });
   }
   initNavDropdowns();
+})();
+</script>
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  function sync(isLight) {
+    btn.innerHTML = (isLight ? '☀️' : '🌙') + ' <span class="theme-label-text">' + (isLight ? 'Light' : 'Dark') + '</span>';
+  }
+  btn.addEventListener('click', function () {
+    var isLight = document.body.classList.toggle('light-mode');
+    try { localStorage.setItem('st-theme', isLight ? 'light' : 'dark'); } catch (e) { /* storage blocked */ }
+    sync(isLight);
+  });
+  sync(document.body.classList.contains('light-mode'));
 })();
 </script>
 <script src="assets/chatbot.js" defer></script>
