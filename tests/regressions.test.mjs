@@ -1277,3 +1277,30 @@ test('docs/DISCORD-INTEGRATION.md names every real postEmbed() call site', () =>
     assert.match(doc, new RegExp(base.replace('.', '\\.')), `docs/DISCORD-INTEGRATION.md: missing mention of ${site}`);
   }
 });
+
+// Incident: functions/api/verify-premium.js deliberately returns a distinct
+// 403 with MEMBERSHIP_ENDED ("Renew on Whop...") for a D1 code found but
+// revoked/expired, separate from the generic 401 GENERIC_BAD_CODE used for a
+// malformed/unknown code (see the comment above MEMBERSHIP_ENDED's own
+// definition for why that asymmetry is safe only in this one case). But
+// docs/API.md's POST /api/verify-premium section only ever documented a
+// single 401 "generic failure (unknown code and inactive code are
+// indistinguishable)" line -- true of the legacy Sheet-bridge fallback, but
+// false of the primary D1 path a developer or support agent would actually
+// hit, and it never mentioned 403 existed at all. docs/SECURITY.md's own
+// enumeration threat note made the identical blanket claim.
+test('docs/API.md documents verify-premium\'s distinct 403 for a revoked/expired D1 membership', () => {
+  assert.match(read('functions/api/verify-premium.js'), /MEMBERSHIP_ENDED/,
+    'expected verify-premium.js to still export a distinct membership-ended message');
+  const doc = read('docs/API.md');
+  assert.match(doc, /403/, 'docs/API.md: verify-premium section must document the 403 status');
+  assert.match(doc, /revoked or expired/i,
+    'docs/API.md: verify-premium section must explain the 403 case is a revoked/expired D1 membership');
+});
+
+test('docs/SECURITY.md\'s enumeration threat note reflects the same 403/401 split, not a blanket "identical" claim', () => {
+  const doc = read('docs/SECURITY.md');
+  assert.doesNotMatch(doc, /unknown code vs inactive code return identical bodies\/status/i,
+    'docs/SECURITY.md: enumeration note falsely claims unknown and inactive codes are always indistinguishable');
+  assert.match(doc, /403/, 'docs/SECURITY.md: enumeration note must account for the distinct 403 case');
+});

@@ -33,7 +33,7 @@ Threat model in one line: anonymous visitors, premium members with codes, and th
 
 ## Threat notes
 
-- Enumeration: unknown code vs inactive code return identical bodies/status.
+- Enumeration: an unknown/malformed code and a D1 code that's expired-but-never-was-live (or the legacy Sheet-bridge path) all return the same generic 401 — but a code D1 already knows was revoked or has expired returns a distinct 403 with a "renew" message. That's safe only because reaching it requires already possessing a code we issued (a guess can't land on someone else's exact code), so it can't be used to enumerate which codes exist.
 - Timing: signature comparisons are constant-time; length-mismatch path burns comparable cycles.
 - SSRF: outbound calls use fixed allowlisted hosts (Alpaca, faireconomy feed, query1.finance.yahoo.com, owner-configured bridge URL). Symbols validated by regex before any URL construction.
 - Caching: all API responses `Cache-Control: no-store`; personalized pages revalidate.

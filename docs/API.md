@@ -13,7 +13,12 @@ Signs in a member. Sets `vjm_session` cookie: `HttpOnly; Secure; SameSite=Lax`.
 
 Request: `{ "code": "ABCD-1234" }`
 - 200 → `{ ok:true, expiresAt:"ISO", discord:"name|null" }` + Set-Cookie
-- 401 → generic failure (unknown code and inactive code are indistinguishable)
+- 401 → generic failure (malformed code, code D1 has never heard of, or the
+  legacy Sheet-bridge fallback rejecting it — these stay indistinguishable so
+  a bad guess can't be used to probe which codes exist)
+- 403 → membership found in D1 but revoked or expired — a distinct message,
+  since telling a lapsed customer to renew (rather than "check your code")
+  only helps once they already possess a code we issued
 - 429 → rate limited (10/min/IP)
 - 503 → signing secret not configured
 
