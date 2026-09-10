@@ -108,7 +108,7 @@
 <div id="stream-countdown-bar">
   <span class="cd-label">📺 Next Stream</span>
   <span id="cd-display" class="cd-time">--:--:--</span>
-  <span id="cd-status" class="cd-status"></span>
+  <span id="cd-status" class="cd-status" role="status" aria-live="polite"></span>
 </div>
 
 <!-- NAV -->
@@ -1151,7 +1151,7 @@
       <div class="section-tag">Stream Schedule</div>
       <h2 class="section-title">Live Futures, <span class="gold" id="sched-freq">13 Sessions a Week</span></h2>
       <p class="section-sub" style="margin:0 auto 20px;">All times ET. Sessions run inside the Discord — the <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold-ink);">#announcements channel</a> is always the source of truth for week-to-week changes.</p>
-      <div id="session-clock" style="display:inline-flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:9px 22px;font-size:.88rem;font-weight:700;color:var(--text);"></div>
+      <div id="session-clock" role="status" aria-live="polite" style="display:inline-flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:9px 22px;font-size:.88rem;font-weight:700;color:var(--text);"></div>
     </div>
     <div class="week-grid" id="week-grid" data-reveal>
       <div class="day-card">
@@ -1755,16 +1755,23 @@ function pjFmtClock(mins) {
   return h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
 }
 
+// status.innerHTML is only ever reassigned via setStatus() below, which
+// skips the write when the markup hasn't actually changed -- #cd-status
+// carries role="status" aria-live="polite" so a screen reader announces
+// real transitions (next session changes, LIVE starts, weekend toggles),
+// but tickCountdown() runs every 1s and would otherwise re-announce the
+// identical "Next: ..." line every single second.
 function tickCountdown() {
   const display = document.getElementById('cd-display');
   const status  = document.getElementById('cd-status');
   const bar     = document.getElementById('stream-countdown-bar');
+  const setStatus = (html) => { if (status.innerHTML !== html) status.innerHTML = html; };
   const next = pjNextSession();
-  if (!next) { display.textContent = ''; status.innerHTML = '<span class="cd-weekend">Schedule unavailable</span>'; return; }
+  if (!next) { display.textContent = ''; setStatus('<span class="cd-weekend">Schedule unavailable</span>'); return; }
 
   if (next.live) {
     display.innerHTML = '';
-    status.innerHTML  = '<span class="cd-live"><span class="cd-live-dot"></span>🔴 LIVE NOW — ' + next.session.name + ' session</span>';
+    setStatus('<span class="cd-live"><span class="cd-live-dot"></span>🔴 LIVE NOW — ' + next.session.name + ' session</span>');
     bar.style.borderBottomColor = 'rgba(209,67,67,0.45)';
     return;
   }
@@ -1783,10 +1790,10 @@ function tickCountdown() {
   display.className = 'cd-time';
   if (etDow === 0 || etDow === 6) {
     display.textContent = '';
-    status.innerHTML = '<span class="cd-weekend">🗓️ Markets closed — next stream ' + when + ' ' + pjFmtClock(s.start) + ' ET (' + s.name + ')</span>';
+    setStatus('<span class="cd-weekend">🗓️ Markets closed — next stream ' + when + ' ' + pjFmtClock(s.start) + ' ET (' + s.name + ')</span>');
   } else {
     display.textContent = hh + ':' + mm + ':' + ss;
-    status.innerHTML = '<span style="color:var(--muted);font-size:0.78rem;">Next: ' + s.name + ' — ' + when + ' ' + pjFmtClock(s.start) + ' ET</span>';
+    setStatus('<span style="color:var(--muted);font-size:0.78rem;">Next: ' + s.name + ' — ' + when + ' ' + pjFmtClock(s.start) + ' ET</span>');
   }
   bar.style.borderBottomColor = 'var(--border)';
 }
@@ -2395,17 +2402,22 @@ function calcPropRisk() {
 }
 
 // ─── SESSION CLOCK (schedule section) ───
+// #session-clock carries role="status" aria-live="polite"; only reassign
+// innerHTML when the markup actually changed so a screen reader announces
+// real transitions (next session changes, LIVE starts) instead of the
+// identical "Next up: ..." line every 30s tick.
 function tickSessionClock() {
   const el = document.getElementById('session-clock');
   if (!el) return;
+  const setEl = (html) => { if (el.innerHTML !== html) el.innerHTML = html; };
   const next = pjNextSession();
-  if (!next) { el.innerHTML = 'Schedule unavailable'; return; }
+  if (!next) { setEl('Schedule unavailable'); return; }
   if (next.live) {
-    el.innerHTML = '<span class="sc-dot"></span> ' + next.session.name + ' session is LIVE now — join in the Discord';
+    setEl('<span class="sc-dot"></span> ' + next.session.name + ' session is LIVE now — join in the Discord');
   } else {
     const s = next.session;
     const when = next.dayOffset === 0 ? 'today' : next.dayOffset === 1 ? 'tomorrow' : PJ_DAY_NAMES[(pjEtNow().getDay() + next.dayOffset) % 7];
-    el.innerHTML = '<span class="sc-dot"></span> Next up: ' + s.name + ' — ' + when + ' ' + pjFmtClock(s.start) + ' ET';
+    setEl('<span class="sc-dot"></span> Next up: ' + s.name + ' — ' + when + ' ' + pjFmtClock(s.start) + ' ET');
   }
 }
 tickSessionClock();

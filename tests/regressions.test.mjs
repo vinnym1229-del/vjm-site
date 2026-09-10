@@ -202,6 +202,121 @@ test('research-engine.html module status regions are announced', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: index.html's hero stream countdown (#cd-status, tickCountdown()
+// every 1s) and schedule-section clock (#session-clock, tickSessionClock()
+// every 30s) were the last two silent-status-change gaps in this class of
+// bug, left unclaimed across several runs specifically because they tick so
+// often -- a naive role="status" aria-live="polite" would make a screen
+// reader re-announce the identical "Next: NYAM -- Today 9:30 AM ET" line
+// every single tick forever, which is worse than the original silence. Both
+// ticks now guard their innerHTML write behind an equality check (setStatus/
+// setEl below tickCountdown/tickSessionClock) so the DOM -- and therefore
+// the live region -- only actually changes when the announced text does:
+// the next session changes, a session goes LIVE, or the weekend toggles.
+test('index.html countdown/session-clock status regions are announced', () => {
+  const html = read('index.html');
+  for (const [tag, id] of [['span', 'cd-status'], ['div', 'session-clock']]) {
+    const m = html.match(new RegExp(`<${tag}[^>]*\\bid="${id}"[^>]*>`));
+    assert.ok(m, `#${id} not found`);
+    assert.match(m[0], /role="status"/, `#${id} missing role="status": ${m[0]}`);
+    assert.match(m[0], /aria-live="polite"/, `#${id} missing aria-live="polite": ${m[0]}`);
+  }
+});
+
+test("index.html session-clock only re-announces when its status text actually changes", () => {
+  const index = read('index.html');
+  const sessionsSrc = index.match(/const PJ_SESSIONS = \[[\s\S]*?\n\];/)[0];
+  const dayNamesSrc = index.match(/const PJ_DAY_NAMES = \[[^\]]*\];/)[0];
+  const nextSessionSrc = index.match(/function pjNextSession\(\) \{[\s\S]*?\n\}\n/)[0];
+  const fmtClockSrc = index.match(/function pjFmtClock\(mins\) \{[\s\S]*?\n\}\n/)[0];
+  const tickSrc = index.match(/function tickSessionClock\(\) \{[\s\S]*?\n\}\n/)[0];
+  assert.ok(tickSrc, 'tickSessionClock() not found');
+
+  const writes = [];
+  const el = {
+    _html: '',
+    get innerHTML() { return this._html; },
+    set innerHTML(v) { writes.push(v); this._html = v; },
+  };
+  const sandbox = {
+    document: { getElementById: (id) => (id === 'session-clock' ? el : null) },
+    __FAKE_NOW__: null,
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(
+    'function pjEtNow(){ const n = __FAKE_NOW__; return new Date(n.y, n.m, n.d, n.h, n.min); }\n' +
+    sessionsSrc + '\n' + dayNamesSrc + '\n' + nextSessionSrc + '\n' + fmtClockSrc + '\n' + tickSrc +
+    'this.tickSessionClock = tickSessionClock;',
+    sandbox,
+  );
+
+  // A real Tuesday, 7:00am ET -- NYAM (9:30) is next, well before it starts.
+  const tue = new Date(2024, 0, 2);
+  sandbox.__FAKE_NOW__ = { y: tue.getFullYear(), m: tue.getMonth(), d: tue.getDate(), h: 7, min: 0 };
+  sandbox.tickSessionClock();
+  sandbox.tickSessionClock();
+  assert.equal(writes.length, 1, 'must not rewrite the announced status text on a tick when nothing changed');
+  assert.match(writes[0], /Next up: NYAM/);
+
+  sandbox.__FAKE_NOW__ = { y: tue.getFullYear(), m: tue.getMonth(), d: tue.getDate(), h: 7, min: 5 };
+  sandbox.tickSessionClock();
+  assert.equal(writes.length, 1, 'a few minutes passing with the same next session must not trigger a re-announce');
+
+  // Cross into the NYAM window -- the status text genuinely changes to LIVE.
+  sandbox.__FAKE_NOW__ = { y: tue.getFullYear(), m: tue.getMonth(), d: tue.getDate(), h: 9, min: 31 };
+  sandbox.tickSessionClock();
+  assert.equal(writes.length, 2, 'a genuine state change (session goes live) must still be announced');
+  assert.match(writes[1], /LIVE now/);
+});
+
+test('index.html hero countdown status only re-announces when its text actually changes', () => {
+  const index = read('index.html');
+  const sessionsSrc = index.match(/const PJ_SESSIONS = \[[\s\S]*?\n\];/)[0];
+  const dayNamesSrc = index.match(/const PJ_DAY_NAMES = \[[^\]]*\];/)[0];
+  const nextSessionSrc = index.match(/function pjNextSession\(\) \{[\s\S]*?\n\}\n/)[0];
+  const fmtClockSrc = index.match(/function pjFmtClock\(mins\) \{[\s\S]*?\n\}\n/)[0];
+  const tickSrc = index.match(/function tickCountdown\(\) \{[\s\S]*?\n\}\n/)[0];
+  assert.ok(tickSrc, 'tickCountdown() not found');
+
+  const writes = [];
+  const status = {
+    _html: '',
+    get innerHTML() { return this._html; },
+    set innerHTML(v) { writes.push(v); this._html = v; },
+  };
+  const display = { textContent: '', className: '' };
+  const bar = { style: {} };
+  const sandbox = {
+    document: {
+      getElementById: (id) => (id === 'cd-status' ? status : id === 'cd-display' ? display : id === 'stream-countdown-bar' ? bar : null),
+    },
+    __FAKE_NOW__: null,
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(
+    'function pjEtNow(){ const n = __FAKE_NOW__; return new Date(n.y, n.m, n.d, n.h, n.min); }\n' +
+    sessionsSrc + '\n' + dayNamesSrc + '\n' + nextSessionSrc + '\n' + fmtClockSrc + '\n' + tickSrc +
+    'this.tickCountdown = tickCountdown;',
+    sandbox,
+  );
+
+  // A real Tuesday, 7:00am ET -- ticking every second while NYAM is still
+  // over two hours out must not touch #cd-status a second time.
+  const tue = new Date(2024, 0, 2);
+  sandbox.__FAKE_NOW__ = { y: tue.getFullYear(), m: tue.getMonth(), d: tue.getDate(), h: 7, min: 0 };
+  sandbox.tickCountdown();
+  sandbox.tickCountdown();
+  assert.equal(writes.length, 1, 'must not rewrite #cd-status on a tick when the announced text is unchanged');
+  assert.match(writes[0], /Next: NYAM/);
+
+  // Cross into the NYAM window -- a genuine transition must still announce.
+  sandbox.__FAKE_NOW__ = { y: tue.getFullYear(), m: tue.getMonth(), d: tue.getDate(), h: 9, min: 31 };
+  sandbox.tickCountdown();
+  assert.equal(writes.length, 2, 'a genuine state change (session goes live) must still be announced');
+  assert.match(writes[1], /LIVE NOW/);
+});
+
+// ---------------------------------------------------------------------------
 // Incident: replacing a quiz question without re-pointing the JSON answer key
 // (a sibling <script type="application/json"> keyed by choice index) would
 // silently grade the quiz wrong.
