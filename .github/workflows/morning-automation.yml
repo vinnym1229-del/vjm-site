@@ -11,9 +11,17 @@ on:
   # 12:30 UTC = 8:30 AM ET while US daylight saving is active (mid-Mar→early Nov).
   # During standard time it fires at 7:30 AM ET — still premarket. Adjust once
   # per season if exact timing matters (GitHub cron is UTC-only).
+  #
+  # No standalone hourly trigger here: this used to also carry '0 * * * *' for
+  # the content job below, which meant every hour, 24/7, two independent
+  # workflows (this one and content-sync.yml, cron '17 * * * *') hit
+  # /api/content-sync with the same payload back to back — double load on the
+  # Apps Script bridge and D1, and two runners racing the same sheet read.
+  # content-sync.yml is the dedicated, better-error-handled owner of the
+  # hourly cadence; the content job below now only piggybacks on the weekday
+  # premarket run alongside the brief.
   schedule:
     - cron: '30 12 * * 1-5'
-    - cron: '0 * * * *'   # hourly content sync
 
 permissions:
   contents: read
@@ -53,7 +61,7 @@ jobs:
           RESPONSE="$response" node -e "const p=JSON.parse(process.env.RESPONSE); console.log('brief ok:', p.ok, '| discord:', p.discordDetail || p.brief && p.discordPosted)"
 
   content:
-    if: github.event.schedule == '0 * * * *' || github.event.schedule == '30 12 * * 1-5' || inputs.job == 'content' || inputs.job == 'all' || github.event_name == 'workflow_dispatch'
+    if: github.event.schedule == '30 12 * * 1-5' || inputs.job == 'content' || inputs.job == 'all' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 6
     env:
