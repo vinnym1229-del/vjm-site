@@ -1386,7 +1386,22 @@ body.pj-home :is(.features-grid, .pj-course-grid, .pj-tool-grid) {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)) !important;
   gap: var(--pj-gap) !important;
 }
+/* 280px doesn't leave room for all four tool cards on one row inside the
+   1140px section-inner (4*280 + 3 gaps > 1140), so it wrapped 3-then-1 --
+   the opposite of "in sync". A tighter, tool-grid-specific minimum is what
+   actually gets a clean row of four instead of touching the shared rule
+   above and risking the course/feature grids' own wrap points. */
+body.pj-home .pj-tool-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)) !important; }
 body.pj-home :is(.tier-grid, .team-grid, .insights-grid, .week-grid, .results-grid) { gap: var(--pj-gap); }
+/* The four tool cards vary a lot in content length (Growth Simulator's mode
+   toggle and extra fields vs. the other three's short forms), which read as
+   misaligned even once the grid stretched them to equal height -- the
+   button+result block just sat wherever the shorter card's content ended,
+   nowhere near its neighbors'. Scoped to a direct-child button so this only
+   grabs each card's own CALCULATE/RUN button, not Growth Simulator's nested
+   mode-toggle or per-mode run buttons (owner, 2026-09-10: "in sync"). */
+body.pj-home .pj-tool-card { display: flex; flex-direction: column; }
+body.pj-home .pj-tool-card > button { margin-top: auto; }
 body.pj-home :is(.feature-card, .course-card, .tier-card, .pj-tool-card, #quiz-box,
   .team-card, .day-card, .review-summary, .buffett-card, .insight-card) {
   background: linear-gradient(145deg, var(--pj-surface), var(--pj-surface-end)) !important;
@@ -1516,7 +1531,11 @@ body.pj-home .hero {
 }
 body.pj-home .hero::before { opacity: .2; }
 body.pj-home .hero::after { opacity: .08; animation: none; }
-body.pj-home #hero-candles { opacity: .24; }
+/* .pj-reference-hero (below) is the rule that actually wins on the current
+   homepage markup -- both bumped together, 2026-09-10, "more visible": the
+   canvas already fades its own edges, so a heavy CSS multiplier on top of
+   that was making an already-faint drawing nearly invisible. */
+body.pj-home #hero-candles { opacity: .5; }
 body.pj-home .hero .liquid-bg { opacity: .18; }
 body.pj-home .hero .bolt-underline { opacity: .22; }
 body.pj-home .hero h1 {
@@ -1623,7 +1642,7 @@ body.pj-home .pj-reference-hero h1 .gold {
 body.pj-home .pj-reference-hero .bolt-underline { visibility: hidden; }
 body.pj-home .pj-reference-hero .hero-sub { font-size: 1rem; line-height: 1.75; }
 body.pj-home .pj-reference-hero #hero-candles {
-  opacity: .25;
+  opacity: .55;
   mask-image: linear-gradient(90deg, transparent, #000 48%, #000 90%, transparent);
 }
 body.pj-home .pj-reference-hero .liquid-bg { opacity: .06; }

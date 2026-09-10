@@ -81,7 +81,7 @@
 <!-- A Cloudflare Cache Rule outside this repo caches /assets/* far longer
      than _headers declares -- bump this ?v= on every edit to site.css or
      it can take hours to show up live even after a hard refresh. -->
-<link rel="stylesheet" href="assets/site.css?v=19">
+<link rel="stylesheet" href="assets/site.css?v=20">
 <script src="assets/theme.js"></script>
 <!-- Funnel event layer. The shim below makes window.vjmTrack safe to call from
      the moment the page starts parsing: anything fired before assets/funnel.js
@@ -127,9 +127,9 @@
     <div class="nav-item">
       <button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true">Curriculum<span class="caret" aria-hidden="true">&#9662;</span></button>
       <div class="nav-drop">
+        <a href="futures-dissection.html">Futures Dissection</a>
         <a href="stock-breakdown.html">Stock Breakdown</a>
         <a href="options-lab.html">Options Lab</a>
-        <a href="futures-dissection.html">Futures Dissection</a>
         <a href="psychology-enhancer.html">Psychology Enhancer</a>
       </div>
     </div>
@@ -180,9 +180,9 @@
   <a href="#bundles" onclick="closeMobileMenu()">Bundles &amp; Pricing</a>
   <a href="premium-guidance.html" onclick="closeMobileMenu()">Premium Guidance</a>
   <div class="mm-group">Curriculum</div>
+  <a href="futures-dissection.html" onclick="closeMobileMenu()">Futures Dissection</a>
   <a href="stock-breakdown.html" onclick="closeMobileMenu()">Stock Breakdown</a>
   <a href="options-lab.html" onclick="closeMobileMenu()">Options Lab</a>
-  <a href="futures-dissection.html" onclick="closeMobileMenu()">Futures Dissection</a>
   <a href="psychology-enhancer.html" onclick="closeMobileMenu()">Psychology Enhancer</a>
   <div class="mm-group">Tools</div>
   <a href="stock-lab.html" onclick="closeMobileMenu()">Stock Lab</a>
@@ -473,7 +473,12 @@
     <div style="text-align:center;margin-bottom:44px;" data-reveal>
       <div class="section-tag">Inside PJ Trades Premium</div>
       <h2 class="section-title">Learn How PJ <span class="gold">Trades Futures</span></h2>
-      <p class="section-sub" style="margin:0 auto 20px;">Join PJ Trades and follow along with a full-time futures trader. You get real-time trading commentary, the strategies PJ actually uses, PJ's Starter Crash Course, and access to prop firm giveaways. This is education, not advice, and nothing here is a promise that you will make money — most traders lose money.</p>
+      <!-- "PJ" appeared 5 times across this kicker+heading+paragraph cluster
+           before 2026-09-10 -- owner: "fix this". Kept it once here (the
+           opening "Join PJ Trades") and switched the other two references
+           to he/his; same facts, same claims, just not repeating the name
+           three times in two sentences. -->
+      <p class="section-sub" style="margin:0 auto 20px;">Join PJ Trades and follow along with a full-time futures trader. You get real-time trading commentary, the strategies he actually uses, his Starter Crash Course, and access to prop firm giveaways. This is education, not advice, and nothing here is a promise that you will make money — most traders lose money.</p>
     </div>
     <div class="features-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;">
       <div class="feature-card" data-reveal>
@@ -659,14 +664,29 @@
       </div>
     </div>
 
-    <!-- Growth Simulator (futures‑connected) + Tick Sim + Sizing Sim -->
+    <!-- Growth Simulator (futures‑connected) + Sizing Sim + Futures Tick Calc
+         + Prop Risk Guard. A near-duplicate "Tick Simulator" (single-contract
+         points<->dollars only) sat here too until 2026-09-10 -- Futures Tick
+         Calc already covers that math as part of a real entry/exit P&L, so
+         it was cut rather than kept as a second, thinner version of the same
+         idea. Four cards instead of five also lines up cleanly at every
+         breakpoint (2x2 on tablet, one row on desktop) instead of wrapping
+         3-then-2. A heading + one shared disclaimer above the grid replaces
+         what used to be near-identical "Hypothetical -- not a projection of
+         your results" boilerplate repeated in all five card footers; each
+         card below keeps only the caveat that's actually specific to it. -->
+    <div style="text-align:center;margin-bottom:28px;max-width:640px;margin-left:auto;margin-right:auto;" data-reveal>
+      <div class="section-tag">🧮 Trading Math</div>
+      <h2 class="section-title" style="font-size:clamp(1.6rem,3.4vw,2.2rem);">Run the Numbers <span class="gold">Before You Risk Them</span></h2>
+      <p style="color:var(--muted);font-size:0.85rem;line-height:1.6;">Every calculator below is arithmetic on the numbers you type — not a forecast, and nothing it shows has been achieved by PJ Trades, by a member, or by anyone. Most traders lose money.</p>
+    </div>
     <div class="pj-tool-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:28px;">
 
       <!-- Growth Simulator (futures‑connected) -->
       <div class="pj-tool-card" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
         <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">📈 Growth Simulator</h3>
         <p style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">Repeats the daily gain you type for the number of days you set, so you can see what that arithmetic adds up to.</p>
-        <p style="font-size:0.72rem;line-height:1.55;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-bottom:14px;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> This tool does arithmetic on the numbers you type. It is not a forecast, and no figure it shows has been achieved by PJ Trades, by a member, or by anyone. A fixed daily dollar target is not a trading edge: markets do not pay a set amount per day, losing days and losing weeks are normal, and the tool ignores losses, drawdown, commissions, slippage, taxes and prop-firm rules. Results are not typical and most traders lose money.</p>
+        <p style="font-size:0.72rem;line-height:1.55;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-bottom:14px;">This tool does arithmetic on the numbers you type. It is not a forecast, and no figure it shows has been achieved by PJ Trades, by a member, or by anyone. A fixed daily dollar target is not a trading edge: markets do not pay a set amount per day, losing days and losing weeks are normal, and the tool ignores losses, drawdown, commissions, slippage, taxes and prop-firm rules. Results are not typical and most traders lose money.</p>
 
         <!-- Mode toggle -->
         <div style="display:flex;background:var(--accent);border-radius:10px;padding:3px;margin-bottom:18px;gap:3px;">
@@ -718,7 +738,7 @@
               <div id="sim-prop-weekly" style="font-size:0.9rem;color:var(--emerald);margin-top:4px;">~$X per week / ~$Y per month</div>
               <div id="sim-prop-balance" style="font-size:0.8rem;color:var(--muted);margin-top:6px;"></div>
             </div>
-            <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> Arithmetic on the numbers you entered, with no losing days, fees or slippage. Results are not typical.</p>
+            <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;">Arithmetic on the numbers you entered, with no losing days, fees or slippage. Results are not typical.</p>
           </div>
         </div>
 
@@ -729,38 +749,7 @@
             <div id="sim-gain-val" style="font-size:0.82rem;color:var(--emerald);margin-top:4px;"></div>
             <div id="sim-extra-val" style="font-size:0.78rem;color:var(--muted);margin-top:4px;"></div>
           </div>
-          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> Arithmetic on the numbers you entered, with no losing days, fees or slippage. Results are not typical.</p>
-        </div>
-      </div>
-
-      <!-- Tick Simulator -->
-      <div class="pj-tool-card" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:26px;" data-reveal>
-        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--text);margin-bottom:4px;">🎯 Tick Simulator</h3>
-        <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;">Select a contract and input stop loss or $ risk to see total point/$ value.</p>
-        <label for="tick-contract" style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Contract</label>
-        <select id="tick-contract" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;">
-          <option value="NQ">NQ — E-mini Nasdaq</option>
-          <option value="MNQ">MNQ — Micro Nasdaq</option>
-          <option value="ES">ES — E-mini S&P 500</option>
-          <option value="MES">MES — Micro S&P 500</option>
-        </select>
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <div>
-            <label style="font-size:0.82rem;color:var(--muted);">Stop Loss (pts)</label>
-            <input id="tick-pts" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;" aria-label="tick pts">
-          </div>
-          <div>
-            <label style="font-size:0.82rem;color:var(--muted);">Risk $</label>
-            <input id="tick-dollars" type="number" value="0" min="0" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;" aria-label="tick dollars">
-          </div>
-        </div>
-        <button onclick="calcTickSim()" style="width:100%;background:var(--gold);color:#fff;font-weight:800;padding:11px;border-radius:8px;border:none;cursor:pointer;font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.1rem;letter-spacing:1px;">CALCULATE</button>
-        <div id="tick-result" style="margin-top:16px;display:none;">
-          <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center;">
-            <div id="tick-output" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
-            <div id="tick-interpret" style="font-size:0.82rem;color:var(--muted);margin-top:4px;"></div>
-          </div>
-          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> Contract math on the numbers you entered; your real fill, fees and slippage will differ.</p>
+          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;">Arithmetic on the numbers you entered, with no losing days, fees or slippage. Results are not typical.</p>
         </div>
       </div>
 
@@ -793,7 +782,7 @@
             <div id="size-output" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--green);"></div>
             <div id="size-interpret" style="font-size:0.82rem;color:var(--muted);margin-top:4px;"></div>
           </div>
-          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> A stop is an order, not a guaranteed fill: gaps and thin liquidity can fill you past it, so the real loss can exceed the figure shown.</p>
+          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;">A stop is an order, not a guaranteed fill: gaps and thin liquidity can fill you past it, so the real loss can exceed the figure shown.</p>
         </div>
       </div>
 
@@ -815,7 +804,7 @@
             <div id="fc-pnl" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;"></div>
             <div id="fc-details" style="font-size:0.78rem;color:var(--muted);margin-top:6px;"></div>
           </div>
-          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> Contract math on the entry and exit you typed, before commissions, exchange fees and slippage.</p>
+          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;">Contract math on the entry and exit you typed, before commissions, exchange fees and slippage.</p>
         </div>
       </div>
 
@@ -835,7 +824,7 @@
             <div id="pr-trades" style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:900;color:var(--green);"></div>
             <div id="pr-details" style="font-size:0.78rem;color:var(--muted);margin-top:6px;line-height:1.6;"></div>
           </div>
-          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;"><strong style="color:var(--text);">Hypothetical &mdash; not a projection of your results.</strong> It assumes every loss is exactly the size you typed. Real losses can be larger, and each prop firm&rsquo;s own trailing-drawdown rules govern &mdash; read your firm&rsquo;s agreement.</p>
+          <p style="font-size:0.7rem;line-height:1.5;color:var(--muted);margin-top:10px;text-align:center;">It assumes every loss is exactly the size you typed. Real losses can be larger, and each prop firm&rsquo;s own trailing-drawdown rules govern &mdash; read your firm&rsquo;s agreement.</p>
         </div>
       </div>
 
@@ -1312,146 +1301,36 @@
   </div>
 </section>
 
-<!-- DISCIPLINE ESSAY -->
+<!-- DISCIPLINE ESSAY -- collapsed to a teaser (owner, 2026-09-10: "move the
+     discipline essay into a tab ... maybe a one line quote ... dont display
+     the whole thing"). The full essay's canonical home is
+     psychology-enhancer.html#essay (identical text); this used to also ship
+     the entire ~2,000-word essay a second time on the homepage. The pull
+     quote stays visible as the one-line teaser; the rest lives behind a
+     native <details> disclosure so a curious visitor can still read the
+     whole thing without leaving the page, but nobody scrolls past it by
+     default. The essay's own closing CTA (a second, identical "30,000+
+     members ... Join now for free" button) is gone too -- the DISCORD CTA
+     section immediately below already makes that exact offer. -->
 <section id="essay" style="background:var(--bg);">
   <div class="section-inner" style="max-width:860px;">
-
-    <div style="text-align:center;margin-bottom:48px;" data-reveal>
+    <div style="text-align:center;margin-bottom:28px;" data-reveal>
       <div class="section-tag">Written by Vinny Mistretta</div>
-      <h2 class="section-title">The Art of <span class="gold">Discipline</span></h2>
-      <p style="color:var(--muted);font-size:0.95rem;max-width:600px;margin:0 auto 16px;">Why Knowing the Rule Is Not the Same as Following It</p>
-      <div style="display:inline-flex;gap:16px;flex-wrap:wrap;justify-content:center;font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;">
-        <span>📖 Research Essay</span>
-        <span>·</span>
-        <span>Trading Psychology</span>
-        <span>·</span>
-        <span>~15 min read</span>
-      </div>
+      <h2 class="section-title">Want to Hone In On Your <span class="gold">Discipline?</span></h2>
+      <p style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:clamp(1.1rem,2.6vw,1.4rem);font-weight:800;color:var(--text);max-width:640px;margin:14px auto 0;line-height:1.4;">&ldquo;Discipline is not a personality trait or a motivational slogan. It is the ability to follow rules despite pressure &mdash; in both markets and all other aspects of life.&rdquo;</p>
+      <p style="color:var(--muted);font-size:0.78rem;margin-top:8px;text-transform:uppercase;letter-spacing:1.5px;">&mdash; Vinny Mistretta, from &ldquo;The Art of Discipline&rdquo;</p>
     </div>
-
-    <!-- Essay body -->
-    <div style="background:var(--card);border:1px solid var(--border);border-radius:20px;overflow:hidden;" data-reveal>
-
-      <!-- Pull quote hero -->
-      <div style="background:linear-gradient(135deg,#131315,#1a1a1c);padding:36px 40px;border-bottom:1px solid var(--border);text-align:center;position:relative;overflow:hidden;">
-        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(209,67,67,0.05) 0%,transparent 65%);pointer-events:none;"></div>
-        <p style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:clamp(1.3rem,3vw,1.9rem);font-weight:800;color:#ededee;text-shadow:0 0 24px rgba(255,255,255,0.10);line-height:1.35;position:relative;">"Discipline is not a personality trait or a motivational slogan. It is the ability to follow rules despite pressure — in both markets and all other aspects of life."</p>
-        <p style="color:#9a9aa0;font-size:0.78rem;margin-top:14px;text-transform:uppercase;letter-spacing:2px;position:relative;">— Vinny Mistretta</p>
-      </div>
-
-      <!-- Essay content -->
-      <div style="padding:44px 48px;line-height:1.9;font-size:0.97rem;color:var(--text);" class="essay-body">
-
-        <p>Today, almost everyone can access tools that were previously reserved for professionals. With a cellphone, a person has instant access to a stock brokerage or trading app. Gym memberships are affordable and located everywhere. A computer possesses more information than an entire library. But having access does not mean people will use it effectively.</p>
-
-        <p style="margin-top:1.4em;">The real challenge is using these resources consistently, especially in environments built to exploit impulse and emotion. The <strong style="color:var(--gold-ink);">"knowledge-execution gap"</strong> explains this clearly: infinite access does not automatically come with the discipline necessary to succeed. This gap is the distance between knowing the correct answer and actually executing it once pressure, temptation, and emotion begin to cloud judgment. In high-stakes environments like financial markets, this gap is not simply personal — it is also structural.</p>
-
-        <p style="margin-top:1.4em;">The problem is that discipline is often treated as a fluctuating mood rather than a measurable, structured process. While this paper analyzes discipline through a trading lens, the same disciplinary failures are apparent in fitness, school, work, health, relationships, and any area where people know the right action but struggle to commit to it.</p>
-
-        <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:18px 24px;margin:28px 0;">
-          <p style="margin:0;font-style:italic;color:var(--text);">Across fields such as athletics, academics, entrepreneurship, and personal finance, the same pattern appears: people rarely fail because they lack information. They fail because they cannot apply what they already know consistently.</p>
-        </div>
-
-        <p>Talent, intelligence, and opportunity all matter, but none of them compensate for inconsistency under pressure. Discipline is the quality that converts knowledge into results, goals into habits, and intentions into action. It is the quality that strengthens every other trait, because without it, even the best strategy or ability can collapse the moment emotion, boredom, or discomfort arises.</p>
-
-        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Trading as a Pressure Chamber</h3>
-
-        <p>Discipline is the ability to execute a system when short-term emotion conflicts with long-term goals. Day trading is an ideal pressure chamber for studying discipline because it compresses temptation, feedback, money, uncertainty, and emotion into seconds or minutes — revealing that people often fail more from inconsistency than from lack of knowledge. Markets are noisy, short-term outcomes are often random, and factors such as fees, slippage, and informational disadvantages all increase losses. But even when a strategy has an edge, that edge collapses without disciplined execution.</p>
-
-        <p style="margin-top:1.4em;">Some critics argue that the high failure rate among traders is not attributed to a disciplinary problem — it is the complex structure of the markets. They claim that professional firms, high-frequency algorithms, and a lack of information create an environment that is disproportionately against retail traders. This is a fair point. However, this claim reduces two separate problems into one. The question of whether a strategy has a genuine edge is different from the question of whether a trader executes that strategy when it matters.</p>
-
-        <p style="margin-top:1.4em;">Research consistently shows that traders with documented strategies still underperform compared to their own systems due to emotional interference, impulsive decisions, and inconsistent rule adherence. The most common documented losses among retail traders are not caused by a market that is simply too difficult to beat — they are caused by behavior that directly contrasts the trader's own stated plan: revenge trading, holding losers too long, and cutting winners too early. Discipline is not being claimed to guarantee profits, but without it guarantees unnecessary losses compounded with the structural disadvantages that could already exist.</p>
-
-        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Self-Control vs. Grit — They're Not the Same</h3>
-
-        <p>Duckworth and Gross help explain why access does not automatically translate into execution. People often confuse wanting a long-term outcome with having the ability to resist short-term temptation. They argue that two important determinants of success are self-control and grit — defining self-control as the "capacity to regulate attention, emotion, and behavior in the presence of temptation" and grit as "the tenacious pursuit of a dominant superordinate goal despite setbacks." These concepts are related but not identical. Someone might handle short-term temptation well while struggling to stay committed long-term. Another person may deeply care about a long-term goal but struggle to regulate immediate impulses.</p>
-
-        <p style="margin-top:1.4em;">Gollwitzer strengthens this point by demonstrating that intentions alone are weak predictors of behavior — accounting for only about 20% to 30% of behavioral variance. He argues that this problem improves when people form specific <em>implementation intentions</em> that connect a future situation to a predetermined response. Together, these sources reinforce the argument: discipline matters more than raw knowledge. This shows the knowledge-execution gap at its simplest level.</p>
-
-        <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:18px 24px;margin:28px 0;">
-          <p style="margin:0;color:var(--text);"><strong style="color:var(--emerald);">Key insight:</strong> Intentions alone account for only 20–30% of actual behavior. The gap between what you plan to do and what you actually do under pressure is where discipline lives.</p>
-        </div>
-
-        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Prospect Theory — Why Losing Feels Worse Than Winning Feels Good</h3>
-
-        <p>In Prospect Theory, Kahneman and Tversky argue that people evaluate outcomes relative to a reference point rather than in absolute terms, and that losses feel more painful than equivalent gains feel rewarding. Because of that, a trader who is down on the day is more willing to take irrational risk in order to get back to "even," while a trader who is up may become overly quick to lock in profits for emotional relief.</p>
-
-        <p style="margin-top:1.4em;">This same loss aversion also helps explain why traders cling too tightly to unrealized gains — because the pain of giving back profit can feel more immediate than the potential benefit of letting the trade develop. Traders anchor to emotionally meaningful reference points and resist exiting until the price reaches those internal thresholds. This leads to predictable patterns: after losses, traders increase their risk, and after gains, they do the opposite. Rule-breaking, then, is not random. It follows recurring psychological patterns that emerge whenever a person's short-term emotional reference point begins to overpower the longer-term system.</p>
-
-        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">The Disposition Effect — Real Data, Not Just Theory</h3>
-
-        <p>Odean's research confirms that these conflicts — especially the tendency to cut winners and hold losers — are not just theoretical. In his study of 10,000 brokerage accounts, investors demonstrated a strong tendency to realize winners more readily than losers. More importantly, the winning trades that investors chose to sell continued to outperform the losing positions they held. This makes the disposition effect one of the clearest real-world examples of rule-breaking under pressure.</p>
-
-        <p style="margin-top:1.4em;">Investors did not merely think irrationally under pressure — they behaved in ways that damaged their later performance. This matters because it shows how emotional relief can override rational decision-making. Traders frequently violate their known process by favoring comfort in the moment over better probabilities in the future.</p>
-
-        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">The Position-Size Paradox</h3>
-
-        <p>Emotional engagement complicates this problem further because a strategy can remain identical while its psychological difficulty changes dramatically. Bossaerts and colleagues found that heart-rate changes that anticipate mispricing events are associated with stronger earnings, while heart-rate changes that react to trades are associated with weaker earnings. Their conclusion: emotion must not disappear from trading, but the timing and regulation of emotion matter.</p>
-
-        <p style="margin-top:1.4em;">This is where the position-size paradox becomes especially important. A setup that appears rational and manageable at a small size can feel entirely different once the exposure becomes large enough to threaten comfort, confidence, or control. The setup remains unchanged, but the trader does not. As size increases, each price movement feels more intense, and adhering to the plan becomes even harder. Discipline, therefore, cannot depend on feeling calm. It must be strong enough to withstand changes in internal state — especially when position size amplifies the emotional weight of the trade.</p>
-
-        <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:18px 24px;margin:28px 0;">
-          <p style="margin:0;font-style:italic;color:var(--text);">Experience by itself does not solve this problem. 80% of all day traders quit within two years, yet traders with a history of losses still account for over half of day-trading volume. Without honest feedback loops, experience can reinforce ego just as easily as it reinforces skill.</p>
-        </div>
-
-        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Beginners vs. Veterans — How They Measure Themselves</h3>
-
-        <p>Beginners often evaluate themselves through profit and loss alone. After a profitable day, they assume they traded well; after a losing day, they assume they traded poorly. Veterans are more likely to judge performance through <em>process</em>: Did I follow my plan? Did I respect my risk rules? Did I size appropriately? Did I violate my structure?</p>
-
-        <p style="margin-top:1.4em;">That shift is critical because it separates identity from immediate outcomes. A losing trade that follows a sound process can still be evidence of discipline, while a winning trade that violates a rule can still be evidence of failure. Long-term traders survive not because they predict every move correctly, but because they treat probability management, emotional regulation, and structural consistency as more important than short-term validation.</p>
-
-        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">The Platform Problem — When the Environment Works Against You</h3>
-
-        <p>Studies on the gamblification of investing argue that certain platforms borrow from gambling by emphasizing rapid feedback, stimulation, and repeated engagement. Barber et al. show that Robinhood's simplified attention structures guide users toward concentrated buying — and that the most purchased stocks are followed by average 20-day abnormal returns of -4.7%.</p>
-
-        <p style="margin-top:1.4em;">When platforms highlight trending stocks or reward constant interaction, they eliminate the friction that could otherwise prevent impulsive executions. In that kind of setting, discipline is no longer just a private internal trait — it becomes a struggle against an external design that benefits from speed, stimulation, and repetition. The trader is not only fighting emotion; they are also fighting an environment designed to turn attention into action before reflection can intervene.</p>
-
-        <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;color:var(--text);margin:36px 0 14px;">Building Discipline as a System</h3>
-
-        <p>For that reason, discipline must be built as a system. Implementation intentions matter because they reduce the knowledge-execution gap by moving the decision from the heated moment of temptation to the earlier cold moment of planning. Rather than in-the-moment decision-making, people link a critical situation to a predetermined action:</p>
-
-        <div style="background:var(--accent);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin:24px 0;">
-          <ul style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px;">
-            <li style="display:flex;gap:12px;align-items:flex-start;"><span style="color:var(--gold-ink);font-weight:800;min-width:20px;">→</span><span>If I take two consecutive losses, <strong>then I step away</strong></span></li>
-            <li style="display:flex;gap:12px;align-items:flex-start;"><span style="color:var(--gold-ink);font-weight:800;min-width:20px;">→</span><span>If I feel the urge to size up out of emotion, <strong>then I cut my size in half</strong></span></li>
-            <li style="display:flex;gap:12px;align-items:flex-start;"><span style="color:var(--gold-ink);font-weight:800;min-width:20px;">→</span><span>If I break one rule, <strong>then I stop trading for the session</strong></span></li>
-            <li style="display:flex;gap:12px;align-items:flex-start;"><span style="color:var(--gold-ink);font-weight:800;min-width:20px;">→</span><span>If the chart does not match my setup, <strong>then I do not enter — period</strong></span></li>
-          </ul>
-        </div>
-
-        <p>This kind of planning makes the response more automatic, so the trader does not have to rely on willpower in the heat of the moment. Checklists, hard daily loss limits, position-size caps, and honest journaling systems all work by making it harder to violate the plan than it is to follow it. At that point, discipline becomes measurable. It becomes visible in whether a trader executes the system when pressure arises or succumbs to short-term temptation.</p>
-
-        <!-- Final takeaway -->
-        <div style="background:linear-gradient(135deg,#131315,#1a1a1c);border:1px solid var(--border);border-radius:14px;padding:28px 32px;margin:36px 0 0;">
-          <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:#ededee;margin-bottom:12px;">The Bottom Line</h3>
-          <p style="margin:0;line-height:1.85;color:#ededee;">Ultimately, trading is a useful case study not because it is the only place where discipline matters, but because it exposes the problem more quickly than ordinary life does. In fitness, school, work, or budgeting, weak discipline can hide behind a delay. Trading eliminates that delay. It shows that modern failure is often caused not by lack of access, knowledge, or tools — but by the inability to follow a structured process once emotion begins to compete with judgment. <strong style="color:#e26060;">Discipline is the foundation that every other skill depends on. That consistency determines survival long before it determines success.</strong></p>
-        </div>
-
-        <!-- Works Cited -->
-        <div style="margin-top:40px;padding-top:28px;border-top:1px solid var(--border);">
-          <h4 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;">Works Cited</h4>
-          <div style="display:flex;flex-direction:column;gap:8px;font-size:0.78rem;color:var(--muted);line-height:1.6;">
-            <p>Barber, B. M., Huang, X., Odean, T., and Schwarz, C. "Attention-Induced Trading and Returns: Evidence from Robinhood Users." <em>The Journal of Finance</em>, vol. 77, no. 6, 2022, pp. 3141-3190.</p>
-            <p>Barber, B. M., Lee, Y., Liu, Y., and Odean, T. "Do Day Traders Rationally Learn About Their Ability?" 2017.</p>
-            <p>Bossaerts, P., Fattinger, F., Rotaru, K., and Xu, K. "Emotional Engagement and Trading Performance." <em>Management Science</em>, vol. 70, no. 6, 2023, pp. 3381-3397.</p>
-            <p>Duckworth, A. L., and Gross, J. J. "Self-Control and Grit." <em>Current Directions in Psychological Science</em>, vol. 23, no. 5, 2014, pp. 319-325.</p>
-            <p>Gollwitzer, P. M. "Implementation Intentions." <em>American Psychologist</em>, vol. 54, no. 7, 1999, pp. 493-503.</p>
-            <p>Kahneman, D., and Tversky, A. "Prospect Theory." <em>Econometrica</em>, vol. 47, no. 2, 1979, pp. 263-291.</p>
-            <p>Newall, P. W. S., and Weiss-Cohen, L. "The Gamblification of Investing." <em>International Journal of Environmental Research and Public Health</em>, vol. 19, no. 9, 2022.</p>
-            <p>Odean, T. "Are Investors Reluctant to Realize Their Losses?" <em>The Journal of Finance</em>, vol. 53, no. 5, 1998, pp. 1775-1798.</p>
-          </div>
-        </div>
-
-      </div>
+    <!-- Reuses .faq-list's own details/summary styling (assets/site.css)
+         rather than inventing a parallel disclosure component. -->
+    <div class="faq-list" style="max-width:100%;" data-reveal>
+      <details>
+        <summary>Read the full essay &mdash; &ldquo;Why Knowing the Rule Is Not the Same as Following It&rdquo; (~15 min)</summary>
+        <p>The full essay &mdash; the knowledge-execution gap, Prospect Theory, the disposition effect, and the implementation-intention checklist PJ Trades members actually use &mdash; lives on its own page so it gets room to breathe.<br><a href="psychology-enhancer.html#essay" class="course-cta" style="display:inline-block;margin-top:10px;">Read it on the Psychology Enhancer page &rarr;</a></p>
+      </details>
     </div>
-
-    <div style="text-align:center;margin-top:28px;">
-      <p style="color:var(--muted);font-size:0.82rem;margin-bottom:14px;">Want to apply this? The discipline system is built into every callout inside the Discord.</p>
-      <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-gold">30,000+ members, one discord. Join now for free</a>
-    </div>
-
   </div>
 </section>
+
 
 <!-- DISCORD CTA -->
 <section id="discord-cta">
@@ -2293,31 +2172,11 @@ function runPropPayout() {
   document.getElementById('sim-prop-result').style.display = 'block';
 }
 
-// ─── TICK SIMULATOR ───
-// Point values: MNQ $2, NQ $20, MES $5, ES $50.
+// Point values: MNQ $2, NQ $20, MES $5, ES $50. Still used by the sizing
+// simulator below -- calcTickSim(), the card that only used this map for a
+// single-contract points<->dollars conversion, was removed 2026-09-10 as a
+// near-duplicate of the Futures Tick Calc card further down the grid.
 const TICK_SIM_SPECS = { NQ: 20, MNQ: 2, ES: 50, MES: 5 };
-function calcTickSim() {
-  const contract = document.getElementById('tick-contract').value;
-  const perPt = TICK_SIM_SPECS[contract] || 0;
-  const pts = parseFloat(document.getElementById('tick-pts').value) || 0;
-  const dollars = parseFloat(document.getElementById('tick-dollars').value) || 0;
-  if (!perPt) return;
-  let output, interpret;
-  if (pts > 0) {
-    const total = pts * perPt;
-    output = '$' + Math.round(total).toLocaleString();
-    interpret = pts + ' pt stop on ' + contract + ' = $' + Math.round(total).toLocaleString() + ' at risk';
-  } else if (dollars > 0) {
-    const impliedPts = dollars / perPt;
-    output = impliedPts.toFixed(2) + ' pts';
-    interpret = '$' + Math.round(dollars).toLocaleString() + ' risk on ' + contract + ' = ' + impliedPts.toFixed(2) + ' pt stop';
-  } else {
-    return;
-  }
-  document.getElementById('tick-output').textContent = output;
-  document.getElementById('tick-interpret').textContent = interpret;
-  document.getElementById('tick-result').style.display = 'block';
-}
 
 // ─── SIZING SIMULATOR ───
 function calcSizingSim() {
