@@ -18,6 +18,7 @@
   let log = null;
   let input = null;
   let sendBtn = null;
+  let btn = null; // the 💬 FAB; toggle() returns focus to it on close
   let busy = false;
 
   // Lesson mode. The widget never holds lesson TEXT: it holds the id +
@@ -243,11 +244,13 @@
     panel.classList.toggle('open', open);
     if (open) {
       input.focus();
+    } else {
+      btn.focus(); // return keyboard focus to the FAB, whichever control closed the panel
     }
   }
 
   function init() {
-    const btn = el('button', 'vjm-chat-fab');
+    btn = el('button', 'vjm-chat-fab');
     btn.type = 'button';
     btn.innerHTML = '<span aria-hidden="true">💬</span>';
     btn.setAttribute('aria-label', 'Open market assistant');
@@ -257,7 +260,6 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && panel && panel.classList.contains('open')) {
         toggle(false);
-        btn.focus();
       }
     });
   }
