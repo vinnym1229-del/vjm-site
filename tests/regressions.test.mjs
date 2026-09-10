@@ -946,6 +946,53 @@ test("futures-dissection tool: E-mini/Micro comparison chart pairs every contrac
   }
 });
 
+// The test above already extracts fut-tool's live IIFE and drives calc()
+// through it, but only ever reads back the chart's `bars` array -- it never
+// checks what calc() wrote to the tool's own #fu-out-points/#fu-out-ticks/
+// #fu-out-pnl outputs, the numbers a free visitor actually reads. That is
+// the same untested-calculator defect class as the FC_SPECS/MNQ-MES-RTY gap
+// (tests/pj-futures.test.mjs) and the stock-lab calcRisk/calcFib gap
+// (tests/stock-lab-calculators.test.mjs): a real per-contract regression (a
+// flipped tick size, a dropped multiplier, an inverted sign on a loss) would
+// ship undetected because nothing ever executes calc() and checks its math.
+test('futures-dissection tool: calc() writes correct point/tick/P&L math across tick-size families', () => {
+  const html = read('futures-dissection.html');
+  const iife = html.match(/\(function\(\)\{\s*var wrapId='fut-tool';[\s\S]*?\}\)\(\);/)[0];
+  const els = {};
+  const el = (id) => (els[id] ||= { value: '', textContent: '', style: {}, addEventListener(_evt, fn) { this._handler = fn; } });
+  const sandbox = {
+    document: { getElementById: el, querySelector: () => null, readyState: 'complete', addEventListener() {} },
+    window: { addEventListener() {}, currDrawBars: null },
+    setTimeout: () => {},
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(iife, sandbox);
+
+  function run(sym, entry, exit, contracts) {
+    el('fu-contract').value = sym;
+    el('fu-entry').value = String(entry);
+    el('fu-exit').value = String(exit);
+    el('fu-contracts').value = String(contracts);
+    els['fu-contract']._handler();
+    return {
+      points: els['fu-out-points'].textContent,
+      ticks: els['fu-out-ticks'].textContent,
+      pnl: els['fu-out-pnl'].textContent,
+    };
+  }
+
+  // ES: page defaults, 0.25 tick, $50/point.
+  assert.deepEqual(run('ES', 21500, 21568, 1), { points: '68.00', ticks: '272', pnl: '$3,400' });
+  // YM: whole-point tick (1.00), $5/point -- the family the string-pairing bug above was about.
+  assert.deepEqual(run('YM', 44000, 44010, 2), { points: '10.00', ticks: '10', pnl: '$100' });
+  // RTY: 0.10 tick, $50/point, fractional point move.
+  assert.deepEqual(run('RTY', 2200, 2200.5, 1), { points: '0.50', ticks: '5', pnl: '$25' });
+  // A losing/short move must report negative P&L, not an absolute value.
+  assert.deepEqual(run('NQ', 15000, 14980, 3), { points: '-20.00', ticks: '-80', pnl: '-$1,200' });
+  // Contracts input rounds to the nearest whole contract rather than truncating.
+  assert.deepEqual(run('MES', 100, 108, 2.6), { points: '8.00', ticks: '32', pnl: '$120' });
+});
+
 test('the vendored Three.js/model files get a long, cache-header path of their own', () => {
   // assets/vendor/three and assets/models/ferrari.glb were vendored once and
   // never edited in place, unlike site.css/lightning-bg.js which rely on a
