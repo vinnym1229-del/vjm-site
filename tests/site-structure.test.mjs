@@ -109,6 +109,43 @@ for (const page of ['privacy.html', 'risk-disclosure.html', 'terms.html']) {
   assert.match(css, /\.skip\{[^}]*\}/, 'assets/site.css must style .skip so it is invisible until focused');
 }
 
+// b13c553 reordered index.html's Curriculum dropdown/mobile-menu to put
+// Futures Dissection first (matching the homepage's own curriculum grid,
+// where it's the free flagship course) but only touched index.html -- every
+// other nav-bearing page still shipped the old Stock Breakdown-first order,
+// so opening the same Curriculum menu from any other page silently
+// reordered the same four links. index.html is the source of truth here
+// since its order was the deliberate, documented change.
+{
+  const COURSE_LINK = /href="(futures-dissection\.html|stock-breakdown\.html|options-lab\.html|psychology-enhancer\.html)"/g;
+  const NAV_DROP = /Curriculum<span class="caret"[^>]*>[^<]*<\/span><\/button>\s*<div class="nav-drop">([\s\S]*?)<\/div>/;
+  const MMENU_GROUP = /<div class="mm-group">Curriculum<\/div>([\s\S]*?)<div class="mm-group">/;
+
+  const expected = [...html.matchAll(COURSE_LINK)].map((m) => m[1]).slice(0, 4);
+  assert.deepEqual(expected, ['futures-dissection.html', 'stock-breakdown.html', 'options-lab.html', 'psychology-enhancer.html'],
+    "index.html's own Curriculum order must stay Futures Dissection first (the free flagship course)");
+
+  const navDropPages = ['forex-calendar.html', 'futures-dissection.html', 'options-lab.html', 'premarket.html',
+    'prop-firms.html', 'psychology-enhancer.html', 'research-engine.html', 'stock-breakdown.html', 'stock-lab.html'];
+  for (const page of navDropPages) {
+    const source = readFileSync(resolve(root, page), 'utf8');
+    const match = source.match(NAV_DROP);
+    assert.ok(match, `${page} must carry a Curriculum nav-drop`);
+    const order = [...match[1].matchAll(COURSE_LINK)].map((m) => m[1]);
+    assert.deepEqual(order, expected, `${page}'s desktop Curriculum dropdown must match index.html's link order`);
+  }
+
+  const mmenuPages = ['futures-dissection.html', 'options-lab.html', 'premarket.html', 'prop-firms.html',
+    'psychology-enhancer.html', 'stock-breakdown.html', 'stock-lab.html'];
+  for (const page of mmenuPages) {
+    const source = readFileSync(resolve(root, page), 'utf8');
+    const match = source.match(MMENU_GROUP);
+    assert.ok(match, `${page} must carry a Curriculum mobile-menu group`);
+    const order = [...match[1].matchAll(COURSE_LINK)].map((m) => m[1]);
+    assert.deepEqual(order, expected, `${page}'s mobile-menu Curriculum group must match index.html's link order`);
+  }
+}
+
 assert.match(html, /meta name="robots" content="noindex,nofollow"/);
 assert.match(html, /Educational research only—not financial advice/);
 // Sessions travel via HttpOnly cookies; no Bearer tokens in client code.
