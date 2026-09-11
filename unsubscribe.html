@@ -17,8 +17,11 @@
 <style>
   body.vjm-page{margin:0;--vjm-font-body:'IBM Plex Sans',system-ui,sans-serif}
   .wrap{max-width:640px;margin:0 auto;padding:64px 22px 90px}
-  .back{display:inline-block;margin-bottom:26px;color:var(--vjm-muted);text-decoration:none;font-size:.82rem;font-weight:800;letter-spacing:1px;text-transform:uppercase}
+  .top-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:26px}
+  .back{display:inline-block;color:var(--vjm-muted);text-decoration:none;font-size:.82rem;font-weight:800;letter-spacing:1px;text-transform:uppercase}
   .back:hover{color:var(--vjm-red)}
+  #theme-toggle{color:var(--vjm-muted);border:1px solid var(--vjm-border-strong);background:rgba(255,255,255,.03);padding:7px 11px;border-radius:999px;font-size:.74rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px;flex:0 0 auto}
+  #theme-toggle:hover{color:var(--vjm-red)}
   footer{border-top:1px solid var(--vjm-border);padding:26px;text-align:center;color:var(--vjm-muted);font-size:.78rem}
   footer a{color:var(--vjm-muted)}
   a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--vjm-red);outline-offset:3px;border-radius:4px}
@@ -27,7 +30,10 @@
 </head>
 <body class="vjm-page">
 <main class="wrap">
-  <a class="back" href="/">← PJ Trades</a>
+  <div class="top-row">
+    <a class="back" href="/">← PJ Trades</a>
+    <button id="theme-toggle" type="button">&#127769; <span class="theme-label-text">Dark</span></button>
+  </div>
 
   <!-- The one-click link from an email footer hits
        /api/newsletter/unsubscribe?token=… , which removes the address and then
@@ -63,5 +69,20 @@
 
 <footer><a href="risk-disclosure.html">Risk Disclosure</a> · <a href="terms.html">Terms</a> · <a href="privacy.html">Privacy</a></footer>
 <script src="assets/newsletter.js" defer></script>
+<script>
+(function () {
+  var btn = document.getElementById('theme-toggle');
+  if (!btn) return;
+  function sync(isLight) {
+    btn.innerHTML = (isLight ? '☀️' : '🌙') + ' <span class="theme-label-text">' + (isLight ? 'Light' : 'Dark') + '</span>';
+  }
+  btn.addEventListener('click', function () {
+    var isLight = document.body.classList.toggle('light-mode');
+    try { localStorage.setItem('st-theme', isLight ? 'light' : 'dark'); } catch (e) { /* storage blocked */ }
+    sync(isLight);
+  });
+  sync(document.body.classList.contains('light-mode'));
+})();
+</script>
 </body>
 </html>
