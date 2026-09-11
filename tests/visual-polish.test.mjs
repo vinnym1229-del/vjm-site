@@ -314,18 +314,27 @@ test('ferrari showcase loads Three.js and the model from this repo, not a third-
     'a model load failure must also call fail(), not proceed to material swaps on an undefined model');
 });
 
-test('the intro video points at the file that actually exists', () => {
-  // The facade pointed at /video/pj-intro.mp4 while the file sat committed at
-  // assets/pj-intro.mp4. The HEAD check 404'd, so the most prominent element
-  // on the homepage told every visitor the video was "dropping here soon"
-  // while it was one directory away. A path typo with no error anywhere.
+test('the intro video points at something that actually exists', () => {
+  // Originally: the facade pointed at /video/pj-intro.mp4 while the KV object
+  // backing that Function route hadn't been uploaded, so its HEAD check
+  // 404'd and the most prominent element on the homepage told every visitor
+  // the video was "dropping here soon". /video/pj-intro.mp4 is a Cloudflare
+  // Pages Function (functions/video/pj-intro.mp4.js) serving from Workers KV
+  // with real Range support, not a static file — it can never exist on disk
+  // at that path, so check for its handler instead. Any other data-video-mp4
+  // value (e.g. a plain /assets/*.mp4 swap) still must exist on disk and
+  // under Cloudflare Pages' 25MB static-asset limit, since a video that fails
+  // to deploy fails exactly like a wrong path: silently, as "coming soon".
   const html = read('index.html');
   const src = /data-video-mp4="([^"]*)"/.exec(html);
   assert.ok(src, 'the facade must declare a video source');
   const path = src[1].replace(/^\//, '');
+  if (path === 'video/pj-intro.mp4') {
+    assert.ok(existsSync(join(ROOT, 'functions', 'video', 'pj-intro.mp4.js')),
+      'data-video-mp4 points at the /video/pj-intro.mp4 Function route, but its handler is missing');
+    return;
+  }
   assert.ok(existsSync(join(ROOT, path)), `data-video-mp4 points at ${src[1]}, which does not exist in the repo`);
-  // Cloudflare Pages refuses any single file over 25MB, and a video that fails
-  // to deploy fails exactly like a wrong path: silently, as "coming soon".
   const mb = statSync(join(ROOT, path)).size / 1e6;
   assert.ok(mb < 25, `${path} is ${mb.toFixed(1)}MB — over Cloudflare Pages' 25MB per-file limit`);
 });
