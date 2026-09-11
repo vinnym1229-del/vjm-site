@@ -1265,7 +1265,7 @@
     <h2 class="section-title" data-reveal>Market <span class="gold">Insights</span></h2>
     <p class="section-sub" data-reveal>Free education for all. Premium insights locked for subscribers.</p>
     <div class="insights-grid">
-      <div class="insight-card" onclick="openPost()" data-reveal>
+      <div class="insight-card" id="insight-card-trigger" onclick="openPost()" role="button" tabindex="0" data-reveal>
         <div class="insight-card-body">
           <div class="insight-tag">Free · Education</div>
           <h3>How to Understand "The Markets"</h3>
@@ -1477,10 +1477,10 @@
 </footer>
 <!-- BLOG POST MODAL -->
 <div class="modal-overlay" id="post-modal">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="post-modal-title">
     <button class="modal-close" onclick="closePost()" aria-label="Close">✕</button>
     <span class="section-tag">Free Education</span>
-    <h2>How to Understand "The Markets"</h2>
+    <h2 id="post-modal-title">How to Understand "The Markets"</h2>
     <p><em>A complete, simplified breakdown of every major market — written so anyone can understand it.</em></p>
     <h3>What Are the Markets?</h3>
     <p>When people say "the markets," it sounds complex but it's simpler than it seems. All markets are places where buyers and sellers trade different types of assets. They're connected but each serves a different purpose. Everything that moves in the markets comes from the same core reasons: supply, demand, economic data, interest rates, and overall investor sentiment.</p>
@@ -1612,8 +1612,31 @@ const SocialStats = (function () {
 
 
 // ─── BLOG POST ───
-function openPost() { document.getElementById('post-modal').classList.add('active'); document.body.style.overflow='hidden'; }
-function closePost() { document.getElementById('post-modal').classList.remove('active'); document.body.style.overflow=''; }
+// The trigger is a `<div>` (grid card styling doesn't fit a <button>), so it
+// needs role="button"/tabindex in the markup plus its own Enter/Space
+// handler here — mirrors the video-facade IIFE above. openPost() also
+// remembers whatever had focus and moves focus onto the modal's close
+// button (WCAG dialog pattern); closePost() returns it, the same
+// focus-restore the chatbot panel and nav dropdowns already do. Escape
+// closes it for keyboard parity with every other overlay on the site.
+let postModalTrigger = null;
+function openPost() {
+  postModalTrigger = document.activeElement;
+  document.getElementById('post-modal').classList.add('active');
+  document.body.style.overflow = 'hidden';
+  document.querySelector('#post-modal .modal-close').focus();
+}
+function closePost() {
+  document.getElementById('post-modal').classList.remove('active');
+  document.body.style.overflow = '';
+  (postModalTrigger || document.getElementById('insight-card-trigger')).focus();
+}
+document.getElementById('insight-card-trigger').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPost(); }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('post-modal').classList.contains('active')) closePost();
+});
 
 // ─── EXPAND / COLLAPSE SECTIONS ───
 function toggleSection(id, btn) {
