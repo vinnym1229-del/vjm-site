@@ -104,6 +104,27 @@ test('no duplicate static id= attributes within any HTML page', () => {
   assert.deepEqual(problems, []);
 });
 
+test('no duplicate meta name=/property= tags within any HTML <head>', () => {
+  // Tags that legitimately repeat (multiple og:image variants, JSON-LD
+  // script blocks, etc.) are excluded; everything else should declare a
+  // given name/property at most once per page.
+  const REPEATABLE = new Set(['og:image']);
+  const problems = [];
+  for (const page of HTML_PAGES) {
+    if (!existsSync(join(ROOT, page))) continue;
+    const html = read(page);
+    const head = html.slice(0, html.indexOf('</head>'));
+    const keys = [...head.matchAll(/<meta\s+(?:name|property)="([^"]+)"/g)].map((m) => m[1]);
+    const seen = new Set();
+    for (const key of keys) {
+      if (REPEATABLE.has(key)) continue;
+      if (seen.has(key)) problems.push(`${page}: <meta name/property="${key}">`);
+      seen.add(key);
+    }
+  }
+  assert.deepEqual(problems, []);
+});
+
 test('verify-premium issues cookies and never returns tokens', () => {
   const src = read('functions/api/verify-premium.js');
   assert.ok(src.includes('jsonWithSession'), 'must set session cookie');
