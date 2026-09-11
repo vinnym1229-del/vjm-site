@@ -1324,3 +1324,35 @@ test('docs/SECURITY.md\'s enumeration threat note reflects the same 403/401 spli
     'docs/SECURITY.md: enumeration note falsely claims unknown and inactive codes are always indistinguishable');
   assert.match(doc, /403/, 'docs/SECURITY.md: enumeration note must account for the distinct 403 case');
 });
+
+// ---------------------------------------------------------------------------
+// Incident: index.html's four homepage calculator widgets (Growth Simulator,
+// Sizing Simulator, Futures Tick Calc, Prop Risk Guard) gave every input a
+// real, visible <label> right next to it, but the label was never associated
+// via for/id -- each input instead carried its own terse, unrelated
+// aria-label ("sim start", "fc entry", "pr drawdown", ...). A screen reader
+// announced the aria-label, never the visible text ("Starting Balance ($)",
+// "Entry Price", "Trailing Drawdown / Loss Limit ($)"), and a voice-control
+// user navigating by the visible label text couldn't find the field at all.
+// Every sibling curriculum page (futures-dissection.html, options-lab.html,
+// stock-breakdown.html, psychology-enhancer.html) already uses the correct
+// for/id pattern with no redundant aria-label -- index.html's own calculators
+// were the outlier.
+test('index.html homepage calculator inputs use a real for/id label, not a mismatched aria-label', () => {
+  const html = read('index.html');
+  const ids = [
+    'sim-start', 'sim-daily-dollar', 'sim-daily-pct', 'sim-days',
+    'sim-prop-start', 'sim-prop-daily', 'sim-prop-days',
+    'size-contracts', 'size-pts', 'size-target',
+    'fc-entry', 'fc-exit', 'fc-contracts',
+    'pr-account', 'pr-drawdown', 'pr-risk',
+  ];
+  for (const id of ids) {
+    const inputMatch = html.match(new RegExp(`<input\\b[^>]*\\bid="${id}"[^>]*>`));
+    assert.ok(inputMatch, `expected an <input id="${id}"> in index.html`);
+    assert.doesNotMatch(inputMatch[0], /aria-label=/,
+      `index.html #${id}: should rely on its visible <label for> instead of a redundant/mismatched aria-label`);
+    assert.match(html, new RegExp(`<label\\b[^>]*\\bfor="${id}"`),
+      `index.html #${id}: missing a <label for="${id}"> associating it with its visible text`);
+  }
+});
