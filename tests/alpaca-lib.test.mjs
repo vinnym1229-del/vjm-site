@@ -45,6 +45,18 @@ try {
     assert.deepEqual(data.SPY, { latestTrade: { p: 500 } }, 'response body read at the top level, not under a "snapshots" wrapper');
   }
 
+  // The endpoint has also been observed wrapping the map under a
+  // "snapshots" key (stock-research.js already accepts both shapes for
+  // this reason). A batch call landing on that shape must not silently
+  // come back empty -- every caller (ticker.js, computedMovers) treats an
+  // empty map as "no data available" for the whole request.
+  {
+    globalThis.fetch = async () => Response.json({ snapshots: { SPY: { latestTrade: { p: 500 } }, QQQ: { latestTrade: { p: 400 } } } });
+    const data = await snapshots(env, ['SPY', 'QQQ']);
+    assert.deepEqual(data.SPY, { latestTrade: { p: 500 } }, 'wrapped "snapshots" key must be unwrapped, not read as a literal symbol');
+    assert.deepEqual(data.QQQ, { latestTrade: { p: 400 } });
+  }
+
   // A falsy JSON body (e.g. `null`) must not propagate as null -- callers
   // index into this map directly.
   {

@@ -27,16 +27,19 @@ async function getJson(env, path, timeoutMs = 8000) {
 }
 
 // Snapshot map for a small symbol list. feed=iex works on the free tier.
-// NOTE: unlike the crypto snapshots endpoint, /v2/stocks/snapshots returns
-// the symbol->snapshot map at the TOP LEVEL of the response body, not
-// nested under a "snapshots" key. (Confirmed against a live response —
-// {"SPY":{...},"QQQ":{...}}, no wrapper.) Reading data.snapshots here
-// always returned undefined, so every snapshot silently came back empty
-// and callers saw "no data" regardless of whether the feed actually had any.
+// NOTE: /v2/stocks/snapshots has been observed returning the symbol->snapshot
+// map both at the TOP LEVEL of the response body ({"SPY":{...},"QQQ":{...}})
+// and nested under a "snapshots" key ({"snapshots":{"SPY":{...}}}) -- the
+// live shape isn't stable. stock-research.js hits this same endpoint and
+// already learned to accept either shape (see its own comment); this helper
+// only checked the top level, so a batch call landing on the wrapped shape
+// silently produced zero snapshots and every caller (the ticker,
+// computedMovers) saw "no data" regardless of whether the feed actually had
+// any.
 export async function snapshots(env, symbols) {
   const list = symbols.map((s) => encodeURIComponent(s)).join(',');
   const data = await getJson(env, `/v2/stocks/snapshots?symbols=${list}&feed=iex`);
-  return data || {};
+  return (data && data.snapshots) ? data.snapshots : (data || {});
 }
 
 export function summarizeSnapshot(sym, snap) {
