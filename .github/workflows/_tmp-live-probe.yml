@@ -27,6 +27,13 @@ jobs:
           curl -s "$SITE/api/yahoo-news?symbol=AAPL" | head -c 500; echo
           curl -s "$SITE/api/stock-research?symbol=AAPL" | head -c 500; echo
           curl -s "$SITE/api/content?type=schedule" | head -c 500; echo
+      - name: Diagnostic -- CDN cache status on the two Alpaca-backed endpoints
+        run: |
+          set -x
+          echo "--- ticker (repeat x3) ---"
+          for i in 1 2 3; do curl -s -D - -o /dev/null "$SITE/api/ticker" | grep -i "^cf-cache-status\|^cf-ray\|^age:"; done
+          echo "--- stock-research (repeat x3) ---"
+          for i in 1 2 3; do curl -s -D - -o /dev/null "$SITE/api/stock-research?symbol=AAPL" | grep -i "^cf-cache-status\|^cf-ray\|^age:"; done
       - name: verify-premium bad code with no turnstileToken stays gated
         run: |
           set -x
