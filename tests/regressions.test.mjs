@@ -1382,3 +1382,29 @@ test('index.html homepage calculator inputs use a real for/id label, not a misma
       `index.html #${id}: missing a <label for="${id}"> associating it with its visible text`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Incident: docs/SECURITY.md's "Known debt / staged work" section carried a
+// bullet claiming "Cloudflare Turnstile on repeated failures should be added
+// once the owner creates a site key" -- describing Turnstile as unbuilt and
+// gated on a site key that doesn't exist yet. Both halves were false: the
+// bot-check has been fully implemented and wired since an earlier run
+// (functions/api/_lib/turnstile.js, called from verify-premium.js and
+// newsletter/subscribe.js; the client mounts it via assets/newsletter.js and
+// premium-guidance.html), it fires on every submit rather than only "on
+// repeated failures", and premium-guidance.html already ships a real site key
+// in its markup (`data-sitekey="0x4AAAAAAEf5izeTKE41bl6z"`). The doc directly
+// contradicted its own siblings: docs/NEWSLETTER.md already said "Turnstile is
+// wired end to end" and docs/OWNER-CHECKLIST.md already said "The widget is
+// now on the signup forms". The only real remaining gap is an owner action
+// (setting `TURNSTILE_SECRET_KEY` in Cloudflare), already tracked in
+// OWNER-CHECKLIST.md -- not an engineering debt item.
+test('docs/SECURITY.md does not claim Turnstile is unbuilt or gated on a site key', () => {
+  const doc = read('docs/SECURITY.md');
+  assert.doesNotMatch(doc, /Turnstile on repeated failures should be added/i,
+    'docs/SECURITY.md: must not describe Turnstile as not-yet-built');
+  assert.doesNotMatch(doc, /once the owner creates a site key/i,
+    'docs/SECURITY.md: a site key already exists in premium-guidance.html; this claim is stale');
+  assert.match(doc, /Turnstile/,
+    'docs/SECURITY.md: Turnstile should still be documented, just accurately (e.g. as a Done control)');
+});

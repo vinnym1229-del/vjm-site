@@ -18,13 +18,13 @@ Threat model in one line: anonymous visitors, premium members with codes, and th
 | S10 | Fabricated data removed: simulated viewers, launch-spots scarcity bar | **Done** | tests assert markers stay out |
 | S11 | Client-side member list (`activeMembersFallback`) removed — honest failure states instead | **Done** | index.html checkStatus rewrite |
 | S12 | `.env.example` with placeholder-only names | **Done** | test enforces no real-looking values |
+| S13 | Cloudflare Turnstile bot-check on login (verify-premium) and every lead-capture form; soft-required so it fails closed once `TURNSTILE_SECRET_KEY` is set, open until then | **Done** (owner env var pending) | `_lib/turnstile.js`, verify-premium.js, newsletter/subscribe.js, assets/newsletter.js, premium-guidance.html; tests/turnstile-lib.test.mjs, tests/quiz-lead-turnstile.test.mjs |
 
 ## Known debt / staged work
 
 - **CSP `'unsafe-inline'` for scripts/styles**: current pages ship large inline `<script>`/`<style>`. Removing these across a 2.7 MB monolith is a structural project (Phase 2 modularization). No wildcard sources are used; TradingView origins are pinned.
 - **Legacy full-map bridge**: until the owner deploys the new Apps Script and switches env vars, `MEMBERS_STATUS_URL` remains supported server-side only. Browsers can never reach it directly, but the upstream URL itself still dumps the map to anyone who knows it → **deploy the new bridge promptly**.
 - **Session revocation list**: cookies are stateless signed tokens (7d). Revocation-on-demand requires a D1 denylist checked in `getSession()` — designed, not yet wired (see ARCHITECTURE).
-- **Turnstile**: rate limits are in; Cloudflare Turnstile on repeated failures should be added once the owner creates a site key.
 - **Rotation checklist (owner)**:
   1. Set a fresh `SESSION_SIGNING_SECRET` (never reused elsewhere).
   2. Rotate any credential ever equal to `VINNY_ADMIN_01`.
