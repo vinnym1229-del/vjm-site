@@ -1013,6 +1013,26 @@ test('the vendored Three.js/model files get a long, cache-header path of their o
   }
 });
 
+test('the committed-once intro video and its poster get the same long-cache treatment as vendor/models', () => {
+  // assets/pj-intro.mp4 is 17MB and assets/pj-intro-poster.jpg loads on every
+  // homepage visit; both are committed once and swapped only by a deliberate
+  // re-shoot (see index.html's intro-video comment), the same rationale the
+  // vendor/models rule above already relies on. Without their own rule they
+  // fall through to the blanket 5-minute /assets/* default and get
+  // needlessly revalidated on the site's highest-traffic page.
+  const headers = read('_headers');
+  const blanket = /\/assets\/\*\n\s*Cache-Control: public, max-age=(\d+)/.exec(headers);
+  assert.ok(blanket, '_headers must still set a blanket /assets/* Cache-Control');
+  const blanketMaxAge = Number(blanket[1]);
+
+  for (const path of ['/assets/pj-intro.mp4', '/assets/pj-intro-poster.jpg']) {
+    const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rule = new RegExp(`${escaped}\\n\\s*Cache-Control: public, max-age=(\\d+), immutable`).exec(headers);
+    assert.ok(rule, `_headers has no long-cache rule for ${path}`);
+    assert.ok(Number(rule[1]) > blanketMaxAge, `${path}'s max-age must exceed the general /assets/* default`);
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Incident: psychology-enhancer.html grew from 59 to 62 lesson-card entries
 // over time, but its own hero stat ("59 Lessons"), index.html's curriculum

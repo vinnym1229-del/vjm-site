@@ -51,6 +51,19 @@
 /assets/models/*
   Cache-Control: public, max-age=604800, immutable
 
+# assets/pj-intro.mp4 (17MB) and its poster are the same "committed once"
+# case as vendor/models above: the intro-video comment in index.html already
+# treats the file's presence, not its content, as the moving part — a
+# re-shoot is a new commit, not a silent overwrite of the same bytes. Without
+# their own rule they fell through to the blanket /assets/* line, so every
+# visitor whose session crossed 5 minutes revalidated a 17MB video and its
+# poster on the site's highest-traffic page for no reason.
+/assets/pj-intro.mp4
+  Cache-Control: public, max-age=604800, immutable
+
+/assets/pj-intro-poster.jpg
+  Cache-Control: public, max-age=604800, immutable
+
 # ── PERMANENT noindex — survives lifting the switch above ──
 # Member/app tools, the research engine, premium guidance, API and video
 # routes, and the /pj/* static preview copies must never be indexed at any
