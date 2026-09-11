@@ -41,6 +41,74 @@ function paidAmountForPeriod(tier, period, entry) {
   return money(entry.amt);
 }
 
+// The "monthly" period entry is what actually paints the page on first load
+// (see setBundlePeriod('monthly') called on DOMContentLoaded) — its own
+// was/amt/off numbers are hand-typed independently of the sixmo/yearly
+// entries above, so the sixmo/yearly check doesn't cover it at all.
+function offAmountMatchesWasMinusAmt(tier, entry) {
+  const was = money(entry.was);
+  const amt = money(entry.amt);
+  assert.ok(was > amt, `${tier}/monthly: "was" ($${entry.was}) is not greater than the current amt ($${entry.amt})`);
+  const dollarOff = was - amt;
+  const dollarMatch = String(entry.off).match(/^\$([0-9.,]+) off$/);
+  const pctMatch = String(entry.off).match(/^(\d+)% off$/);
+  assert.ok(dollarMatch || pctMatch, `${tier}/monthly: off badge "${entry.off}" is neither a "$X off" nor "N% off" shape`);
+  if (dollarMatch) {
+    assert.equal(
+      Number(dollarMatch[1]),
+      Number(dollarOff.toFixed(2)),
+      `${tier}/monthly: badge says "${entry.off}" but $${entry.was} - $${entry.amt} is $${dollarOff.toFixed(2)} off`
+    );
+  } else {
+    const actualPct = Math.round((dollarOff / was) * 100);
+    assert.equal(
+      Number(pctMatch[1]),
+      actualPct,
+      `${tier}/monthly: badge says "${entry.off}" but $${entry.was} -> $${entry.amt} is actually ${actualPct}% off`
+    );
+  }
+}
+
+test('bundle "monthly" period was/amt/off badges are internally consistent', () => {
+  const periods = extractBundlePeriods(index);
+  const tiersWithDiscount = ['allmarkets', 'ifvg'];
+  for (const tier of tiersWithDiscount) {
+    const entry = periods[tier].monthly;
+    assert.ok(entry.was && entry.off, `${tier}/monthly: expected a "was"/"off" pair, got ${JSON.stringify(entry)}`);
+    offAmountMatchesWasMinusAmt(tier, entry);
+  }
+});
+
+// The homepage paints price-futures/-allmarkets/-ifvg twice: once as static
+// markup for first paint, and again from BUNDLE_PERIODS[...].monthly via
+// setBundlePeriod('monthly') on load. The two copies are hand-maintained
+// independently, so a price edit to one without the other would flash a
+// wrong number before JS runs (or ship a permanently wrong one if JS fails).
+function extractStaticTierPrice(src, tier) {
+  const re = new RegExp(
+    `<div class="tier-price" id="price-${tier}">` +
+      `(?:<s class="tier-was">([^<]+)</s>)?` +
+      `([^<]+)<span>([^<]+)</span>` +
+      `(?:<span class="tier-off">([^<]+)</span>)?` +
+      `</div>`
+  );
+  const m = src.match(re);
+  assert.ok(m, `price-${tier} static markup not found or its shape changed`);
+  return { was: m[1], amt: m[2], per: m[3], off: m[4] };
+}
+
+test('static homepage tier-price markup matches BUNDLE_PERIODS[...].monthly exactly', () => {
+  const periods = extractBundlePeriods(index);
+  for (const tier of ['futures', 'allmarkets', 'ifvg']) {
+    const monthly = periods[tier].monthly;
+    const staticPrice = extractStaticTierPrice(index, tier);
+    assert.equal(staticPrice.amt, monthly.amt, `price-${tier}: static amt "${staticPrice.amt}" != BUNDLE_PERIODS amt "${monthly.amt}"`);
+    assert.equal(staticPrice.per, monthly.per, `price-${tier}: static period "${staticPrice.per}" != BUNDLE_PERIODS per "${monthly.per}"`);
+    assert.equal(staticPrice.was ?? undefined, monthly.was, `price-${tier}: static was "${staticPrice.was}" != BUNDLE_PERIODS was "${monthly.was}"`);
+    assert.equal(staticPrice.off ?? undefined, monthly.off, `price-${tier}: static off "${staticPrice.off}" != BUNDLE_PERIODS off "${monthly.off}"`);
+  }
+});
+
 test('bundle period "% off" badges match the tier\'s own monthly rate x months', () => {
   const periods = extractBundlePeriods(index);
   const checked = [];
