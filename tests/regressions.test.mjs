@@ -403,6 +403,32 @@ test("psychology essay's 2017 Barber et al. citations don't cite pages its own b
   assert.doesNotMatch(worksCited, /pp?\.\s*\d/, 'this Works Cited entry has no pagination -- if that ever changes, the in-text citations above should cite the real pages instead of none');
 });
 
+// Incident: the Works Cited list carried two entries (Fenton-O'Creevy et al.
+// and a Securities and Exchange Commission staff report) that were never
+// actually cited anywhere in the essay body -- MLA's "Works Cited" only
+// lists sources cited in-text (an uncited source belongs in a
+// "Bibliography," a different list this page doesn't have). The essay's own
+// meta line also claimed "10 cited sources" while only 10 entries existed in
+// the list, masking that two of them were dead weight. This is the site's
+// one free, citation-backed page -- a visitor can actually click through and
+// check every source, so every listed source must earn its place.
+test("psychology essay's Works Cited list contains only sources actually cited in the essay", () => {
+  const psych = read('psychology-enhancer.html');
+  const bodyEnd = psych.indexOf('<div class="refs">');
+  const body = psych.slice(psych.indexOf('<div class="essay-full">'), bodyEnd);
+  const worksCitedHtml = psych.slice(bodyEnd).match(/<ol>([\s\S]*?)<\/ol>/)?.[1] || '';
+  const entries = [...worksCitedHtml.matchAll(/<li>([\s\S]*?)<\/li>/g)].map((m) => m[1]);
+  assert.ok(entries.length > 0, 'Works Cited list not found');
+  for (const entry of entries) {
+    // First surname (or agency name for the SEC-style corporate author) leads every entry.
+    const leadName = entry.match(/^([A-Za-z.’'-]+(?: [A-Za-z.’'-]+)?),/)?.[1] || entry.split(',')[0];
+    assert.match(body, new RegExp(leadName.split(' ')[0]),
+      `Works Cited entry "${leadName}" is never cited in the essay body -- remove it or add the missing in-text citation`);
+  }
+  const claimed = Number(psych.match(/(\d+) cited sources/)?.[1]);
+  assert.equal(claimed, entries.length, 'the "N cited sources" badge must match the actual Works Cited entry count');
+});
+
 // ---------------------------------------------------------------------------
 // Incident: four API routes shipped without rate limiting; one exposed a
 // brute-forceable shared secret.
