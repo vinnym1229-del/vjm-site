@@ -384,6 +384,7 @@
       email: String(email || '').trim(),
       consent: p.consent === true,
       source: typeof p.source === 'string' ? p.source : 'site',
+      turnstileToken: typeof p.turnstileToken === 'string' ? p.turnstileToken : '',
       props: cleanProps(props)
     };
     if (!looksLikeEmail(payload.email)) {

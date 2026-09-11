@@ -60,21 +60,34 @@
     document.head.appendChild(s);
   }
 
+  // Forms that asked to be mounted before the script/site key were ready
+  // (the homepage quiz's lead form is built at runtime, after the user
+  // finishes the quiz, so it can easily exist before or after this point).
+  var pendingMounts = [];
+
+  function mountTurnstile(form) {
+    if (!form) return;
+    if (!turnstile.ready || !turnstile.siteKey || !window.turnstile) {
+      if (pendingMounts.indexOf(form) === -1) pendingMounts.push(form);
+      return;
+    }
+    var slot = form.querySelector('.nl-turnstile');
+    if (!slot || slot.dataset.rendered) return;
+    slot.dataset.rendered = '1';
+    try {
+      window.turnstile.render(slot, {
+        sitekey: turnstile.siteKey,
+        callback: function (token) { form.dataset.turnstileToken = token; },
+        'expired-callback': function () { delete form.dataset.turnstileToken; },
+        'error-callback': function () { delete form.dataset.turnstileToken; }
+      });
+    } catch (e) { /* a failed widget must not take the form down with it */ }
+  }
+
   function renderWidgets() {
     if (!turnstile.ready || !turnstile.siteKey || !window.turnstile) return;
-    document.querySelectorAll('form.nl-signup').forEach(function (form) {
-      var slot = form.querySelector('.nl-turnstile');
-      if (!slot || slot.dataset.rendered) return;
-      slot.dataset.rendered = '1';
-      try {
-        window.turnstile.render(slot, {
-          sitekey: turnstile.siteKey,
-          callback: function (token) { form.dataset.turnstileToken = token; },
-          'expired-callback': function () { delete form.dataset.turnstileToken; },
-          'error-callback': function () { delete form.dataset.turnstileToken; }
-        });
-      } catch (e) { /* a failed widget must not take the form down with it */ }
-    });
+    document.querySelectorAll('form.nl-signup').forEach(mountTurnstile);
+    pendingMounts.splice(0, pendingMounts.length).forEach(mountTurnstile);
   }
 
   async function initTurnstile() {
@@ -213,6 +226,17 @@
       if (copy) { banner.className = 'nl-msg ' + copy[0]; banner.textContent = copy[1]; }
     }
   }
+
+  /* Public hook for forms this file did not render itself — currently just
+   * the homepage quiz's lead-capture box (built by index.html's own JS after
+   * the quiz finishes, so it cannot be a static `.nl-signup` this file finds
+   * at load). Shares the one `turnstile` state/script/widget instead of each
+   * caller re-implementing the fetch-config-then-render dance. */
+  window.vjmTurnstile = {
+    mount: mountTurnstile,
+    required: function () { return turnstile.required; },
+    misconfigured: function () { return turnstile.required && !turnstile.siteKey; }
+  };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();

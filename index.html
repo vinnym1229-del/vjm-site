@@ -1979,6 +1979,10 @@ function renderQuizLead(track) {
         '<span>Yes, email me the free lessons and the newsletter. I can unsubscribe from any email, or at ' +
         '<a href="unsubscribe.html" style="color:var(--gold-ink);">this link</a>, at any time.</span>' +
       '</label>' +
+      // Turnstile mounts here when the owner sets TURNSTILE_SITE_KEY, same as
+      // the two standalone newsletter forms — see assets/newsletter.js, which
+      // owns the one fetch-config/render-widget flow this form reuses.
+      '<div class="nl-turnstile" style="flex:1 0 100%;margin-top:4px;"></div>' +
     '</form>' +
     '<p style="font-size:0.72rem;color:var(--muted);line-height:1.6;margin:10px 0 0;">' +
       'Used only to send you PJ Trades course and membership emails. No selling, no sharing, unsubscribe in every email. ' +
@@ -1988,14 +1992,36 @@ function renderQuizLead(track) {
 
   const form = document.getElementById('quiz-lead-form');
   const msg = document.getElementById('quiz-lead-msg');
+
+  // Same widget/config the two standalone newsletter forms use (see
+  // assets/newsletter.js) so this box cannot silently drift out of sync with
+  // whether the site's bot check is actually on. Reachable only if
+  // assets/newsletter.js failed to load at all, in which case there is no
+  // Turnstile object to mount anyway and the endpoint's own required check
+  // is the backstop.
+  if (window.vjmTurnstile) {
+    if (window.vjmTurnstile.misconfigured()) {
+      // Secret set, site key missing: every submit would 403. Say so now
+      // instead of letting someone find out one failed submit at a time.
+      msg.textContent = 'Signups are temporarily unavailable — the bot check on this site is misconfigured. Please try again later.';
+      form.querySelector('button').disabled = true;
+    } else {
+      window.vjmTurnstile.mount(form);
+    }
+  }
+
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
     const input = document.getElementById('quiz-lead-email');
     const button = form.querySelector('button');
+    if (window.vjmTurnstile && window.vjmTurnstile.required() && !form.dataset.turnstileToken) {
+      msg.textContent = 'Just a moment — finishing the bot check. Try again in a second.';
+      return;
+    }
     msg.textContent = 'Sending…';
     button.disabled = true;
     const consented = !!(document.getElementById('quiz-lead-consent') || {}).checked;
-    window.vjmLead.submit(input.value, { track: track, source: 'homepage-quiz', consent: consented }).then(function (res) {
+    window.vjmLead.submit(input.value, { track: track, source: 'homepage-quiz', consent: consented, turnstileToken: form.dataset.turnstileToken || '' }).then(function (res) {
       button.disabled = false;
       if (res.ok) {
         msg.textContent = 'Sent — check your inbox.';
@@ -2009,6 +2035,10 @@ function renderQuizLead(track) {
         // claim the address was stored when it was not.
         msg.textContent = 'Email signup is not connected yet — your address was not saved.';
       } else {
+        // A Turnstile token is single-use, so a failed submit must not be
+        // retried with the same one — same cleanup the standalone forms do.
+        delete form.dataset.turnstileToken;
+        if (window.turnstile) { try { window.turnstile.reset(); } catch (e) { /* nothing to reset */ } }
         msg.textContent = 'That did not go through — your address was not saved. Please try again.';
       }
       vjmTrack('lead_submit', { ok: !!res.ok, reason: res.reason || 'ok', track: track, source: 'homepage-quiz' });

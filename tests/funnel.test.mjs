@@ -24,7 +24,7 @@ const indexMarkup = index.replace(/<!--[\s\S]*?-->/g, '');
 const plain = (v) => JSON.parse(JSON.stringify(v));
 
 /** Enough of a browser for the IIFE to install itself. */
-function load({ queue, storage = true, search = '' } = {}) {
+function load({ queue, storage = true, search = '', fetch: fetchImpl } = {}) {
   const listeners = {};
   const store = new Map();
   const sandbox = {
@@ -41,6 +41,7 @@ function load({ queue, storage = true, search = '' } = {}) {
   };
   sandbox.window = sandbox;
   if (queue) sandbox.vjmTrackQueue = queue;
+  if (fetchImpl) sandbox.fetch = fetchImpl;
   vm.createContext(sandbox);
   vm.runInContext(funnelSrc, sandbox);
   return { win: sandbox, listeners };
@@ -164,6 +165,38 @@ test('lead capture points at the site\'s own endpoint and never reports a signup
   assert.deepEqual(plain(await win.vjmLead.submit('reader@example.com', {})), { ok: false, reason: 'no_consent' },
     'consent comes from the form; the helper must never supply it');
   assert.deepEqual(plain(await win.vjmLead.submit('reader@example.com', { consent: 'yes' })), { ok: false, reason: 'no_consent' });
+});
+
+// Incident: docs/NEWSLETTER.md claims Turnstile is "wired end to end" for all
+// four forms feeding /api/newsletter/subscribe, but the homepage quiz's lead
+// box (the only one of the four built via vjmLead.submit() rather than a
+// static <form class="nl-signup">) never forwarded a token at all. The
+// moment an owner sets TURNSTILE_SECRET_KEY, the server requires one
+// (functions/api/_lib/turnstile.js: no token is always a fail) and the quiz
+// form's every submit would 403 while the other three kept working — a gap
+// the docs' own claim hid rather than caught. Fixed by threading a
+// turnstileToken through submitLead's payload, same field name and same
+// shape the standalone forms already send.
+test('lead capture forwards a turnstileToken through to the subscribe endpoint', async () => {
+  const calls = [];
+  const fetchImpl = async (url, opts) => {
+    calls.push({ url, body: JSON.parse(opts.body) });
+    return { ok: true, json: async () => ({ ok: true }) };
+  };
+  const { win } = load({ fetch: fetchImpl });
+
+  await win.vjmLead.submit('reader@example.com', { consent: true, source: 'homepage-quiz', turnstileToken: 'tok-abc' });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, '/api/newsletter/subscribe');
+  assert.equal(calls[0].body.turnstileToken, 'tok-abc', 'the token given to submit() must reach the request body');
+
+  // No token supplied (Turnstile off, or the widget has not produced one
+  // yet): the field must still serialise as an empty string, same as the
+  // standalone forms' `form.dataset.turnstileToken || ''` -- a stray
+  // `undefined` in the JSON body is the kind of thing that is easy to miss
+  // in a manual test and awkward for the server to distinguish from "off".
+  await win.vjmLead.submit('reader@example.com', { consent: true });
+  assert.equal(calls[1].body.turnstileToken, '', 'a missing token must serialise as an empty string, not be omitted');
 });
 
 test('the homepage carries the queue shim and loads the event layer', () => {
