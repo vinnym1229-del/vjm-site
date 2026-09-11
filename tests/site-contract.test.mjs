@@ -246,13 +246,14 @@ test('indexing stays off, coherently, in one place', () => {
   const headers = read('_headers');
   // Site-wide hold, not a /pj/-only hold.
   assert.match(headers, /\/\*\n(?:[^\n]*\n)*?\s+X-Robots-Tag: noindex/, '_headers must apply the noindex hold site-wide');
-  // Member/app, labs, research engine, premium guidance and APIs stay
-  // noindexed even after the site-wide hold is lifted.
-  for (const path of ['/api/*', '/stock-lab', '/research-engine', '/premium-guidance', '/pj/*']) {
+  // Member/app, labs, research engine, premium guidance, APIs, the
+  // unsubscribe page and the 404 page stay noindexed even after the
+  // site-wide hold is lifted.
+  for (const path of ['/api/*', '/stock-lab', '/research-engine', '/premium-guidance', '/pj/*', '/unsubscribe', '/404']) {
     const block = new RegExp(path.replace(/[*/]/g, (c) => '\\' + c) + '\\n\\s+X-Robots-Tag: noindex');
     assert.match(headers, block, `${path} must be noindexed independently of the site-wide hold`);
   }
-  for (const page of ['stock-lab.html', 'research-engine.html', '404.html']) {
+  for (const page of ['stock-lab.html', 'research-engine.html', 'premium-guidance.html', 'unsubscribe.html', '404.html']) {
     assert.match(read(page), /<meta name="robots" content="noindex/i, `${page} must declare noindex itself`);
   }
   // No page may claim index,follow while the site-wide hold is on — that was

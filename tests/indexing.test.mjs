@@ -49,11 +49,13 @@ test('the real host indexes public pages and still excludes the private ones', (
   for (const path of ['/', '/index.html', '/prop-firms.html', '/premarket.html', '/privacy.html']) {
     assert.equal(on(path), true, `${path} should be indexable on the real domain`);
   }
-  // Member tools, the API, the preview copies and the opt-out page never are.
+  // Member tools, the API, the preview copies, the opt-out page and the 404
+  // page never are.
   for (const path of [
     '/api/newsletter/subscribe', '/video/pj-intro.mp4', '/pj/index.html',
     '/stock-lab', '/stock-lab.html', '/research-engine', '/research-engine.html',
     '/premium-guidance', '/premium-guidance.html', '/unsubscribe', '/unsubscribe.html',
+    '/404', '/404.html',
   ]) {
     assert.equal(on(path), false, `${path} must never be indexed`);
   }
@@ -154,6 +156,6 @@ test('the canonical host agrees with robots.txt, the canonical links, and _heade
     assert.equal(isAlwaysNoindex(path === '/' ? '/x' : path), true,
       `${path} is permanently noindex in _headers but the middleware would un-noindex it`);
   }
-  assert.ok(ALWAYS_NOINDEX.length >= 7);
+  assert.ok(ALWAYS_NOINDEX.length >= 8);
   assert.equal(normalizeHost('  EXAMPLE.com:8443 '), 'example.com');
 });

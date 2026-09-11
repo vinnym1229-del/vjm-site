@@ -29,11 +29,14 @@ export const CANONICAL_HOST = 'not-financial-advice-vjm.com';
 
 /** Paths that must never be indexed on ANY host, including the real one:
  *  member tools, the research engine, premium guidance, the API and video
- *  routes, the /pj/* preview copies, and the unsubscribe page. Mirrors the
- *  per-path blocks at the bottom of `_headers` — kept in sync by a test. */
+ *  routes, the /pj/* preview copies, the unsubscribe page, and the 404 page
+ *  (sitemap.xml's own header comment already lists 404 in this tier — it is
+ *  a directly-requestable static file, not just Cloudflare Pages' fallback
+ *  body for unmatched paths). Mirrors the per-path blocks at the bottom of
+ *  `_headers` — kept in sync by a test. */
 export const ALWAYS_NOINDEX = [
   '/api/', '/video/', '/pj/',
-  '/stock-lab', '/research-engine', '/premium-guidance', '/unsubscribe',
+  '/stock-lab', '/research-engine', '/premium-guidance', '/unsubscribe', '/404',
 ];
 
 /** Strip the port and case-fold. A Host header carries neither guarantee. */

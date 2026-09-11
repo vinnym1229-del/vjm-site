@@ -104,3 +104,14 @@
 
 /unsubscribe.html
   X-Robots-Tag: noindex, nofollow
+
+# 404.html is a directly-requestable static file, not only Cloudflare Pages'
+# fallback body for an unmatched path — sitemap.xml already declares it must
+# never be indexed. Without its own block here it would fall through to the
+# site-wide hold above and lose header-level protection the moment INDEXING
+# is turned on, leaving only its own <meta name="robots"> tag standing.
+/404
+  X-Robots-Tag: noindex, nofollow
+
+/404.html
+  X-Robots-Tag: noindex, nofollow
