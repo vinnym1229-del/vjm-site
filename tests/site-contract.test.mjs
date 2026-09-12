@@ -125,6 +125,22 @@ test('no duplicate meta name=/property= tags within any HTML <head>', () => {
   assert.deepEqual(problems, []);
 });
 
+test('every page declares the real brand favicon, not a stray or missing one', () => {
+  // Incident: options-lab.html shipped an unrelated inline "S" glyph icon and
+  // research-engine.html pointed at assets/logo-nav.jpg (a different, unused
+  // shield logo, referenced nowhere else on the site) while every meta tag on
+  // that same page calls itself "PJ Trades" — 13 other pages declared no
+  // favicon at all. All top-level pages must use the one real brand mark.
+  const problems = [];
+  for (const page of readdirSync(ROOT).filter((f) => f.endsWith('.html'))) {
+    const head = read(page).split('</head>')[0];
+    const icons = [...head.matchAll(/<link\s+rel="icon"[^>]*href="([^"]+)"/g)].map((m) => m[1]);
+    if (icons.length !== 1) problems.push(`${page}: expected exactly one <link rel="icon">, found ${icons.length}`);
+    else if (icons[0].replace(/^\//, '') !== 'assets/pj-logo.jpg') problems.push(`${page}: favicon is ${icons[0]}, expected assets/pj-logo.jpg`);
+  }
+  assert.deepEqual(problems, []);
+});
+
 test('verify-premium issues cookies and never returns tokens', () => {
   const src = read('functions/api/verify-premium.js');
   assert.ok(src.includes('jsonWithSession'), 'must set session cookie');
