@@ -37,6 +37,14 @@ test('unknown tiers and unknown requirements fail closed', () => {
   assert.equal(tierAllows(undefined, TIERS.FREE), false);
   assert.equal(tierAllows(null, null), false);
   assert.equal(isTier('Complete'), false, 'tier matching is exact, not case-folded');
+
+  // tierRank's own fallback: an unrecognized tier must rank below every real
+  // tier (including FREE, rank 0), never fall through to `undefined` and
+  // compare as neither greater nor less -- that's how a stray typo in a
+  // resource's declared tier would silently pass an allows-check instead of
+  // failing it.
+  assert.equal(tierRank('vip'), -1);
+  assert.ok(tierRank('vip') < tierRank(TIERS.FREE), 'an unknown tier must rank below FREE, not compare as undefined');
 });
 
 test('a product outside the allowlist never grants a tier', () => {
