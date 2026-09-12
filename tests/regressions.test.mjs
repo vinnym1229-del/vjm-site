@@ -1408,3 +1408,20 @@ test('docs/SECURITY.md does not claim Turnstile is unbuilt or gated on a site ke
   assert.match(doc, /Turnstile/,
     'docs/SECURITY.md: Turnstile should still be documented, just accurately (e.g. as a Done control)');
 });
+
+// ---------------------------------------------------------------------------
+// Incident: manifest.json's description was never touched when index.html's
+// session-cadence copy was standardized to "every weekday -- 15 team sessions
+// a week" (meta description, JSON-LD, hero trust badge, Futures Only tier
+// card all agree). The manifest kept the pre-standardization "3-5x per week"
+// wording, which a visitor sees at PWA install/"Add to Home Screen" time --
+// often their first exposure to the offer, separate from page content -- and
+// which is a materially weaker (and now simply wrong) claim than the page
+// itself makes.
+test('the PWA manifest description matches the site\'s "every weekday" session cadence', () => {
+  const manifest = JSON.parse(read('manifest.json'));
+  assert.doesNotMatch(manifest.description, /3-5x per week/i,
+    `manifest.json description still has the stale pre-standardization cadence: "${manifest.description}"`);
+  assert.match(manifest.description, /every weekday/i,
+    'manifest.json description should match index.html\'s standardized "every weekday" session cadence');
+});
