@@ -66,7 +66,12 @@ export async function onRequestGet(context) {
     return json({
       ok: true,
       symbol,
-      tradingViewSymbol: 'NASDAQ:' + symbol,
+      // No exchange field here: the Alpaca snapshot doesn't carry one, and a
+      // hardcoded "NASDAQ:" prefix was wrong for every NYSE-listed name in
+      // stock-lab.html's own watchlist (ANET, TSM, VRT, IONQ, VST, LLY, ...),
+      // printing a TradingView symbol that contradicted the correct one the
+      // page's own TV_SYMBOLS table already put in the chart title above it.
+      // The frontend already knows the right exchange -- let it use that.
       source: { name: 'Alpaca Market Data (IEX)', feed: 'IEX' },
       mode: 'observed',
       precision: 'IEX-only snapshot; consolidated tape may differ slightly',

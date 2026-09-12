@@ -160,7 +160,14 @@ try {
     assert.ok(Math.abs(data.quote.change - 2.5) < 1e-9);
     assert.ok(Math.abs(data.quote.changePercent - (2.5 / 148) * 100) < 1e-9);
     assert.equal(data.quote.marketCap, null);
-    assert.equal(data.tradingViewSymbol, 'NASDAQ:AAPL');
+    // The route used to fabricate `tradingViewSymbol: 'NASDAQ:'+symbol`, which
+    // was simply wrong for every NYSE-listed name in stock-lab.html's own
+    // watchlist (ANET, TSM, VRT, IONQ, VST, LLY, ...) -- the Alpaca snapshot
+    // carries no exchange, so guessing one is the same fabrication marketCap
+    // is guarded against above. The frontend already resolves the correct
+    // exchange itself (stock-lab.html's TV_SYMBOLS table) and no longer reads
+    // this field, so the API must not reintroduce it.
+    assert.equal(data.tradingViewSymbol, undefined);
   }
 
   // Wrapped shape (data.snapshots.SYMBOL) must be accepted too, in case
