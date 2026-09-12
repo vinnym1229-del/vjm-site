@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   brief:
-    if: github.event.schedule == '30 12 * * 1-5' || inputs.job == 'brief' || inputs.job == 'all' || github.event_name == 'workflow_dispatch'
+    if: github.event.schedule == '30 12 * * 1-5' || inputs.job == 'brief' || inputs.job == 'all'
     runs-on: ubuntu-latest
     timeout-minutes: 6
     env:
@@ -61,7 +61,7 @@ jobs:
           RESPONSE="$response" node -e "const p=JSON.parse(process.env.RESPONSE); console.log('brief ok:', p.ok, '| discord:', p.discordDetail || p.brief && p.discordPosted)"
 
   content:
-    if: github.event.schedule == '30 12 * * 1-5' || inputs.job == 'content' || inputs.job == 'all' || github.event_name == 'workflow_dispatch'
+    if: github.event.schedule == '30 12 * * 1-5' || inputs.job == 'content' || inputs.job == 'all'
     runs-on: ubuntu-latest
     timeout-minutes: 6
     env:
