@@ -379,6 +379,64 @@ console.log('# VJM backtest-core (Edge Lab) library tests passed.');
   );
 }
 
+// ─── directionHint must track each trigger's own `dir` param, not a fixed
+// constant. streak_reversal/sma_break/rsi_cross/big_move each detect either
+// a bullish or bearish pattern depending on triggerParams.dir, but used to
+// report a hardcoded 'long' regardless -- so a caller that (correctly) never
+// passes an explicit config.direction got every bearish variant simulated,
+// and P&L-signed, as a long trade. bars/params here don't need to produce
+// any events: dir is resolved before the trigger loop runs.
+{
+  const bars = [];
+  let price = 100;
+  for (let i = 0; i < 30; i++) {
+    price += (i % 2 === 0 ? 1 : -1) * 0.5;
+    bars.push({ t: i, o: price, h: price + 1, l: price - 1, c: price, v: 1000 });
+  }
+
+  assert.equal(
+    runEventStudy(bars, { triggerType: 'streak_reversal', triggerParams: { streak: 3, dir: 'down' } }).direction,
+    'long', 'a red streak reversing into a green day is a bullish (long) setup'
+  );
+  assert.equal(
+    runEventStudy(bars, { triggerType: 'streak_reversal', triggerParams: { streak: 3, dir: 'up' } }).direction,
+    'short', 'a green streak reversing into a red day is a bearish (short) setup'
+  );
+
+  assert.equal(
+    runEventStudy(bars, { triggerType: 'sma_break', triggerParams: { period: 5, dir: 'up' } }).direction,
+    'long', 'crossing above the SMA is a bullish (long) breakout'
+  );
+  assert.equal(
+    runEventStudy(bars, { triggerType: 'sma_break', triggerParams: { period: 5, dir: 'down' } }).direction,
+    'short', 'crossing below the SMA is a bearish (short) breakdown'
+  );
+
+  assert.equal(
+    runEventStudy(bars, { triggerType: 'rsi_cross', triggerParams: { level: 30, dir: 'up' } }).direction,
+    'long', 'crossing up through a level is a bullish (long) signal'
+  );
+  assert.equal(
+    runEventStudy(bars, { triggerType: 'rsi_cross', triggerParams: { level: 70, dir: 'down' } }).direction,
+    'short', 'crossing down through a level is a bearish (short) signal'
+  );
+
+  assert.equal(
+    runEventStudy(bars, { triggerType: 'big_move', triggerParams: { mult: 2, dir: 'up' } }).direction,
+    'long', 'a large upside move is a bullish (long) continuation setup'
+  );
+  assert.equal(
+    runEventStudy(bars, { triggerType: 'big_move', triggerParams: { mult: 2, dir: 'down' } }).direction,
+    'short', 'a large downside move is a bearish (short) continuation setup'
+  );
+
+  // An explicit config.direction must still win over the resolved hint.
+  assert.equal(
+    runEventStudy(bars, { triggerType: 'streak_reversal', triggerParams: { streak: 3, dir: 'up' }, direction: 'long' }).direction,
+    'long', 'an explicit direction override must not be clobbered by the trigger hint'
+  );
+}
+
 // ─── simulateEvent: a single-sided touch (stop only, or target only) must
 // resolve on the day it actually happens, not run to the timeout exit.
 // The existing coverage only exercised the no-stop/no-target timeout case

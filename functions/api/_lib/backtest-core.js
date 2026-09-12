@@ -212,7 +212,11 @@ export const TRIGGERS = {
       return (b[i].c - b[i - 1].c) * sign < 0;
     },
     describe: (p) => `${p.streak} consecutive ${p.dir} days then a close in the opposite direction`,
-    directionHint: 'long',
+    // A 'down' streak reverses into a green day (bullish -> long); an 'up'
+    // streak reverses into a red day (bearish -> short). The default ('down')
+    // happens to match the old hardcoded 'long', which is why this only broke
+    // silently for the 'up' variant.
+    directionHint: (p) => (p.dir === 'up' ? 'short' : 'long'),
   },
   sma_break: {
     label: 'Close crosses SMA(N)',
@@ -225,7 +229,7 @@ export const TRIGGERS = {
       return b[i - 1].c > s[i - 1] && b[i].c < s[i];
     },
     describe: (p) => `Close crosses ${p.dir === 'up' ? 'above' : 'below'} the ${p.period}-day simple moving average`,
-    directionHint: 'long',
+    directionHint: (p) => (p.dir === 'down' ? 'short' : 'long'),
   },
   vol_spike: {
     label: 'Volume ≥ X× 20-day average',
@@ -246,7 +250,7 @@ export const TRIGGERS = {
       return r[i - 1] > p.level && r[i] <= p.level;
     },
     describe: (p) => `RSI(14) crosses ${p.dir === 'up' ? 'up through' : 'down through'} ${p.level}`,
-    directionHint: 'long',
+    directionHint: (p) => (p.dir === 'down' ? 'short' : 'long'),
   },
   new_n_day_close_high: {
     label: 'New N-day closing high',
@@ -276,7 +280,7 @@ export const TRIGGERS = {
       return move <= -p.mult * a;
     },
     describe: (p) => `Single-session move of at least ${p.mult}× ATR(14) to the ${p.dir === 'up' ? 'upside' : 'downside'}`,
-    directionHint: 'long',
+    directionHint: (p) => (p.dir === 'down' ? 'short' : 'long'),
   },
 };
 
@@ -404,7 +408,8 @@ export function runEventStudy(bars, config) {
   if (triggerType === 'sma_break') indicators.sma[triggerParams.period] = sma(closes, triggerParams.period);
 
   const warmup = Math.max(triggerWarmup(triggerType, triggerParams), 14);
-  const dir = direction || trigger.directionHint || 'long';
+  const hint = typeof trigger.directionHint === 'function' ? trigger.directionHint(triggerParams) : trigger.directionHint;
+  const dir = direction || hint || 'long';
 
   const events = [];
   let dropped = 0;
