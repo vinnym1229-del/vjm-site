@@ -1,7 +1,7 @@
 // PJ futures-first redesign contract tests (owner requirements, 2026-08-24).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
@@ -688,9 +688,24 @@ test('apps-script content bridge reads the new CMS tabs', () => {
   }
 });
 
-test('package.json check:syntax covers content.js', () => {
+test('package.json check:syntax auto-discovers assets/*.js instead of hand-listing it', async () => {
+  // The assets/ half of check:syntax used to be a hardcoded node --check
+  // chain in package.json, and it rotted twice in exactly the way a hand-kept
+  // list rots: candles-bg.js was missing until an earlier run added it, then
+  // curriculum.js and tilt.js went missing too (fixed 2026-09-12, same day as
+  // this test). Replaced that half with tools/check-syntax.mjs's readdirSync
+  // walk so a third file can't go uncovered the same way. (The
+  // functions/api/*.js half stays an explicit list on purpose — see that
+  // file's own comment — so this test only pins the assets/ side.)
   const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
-  assert.match(pkg.scripts['check:syntax'], /functions\/api\/content\.js/);
+  assert.match(pkg.scripts['check:syntax'], /node tools\/check-syntax\.mjs/);
+  const { filesToCheck } = await import(join(ROOT, 'tools', 'check-syntax.mjs'));
+  const checked = filesToCheck(ROOT).map((f) => f.slice(ROOT.length + 1));
+  const assetsFiles = readdirSync(join(ROOT, 'assets')).filter((f) => f.endsWith('.js'));
+  assert.ok(assetsFiles.length > 0, 'sanity: assets/ must actually contain .js files');
+  for (const file of assetsFiles) {
+    assert.ok(checked.includes(join('assets', file)), `check:syntax must cover assets/${file}`);
+  }
 });
 
 test('the sheet-driven schedule can express an off slot, like the hard-coded one', () => {
