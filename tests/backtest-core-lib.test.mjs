@@ -355,7 +355,28 @@ console.log('# VJM backtest-core (Edge Lab) library tests passed.');
   assert.equal(triggerWarmup('sma_break', { period: 50 }), 50, 'resolved from the configured period, not a fixed constant');
   assert.equal(triggerWarmup('new_n_day_close_high', { n: 25 }), 25, 'resolved from the configured n');
   assert.equal(triggerWarmup('new_n_day_close_low', { n: 10 }), 10);
+  assert.equal(
+    triggerWarmup('streak_reversal', { streak: 20 }),
+    21,
+    'resolved from the configured streak (test() walks back i - streak), not the fixed default-streak constant'
+  );
   assert.equal(triggerWarmup('not_a_real_trigger', {}), 0, 'an unknown trigger type must not throw here -- runEventStudy throws first');
+}
+
+// ─── streak_reversal's test() walks back `i - p.streak` bars, so a
+// configured streak longer than the fixed warmup:4 default (and longer than
+// runEventStudy's 14-bar floor) must not run off the front of the array.
+{
+  const bars = [];
+  let price = 100;
+  for (let i = 0; i < 60; i++) {
+    price += (i % 2 === 0 ? 1 : -1) * 0.5;
+    bars.push({ t: i, o: price, h: price + 1, l: price - 1, c: price, v: 1000 });
+  }
+  assert.doesNotThrow(
+    () => runEventStudy(bars, { triggerType: 'streak_reversal', triggerParams: { streak: 20, dir: 'down' }, holdDays: 2 }),
+    'a streak longer than the 14-bar floor must not index before bar 0'
+  );
 }
 
 // ─── simulateEvent: a single-sided touch (stop only, or target only) must

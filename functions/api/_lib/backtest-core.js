@@ -285,6 +285,7 @@ export function triggerWarmup(type, params) {
   if (!t) return 0;
   if (type === 'sma_break') return params.period;
   if (type === 'new_n_day_close_high' || type === 'new_n_day_close_low') return params.n;
+  if (type === 'streak_reversal') return params.streak + 1;
   return t.warmup || 0;
 }
 
