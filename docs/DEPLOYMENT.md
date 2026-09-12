@@ -18,12 +18,23 @@ via PR).
 | `MEMBERS_STATUS_URL` | legacy bridge — DELETE after new bridge verified |
 | `SESSION_DAYS` | optional, default 7, max 30 |
 | `RESEARCH_CRON_SECRET` | scheduled refresh auth |
-| D1 bindings: `RESEARCH_DB`, `RATELIMIT_DB` | snapshots, rate limits, audit |
+| `WHOP_PRODUCTS_FUTURES` / `WHOP_PRODUCTS_COMPLETE` | entitlement tier mapping — until BOTH are set, every member is granted `complete` (see docs/ENTITLEMENTS.md) |
+| `WHOP_DEFAULT_TIER` | optional, tier granted while the two lists above are empty (default `complete`) |
+| `STRICT_LEGACY_SESSIONS` | optional, force pre-tier sessions to re-authenticate instead of grandfathering as `complete` |
+| `WHOP_WEBHOOK_SECRET` | HMAC verification for the Whop purchase webhook |
+| `CONTENT_BRIDGE_URL` + `CONTENT_BRIDGE_SECRET` | owner content CMS Apps Script bridge (see docs/APPS-SCRIPT-INTEGRATION.md) |
+| `CONTENT_DISCORD_DRYRUN` | optional, default `true` — set `false` only when announcements should auto-post |
+| `DISCORD_ANNOUNCEMENTS_WEBHOOK` | optional, pre-market brief auto-post |
+| `DISCORD_WHOP_CODES_WEBHOOK` | optional, delivers fresh Whop purchase codes to the owner channel |
+| D1 bindings: `RESEARCH_DB`, `RATELIMIT_DB` | snapshots, rate limits, audit, content, analytics, newsletter (all migrations share these bindings) |
 
-Apply migrations:
+Apply migrations (all of them — later migrations add the content CMS,
+entitlement-tier columns, analytics, and newsletter tables that production
+code queries unconditionally, not just the first two):
 ```bash
-npx wrangler d1 execute <DB> --remote --file=migrations/0001_research_engine.sql
-npx wrangler d1 execute <DB> --remote --file=migrations/0002_security_tables.sql
+for f in migrations/*.sql; do
+  npx wrangler d1 execute <DB> --remote --file="$f"
+done
 ```
 
 ## GitHub Actions secrets
