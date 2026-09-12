@@ -393,6 +393,10 @@ function fullSnapshot(price) {
     seen.add(l.id);
     assert.match(l.resource, /^\/[a-z-]+\.html$/);
     assert.ok(l.sections.length > 0 && l.sections.every((s) => s.heading && s.text));
+    for (const s of l.sections) {
+      assert.doesNotMatch(s.text, /&[a-z]+;/i, `lesson ${l.id} section "${s.heading}" leaks an HTML entity into prompt text`);
+      assert.doesNotMatch(s.heading, /&[a-z]+;/i, `lesson ${l.id} heading leaks an HTML entity into prompt text`);
+    }
   }
 }
 
