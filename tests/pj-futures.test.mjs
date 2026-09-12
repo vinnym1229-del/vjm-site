@@ -164,12 +164,11 @@ test('the stated session frequency matches the schedule table itself', () => {
   // template literal, and counting that as a session inflates the total by one.
   const staticMarkup = indexMarkup.replace(/<script[\s\S]*?<\/script>/gi, '');
   const realRows = [...staticMarkup.matchAll(/<div class="session-row">/g)].length;
-  // 13, not the usual 15: the current schedule table mirrors a Labor Day week
-  // (Monday fully off) — see the comment above #schedule in index.html. This
-  // is expected to move back to 15 once a non-holiday week's graphic replaces
-  // it; update this number and the copy together when that happens, exactly
-  // as this message says.
-  assert.equal(realRows, 13, 'schedule table changed — update the copy and this number together');
+  // 15 is the standing figure for a normal (non-holiday) week — see the
+  // comment above #schedule in index.html. It drops for a one-week holiday
+  // exception (e.g. Labor Day); update this number and the copy together
+  // whenever the schedule table itself changes, exactly as this message says.
+  assert.equal(realRows, 15, 'schedule table changed — update the copy and this number together');
 
   // Every claim about the team's cadence must state that same figure.
   assert.match(index, new RegExp(`${realRows} (Sessions|sessions|team sessions|a week)`),
@@ -183,8 +182,8 @@ test('the stated session frequency matches the schedule table itself', () => {
   // "10+ times a week" was never sourced from anything; it must not come back.
   assert.doesNotMatch(index, /10\+ times/, 'unsourced claim');
 
-  // Slots the owner's graphic marks as off (this week: all three of Monday's,
-  // for Labor Day) are shown, because a silent gap reads as an oversight
+  // Slots the owner's graphic marks as off (this week: Monday's standing
+  // NYPM slot) are shown, because a silent gap reads as an oversight
   // rather than as "nothing today". They must carry .session-row-off, never
   // .session-row: counted as sessions they would inflate the figure above and
   // the copy would overstate the week.
@@ -579,9 +578,9 @@ test('schedule headline count updates from the CMS feed instead of staying hardc
 
   // The headline span must actually be wired to that count, not just have a
   // same-named function sitting unused nearby. The starting literal tracks
-  // whatever the static fallback grid currently lists (13, for the present
-  // Labor Day week) — this assertion is about the wiring, not that number.
-  assert.match(indexMarkup, /<span class="gold" id="sched-freq">13 Sessions a Week<\/span>/,
+  // whatever the static fallback grid currently lists (15, for a normal
+  // non-holiday week) — this assertion is about the wiring, not that number.
+  assert.match(indexMarkup, /<span class="gold" id="sched-freq">15 Sessions a Week<\/span>/,
     'headline span needs a stable id for the CMS handler to update');
   assert.match(index, /getElementById\('sched-freq'\)[\s\S]{0,80}countLiveSessions\(active\)/,
     'the schedule fetch handler must write the live count into #sched-freq');

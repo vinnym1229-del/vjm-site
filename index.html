@@ -1133,43 +1133,37 @@
 </section>
 
 <!-- WEEKLY STREAM SCHEDULE — mirrored from the owner's "PJ's Stream Schedule"
-     graphic for the week of Sep 7 – Sep 11, 2026. Sessions recur weekly; hosts
-     can shift week to week — TODO: move to the schedule CMS tab so the owner
-     updates this from the Google Sheet without code, instead of this being a
-     hand edit every Monday.
+     graphic for the week of Sep 14 – Sep 18, 2026, the first normal
+     (non-holiday) week after the Sep 7 Labor Day exception. Sessions recur
+     weekly; hosts can shift week to week — TODO: move to the schedule CMS
+     tab so the owner updates this from the Google Sheet without code,
+     instead of this being a hand edit every Monday.
 
-     Changes from the Aug 31 – Sep 4 week: Monday is Labor Day, so all three
-     sessions (NYAM/NYPM/ASIA) are off, not just the usual NYPM slot — the
-     graphic's own "HAPPY LABOR DAY" banner is why, and the day heading below
-     notes it rather than leaving three off-rows unexplained. Wednesday 2:30
-     drops back to KWT alone (no Gainz). That takes the real session count
-     from 15 to 13 for this one week — #sched-freq and the test in
+     Reverted the Sep 7–11 Labor Day edit: Monday is back to its standing
+     pattern (NYAM + ASIA live, NYPM off — the usual slot, not a holiday
+     closure), and Wednesday 2:30 is back to KWT & Gainz. That restores the
+     real session count to 15 — #sched-freq and the test in
      tests/pj-futures.test.mjs that derives the "N a week" copy from these
-     rows both follow it down; next week's normal (non-holiday) Monday
-     restores 15 and both should follow back up. This is a temporary,
-     date-specific exception to the standing "15 sessions a week, every
-     weekday" claim made elsewhere on the site (meta description, hero,
-     tier card) — those describe the typical cadence and are deliberately
-     left alone, not this one week's holiday closure. -->
+     rows both follow it back up, matching the standing "15 sessions a
+     week, every weekday" claim made elsewhere on the site (meta
+     description, hero, tier card). -->
 <section id="schedule" style="background:var(--bg2);">
   <div class="section-inner">
     <div style="text-align:center;margin-bottom:40px;" data-reveal>
       <div class="section-tag">Stream Schedule</div>
-      <h2 class="section-title">Live Futures, <span class="gold" id="sched-freq">13 Sessions a Week</span></h2>
+      <h2 class="section-title">Live Futures, <span class="gold" id="sched-freq">15 Sessions a Week</span></h2>
       <p class="section-sub" style="margin:0 auto 20px;">All times ET. Sessions run inside the Discord — the <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" style="color:var(--gold-ink);">#announcements channel</a> is always the source of truth for week-to-week changes.</p>
       <div id="session-clock" role="status" aria-live="polite" style="display:inline-flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--border);border-radius:999px;padding:9px 22px;font-size:.88rem;font-weight:700;color:var(--text);"></div>
     </div>
     <div class="week-grid" id="week-grid" data-reveal>
       <div class="day-card">
-        <h3>Monday <span style="color:var(--muted);font-weight:700;font-size:0.68rem;text-transform:uppercase;letter-spacing:.5px;">— Labor Day</span></h3>
-        <!-- Deliberately class="session-row-off", not "session-row", on all three:
-             this is the absence of a session, and counting any of them would
-             inflate the "N a week" figure that tests/pj-futures.test.mjs derives
-             from these rows. Every other week Monday runs NYAM + ASIA; this is a
-             one-week holiday closure, not a permanent schedule change. -->
-        <div class="session-row-off"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host">No live trading</span></div>
+        <h3>Monday</h3>
+        <div class="session-row"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
+        <!-- Deliberately class="session-row-off", not "session-row": this is the
+             absence of a session, and counting it would inflate the "15 a week"
+             figure that tests/pj-futures.test.mjs derives from these rows. -->
         <div class="session-row-off"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host">No live trading</span></div>
-        <div class="session-row-off"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host">No live trading</span></div>
+        <div class="session-row"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
       </div>
       <div class="day-card">
         <h3>Tuesday</h3>
@@ -1181,7 +1175,7 @@
       <div class="day-card">
         <h3>Wednesday</h3>
         <div class="session-row"><span class="sess-name">NYAM</span><span class="sess-time">9:30 AM ET</span><span class="host host-pj">Live trading with PJTrades</span></div>
-        <div class="session-row"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host host-kwt">Live trading with KWT</span></div>
+        <div class="session-row"><span class="sess-name">NYPM</span><span class="sess-time">2:30 PM ET</span><span class="host host-kwt">Live trading with KWT &amp; Gainz</span></div>
         <div class="session-row"><span class="sess-name">ASIA</span><span class="sess-time">8:00 PM ET</span><span class="host host-caleb">Live trading with Caleb &amp; Fin</span></div>
       </div>
       <div class="day-card">
