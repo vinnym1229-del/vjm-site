@@ -1290,6 +1290,31 @@ test('stock-lab.html watchlist sector labels spell each concept one way', () => 
     `WATCHLIST spells the same sector inconsistently: ${offenders.map((v) => [...v].join(' vs ')).join('; ')}`);
 });
 
+// Incident: GROUPS (the sector tab bar rendered above the $129/mo
+// Complete-tier Premium Stock Screener) listed 'Robotics' and 'Fintech' as
+// tabs, but no WATCHLIST stock carried either group tag -- groupStocks()
+// filters WATCHLIST by the active tab, so clicking either tab returned an
+// empty array with no "no results" message anywhere in that render path: a
+// paying member saw a premium feature go silently blank. Removed both
+// orphan tabs rather than inventing stock picks to fill them. This test
+// pins the invariant the other direction: every tab in GROUPS must have at
+// least one matching stock, so a future tab can't be added without data
+// (or a future WATCHLIST edit can't orphan an existing tab) without a
+// failing test naming the exact tab.
+test('stock-lab.html every sector tab has at least one matching stock', () => {
+  const html = read('stock-lab.html');
+  const arr = html.match(/const WATCHLIST=\[[\s\S]*?\];/);
+  assert.ok(arr, 'WATCHLIST array not found in stock-lab.html');
+  const groupsMatch = html.match(/const GROUPS=\[([^\]]+)\];/);
+  assert.ok(groupsMatch, 'GROUPS array not found in stock-lab.html');
+  const groups = [...groupsMatch[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  const usedGroups = new Set([...arr[0].matchAll(/group:\[([^\]]+)\]/g)]
+    .flatMap((m) => [...m[1].matchAll(/'([^']+)'/g)].map((g) => g[1])));
+  const orphanTabs = groups.filter((g) => !usedGroups.has(g));
+  assert.deepEqual(orphanTabs, [],
+    `GROUPS has a tab with no matching WATCHLIST stock: ${orphanTabs.join(', ')}`);
+});
+
 // Incident: docs/DISCORD-INTEGRATION.md's Status line read "designed, not
 // wired. No Discord calls are made anywhere on this branch" -- but
 // functions/api/_lib/discord.js's postEmbed() was already live and called
