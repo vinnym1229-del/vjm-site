@@ -1425,3 +1425,24 @@ test('the PWA manifest description matches the site\'s "every weekday" session c
   assert.match(manifest.description, /every weekday/i,
     'manifest.json description should match index.html\'s standardized "every weekday" session cadence');
 });
+
+// ---------------------------------------------------------------------------
+// Incident: the About section's .social-row carried a comment claiming it
+// reused "the same three accounts... as the footer's .social-row... so
+// these can never drift out of sync" -- but the footer had since grown an
+// X/Twitter link (and a Whop link) that the About row never got, so the
+// comment's own promise was already false. A visitor reading the About bio
+// had no way to reach the X account that's linked everywhere else on the
+// same page (footer, JSON-LD sameAs). Pin the About row's platform links to
+// match the footer's, Whop excluded since the About section already has a
+// distinct "Whop -- 5.0" CTA button of its own right above it.
+test('index.html About section social row includes every footer platform except the separately-CTA\'d Whop', () => {
+  const html = read('index.html');
+  const footerRow = /<div class="social-row" style="width:100%[\s\S]*?<\/div>/.exec(html)[0];
+  const aboutRow = /<!-- Same social accounts[\s\S]*?<div class="social-row" style="margin-top:14px[\s\S]*?<\/div>\s*<\/div>/.exec(html)[0];
+  const footerHrefs = [...footerRow.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+  const aboutHrefs = [...aboutRow.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+  const footerSocialMinusWhop = footerHrefs.filter((h) => !h.includes('whop.com'));
+  assert.deepEqual(aboutHrefs, footerSocialMinusWhop,
+    'About section social-row must list the same accounts, in the same order, as the footer (Whop excluded)');
+});
