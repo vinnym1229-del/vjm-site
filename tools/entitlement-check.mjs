@@ -16,6 +16,9 @@
  *   node tools/entitlement-check.mjs --futures="prod_a,plan_b" --complete="prod_c"
  *   WHOP_PRODUCTS_FUTURES=... WHOP_PRODUCTS_COMPLETE=... node tools/entitlement-check.mjs
  *
+ * WHOP_DEFAULT_TIER (env only, same as production) is also honored: it picks
+ * the fallback tier resolveTier() grants while both lists above are empty.
+ *
  * Exits non-zero if anything about the configuration would misbehave.
  */
 import {
@@ -29,21 +32,27 @@ function arg(name) {
 
 const futures = arg('futures') ?? process.env.WHOP_PRODUCTS_FUTURES ?? '';
 const complete = arg('complete') ?? process.env.WHOP_PRODUCTS_COMPLETE ?? '';
-const env = { WHOP_PRODUCTS_FUTURES: futures, WHOP_PRODUCTS_COMPLETE: complete };
+const env = {
+  WHOP_PRODUCTS_FUTURES: futures,
+  WHOP_PRODUCTS_COMPLETE: complete,
+  WHOP_DEFAULT_TIER: process.env.WHOP_DEFAULT_TIER ?? '',
+};
 
 const problems = [];
 const warn = (m) => problems.push(m);
 
 console.log('\nWHOP_PRODUCTS_FUTURES  =', futures || '(empty)');
 console.log('WHOP_PRODUCTS_COMPLETE =', complete || '(empty)');
+console.log('WHOP_DEFAULT_TIER      =', env.WHOP_DEFAULT_TIER || '(unset)');
 
 const fList = parseIdList(futures);
 const cList = parseIdList(complete);
 
 if (!fList.size && !cList.size) {
-  warn('Both lists are empty, so strict mode is OFF: every verified member still '
-     + 'resolves to Complete and the two products remain identical. This is the '
-     + 'state the site ships in — setting these two variables is the actual fix.');
+  const { tier: fallbackTier } = resolveTier(env, {});
+  warn(`Both lists are empty, so strict mode is OFF: every verified member still `
+     + `resolves to ${fallbackTier} and the two products remain identical. This is `
+     + `the state the site ships in — setting these two variables is the actual fix.`);
 } else if (!fList.size || !cList.size) {
   console.log('\nNote: only one list is set. That is valid — anything not in it is '
     + 'rejected rather than granted — but double-check it is deliberate.');
@@ -78,8 +87,9 @@ for (const [id, intent] of rows) {
 // A product nobody configured must grant nothing — this is what stops a cheap
 // add-on or a separately sold indicator becoming a full-course credential.
 const stray = resolveTier(env, { product: 'prod_some_other_thing_you_sell' });
-console.log(`\n  an UNLISTED product      -> ${stray.tier === null ? 'NOTHING (correct)' : String(stray.tier).toUpperCase() + ' (!!)'}  [${stray.reason}]`);
-if (stray.tier !== null && (fList.size || cList.size)) {
+const strayIsAlarming = stray.tier !== null && (fList.size || cList.size);
+console.log(`\n  an UNLISTED product      -> ${stray.tier === null ? 'NOTHING (correct)' : String(stray.tier).toUpperCase() + (strayIsAlarming ? ' (!!)' : ' (expected — no allowlist configured yet)')}  [${stray.reason}]`);
+if (strayIsAlarming) {
   warn('An unlisted product still grants access — the allowlist is not taking effect.');
 }
 
