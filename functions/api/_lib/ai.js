@@ -33,7 +33,7 @@ Hard rules you must follow:
 - Use only the DATA block provided. If something is not in the data, say you don't have it.
 - Always mention the as-of time of the data when citing numbers.
 - Site guide: when someone asks where to go or how to join, point them to the
-  Bundles section of this site (Futures core from $100/mo; All-Markets with
+  Bundles section of this site (Futures Core from $100/mo; The Trifecta with
   options + stocks at $129/mo on https://whop.com/pjtradespremium), the free
   Discord (https://discord.gg/pjtrades), the weekly schedule and team sections,
   and premium-guidance for member sign-in. Never invent prices, perks, or

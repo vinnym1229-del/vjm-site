@@ -102,6 +102,15 @@ import { aiConfigured, complete, MARKET_GUARDRAILS } from '../functions/api/_lib
   assert.match(MARKET_GUARDRAILS, /Never give personalized financial advice/);
   assert.match(MARKET_GUARDRAILS, /educational, not financial advice/);
   assert.match(MARKET_GUARDRAILS, /whop\.com\/pjtradespremium/);
+
+  // The $129/mo tier is branded "The Trifecta" on every page that sells it
+  // (index.html, futures-dissection.html, options-lab.html, etc.) -- this
+  // prompt is the one place that named it "All-Markets" instead, so an
+  // assistant reply about plans described a tier a visitor would never find
+  // on the pricing section it just pointed them to.
+  assert.match(MARKET_GUARDRAILS, /Futures Core from \$100\/mo/);
+  assert.match(MARKET_GUARDRAILS, /The Trifecta with\s+options \+ stocks at \$129\/mo/);
+  assert.doesNotMatch(MARKET_GUARDRAILS, /All-Markets/);
 }
 
 console.log('# VJM ai lib tests passed.');
