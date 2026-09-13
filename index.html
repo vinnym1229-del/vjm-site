@@ -2042,9 +2042,11 @@ function renderQuizLead(track) {
         msg.textContent = 'Email signup is not connected yet — your address was not saved.';
       } else {
         // A Turnstile token is single-use, so a failed submit must not be
-        // retried with the same one — same cleanup the standalone forms do.
+        // retried with the same one — same cleanup the standalone forms do,
+        // resetting this form's own widget by id (a bare reset() is undefined
+        // once more than one widget is on the page, which this page always has).
         delete form.dataset.turnstileToken;
-        if (window.turnstile) { try { window.turnstile.reset(); } catch (e) { /* nothing to reset */ } }
+        if (window.turnstile) { try { window.turnstile.reset(form.dataset.turnstileWidgetId); } catch (e) { /* nothing to reset */ } }
         msg.textContent = 'That did not go through — your address was not saved. Please try again.';
       }
       vjmTrack('lead_submit', { ok: !!res.ok, reason: res.reason || 'ok', track: track, source: 'homepage-quiz' });

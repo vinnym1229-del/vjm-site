@@ -122,6 +122,77 @@ test('Turnstile off entirely: required() is false and nothing is misconfigured',
   assert.equal(win.vjmTurnstile.misconfigured(), false);
 });
 
+test('a failed submit resets only that form\'s own widget by id, not a bare/global reset() (the homepage always has multiple widgets live)', async () => {
+  // index.html mounts three widgets at once in production (two static
+  // .nl-signup forms plus the quiz's runtime one). window.turnstile.reset()
+  // with no id is undefined once more than one widget exists, so
+  // mountTurnstile() must keep the id render() returns per form, and a
+  // failed submit must reset that form's own widget, not whichever widget
+  // Cloudflare's client happens to treat as "default".
+  function makeForm(dataSource) {
+    const submitHandlers = [];
+    const children = {
+      '.nl-turnstile': makeEl(),
+      '.nl-submit': { disabled: false, textContent: 'Sign up' },
+      'input[name="email"]': { value: 'a@b.com' },
+      'input[name="consent"]': { checked: true },
+      '.nl-msg': { textContent: '', className: '' },
+    };
+    return {
+      dataset: {},
+      querySelector(sel) { return children[sel] || null; },
+      getAttribute(name) { return name === 'data-source' ? dataSource : null; },
+      addEventListener(type, handler) { if (type === 'submit') submitHandlers.push(handler); },
+      get submitHandler() { return submitHandlers[0]; },
+    };
+  }
+
+  const formA = makeForm('giveaway');
+  const formB = makeForm('home');
+  let renderCount = 0;
+  const resetCalls = [];
+  const fakeCfTurnstile = {
+    render(slot, opts) { renderCount += 1; slot._renderOpts = opts; return 'widget-' + renderCount; },
+    reset(id) { resetCalls.push(id); },
+  };
+
+  let scriptNode = null;
+  const sandbox = {
+    console: { log() {}, warn() {} },
+    turnstile: fakeCfTurnstile,
+    document: {
+      readyState: 'complete',
+      addEventListener() {},
+      getElementById: () => null,
+      createElement(tag) {
+        const el = { tag, dataset: {} };
+        if (tag === 'script') scriptNode = el;
+        return el;
+      },
+      head: { appendChild() {} },
+      querySelectorAll(sel) { return sel === 'form.nl-signup' ? [formA, formB] : []; },
+    },
+    location: { search: '', pathname: '/' },
+    fetch: async (url, opts) => (opts && opts.method === 'POST')
+      ? { ok: true, json: async () => ({ ok: false, error: 'nope' }) }
+      : { ok: true, json: async () => ({ required: true, siteKey: 'sk_test' }) },
+  };
+  sandbox.window = sandbox;
+  vm.createContext(sandbox);
+  vm.runInContext(newsletterSrc, sandbox);
+
+  await settle();          // let initTurnstile's config fetch land
+  scriptNode.onload();     // Turnstile script "loads" -> renders both widgets
+
+  assert.equal(formA.dataset.turnstileWidgetId, 'widget-1');
+  assert.equal(formB.dataset.turnstileWidgetId, 'widget-2', 'each form must keep its own widget id, not share one');
+
+  formB.dataset.turnstileToken = 'tok-b';
+  await formB.submitHandler({ preventDefault() {} });
+
+  assert.deepEqual(resetCalls, ['widget-2'], 'the failed form\'s own widget must be reset by id, not a bare/global reset()');
+});
+
 test('the homepage quiz lead form carries a Turnstile mount point and wires it up', () => {
   const quizBlock = index.slice(index.indexOf('function renderQuizLead'), index.indexOf('function resetQuiz'));
   assert.match(quizBlock, /class="nl-turnstile"/, 'quiz-lead-form is missing the Turnstile mount div other newsletter forms have');

@@ -311,7 +311,10 @@ test('secret-without-site-key is reported, because it rejects every signup', asy
   assert.match(js, /misconfigured/, 'the form must say so rather than failing silently');
   // A used token is single-use; a retry with the same one always fails.
   assert.match(js, /delete form\.dataset\.turnstileToken;/);
-  assert.match(js, /window\.turnstile\.reset\(\)/);
+  // Reset by this form's own widget id, not a bare reset() — the homepage
+  // can have more than one widget live at once, and a bare reset() is
+  // undefined once it does (see tests/quiz-lead-turnstile.test.mjs).
+  assert.match(js, /window\.turnstile\.reset\(form\.dataset\.turnstileWidgetId\)/);
 });
 
 test('the widget is on the signup forms and never on the unsubscribe form', () => {

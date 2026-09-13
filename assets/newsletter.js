@@ -75,12 +75,17 @@
     if (!slot || slot.dataset.rendered) return;
     slot.dataset.rendered = '1';
     try {
-      window.turnstile.render(slot, {
+      // The page can have more than one widget alive at once (the two static
+      // forms below, plus the quiz's runtime one), so the id render() returns
+      // must be kept per-form — reset() with no id is undefined once there is
+      // more than one widget on the page.
+      var widgetId = window.turnstile.render(slot, {
         sitekey: turnstile.siteKey,
         callback: function (token) { form.dataset.turnstileToken = token; },
         'expired-callback': function () { delete form.dataset.turnstileToken; },
         'error-callback': function () { delete form.dataset.turnstileToken; }
       });
+      if (widgetId) form.dataset.turnstileWidgetId = widgetId;
     } catch (e) { /* a failed widget must not take the form down with it */ }
   }
 
@@ -158,9 +163,12 @@
           return;
         }
         // A Turnstile token is single-use, so a failed submit must not be
-        // retried with the same one — reset the widget and drop the stale token.
+        // retried with the same one — reset this form's own widget (by id,
+        // not a bare reset()) and drop the stale token. A bare reset() is
+        // undefined once more than one widget is on the page, which the
+        // homepage always has (two static forms plus the quiz's).
         delete form.dataset.turnstileToken;
-        if (window.turnstile && turnstile.siteKey) { try { window.turnstile.reset(); } catch (e) { /* nothing to reset */ } }
+        if (window.turnstile && turnstile.siteKey) { try { window.turnstile.reset(form.dataset.turnstileWidgetId); } catch (e) { /* nothing to reset */ } }
         setMsg(form, (out.data && out.data.error) || 'Could not sign you up just now. Try again shortly.', 'err');
       } catch (err) {
         setMsg(form, 'Could not reach the server. Check your connection and try again.', 'err');
