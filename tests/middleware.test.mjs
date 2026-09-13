@@ -100,6 +100,36 @@ async function unlocked(path, opts) {
   assert.ok(!body.includes('paid lesson text'), 'a tampered session cookie must not unlock gated content');
 }
 
+// The module's own header comment says "Fail-closed: any error while
+// reading the session is treated as unauthenticated" — but every test above
+// reaches that guarantee through getSession() returning null, never through
+// getSession()/authorizeResource() actually THROWING. A `request` whose own
+// `.headers.get()` throws (a misbehaving Workers Request, a header value
+// that breaks decoding) exercises the real catch block instead: readSessionCookie()
+// calls request.headers.get('Cookie') with no try/catch of its own, so the
+// throw propagates out of getSession() into onRequest()'s try/catch. The same
+// fake request also makes applyIndexing()'s isIndexable() call throw (it reads
+// request.headers.get('host')), so this one fixture exercises both of this
+// file's previously-uncovered catch blocks at once.
+{
+  const throwingRequest = {
+    url: 'https://example.com/futures-dissection',
+    method: 'GET',
+    headers: { get() { throw new Error('boom: headers unreadable'); } },
+  };
+  const context = {
+    request: throwingRequest,
+    env: { SESSION_SIGNING_SECRET: SECRET, INDEXING: 'on', CANONICAL_HOST: 'example.com' },
+    next: async () => gatedPageResponse(),
+  };
+  const res = await onRequest(context);
+  const body = await res.text();
+  assert.equal(res.status, 200);
+  assert.ok(!body.includes('paid lesson text'),
+    'a request whose headers.get() throws must fail closed to the stripped page, not crash or unlock content');
+  assert.match(body, /data-locked="1"/, 'stripped wrapper must still be marked locked on the throwing-headers path');
+}
+
 // Both branches (stripped and full) must carry the same no-store contract —
 // this response body depends on the caller's own session, so neither variant
 // may be reused by a shared/edge cache for a different visitor.
