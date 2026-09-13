@@ -241,6 +241,48 @@ try {
       assert.equal(status, 500);
       assert.equal(data.ok, false);
     }
+
+    // Status parsing within the found-in-the-map case: only the success path
+    // ('active') above had ever been exercised, so 'renewed' counting as live
+    // -- the same parity the secure bridge already has dedicated coverage for
+    // -- and a non-live status being rejected were both unpinned for this
+    // still-load-bearing legacy bridge specifically.
+    {
+      // 'renewed' counts as live here too, not just on the secure bridge.
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return Response.json({ ok: true, codes: { 'ABCD-6661': { status: 'renewed', discord: 'renewedlegacy' } } });
+      };
+      const { status, data } = await callVerify(LEGACY_ENV, { code: 'ABCD-6661', turnstileToken: 'tok' });
+      assert.equal(status, 200);
+      assert.equal(data.discord, 'renewedlegacy');
+    }
+
+    // A status that is neither 'active' nor 'renewed' (e.g. a cancelled Sheet
+    // row) is not an entitlement, same generic message as an unknown code so
+    // the Sheet can't be probed for which codes exist.
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return Response.json({ ok: true, codes: { 'ABCD-6662': { status: 'cancelled', discord: 'x' } } });
+      };
+      const { status, data } = await callVerify(LEGACY_ENV, { code: 'ABCD-6662', turnstileToken: 'tok' });
+      assert.equal(status, 401);
+      assert.equal(data.error, GENERIC_BAD_CODE);
+    }
+
+    // A code that simply isn't in the Sheet's map at all (as opposed to the
+    // "no bridge configured" case tested earlier) must land on the same
+    // generic message, not a crash on the missing entry.
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return Response.json({ ok: true, codes: {} });
+      };
+      const { status, data } = await callVerify(LEGACY_ENV, { code: 'ABCD-6663', turnstileToken: 'tok' });
+      assert.equal(status, 401);
+      assert.equal(data.error, GENERIC_BAD_CODE);
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────
