@@ -1315,6 +1315,25 @@ test('stock-lab.html every sector tab has at least one matching stock', () => {
     `GROUPS has a tab with no matching WATCHLIST stock: ${orphanTabs.join(', ')}`);
 });
 
+// Incident: the hero "Sectors/themes" stat next to the Premium Stock
+// Screener hardcoded the digit 12, while the adjacent "Tracked names" stat
+// (id="heroTotal") was wired to WATCHLIST.length in init(). When the
+// GROUPS-orphan-tab fix above dropped GROUPS from 12 entries to 10, the
+// static "12" was never touched and started overstating the tool by 20%
+// with no test to catch it. Fixed by giving the stat an id and setting it
+// from GROUPS.length in init(), the same pattern heroTotal already uses.
+// This test pins that wiring so a future GROUPS edit can't silently drift
+// the hero copy again.
+test('stock-lab.html hero "Sectors/themes" stat is wired to GROUPS.length, not hardcoded', () => {
+  const html = read('stock-lab.html');
+  assert.ok(!/<b>\d+<\/b><span>Sectors\/themes<\/span>/.test(html),
+    'hero "Sectors/themes" stat is a hardcoded digit again -- wire it to GROUPS.length instead');
+  assert.match(html, /<b id="heroSectors">--<\/b><span>Sectors\/themes<\/span>/,
+    'hero "Sectors/themes" stat lost its #heroSectors id');
+  assert.match(html, /el\('heroSectors'\)\.textContent=GROUPS\.length/,
+    'init() no longer sets #heroSectors from GROUPS.length');
+});
+
 // Incident: docs/DISCORD-INTEGRATION.md's Status line read "designed, not
 // wired. No Discord calls are made anywhere on this branch" -- but
 // functions/api/_lib/discord.js's postEmbed() was already live and called
