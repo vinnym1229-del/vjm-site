@@ -84,6 +84,35 @@ function req(ip, headers = {}) {
   assert.equal(other.count, 1);
 }
 
+// checkRateLimit, in-isolate Map fallback: the per-minute window actually
+// rolls over. Every handler test above only ever calls this within a single
+// real-time minute, so nothing had pinned that a client's count resets on
+// the next minute instead of compounding forever (which would eventually
+// lock out a legitimate client) or never resetting fewer than would allow
+// (which would fail to enforce the limit at all) — the one invariant this
+// module exists to guarantee, per the run cycle's own hard rule against
+// weakening rate limiting.
+{
+  const scope = 'lib-test-mem-rollover-' + Math.random();
+  const r = req('198.51.100.4');
+  const originalNow = Date.now;
+  try {
+    const baseMs = 1_000_000 * 60_000; // an arbitrary whole-minute boundary
+    Date.now = () => baseMs;
+    const first = await checkRateLimit({}, r, scope, 2);
+    const second = await checkRateLimit({}, r, scope, 2);
+    assert.deepEqual([first.allowed, second.allowed], [true, true]);
+    assert.deepEqual([first.count, second.count], [1, 2]);
+
+    Date.now = () => baseMs + 60_000; // next minute
+    const third = await checkRateLimit({}, r, scope, 2);
+    assert.equal(third.allowed, true, 'window must reset on the new minute, not stay tripped');
+    assert.equal(third.count, 1, 'count must restart at 1, not compound to 3');
+  } finally {
+    Date.now = originalNow;
+  }
+}
+
 // checkRateLimit, D1-backed path: the actual production persistence layer.
 // Verify the increment SQL runs, the returned count drives the allowed
 // decision, and the stale-bucket sweep fires only on the bucket's first hit
