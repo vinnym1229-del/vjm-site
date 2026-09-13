@@ -27,11 +27,17 @@ function fakeDb() {
 
 const envWith = (db, extra = {}) => ({ RESEARCH_DB: db, ...extra });
 
-function post(body, env) {
+let ipCounter = 0;
+function nextIp() {
+  ipCounter += 1;
+  return `10.9.0.${ipCounter}`;
+}
+
+function post(body, env, ip) {
   return onRequestPost({
     request: new Request('https://x/api/analytics', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(ip ? { 'CF-Connecting-IP': ip } : {}) },
       body: typeof body === 'string' ? body : JSON.stringify(body),
     }),
     env,
@@ -106,6 +112,24 @@ test('malformed input is refused without touching storage', async () => {
   assert.equal((await post({ events: [] }, envWith(db))).status, 400);
   assert.equal((await post({ events: 'nope' }, envWith(db))).status, 400);
   assert.equal(db.written.length, 0);
+});
+
+test('the rate limit trips before storage, per the header comment\'s own promise', async () => {
+  // The header comment names rate-limiting as one of three things that make a
+  // public write endpoint safe. Nothing pinned that guarantee: every sibling
+  // public endpoint (live-stats, forex-calendar, content, ticker) has this
+  // exact test; analytics.js was the one public write endpoint without it.
+  const db = fakeDb();
+  const ip = nextIp();
+  const event = { events: [{ name: 'plan_cta' }] };
+  let last;
+  for (let i = 0; i < 120; i++) last = await post(event, envWith(db), ip);
+  assert.equal(last.status, 200, 'the 120th call from one IP in one minute is still allowed');
+
+  const limited = await post(event, envWith(db), ip);
+  assert.equal(limited.status, 429);
+  assert.equal((await limited.json()).ok, false);
+  assert.equal(db.written.length, 120, 'the rate-limited call never reaches storage');
 });
 
 test('an unconfigured deployment says so instead of pretending to store', async () => {
