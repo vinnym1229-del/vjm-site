@@ -109,6 +109,21 @@ for (const page of ['privacy.html', 'risk-disclosure.html', 'terms.html']) {
   assert.match(css, /\.skip\{[^}]*\}/, 'assets/site.css must style .skip so it is invisible until focused');
 }
 
+// index.html and options-lab.html had no <main> landmark at all, unlike every
+// other nav-bearing page on the site (futures-dissection.html,
+// stock-breakdown.html, psychology-enhancer.html, premarket.html,
+// stock-lab.html, premium-guidance.html, privacy.html, risk-disclosure.html,
+// terms.html, prop-firms.html, forex-calendar.html, research-engine.html and
+// unsubscribe.html all wrap their primary content in <main>). A screen-reader
+// user landmark-navigating (e.g. NVDA/JAWS "D") found nothing to jump to on
+// the homepage or the options tool, even though both already offer a skip
+// link past the nav.
+for (const page of ['index.html', 'options-lab.html']) {
+  const source = readFileSync(resolve(root, page), 'utf8');
+  assert.match(source, /<main[ >]/, `${page} must wrap its primary content in a <main> landmark`);
+  assert.match(source, /<\/main>/, `${page}'s <main> landmark must be closed`);
+}
+
 // b13c553 reordered index.html's Curriculum dropdown/mobile-menu to put
 // Futures Dissection first (matching the homepage's own curriculum grid,
 // where it's the free flagship course) but only touched index.html -- every
