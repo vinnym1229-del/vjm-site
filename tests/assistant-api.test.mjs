@@ -476,6 +476,29 @@ function fullSnapshot(price) {
   }
 }
 
+// Alpaca configured but the snapshots call itself throws (a rate-limited or
+// 5xx response makes alpaca.js's getJson() throw, not resolve) -- must still
+// fail closed to data-unavailable, not let the outer catch's aiReady=false
+// get missed or a partially-built dataBlock leak into the AI prompt.
+{
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes('/v2/stocks/snapshots')) {
+        return new Response('rate limited', { status: 429 });
+      }
+      return new Response('not found', { status: 404 });
+    };
+    const { status, data } = await ask(alpacaEnv(), { question: 'How is SPY doing?' });
+    assert.equal(status, 200);
+    assert.equal(data.ok, true);
+    assert.equal(data.mode, 'data-unavailable');
+    assert.equal(data.narrative, null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
 // Alpaca configured with real rows, but no AI binding: data-only mode
 // returns the live data block instead of narrating with a missing engine.
 {
