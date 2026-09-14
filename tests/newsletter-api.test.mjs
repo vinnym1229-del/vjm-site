@@ -195,6 +195,32 @@ test('the one-click GET link works without JavaScript and lands on the page', as
   assert.match(reused.headers.get('location'), /state=done$/, 're-clicking a spent link must not read as invalid');
 });
 
+test('the one-click GET link fails toward the page, never a crash or a lie', async () => {
+  // A mail provider's automated List-Unsubscribe-Post follower has no error
+  // console to show a thrown exception in — it just gets a broken response.
+  // Every failure mode here must redirect to the page's own 'error' state
+  // instead, the same promise the POST path already makes for a human.
+
+  // Unconfigured deployment: no RESEARCH_DB at all.
+  const noDb = await unsubscribeGet({ request: new Request(`${UNSUB}?token=${newUnsubToken()}`, { headers: { 'CF-Connecting-IP': `203.0.113.${++ip}` } }), env: {} });
+  assert.match(noDb.headers.get('location'), /state=error$/);
+
+  // The D1 write itself throws (outage, locked table, etc.) — must not
+  // propagate as an uncaught exception.
+  const broken = { prepare() { return { bind: () => ({ async run() { throw new Error('boom'); } }) }; } };
+  const dbThrows = await unsubscribeGet({ request: new Request(`${UNSUB}?token=${newUnsubToken()}`, { headers: { 'CF-Connecting-IP': `203.0.113.${++ip}` } }), env: envWith(broken) });
+  assert.match(dbThrows.headers.get('location'), /state=error$/);
+
+  // Rate limit tripped: 30/min shared with the POST path, same IP.
+  const rlIp = `203.0.113.${++ip}`;
+  const rlEnv = envWith(fakeDb());
+  for (let i = 0; i < 30; i++) {
+    await unsubscribeGet({ request: new Request(`${UNSUB}?token=${newUnsubToken()}`, { headers: { 'CF-Connecting-IP': rlIp } }), env: rlEnv });
+  }
+  const limited = await unsubscribeGet({ request: new Request(`${UNSUB}?token=${newUnsubToken()}`, { headers: { 'CF-Connecting-IP': rlIp } }), env: rlEnv });
+  assert.match(limited.headers.get('location'), /state=error$/);
+});
+
 test('the one-click link copy does not promise a state the handler cannot reach', () => {
   // The client-side 'invalid' message used to say a link "has already been
   // used" — but a reused, well-formed token redirects to 'done' (proven
