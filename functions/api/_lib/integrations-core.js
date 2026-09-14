@@ -76,6 +76,28 @@ export function isValidGeneratedCode(code) {
   return /^VJM-[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{4}$/.test(String(code || ''));
 }
 
+// Generate-then-validate retry loop, extracted so it's directly testable:
+// whop-webhook.js can't otherwise exercise a mismatch between
+// generateAccessCodeShape and isValidGeneratedCode (today they always agree,
+// by construction, over every byte value -- see the exhaustive round-trip
+// test), so nothing ever drove this loop's own retry-then-give-up mechanics.
+// `generate`/`isValid` default to the real pair; tests inject fakes to prove
+// a transient mismatch is retried past, and that persistent invalidity
+// returns null rather than looping forever or handing back a bad code.
+export function pickValidAccessCode({
+  getBytes,
+  generate = generateAccessCodeShape,
+  isValid = isValidGeneratedCode,
+  maxAttempts = 5,
+} = {}) {
+  let code = generate(getBytes());
+  let attempts = 0;
+  while (!isValid(code) && attempts++ < maxAttempts) {
+    code = generate(getBytes());
+  }
+  return isValid(code) ? code : null;
+}
+
 // ─── Futures-proxy lean (explicit heuristic, labeled LOW confidence) ───────
 // score components are pre-computed percentage numbers; weights fixed and
 // published. Output is a lean label only — never a prediction.

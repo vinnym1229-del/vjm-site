@@ -28,7 +28,7 @@
 //      DISCORD_WHOP_CODES_WEBHOOK (optional delivery channel).
 
 import { json } from './_lib/http.js';
-import { normalizeWhopEvent, generateAccessCodeShape, isValidGeneratedCode, timingSafeHexEqual } from './_lib/integrations-core.js';
+import { normalizeWhopEvent, pickValidAccessCode, timingSafeHexEqual } from './_lib/integrations-core.js';
 import { postEmbed } from './_lib/discord.js';
 import { resolveTier } from './_lib/entitlements.js';
 import { memberRefFromCodeHash } from './_lib/session.js';
@@ -103,12 +103,19 @@ export async function onRequestPost(context) {
     }
 
     const bytes = new Uint8Array(8);
-    crypto.getRandomValues(bytes);
-    let code = generateAccessCodeShape(bytes);
-    let guard = 0;
-    while (!isValidGeneratedCode(code) && guard++ < 5) {
-      crypto.getRandomValues(bytes);
-      code = generateAccessCodeShape(bytes);
+    const code = pickValidAccessCode({ getBytes: () => { crypto.getRandomValues(bytes); return bytes; } });
+    if (!code) {
+      // generateAccessCodeShape and isValidGeneratedCode are meant to always
+      // agree (their alphabets are kept in sync deliberately -- see
+      // integrations-core.js), but they HAVE drifted out of sync once
+      // before. Nothing has been written yet, so releasing the claim is
+      // enough for Whop's retry to mint a fresh code instead of this
+      // silently hashing and storing one that would fail its own validator
+      // and leave the customer with a code nobody, including them, could
+      // ever sign in with.
+      await releaseClaim();
+      console.error('whop-webhook: code generation exhausted retries for ' + evt.eventId);
+      return json({ ok: false, error: 'Code generation failed; will retry.' }, 503);
     }
     const hash = await sha256Hex(code);
     const emailHash = evt.email ? await sha256Hex(evt.email) : null;

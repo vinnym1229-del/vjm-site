@@ -20,14 +20,18 @@
 //     content-sync-api.test.mjs only ever feeds announcements rows.
 //   - generateAccessCodeShape/isValidGeneratedCode round-trip is what stands
 //     between a purchase and a deliverable Whop access code; a shape drift
-//     between the two functions would make whop-webhook.js's retry loop
-//     exhaust its 5 guard attempts and silently fail to mint a code.
+//     between the two functions would make pickValidAccessCode's retry loop
+//     exhaust its 5 guard attempts. The loop itself (its retry-then-give-up
+//     mechanics, as opposed to the two functions it calls) had zero coverage
+//     until this run, since the two functions always agree today and nothing
+//     ever drove a real mismatch through it.
 import assert from 'node:assert/strict';
 import {
   timingSafeHexEqual,
   normalizeWhopEvent,
   generateAccessCodeShape,
   isValidGeneratedCode,
+  pickValidAccessCode,
   computeFuturesLean,
   sanitizeContentRow,
   CONTENT_TYPES,
@@ -116,15 +120,47 @@ import {
     assert.equal(isValidGeneratedCode(`VJM-${ch}BCD-EFGH`), false, `${ch} must not be a valid code character`);
   }
 
-  // Every byte value in the alphabet's range round-trips to a code that
-  // passes validation -- this is the exact contract whop-webhook.js's
-  // generate-then-validate retry loop depends on.
-  for (let trial = 0; trial < 20; trial++) {
-    const bytes = Array.from({ length: 8 }, () => Math.floor(Math.random() * 256));
-    const code = generateAccessCodeShape(bytes);
+  // Every possible byte value (0-255, exhaustive, not sampled) round-trips
+  // to a code that passes validation -- this is the exact contract
+  // pickValidAccessCode's generate-then-validate retry loop depends on, and
+  // it's why that loop never actually retries in production today.
+  for (let b = 0; b <= 255; b++) {
+    const code = generateAccessCodeShape(new Array(8).fill(b));
     assert.match(code, /^VJM-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/);
-    assert.equal(isValidGeneratedCode(code), true, `generated code ${code} must pass its own validator`);
+    assert.equal(isValidGeneratedCode(code), true, `generated code ${code} (byte ${b}) must pass its own validator`);
   }
+}
+
+// ─── pickValidAccessCode ────────────────────────────────────────────────────
+{
+  // Default generate/isValid (the real functions) always succeed on the
+  // first attempt, per the exhaustive round-trip proof above.
+  let calls = 0;
+  const realCode = pickValidAccessCode({ getBytes: () => { calls++; return [1, 2, 3, 4, 5, 6, 7, 8]; } });
+  assert.equal(isValidGeneratedCode(realCode), true);
+  assert.equal(calls, 1, 'the real generate/isValid pair must not need a single retry');
+
+  // A transient mismatch must be retried past, not given up on immediately.
+  let attempt = 0;
+  const recovered = pickValidAccessCode({
+    getBytes: () => ++attempt,
+    generate: (n) => `code-${n}`,
+    isValid: (code) => code === 'code-3',
+  });
+  assert.equal(recovered, 'code-3', 'must keep retrying until isValid says yes');
+  assert.equal(attempt, 3, 'must stop generating as soon as a valid code is found');
+
+  // Persistent invalidity (e.g. the two real functions drifting out of
+  // sync, as they once did) must give up cleanly with null -- never loop
+  // forever, and never hand back a code that fails its own validator.
+  let genCalls = 0;
+  const exhausted = pickValidAccessCode({
+    getBytes: () => { genCalls++; return genCalls; },
+    generate: (n) => `bad-${n}`,
+    isValid: () => false,
+  });
+  assert.equal(exhausted, null, 'must return null rather than an invalid code once retries are exhausted');
+  assert.equal(genCalls, 6, 'must attempt exactly maxAttempts+1 (1 initial + 5 retries), not more');
 }
 
 // ─── computeFuturesLean ─────────────────────────────────────────────────────
