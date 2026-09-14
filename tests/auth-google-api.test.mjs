@@ -158,6 +158,55 @@ try {
     assert.equal(status, 401);
   }
 
+  // An expired token must not be honored even with a correct aud/iss/verified
+  // trio -- verifyGoogleIdToken's own exp check, not just Google's tokeninfo
+  // 200 response, is what has to catch a stale or replayed credential.
+  globalThis.fetch = async () => Response.json({
+    aud: CLIENT_ID,
+    iss: 'https://accounts.google.com',
+    exp: String(Math.floor(Date.now() / 1000) - 60),
+    email: 'trader@example.com',
+    email_verified: 'true',
+  });
+  {
+    const { status } = await callAuth(baseEnv(), { credential: 'tok' });
+    assert.equal(status, 401);
+  }
+
+  // A token whose issuer isn't Google must be rejected even when aud, exp,
+  // and email_verified all line up -- aud alone isn't proof the tokeninfo
+  // response actually came from Google.
+  globalThis.fetch = async () => Response.json({
+    aud: CLIENT_ID,
+    iss: 'https://evil.example.com',
+    exp: String(Math.floor(Date.now() / 1000) + 3600),
+    email: 'trader@example.com',
+    email_verified: 'true',
+  });
+  {
+    const { status } = await callAuth(baseEnv(), { credential: 'tok' });
+    assert.equal(status, 401);
+  }
+
+  // tokeninfo answering with a non-2xx status must be rejected on the status
+  // alone, even if the response body happens to carry an otherwise-valid
+  // claim set -- Google's own error shape for a rejected id_token still
+  // returns a JSON object, so the aud/iss/exp checks alone can't be trusted
+  // to catch this; a 401 here (not a crash or a 502 implying our own
+  // deployment broke) has to come from checking res.ok itself.
+  globalThis.fetch = async () => Response.json({
+    aud: CLIENT_ID,
+    iss: 'https://accounts.google.com',
+    exp: String(Math.floor(Date.now() / 1000) + 3600),
+    email: 'trader@example.com',
+    email_verified: 'true',
+  }, { status: 400 });
+  {
+    const { status, data } = await callAuth(baseEnv(), { credential: 'tok' });
+    assert.equal(status, 401);
+    assert.equal(data.ok, false);
+  }
+
   // Verified Google account with no matching Whop purchase on file.
   globalThis.fetch = async () => Response.json({
     aud: CLIENT_ID,
