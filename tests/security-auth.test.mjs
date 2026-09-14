@@ -81,6 +81,12 @@ test('cookie reader extracts session value only', () => {
   assert.equal(readSessionCookie(req), 'tok.value');
   const none = { headers: { get: () => null } };
   assert.equal(readSessionCookie(none), null);
+  // An anonymous visitor's real Cookie header (Cloudflare/consent/analytics
+  // cookies, no session) is the most common shape this ever sees in
+  // production — distinct from "no Cookie header at all" above, and the one
+  // case nothing pinned before this.
+  const noSession = { headers: { get: (h) => h === 'Cookie' ? '__cf_bm=abc; cf_clearance=xyz' : null } };
+  assert.equal(readSessionCookie(noSession), null);
 });
 
 test('sessionDays defaults to 7 and hard-caps at 30 regardless of misconfiguration', () => {
