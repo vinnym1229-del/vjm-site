@@ -171,6 +171,36 @@ test('a token from an email footer opts out without the address being typed', as
   assert.equal(db.calls[0].args[0], token, 'the token wins over any address in the same body');
 });
 
+test('the RFC 8058 List-Unsubscribe-Post link works with no JSON body at all', async () => {
+  // A mailbox provider's one-click follower POSTs `List-Unsubscribe=One-Click`
+  // as form data, never JSON, with the token in the query string. An
+  // unparseable body must not be treated as an error here — it is the
+  // expected shape for this exact caller, not a malformed request.
+  const db = fakeDb();
+  const token = newUnsubToken();
+  const req = new Request(`${UNSUB}?token=${token}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'CF-Connecting-IP': `203.0.113.${++ip}` },
+    body: 'List-Unsubscribe=One-Click',
+  });
+  const res = await unsubscribe({ request: req, env: envWith(db) });
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).unsubscribed, true);
+  assert.equal(db.calls[0].args[0], token, 'the token comes from the query string since the form body has none to read');
+});
+
+test('a JSON body that parses but is not an object falls back cleanly, never throws', async () => {
+  // request.json() succeeds here — it is valid JSON — but an array or a bare
+  // string has no .token/.email to read, and body.token would throw on a
+  // string. Distinct from the unparseable-body case above.
+  const db = fakeDb();
+  const arr = await post(unsubscribe, [1, 2, 3], envWith(db), UNSUB);
+  assert.equal(arr.status, 400, 'no token and no email recoverable from a JSON array body');
+  const str = await post(unsubscribe, '"just a string"', envWith(db), UNSUB);
+  assert.equal(str.status, 400);
+  assert.equal(db.calls.length, 0, 'neither shape reaches the database');
+});
+
 test('the one-click GET link works without JavaScript and lands on the page', async () => {
   const db = fakeDb();
   const token = newUnsubToken();
