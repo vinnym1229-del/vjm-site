@@ -166,6 +166,24 @@ assert.match(html, /Educational research only—not financial advice/);
 // Sessions travel via HttpOnly cookies; no Bearer tokens in client code.
 assert.doesNotMatch(javascript, /Authorization\s*=\s*'Bearer '/, 'client code must not attach Bearer tokens');
 assert.doesNotMatch(javascript, /localStorage\.getItem\(/, 'client code must not read tokens from storage');
+// assets/site.css restates a keyboard focus ring at `input:focus-visible`
+// specifically because some inputs set `outline:0` in a class selector for
+// their resting state, which killed the sitewide default too -- but that
+// restated rule can only win a specificity fight against another selector.
+// An inline `style="...outline:none;"` attribute beats any external
+// stylesheet rule regardless of specificity (short of `!important`), so it
+// silently defeats that fix. index.html's growth-simulator and Discord
+// status-check inputs had exactly this: seven inline-styled inputs a
+// keyboard user could tab to and see no focus indicator at all -- a WCAG
+// 2.4.7 gap distinct from (and missed by) the class-based fix.
+for (const page of ['index.html', 'stock-lab.html', 'options-lab.html', 'premarket.html', 'prop-firms.html', 'forex-calendar.html', 'premium-guidance.html', 'research-engine.html']) {
+  const source = readFileSync(resolve(root, page), 'utf8');
+  for (const match of source.matchAll(/<input\b[^>]*\bstyle="([^"]*)"[^>]*>/g)) {
+    assert.doesNotMatch(match[1], /outline\s*:\s*(none|0)\b/,
+      `${page}: an inline input style must not set outline:none/0 -- it defeats the sitewide input:focus-visible ring (inline styles beat stylesheet rules)`);
+  }
+}
+
 // CNAME is a GitHub Pages convention. This site deploys via Cloudflare
 // Pages, which takes its custom domains from the dashboard and ignores
 // this file entirely -- so the stale `not-financial-advice.com` in it was
