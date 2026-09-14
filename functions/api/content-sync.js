@@ -136,7 +136,11 @@ async function fetchContentBridge(env) {
   if (data && data.ok === false) {
     throw new Error('bridge rejected the request: ' + (data.error || 'unknown reason'));
   }
-  if (!data || data.ok !== true || typeof data.content !== 'object') {
+  // typeof null === 'object', so the content check needs an explicit null
+  // exclusion too -- otherwise {ok:true, content:null} slips past this guard
+  // and the per-type loop below crashes on bridgeData[type] with an uncaught
+  // TypeError instead of the clean 502 every other bad shape gets here.
+  if (!data || data.ok !== true || typeof data.content !== 'object' || data.content === null) {
     throw new Error('bridge returned unexpected shape');
   }
   return data.content;

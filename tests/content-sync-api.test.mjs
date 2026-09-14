@@ -143,6 +143,18 @@ try {
     assert.equal(status, 502);
   }
 
+  // content:null must also 502, not crash: typeof null === 'object', so a
+  // naive `typeof data.content !== 'object'` check lets null through and the
+  // per-type loop below throws on bridgeData[type] uncaught. This is a real
+  // shape the bridge could send (e.g. a serialization bug), distinct from
+  // the ok:false and content-missing cases above.
+  {
+    globalThis.fetch = async () => Response.json({ ok: true, content: null });
+    const { status, data } = await postSync(baseEnv());
+    assert.equal(status, 502);
+    assert.match(data.error, /unreachable/);
+  }
+
   // A malformed row (no id) is skipped, not upserted; a valid row is upserted.
   {
     const db = makeDb();
