@@ -256,4 +256,23 @@ try {
   globalThis.fetch = originalFetch3;
 }
 
+// ---------------------------------------------------------------------------
+// onRequestGet's OWN try/catch (distinct from handle()'s inner one, which
+// every case above already exercises via lookupActive/bridgeLookup throwing)
+// guards anything that throws before the inner try even starts -- here, an
+// unparseable request.url blowing up `new URL(...)` at the top of handle().
+// Same "fail closed to 502, never crash the isolate uncaught" contract as
+// auth-google.js's outer catch; nothing had driven this one yet.
+// ---------------------------------------------------------------------------
+{
+  const res = await onRequestGet({
+    request: { url: 'not a valid url', headers: { get: () => null } },
+    env: {},
+  });
+  assert.equal(res.status, 502);
+  const data = await res.json();
+  assert.equal(data.ok, false);
+  assert.equal(data.error, 'Status lookup is temporarily unavailable.');
+}
+
 console.log('VJM check-member-status API tests passed.');
