@@ -109,6 +109,17 @@ test('bad addresses are refused and the honeypot is answered blandly', async () 
   assert.equal(db.calls.length, 0, 'the honeypot submission is not stored');
 });
 
+test('an unparseable body is refused cleanly, never thrown past the handler', async () => {
+  // Unlike unsubscribe's one-click POST, subscribe has no legitimate caller
+  // that sends anything but JSON — a bad body here is a bot, a truncated
+  // connection, or a stray curl typo, not an expected shape to fall back on.
+  const db = fakeDb();
+  const res = await post(subscribe, '{not valid json', envWith(db));
+  assert.equal(res.status, 400);
+  assert.equal((await res.json()).ok, false);
+  assert.equal(db.calls.length, 0, 'nothing is stored when the body cannot be parsed');
+});
+
 test('an unconfigured deployment refuses rather than pretending to store', async () => {
   // A form that says "you're subscribed" and drops the address is the worst
   // possible outcome: the person believes they signed up and never hears back.
