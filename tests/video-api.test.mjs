@@ -174,6 +174,40 @@ async function bodyBytes(res) {
   assert.equal(bytes.length, 1000);
 }
 
+// asBytes() normalizes every chunk shape a byte stream could hand back to a
+// Uint8Array before slicing. Every fixture above enqueues plain Uint8Array
+// chunks, so a DataView or bare ArrayBuffer chunk had never actually reached
+// this code — a real gap, since `new Uint8Array(view)` (skipping the
+// `.buffer`/`.byteOffset`/`.byteLength` unwrap) silently produces a
+// zero-length array instead of throwing, which would have shipped as a
+// missing chunk of video with no error anywhere. The range below spans both
+// chunks so both the DataView (ArrayBuffer.isView) and bare-ArrayBuffer
+// (neither Uint8Array nor a view) branches run in one request.
+{
+  const buf = makeVideoBuf();
+  const bytes = new Uint8Array(buf);
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new DataView(bytes.buffer, 0, 500));
+      controller.enqueue(bytes.buffer.slice(500, 1000));
+      controller.close();
+    },
+  });
+  const env = {
+    vjm_video: {
+      async getWithMetadata(key, opts) {
+        assert.equal(opts?.type, 'stream');
+        return { value: stream, metadata: { size: TOTAL } };
+      },
+    },
+  };
+  const res = await onRequestGet({ env, request: req('bytes=200-799') });
+  assert.equal(res.status, 206);
+  const out = await bodyBytes(res);
+  assert.deepEqual(out, bytes.subarray(200, 800),
+    'a DataView or bare-ArrayBuffer chunk must slice to the same bytes as a Uint8Array chunk');
+}
+
 // Malformed and unsatisfiable ranges both fail as 416 with a Content-Range
 // hint, never a 200/206 of the wrong data.
 {
