@@ -105,9 +105,14 @@ export async function onRequestGet(context) {
   }
 }
 
-// Yahoo occasionally double-encodes UTF-8 in these titles, so a curly
-// apostrophe arrives as "â€™". Repair only when that exact pattern shows up;
-// leaving it produces visible garbage in the headline.
+// Yahoo occasionally double-encodes UTF-8 in these titles: a Latin-1
+// Supplement character (e.g. the "é" in "café") gets UTF-8-encoded, then
+// each of those two bytes is mis-decoded again as its own Latin-1
+// character, leaving a "Â"/"Ã" + continuation-byte pair in the string (e.g.
+// "cafÃ©"). Repair only that 2-byte pattern; leaving it produces visible
+// garbage in the headline. A double-encoded curly apostrophe ("don't" ->
+// "donâ€™t") is a different, 3-byte Windows-1252 corruption this guard does
+// not match, so it passes through unrepaired.
 function fixMojibake(s) {
   const str = String(s == null ? '' : s);
   if (!/[\u00C2-\u00C3][\u0080-\u00BF]/.test(str)) return str;
