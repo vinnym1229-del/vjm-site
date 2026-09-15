@@ -1490,3 +1490,43 @@ test('index.html About section social row includes every footer platform except 
   assert.deepEqual(aboutHrefs, footerSocialMinusWhop,
     'About section social-row must list the same accounts, in the same order, as the footer (Whop excluded)');
 });
+
+// ---------------------------------------------------------------------------
+// Incident: the curriculum level/group tab widgets (assets/curriculum.js's
+// initGroupTabs/initLevelTabs, rendered on all four course pages) only ever
+// toggled a private `.active` CSS class -- no role="tablist"/role="tab"/
+// aria-selected -- while every other tab-style control the site ships
+// (research-engine.html's module-nav + assets/research-engine.js's setModule,
+// index.html's period-tabs) already carries that semantics. A screen-reader
+// visitor tabbing through Level 1-4 (or Psychology Enhancer's A-D sections)
+// heard only "button, button, button, button", with no indication of a tab
+// group, count, or which level was currently selected/visible.
+const CURRICULUM_TAB_PAGES = ['futures-dissection.html', 'options-lab.html', 'stock-breakdown.html', 'psychology-enhancer.html'];
+test('curriculum level/group tab widgets carry ARIA tab semantics', () => {
+  const offenders = [];
+  for (const page of CURRICULUM_TAB_PAGES) {
+    const html = read(page);
+    for (const bar of html.matchAll(/<div class="(?:level-tabs|group-tabs)"[^>]*>/g)) {
+      if (!/role="tablist"/.test(bar[0])) offenders.push(`${page}: tab bar missing role="tablist": ${bar[0]}`);
+    }
+    for (const btn of html.matchAll(/<button class="(?:level-tab|group-tab)( active)?"[^>]*>/g)) {
+      if (!/role="tab"/.test(btn[0])) { offenders.push(`${page}: tab button missing role="tab": ${btn[0]}`); continue; }
+      const expected = btn[1] ? 'true' : 'false';
+      if (!btn[0].includes(`aria-selected="${expected}"`)) {
+        offenders.push(`${page}: tab button aria-selected should be "${expected}": ${btn[0]}`);
+      }
+    }
+  }
+  assert.deepEqual(offenders, [], `curriculum tab ARIA gaps:\n  ${offenders.join('\n  ')}`);
+});
+
+test('curriculum.js keeps aria-selected in sync with the .active class it already toggles', () => {
+  const js = read('assets/curriculum.js');
+  const groupFn = js.slice(js.indexOf('function initGroupTabs'), js.indexOf('function initLevelTabs'));
+  const levelFn = js.slice(js.indexOf('function initLevelTabs'), js.indexOf('async function checkPremium'));
+  assert.ok(groupFn.length && levelFn.length, 'expected to find both initGroupTabs and initLevelTabs in assets/curriculum.js');
+  for (const [name, fn] of [['initGroupTabs', groupFn], ['initLevelTabs', levelFn]]) {
+    assert.match(fn, /setAttribute\('aria-selected',\s*String\(active\)\)/,
+      `${name} must set aria-selected alongside the .active class it toggles on click`);
+  }
+});

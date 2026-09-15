@@ -48,7 +48,11 @@
         const btn = e.target.closest('.group-tab');
         if (!btn) return;
         const group = bar.dataset.group;
-        bar.querySelectorAll('.group-tab').forEach((b) => b.classList.toggle('active', b === btn));
+        bar.querySelectorAll('.group-tab').forEach((b) => {
+          const active = b === btn;
+          b.classList.toggle('active', active);
+          b.setAttribute('aria-selected', String(active));
+        });
         document.querySelectorAll(`.group-panel[data-group="${group}"]`).forEach((p) => {
           p.classList.toggle('active', p.dataset.groupValue === btn.dataset.groupValue);
         });
@@ -62,7 +66,11 @@
         const btn = e.target.closest('.level-tab');
         if (!btn) return;
         const bar2 = btn.closest('.level-tabs');
-        bar2.querySelectorAll('.level-tab').forEach((b) => b.classList.toggle('active', b === btn));
+        bar2.querySelectorAll('.level-tab').forEach((b) => {
+          const active = b === btn;
+          b.classList.toggle('active', active);
+          b.setAttribute('aria-selected', String(active));
+        });
         // Panels are matched to their tab bar by a shared data-pair id, so
         // multiple independent tab groups (Psychology Enhancer's A/B/C/D
         // subsections) can coexist on one page without cross-talk.
