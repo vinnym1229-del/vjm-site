@@ -8,7 +8,9 @@
 // depends on ?topic=forex resolving, and an unknown topic must 400 rather
 // than fall through to a caller-controlled query), the mojibake repair for
 // double-encoded UTF-8 titles, the https-only link sanitizer (a javascript:
-// or http: link must be dropped, not passed through), and dedup-by-link.
+// or http: link must be dropped, not passed through, and so must a missing
+// link field -- sanitizeLink's `new URL()` throwing on a non-URL string was
+// its one branch nothing had exercised), and dedup-by-link.
 import assert from 'node:assert/strict';
 import { onRequestGet } from '../functions/api/yahoo-news.js';
 
@@ -131,6 +133,25 @@ try {
     assert.equal(status, 200);
     assert.equal(data.count, 1);
     assert.equal(data.items[0].title, 'Safe item');
+  }
+
+  // sanitizeLink's catch branch (a link that isn't a URL at all, not just the
+  // wrong protocol) was untested -- the only prior link-sanitizing case here
+  // exercises the protocol check inside `new URL()`, not `new URL()` itself
+  // throwing. Yahoo omitting `link` on an item is the realistic trigger:
+  // `sanitizeLink(undefined)` stringifies to "undefined", which `new URL()`
+  // rejects as malformed, not as wrong-protocol. Must drop silently, not 500.
+  {
+    globalThis.fetch = async () => Response.json({
+      news: [
+        { title: 'No link field', providerPublishTime: 1735689600 },
+        { title: 'Has link', link: 'https://finance.yahoo.com/news/d', providerPublishTime: 1735689600 },
+      ],
+    });
+    const { status, data } = await fetchNews('?symbol=AAPL');
+    assert.equal(status, 200);
+    assert.equal(data.count, 1);
+    assert.equal(data.items[0].title, 'Has link');
   }
 
   // Duplicate links (same story surfaced twice) are deduped.
