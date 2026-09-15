@@ -62,6 +62,7 @@ async function handle(context) {
 
   let body;
   try { body = await request.json(); } catch { return json({ ok: false, error: 'Invalid request.' }, 400); }
+  if (!body || typeof body !== 'object') return json({ ok: false, error: 'Invalid request.' }, 400);
   const credential = String(body.credential || '').trim();
   if (!credential || credential.length > 4096) {
     return json({ ok: false, error: 'Missing Google credential.' }, 400);

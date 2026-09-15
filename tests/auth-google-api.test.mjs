@@ -85,6 +85,15 @@ async function callAuth(env, body) {
   assert.equal(status, 400);
 }
 {
+  // A body of literal JSON `null` parses without a syntax error, so the
+  // try/catch around request.json() doesn't fire -- but `body.credential`
+  // on `null` used to throw, and onRequestPost's outer catch-all turned
+  // that into a misleading 502 "temporarily unavailable" instead of the
+  // 400 malformed JSON already gets.
+  const { status } = await callAuth(baseEnv(), null);
+  assert.equal(status, 400);
+}
+{
   const { status } = await callAuth(baseEnv(), { credential: '' });
   assert.equal(status, 400);
 }

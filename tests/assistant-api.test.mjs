@@ -450,6 +450,23 @@ function fullSnapshot(price) {
   }
 }
 
+// A body of literal JSON `null` parses without a syntax error, so the
+// try/catch around request.json() doesn't fire -- but `body.question` on
+// `null` used to throw, and onRequestPost's outer catch-all turned that into
+// a misleading 502 "temporarily unavailable" instead of the 400 malformed
+// JSON already gets. Proven the same way as the missing-question case.
+{
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('must not call Alpaca when the body is null'); };
+  try {
+    const { status, data } = await ask(alpacaEnv(), null);
+    assert.equal(status, 400);
+    assert.equal(data.ok, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
 // Default (non-lesson) mode: Alpaca unconfigured degrades to data-unavailable
 // rather than fabricating numbers, even with an AI binding present.
 {

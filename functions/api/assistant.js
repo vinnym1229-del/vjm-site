@@ -417,6 +417,7 @@ async function handle({ request, env }) {
 
   let body;
   try { body = await request.json(); } catch { return json({ ok: false, error: 'Invalid request.' }, 400); }
+  if (!body || typeof body !== 'object') return json({ ok: false, error: 'Invalid request.' }, 400);
 
   const question = String(body.question || '').trim().slice(0, 500);
   const lessonId = String(body.lessonId || '').trim().slice(0, 64);
