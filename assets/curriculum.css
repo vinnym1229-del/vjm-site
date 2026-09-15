@@ -1,9 +1,10 @@
 /* Shared styling for the curriculum pages: Stock Breakdown, Options Lab
    (curriculum section), Futures Dissection, Psychology Enhancer.
    Reuses the site's red/black design tokens (see index.html :root) so these
-   pages feel like the same product, not a bolted-on course platform. */
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
-
+   pages feel like the same product, not a bolted-on course platform.
+   Font loading (preconnect + non-blocking preload) lives in each consumer
+   page's <head>, not here — a stylesheet @import is render-blocking and
+   can't be discovered until this file itself has loaded. */
 :root{
   --gold:#d14343;--gold-ink:#e26060; --gold2:#a63333; --green:#cfcfd4; --emerald:#d9d9dd;
   --bg:#0c0c0d; --bg2:#131315; --bg3:#1a1a1c; --card:#161618; --border:#2a2a2e;

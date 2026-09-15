@@ -1560,3 +1560,34 @@ test('setBundlePeriod keeps aria-selected in sync with the .active class it togg
   assert.match(fn, /setAttribute\('aria-selected',\s*String\(active\)\)/,
     'setBundlePeriod must set aria-selected alongside the .active class it toggles');
 });
+
+// ---------------------------------------------------------------------------
+// Incident: only index.html loaded Google Fonts via preconnect+preload (the
+// non-render-blocking pattern the test above pins). Every other page that
+// used 'Barlow Condensed'/'IBM Plex Sans' -- forex-calendar, options-lab,
+// stock-lab, and the four curriculum/research-engine pages via their shared
+// CSS -- loaded the same fonts through a plain CSS `@import`, which the
+// browser can't even discover until it has fetched and parsed the stylesheet
+// containing it (for the curriculum/research-engine pages, a second external
+// file on top of that), fully serial with no early connection warm-up. That
+// delays the large Barlow Condensed headings on the four gated course pages,
+// two premium tools, and the research engine specifically.
+test('no page or stylesheet loads Google Fonts via a render-blocking @import', () => {
+  const cssDir = join(ROOT, 'assets');
+  const cssFiles = readdirSync(cssDir).filter((f) => f.endsWith('.css'));
+  const offenders = [];
+  for (const p of PAGES) if (/@import url\(['"]https:\/\/fonts\.googleapis/.test(read(p))) offenders.push(p);
+  for (const f of cssFiles) if (/@import url\(['"]https:\/\/fonts\.googleapis/.test(read(join('assets', f)))) offenders.push(`assets/${f}`);
+  assert.deepEqual(offenders, [], `render-blocking font @import found in:\n  ${offenders.join('\n  ')}`);
+});
+
+test('pages fixed to use non-blocking font loading keep both preconnect hints', () => {
+  const fixed = ['forex-calendar.html', 'options-lab.html', 'stock-lab.html',
+    'futures-dissection.html', 'psychology-enhancer.html', 'stock-breakdown.html', 'research-engine.html'];
+  for (const p of fixed) {
+    const html = read(p);
+    assert.match(html, /<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">/, `${p} missing googleapis preconnect`);
+    assert.match(html, /<link rel="preconnect" href="https:\/\/fonts\.gstatic\.com" crossorigin>/, `${p} missing gstatic preconnect`);
+    assert.match(html, /<link rel="preload"[^>]*fonts\.googleapis\.com[^>]*as="style"[^>]*onload="this\.rel='stylesheet'"/, `${p} missing non-blocking font preload`);
+  }
+});

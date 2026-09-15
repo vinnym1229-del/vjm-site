@@ -1,5 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
-
+/* Font loading (preconnect + non-blocking preload) lives in research-engine.html's
+   <head>, not here — a stylesheet @import is render-blocking and can't be
+   discovered until this file itself has loaded. */
 :root{
   --red:#d14343;--red-ink:#e26060;--red2:#a63333;--green:#cfcfd4;--amber:#d9d9dd;--blue:#d9d9dd;
   --bg:#0c0c0d;--bg2:#131315;--panel:#161618;--panel2:#1d1d20;--line:#2a2a2e;
