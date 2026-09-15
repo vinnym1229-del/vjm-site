@@ -37,17 +37,26 @@ jobs:
       - name: Refresh QQQ and SPY option snapshots
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          failed=0
           refresh() {
             local endpoint="$1"
             local response
-            response="$(curl --fail-with-body --silent --show-error --retry 3 --max-time 90 \
+            if ! response="$(curl --fail-with-body --silent --show-error --retry 3 --max-time 90 \
               -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
-              "${RESEARCH_REFRESH_URL%/}${endpoint}")"
-            RESPONSE="$response" node -e "const p=JSON.parse(process.env.RESPONSE); if(!p.ok) process.exit(1); console.log(p.module, p.asOf)"
+              "${RESEARCH_REFRESH_URL%/}${endpoint}")"; then
+              echo "::warning::refresh request failed: ${endpoint}"
+              failed=1
+              return
+            fi
+            if ! RESPONSE="$response" node -e "const p=JSON.parse(process.env.RESPONSE); if(!p.ok) process.exit(1); console.log(p.module, p.asOf)"; then
+              echo "::warning::refresh returned ok:false: ${endpoint}"
+              failed=1
+            fi
           }
           refresh "/api/research-engine?module=options&symbol=QQQ&expiryDays=7"
           refresh "/api/research-engine?module=options&symbol=SPY&expiryDays=7"
+          exit "$failed"
 
   daily:
     if: github.event.schedule == '30 22 * * 1-5' || inputs.scope == 'daily' || inputs.scope == 'all'
@@ -62,14 +71,22 @@ jobs:
       - name: Refresh daily research modules
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
+          failed=0
           refresh() {
             local endpoint="$1"
             local response
-            response="$(curl --fail-with-body --silent --show-error --retry 3 --max-time 120 \
+            if ! response="$(curl --fail-with-body --silent --show-error --retry 3 --max-time 120 \
               -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
-              "${RESEARCH_REFRESH_URL%/}${endpoint}")"
-            RESPONSE="$response" node -e "const p=JSON.parse(process.env.RESPONSE); if(!p.ok) process.exit(1); console.log(p.module, p.asOf)"
+              "${RESEARCH_REFRESH_URL%/}${endpoint}")"; then
+              echo "::warning::refresh request failed: ${endpoint}"
+              failed=1
+              return
+            fi
+            if ! RESPONSE="$response" node -e "const p=JSON.parse(process.env.RESPONSE); if(!p.ok) process.exit(1); console.log(p.module, p.asOf)"; then
+              echo "::warning::refresh returned ok:false: ${endpoint}"
+              failed=1
+            fi
           }
           refresh "/api/research-engine?module=intraday&symbol=QQQ&days=20"
           refresh "/api/research-engine?module=intraday&symbol=SPY&days=20"
@@ -78,3 +95,4 @@ jobs:
           for symbol in QQQ SPY NVDA AAPL MSFT AMD TSLA; do
             refresh "/api/research-engine?module=stock&symbol=${symbol}&lookback=1095&horizon=40&timeframe=combined&pivot=5"
           done
+          exit "$failed"
