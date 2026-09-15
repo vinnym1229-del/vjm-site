@@ -1583,11 +1583,33 @@ test('no page or stylesheet loads Google Fonts via a render-blocking @import', (
 
 test('pages fixed to use non-blocking font loading keep both preconnect hints', () => {
   const fixed = ['forex-calendar.html', 'options-lab.html', 'stock-lab.html',
-    'futures-dissection.html', 'psychology-enhancer.html', 'stock-breakdown.html', 'research-engine.html'];
+    'futures-dissection.html', 'psychology-enhancer.html', 'stock-breakdown.html', 'research-engine.html',
+    '404.html', 'premarket.html', 'premium-guidance.html', 'prop-firms.html', 'unsubscribe.html'];
   for (const p of fixed) {
     const html = read(p);
     assert.match(html, /<link rel="preconnect" href="https:\/\/fonts\.googleapis\.com">/, `${p} missing googleapis preconnect`);
     assert.match(html, /<link rel="preconnect" href="https:\/\/fonts\.gstatic\.com" crossorigin>/, `${p} missing gstatic preconnect`);
     assert.match(html, /<link rel="preload"[^>]*fonts\.googleapis\.com[^>]*as="style"[^>]*onload="this\.rel='stylesheet'"/, `${p} missing non-blocking font preload`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// Incident: the @import sweep above only caught fonts pulled in through a CSS
+// `@import`. 404.html, premarket.html, premium-guidance.html, prop-firms.html,
+// and unsubscribe.html loaded the same Google Fonts through a plain
+// synchronous `<link rel="stylesheet">` in <head> instead -- a different but
+// equally render-blocking pattern the @import regex never matches, so it went
+// unnoticed on five real pages (a daily brief, a member tool, and the 404).
+test('no page loads Google Fonts via a plain render-blocking <link rel="stylesheet">', () => {
+  const offenders = [];
+  for (const p of PAGES) {
+    // the <noscript> fallback intentionally carries a plain rel="stylesheet"
+    // link for the no-JS case, where the preload+onload swap can't run.
+    const html = read(p).replace(/<noscript>[\s\S]*?<\/noscript>/g, '');
+    for (const m of html.matchAll(/<link\s+[^>]*fonts\.googleapis\.com[^>]*>/g)) {
+      if (/rel="preload"/.test(m[0])) continue; // the non-blocking pattern
+      if (/rel="stylesheet"/.test(m[0])) offenders.push(p);
+    }
+  }
+  assert.deepEqual(offenders, [], `render-blocking font <link rel="stylesheet"> found in:\n  ${offenders.join('\n  ')}`);
 });
