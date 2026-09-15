@@ -1496,11 +1496,11 @@ test('index.html About section social row includes every footer platform except 
 // initGroupTabs/initLevelTabs, rendered on all four course pages) only ever
 // toggled a private `.active` CSS class -- no role="tablist"/role="tab"/
 // aria-selected -- while every other tab-style control the site ships
-// (research-engine.html's module-nav + assets/research-engine.js's setModule,
-// index.html's period-tabs) already carries that semantics. A screen-reader
-// visitor tabbing through Level 1-4 (or Psychology Enhancer's A-D sections)
-// heard only "button, button, button, button", with no indication of a tab
-// group, count, or which level was currently selected/visible.
+// (research-engine.html's module-nav + assets/research-engine.js's setModule)
+// already carried that semantics. A screen-reader visitor tabbing through
+// Level 1-4 (or Psychology Enhancer's A-D sections) heard only "button,
+// button, button, button", with no indication of a tab group, count, or
+// which level was currently selected/visible.
 const CURRICULUM_TAB_PAGES = ['futures-dissection.html', 'options-lab.html', 'stock-breakdown.html', 'psychology-enhancer.html'];
 test('curriculum level/group tab widgets carry ARIA tab semantics', () => {
   const offenders = [];
@@ -1529,4 +1529,34 @@ test('curriculum.js keeps aria-selected in sync with the .active class it alread
     assert.match(fn, /setAttribute\('aria-selected',\s*String\(active\)\)/,
       `${name} must set aria-selected alongside the .active class it toggles on click`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// Incident: the curriculum tab fix above (and its own test comment) claimed
+// index.html's period-tabs -- the homepage's billing-period switcher, on the
+// direct conversion path -- "already carries" ARIA tab semantics. That was
+// false: the container declared role="tablist" but none of its four buttons
+// carried role="tab", and setBundlePeriod() never set aria-selected, only
+// toggling the .active CSS class. A tablist whose children aren't role="tab"
+// is structurally invalid per WAI-ARIA, so AT behavior was undefined -- worse
+// than shipping no role at all.
+test('index.html billing-period tabs carry ARIA tab semantics', () => {
+  const html = read('index.html');
+  const bar = /<div class="period-tabs"[^>]*>/.exec(html);
+  assert.ok(bar && /role="tablist"/.test(bar[0]), 'period-tabs bar missing role="tablist"');
+  const buttons = [...html.matchAll(/<button class="period-tab( active)?"[^>]*>/g)];
+  assert.ok(buttons.length >= 4, 'expected at least 4 period-tab buttons');
+  for (const btn of buttons) {
+    assert.match(btn[0], /role="tab"/, `period-tab button missing role="tab": ${btn[0]}`);
+    const expected = btn[1] ? 'true' : 'false';
+    assert.ok(btn[0].includes(`aria-selected="${expected}"`),
+      `period-tab button aria-selected should be "${expected}": ${btn[0]}`);
+  }
+});
+
+test('setBundlePeriod keeps aria-selected in sync with the .active class it toggles', () => {
+  const js = read('index.html');
+  const fn = js.slice(js.indexOf('function setBundlePeriod'), js.indexOf('function setBundlePeriod') + 600);
+  assert.match(fn, /setAttribute\('aria-selected',\s*String\(active\)\)/,
+    'setBundlePeriod must set aria-selected alongside the .active class it toggles');
 });

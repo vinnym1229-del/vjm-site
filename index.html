@@ -863,10 +863,10 @@
     </div>
 
     <div class="period-tabs" data-reveal role="tablist" aria-label="Billing period">
-      <button class="period-tab active" data-period="monthly" onclick="setBundlePeriod('monthly')">Monthly</button>
-      <button class="period-tab" data-period="sixmo" onclick="setBundlePeriod('sixmo')">6-Month</button>
-      <button class="period-tab" data-period="yearly" onclick="setBundlePeriod('yearly')">Yearly</button>
-      <button class="period-tab" data-period="lifetime" onclick="setBundlePeriod('lifetime')">Lifetime</button>
+      <button class="period-tab active" data-period="monthly" role="tab" aria-selected="true" onclick="setBundlePeriod('monthly')">Monthly</button>
+      <button class="period-tab" data-period="sixmo" role="tab" aria-selected="false" onclick="setBundlePeriod('sixmo')">6-Month</button>
+      <button class="period-tab" data-period="yearly" role="tab" aria-selected="false" onclick="setBundlePeriod('yearly')">Yearly</button>
+      <button class="period-tab" data-period="lifetime" role="tab" aria-selected="false" onclick="setBundlePeriod('lifetime')">Lifetime</button>
     </div>
 
     <div class="tier-grid" id="tier-grid" data-reveal>
@@ -2304,7 +2304,9 @@ const PERIOD_LABELS = { monthly: 'Monthly', sixmo: '6-Month', yearly: 'Yearly', 
 
 function setBundlePeriod(period) {
   document.querySelectorAll('.period-tab').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.period === period);
+    const active = btn.dataset.period === period;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', String(active));
   });
   Object.keys(BUNDLE_PERIODS).forEach((tier) => {
     const priceEl = document.getElementById('price-' + tier);
