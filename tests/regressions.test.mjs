@@ -1562,6 +1562,63 @@ test('setBundlePeriod keeps aria-selected in sync with the .active class it togg
 });
 
 // ---------------------------------------------------------------------------
+// Incident: stock-lab.html's premium sector-group switcher (#sectorTabs) is
+// the same tab-widget defect class as index.html's period-tabs and the
+// curriculum level/group tabs above -- a `role="tablist"` container whose
+// buttons are structurally invalid without `role="tab"` on each child, so AT
+// behavior is undefined. Unlike those two, #sectorTabs starts empty in the
+// static markup (`<div ... id="sectorTabs" role="tablist" ...></div>`) and
+// is filled entirely by renderTabs() in stock-lab.html's inline script, so a
+// static regex over the shipped HTML can never see the rendered buttons --
+// this has to run the real function. No prior test (including the two
+// tab-ARIA tests above, both markup-only) ever executed renderTabs().
+function extractInlineFunction(source, name) {
+  const marker = `function ${name}(`;
+  const start = source.indexOf(marker);
+  assert.ok(start > -1, `${name} no longer defined in stock-lab.html`);
+  const braceStart = source.indexOf('{', start);
+  let depth = 0;
+  for (let i = braceStart; i < source.length; i++) {
+    if (source[i] === '{') depth++;
+    else if (source[i] === '}') {
+      depth--;
+      if (depth === 0) return source.slice(start, i + 1);
+    }
+  }
+  throw new Error(`unbalanced braces extracting ${name} from stock-lab.html`);
+}
+
+test('stock-lab.html sectorTabs buttons carry ARIA tab semantics', () => {
+  const html = read('stock-lab.html');
+  assert.match(html, /<div class="quick" id="sectorTabs" role="tablist"/,
+    '#sectorTabs container missing role="tablist"');
+
+  const tabIconSrc = extractInlineFunction(html, 'tabIcon');
+  const renderTabsSrc = extractInlineFunction(html, 'renderTabs');
+
+  const out = { innerHTML: '' };
+  const sandbox = {
+    GROUPS: ['Best Rated', 'AI / Semis', 'Speculative'],
+    activeGroup: 'AI / Semis',
+    document: { getElementById: () => out },
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(
+    `const el = (id) => document.getElementById(id);\n${tabIconSrc}\n${renderTabsSrc}\nrenderTabs();`,
+    sandbox
+  );
+
+  const buttons = [...out.innerHTML.matchAll(/<button class="tab( active)?\s*"[^>]*>/g)];
+  assert.equal(buttons.length, 3, 'expected one rendered button per group');
+  for (const btn of buttons) {
+    assert.match(btn[0], /role="tab"/, `sectorTabs button missing role="tab": ${btn[0]}`);
+    const expected = btn[1] ? 'true' : 'false';
+    assert.ok(btn[0].includes(`aria-selected="${expected}"`),
+      `sectorTabs button aria-selected should be "${expected}": ${btn[0]}`);
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Incident: only index.html loaded Google Fonts via preconnect+preload (the
 // non-render-blocking pattern the test above pins). Every other page that
 // used 'Barlow Condensed'/'IBM Plex Sans' -- forex-calendar, options-lab,
