@@ -57,7 +57,7 @@
     if (panel) return;
     panel = el('div', 'vjm-chat-panel');
     panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', 'VJM Market Assistant');
+    panel.setAttribute('aria-label', 'PJ Trades Market Assistant');
 
     const head = el('div', 'vjm-chat-head');
     head.append(el('strong', null, 'Market Assistant'));
