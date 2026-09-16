@@ -3,6 +3,7 @@ import { __test } from '../functions/api/research-engine.js';
 
 const {
   analyseFib,
+  buildIntradayEvents,
   buildLatestLevels,
   buildPriceActionModel,
   classifySweep,
@@ -398,6 +399,92 @@ assert.equal(bullishSummary.medianMinutesToRetest, 10, 'the untested row\'s null
   }
   assert.deepEqual(both.fvgRecords, expectedRecords, 'fvgRecords must equal scanning every timeframe on every included day, in order');
   assert.deepEqual(both.events, expectedEvents, 'events must equal every timeframe\'s FVG events plus the displacement scan, in order');
+}
+
+// buildIntradayEvents is the orchestrator behind module=intraday, the paid
+// Liquidity Sweep Model (PDH/PDL, PWH/PWL, Prior VA, Overnight/Asia/London/
+// Premarket ranges, Overnight BSL/SSL, Opening Range, Initial Balance). It had
+// zero direct test references and wasn't even in __test -- unlike its sibling
+// buildPriceActionModel (pinned 2026-09-01), nothing here had ever actually
+// run against bar data: tests/research-api.test.mjs's only module=intraday
+// path mocks Alpaca bars as permanently empty, so this function's whole loop
+// body never executes anywhere in the suite (node --test
+// --experimental-test-coverage flags lines 387-397, the entire per-day body,
+// as uncovered). Opening Range and Initial Balance are unique to this
+// function -- buildLatestLevels covers every other condition independently --
+// so they're the focus here.
+{
+  function mBar(dateIso, etMinute, h, l) {
+    const utcMinute = etMinute + 300; // January ET = UTC-5, no DST
+    const t = `${dateIso}T${String(Math.floor(utcMinute / 60)).padStart(2, '0')}:${String(utcMinute % 60).padStart(2, '0')}:00.000Z`;
+    const _time = `${String(Math.floor(etMinute / 60)).padStart(2, '0')}:${String(etMinute % 60).padStart(2, '0')}`;
+    return { t, o: (h + l) / 2, h, l, c: (h + l) / 2, v: 1000, _time };
+  }
+
+  // 200 RTH minutes from 09:30 ET. Every bar defaults to a calm 99-101 range
+  // except: minute 5 prints the day's only 105 high and minute 10 the only 95
+  // low -- both inside the first 15 AND first 60 minutes, so Opening Range and
+  // Initial Balance land on the exact same two levels by construction, with
+  // nothing between minute 15 and 60 extending either range. Minute 80 is the
+  // first bar to trade below 95, minute 150 the first to trade above 105 --
+  // both well after the Initial Balance window closes, so both guarded blocks
+  // (line 395's `>15` and line 396's `>60`) get real sweeps to detect, not just
+  // a level with no touch.
+  const overrides = { 5: [105, 99], 10: [101, 95], 80: [101, 90], 150: [110, 99] };
+  const curDate = '2024-01-10';
+  const curDay = [];
+  for (let minute = 0; minute < 200; minute++) {
+    const [h, l] = overrides[minute] || [101, 99];
+    curDay.push(mBar(curDate, 570 + minute, h, l));
+  }
+  const prevDate = '2024-01-09';
+  const prevDay = [mBar(prevDate, 570, 101, 99), mBar(prevDate, 571, 101, 99)];
+
+  const mainMap = new Map([[prevDate, prevDay], [curDate, curDay]]);
+  const mainResult = buildIntradayEvents(mainMap, 1);
+
+  // Same cross-check style as buildPriceActionModel's "union" assertion above:
+  // call the exact building blocks buildIntradayEvents calls internally
+  // (already pinned individually) with the same slice/vwap-offset arguments,
+  // and require the orchestrator's output to match byte-for-byte.
+  const vwap = cumulativeVwap(curDay);
+  const after15 = curDay.slice(15), afterVwap15 = vwap.slice(15);
+  const after60 = curDay.slice(60), afterVwap60 = vwap.slice(60);
+  const expectedOrHigh = classifySweep(after15, 105, 'high', 'Opening Range High', curDate, afterVwap15);
+  const expectedOrLow = classifySweep(after15, 95, 'low', 'Opening Range Low', curDate, afterVwap15);
+  const expectedIbHigh = classifySweep(after60, 105, 'high', 'Initial Balance High', curDate, afterVwap60);
+  const expectedIbLow = classifySweep(after60, 95, 'low', 'Initial Balance Low', curDate, afterVwap60);
+  for (const expected of [expectedOrHigh, expectedOrLow, expectedIbHigh, expectedIbLow]) {
+    assert.ok(expected, `fixture must actually produce a ${expected?.condition} sweep for this check to be meaningful`);
+  }
+  assert.deepEqual(mainResult.find((e) => e.condition === 'Opening Range High'), expectedOrHigh);
+  assert.deepEqual(mainResult.find((e) => e.condition === 'Opening Range Low'), expectedOrLow);
+  assert.deepEqual(mainResult.find((e) => e.condition === 'Initial Balance High'), expectedIbHigh);
+  assert.deepEqual(mainResult.find((e) => e.condition === 'Initial Balance Low'), expectedIbLow);
+
+  // Opening Range and Initial Balance sit on the identical 105/95 levels here
+  // by construction, and the minute-150/80 breakout bars are visible from both
+  // windows -- so beyond matching their own recomputation, the two readings
+  // must describe the very same breakout bar as each other, not just
+  // coincidentally similar ones.
+  const { condition: _orH, ...orHighRest } = expectedOrHigh;
+  const { condition: _ibH, ...ibHighRest } = expectedIbHigh;
+  assert.deepEqual(orHighRest, ibHighRest, 'Opening Range High and Initial Balance High must describe the same breakout when neither range was extended between minute 15 and 60');
+  const { condition: _orL, ...orLowRest } = expectedOrLow;
+  const { condition: _ibL, ...ibLowRest } = expectedIbLow;
+  assert.deepEqual(orLowRest, ibLowRest, 'Opening Range Low and Initial Balance Low must describe the same breakout when neither range was extended between minute 15 and 60');
+
+  // The window (`dates.slice(-limitDays-1)`) needs one extra date beyond
+  // limitDays to supply every included day's own "prev" -- untested until now.
+  // With 4 days and limitDays=2, only the last 3 dates should even be
+  // considered, and only the last 2 (each paired with its own predecessor)
+  // should ever appear in the output.
+  const windowDates = ['2024-02-05', '2024-02-06', '2024-02-07', '2024-02-08'];
+  const windowMap = new Map(windowDates.map((d) => [d, [mBar(d, 570, 101, 99), mBar(d, 571, 101, 99)]]));
+  const windowResult = buildIntradayEvents(windowMap, 2);
+  assert.ok(windowResult.length > 0, 'the trivial PDH sweep must actually fire for this check to be meaningful');
+  assert.ok(windowResult.some((e) => e.date === windowDates[2]) && windowResult.some((e) => e.date === windowDates[3]), 'both dates inside the window must be processed, not just the most recent');
+  assert.ok(windowResult.every((e) => e.date === windowDates[2] || e.date === windowDates[3]), 'limitDays=2 must exclude the two oldest dates entirely');
 }
 
 // buildLatestLevels drives the premium dashboard's "Latest Levels" panel --
