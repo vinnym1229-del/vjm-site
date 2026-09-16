@@ -6,7 +6,7 @@ import {
   timingSafeEqual, resolveSigningSecret, signSession, verifySessionToken,
   buildSessionCookie, buildClearCookie, readSessionCookie, getSession, sessionDays,
   verifySessionCookie, entitlementRowState, sessionEntitlementCheck,
-  memberRefFromCodeHash, LIVE_ENTITLEMENT_STATUSES,
+  memberRefFromCodeHash, LIVE_ENTITLEMENT_STATUSES, base64UrlEncodeBytes,
 } from '../functions/api/_lib/session.js';
 
 const SECRET = 'x'.repeat(48);
@@ -42,6 +42,30 @@ test('garbage tokens are rejected without throwing', async () => {
   assert.equal(await verifySessionToken('abc', SECRET), null);
   assert.equal(await verifySessionToken('a.b.c', SECRET), null);
   assert.equal(await verifySessionToken(null, SECRET), null);
+});
+
+// A validly-signed token still has to survive decoding its own payload.
+// signSession always JSON.stringifies its input, so it can never produce a
+// non-JSON body itself — this can only arise from a signing-secret leak (an
+// attacker who has the secret but chooses an odd payload) or a signing
+// scheme change under an old secret. Either way, the JSON.parse try/catch
+// is the only thing standing between that body and an uncaught exception
+// two callers up (getSession -> every gated page). Signed by hand here, the
+// same HMAC-SHA256-over-base64url scheme session.js's own (unexported)
+// hmac() uses, since signSession can't produce a non-JSON body.
+async function signRawBody(body, secret) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(body));
+  return body + '.' + base64UrlEncodeBytes(new Uint8Array(sig));
+}
+
+test('a validly-signed token whose payload is not JSON fails closed, not throws', async () => {
+  const body = base64UrlEncodeBytes(new TextEncoder().encode('not-json{'));
+  const token = await signRawBody(body, SECRET);
+  assert.equal(await verifySessionToken(token, SECRET), null);
 });
 
 test('timingSafeEqual accepts equal / rejects unequal incl. length mismatch', () => {
