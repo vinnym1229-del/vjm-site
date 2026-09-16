@@ -273,6 +273,148 @@ test('quiz routing maps answers to the track they imply', () => {
   assert.equal(gambler.overridden, true);
 });
 
+// ─────────────────────────────────────────────────────────────────────────
+// Declarative auto-binding: handleClick/bindViews/closestWith/propsFrom/
+// isWhopLink. This is the mechanism that actually fires plan_cta, lock_view
+// and whop_checkout on every page that carries data-vjm-* markup (and the
+// only way a CMS-rendered CTA gets counted at all), but nothing above this
+// point ever dispatches a click or an intersection through it — every prior
+// test drives window.vjmTrack directly. A regression in the ancestor walk,
+// the whop-link detector, or the anti-double-count guard on a link that is
+// both tagged and outbound would ship with the whole suite green.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** A DOM node stub with just enough shape for closestWith's parentNode walk. */
+function fakeEl(tagName, attrs = {}, parent = null) {
+  return {
+    tagName,
+    nodeType: 1,
+    parentNode: parent,
+    getAttribute(name) { return Object.prototype.hasOwnProperty.call(attrs, name) ? attrs[name] : null; },
+    setAttribute(name, value) { attrs[name] = String(value); },
+  };
+}
+
+/** Same sandbox as load(), plus a delegated-click listener capture and an
+ *  optional fake IntersectionObserver so bindViews can be driven directly. */
+function loadWithDom({ viewEls = [], withObserver = false } = {}) {
+  const listeners = {};
+  const ioInstances = [];
+  class FakeIntersectionObserver {
+    constructor(cb) { this.cb = cb; this.observed = []; ioInstances.push(this); }
+    observe(el) { this.observed.push(el); }
+    unobserve(el) { this.observed = this.observed.filter((e) => e !== el); }
+  }
+  const sandbox = {
+    console: { log() {}, warn() {} },
+    document: {
+      readyState: 'complete',
+      addEventListener(type, fn) { (listeners[type] ||= []).push(fn); },
+      querySelectorAll(sel) { return sel === '[data-vjm-view]' ? viewEls : []; },
+    },
+    location: { search: '', pathname: '/' },
+    sessionStorage: { getItem: () => null, setItem() {} },
+  };
+  sandbox.window = sandbox;
+  if (withObserver) sandbox.IntersectionObserver = FakeIntersectionObserver;
+  vm.createContext(sandbox);
+  vm.runInContext(funnelSrc, sandbox);
+  return { win: sandbox, listeners, ioInstances };
+}
+
+test('bindAuto installs exactly one delegated click listener', () => {
+  const { listeners } = loadWithDom();
+  assert.equal(listeners.click && listeners.click.length, 1);
+});
+
+test('clicking a data-vjm-event element fires that stage with its convenience props', () => {
+  const { win, listeners } = loadWithDom();
+  const seen = [];
+  win.vjmFunnel.setSink((name, props) => seen.push([name, props]));
+  const btn = fakeEl('BUTTON', { 'data-vjm-event': 'plan_cta', 'data-vjm-plan': 'complete' });
+  listeners.click[0]({ target: btn });
+  assert.deepEqual(plain(seen), [['plan_cta', { plan: 'complete' }]]);
+});
+
+test('a click on a descendant of a tagged element still finds the tag via the ancestor walk', () => {
+  const { win, listeners } = loadWithDom();
+  const seen = [];
+  win.vjmFunnel.setSink((name) => seen.push(name));
+  const btn = fakeEl('BUTTON', { 'data-vjm-event': 'plan_cta' });
+  const icon = fakeEl('svg', {}, btn); // e.g. an icon rendered inside the CTA
+  listeners.click[0]({ target: icon });
+  assert.deepEqual(plain(seen), ['plan_cta']);
+});
+
+test('malformed data-vjm-props JSON does not break the click; convenience attrs still apply', () => {
+  const { win, listeners } = loadWithDom();
+  const seen = [];
+  win.vjmFunnel.setSink((name, props) => seen.push(props));
+  const btn = fakeEl('BUTTON', { 'data-vjm-event': 'plan_cta', 'data-vjm-props': '{not json', 'data-vjm-tier': 'complete' });
+  assert.doesNotThrow(() => listeners.click[0]({ target: btn }));
+  assert.deepEqual(plain(seen), [{ tier: 'complete' }]);
+});
+
+test('clicking an outbound whop.com link auto-fires whop_checkout with no markup needed', () => {
+  const { win, listeners } = loadWithDom();
+  const seen = [];
+  win.vjmFunnel.setSink((name, props) => seen.push([name, props]));
+  const link = fakeEl('A', { href: 'https://whop.com/checkout/abc', 'data-vjm-plan': 'complete' });
+  listeners.click[0]({ target: link });
+  assert.deepEqual(plain(seen), [['whop_checkout', { plan: 'complete', href: 'https://whop.com/checkout/abc' }]]);
+});
+
+// This guard (funnel.js: `if (!tagged || tagged.getAttribute('data-vjm-event')
+// !== STAGES.WHOP_CHECKOUT)`) exists specifically so a link that is BOTH
+// explicitly tagged whop_checkout AND caught by the outbound-host detector
+// only ever reports once. Without it, the sitewide checkout conversion count
+// would be inflated by exactly one for every anchor that carries the tag.
+test('a link explicitly tagged whop_checkout is not double-counted by the outbound-link detector', () => {
+  const { win, listeners } = loadWithDom();
+  const seen = [];
+  win.vjmFunnel.setSink((name) => seen.push(name));
+  const link = fakeEl('A', {
+    href: 'https://whop.com/checkout/abc',
+    'data-vjm-event': 'whop_checkout',
+    'data-vjm-plan': 'complete',
+  });
+  listeners.click[0]({ target: link });
+  assert.deepEqual(plain(seen), ['whop_checkout'], 'exactly one event, not two, for a tagged outbound link');
+});
+
+test('data-vjm-view elements fire once on intersection, then unobserve themselves', () => {
+  const target = fakeEl('DIV', { 'data-vjm-view': 'lock_view', 'data-vjm-course': 'options-lab' });
+  const { win, ioInstances } = loadWithDom({ viewEls: [target], withObserver: true });
+  assert.equal(ioInstances.length, 1, 'bindViews must construct one observer');
+  assert.deepEqual(ioInstances[0].observed, [target]);
+
+  const seen = [];
+  win.vjmFunnel.setSink((name, props) => seen.push([name, props]));
+  ioInstances[0].cb([{ target, isIntersecting: true }]);
+  assert.deepEqual(plain(seen), [['lock_view', { course: 'options-lab' }]]);
+  assert.deepEqual(ioInstances[0].observed, [], 'must unobserve once counted, so it stops watching');
+
+  // Scrolling the same element back into view (re-triggering the observer)
+  // must not count it a second time.
+  ioInstances[0].cb([{ target, isIntersecting: true }]);
+  assert.equal(seen.length, 1, 'an already-seen element must not track twice');
+});
+
+test('an intersection entry that is not yet intersecting is ignored', () => {
+  const target = fakeEl('DIV', { 'data-vjm-view': 'lock_view' });
+  const { win, ioInstances } = loadWithDom({ viewEls: [target], withObserver: true });
+  win.vjmFunnel.setSink(() => assert.fail('must not track before the element actually intersects'));
+  ioInstances[0].cb([{ target, isIntersecting: false }]);
+});
+
+test('without IntersectionObserver support, data-vjm-view elements count as seen immediately rather than losing the stage', () => {
+  const target = fakeEl('DIV', { 'data-vjm-view': 'quiz_start' });
+  const { win } = loadWithDom({ viewEls: [target], withObserver: false });
+  const names = win.vjmFunnel.events().map((e) => e.name);
+  assert.deepEqual(plain(names), ['quiz_start']);
+  assert.equal(target.getAttribute('data-vjm-seen'), '1');
+});
+
 test('the homepage lead capture cannot claim a signup that did not happen', () => {
   assert.match(index, /function renderQuizLead/);
   // With no collector configured no form is rendered at all.
