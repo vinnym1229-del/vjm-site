@@ -562,7 +562,7 @@ function loadResearchEngineClient() {
   vm.createContext(sandbox);
   vm.runInContext(clientJs, sandbox, { filename: 'research-engine.sandboxed.js' });
   getElementById('engine').classList.contains = () => true; // simulate an unlocked, entitled session
-  return { internal: sandbox.window.__researchEngineInternals, fetchLog };
+  return { internal: sandbox.window.__researchEngineInternals, fetchLog, getElementById };
 }
 
 {
@@ -585,6 +585,37 @@ function loadResearchEngineClient() {
   assert.equal(internal.state.loadingModules.has('stocks'), false, 'a settled fetch must clear its own module from the in-flight set');
 }
 
+// ---------------------------------------------------------------------------
+// Options module "Complete model outcome matrix" table: the Median MAE cell
+// used to pass classify(value, inverse=true) -- classify()'s only other
+// caller (thresholdClass(ifvgRate, .5, true), the FVG table) uses inverse to
+// mean "this is a 0..1 RATE where LOW is favorable". medianMae is not a rate,
+// it is a signed excursion where negative already means "adverse", so
+// inverse=true flipped the sign check instead: ANY real drawdown (medianMae
+// < 0, the normal case) rendered "good" (green) no matter how deep, while a
+// flat/no-drawdown reading (medianMae === 0, the best case) rendered "warn".
+// A member reading this table could not tell a -2% median adverse excursion
+// from a -60% one -- both were green -- and the safest reading in the table
+// looked worse than the dangerous one. Fixed by dropping the inverse flag so
+// medianMae classifies the same plain way as medianMfe right next to it.
+// ---------------------------------------------------------------------------
+{
+  const { internal, getElementById } = loadResearchEngineClient();
+  const row = (condition, medianMae) => ({
+    condition, n: 10, continuationRate: .6, reversalRate: .4, vwapHitRate: .5,
+    medianMinutesToVwap: 5, medianMfe: .02, medianMae, rewardRisk: 1.2,
+  });
+  internal.renderConditions([row('severe drawdown', -0.30), row('no drawdown', 0)]);
+  const html = getElementById('optionsConditionBody').innerHTML;
+  const maeCellClass = (condition) => {
+    const rowHtml = html.slice(html.indexOf(`>${condition}<`));
+    const cells = [...rowHtml.matchAll(/class="num( [a-z]+)?"/g)];
+    return cells[6][1] ? cells[6][1].trim() : ''; // 7th <td class="num ..."> is Median MAE
+  };
+  assert.equal(maeCellClass('severe drawdown'), 'bad', 'a real adverse excursion must not classify as good');
+  assert.equal(maeCellClass('no drawdown'), 'warn', 'zero adverse excursion must not classify worse (or equal) to an actual drawdown');
+  assert.notEqual(maeCellClass('severe drawdown'), 'good', 'the deepest drawdown in the table must never be the "good" cell');
+}
 
 // ---------------------------------------------------------------------------
 // LOOK-AHEAD: grouped (5m/15m/60m) bars carry a completed candle's values but

@@ -314,7 +314,19 @@
   function renderConditions(rows) {
     const body = $('optionsConditionBody');
     if (!rows.length) { body.innerHTML = '<tr><td colspan="9">No qualified events were found in the selected sample.</td></tr>'; return; }
-    body.innerHTML = rows.map((r) => `<tr><td>${esc(r.condition)}</td><td class="num">${num(r.n)}</td><td class="num ${thresholdClass(r.continuationRate)}">${pct(r.continuationRate)}</td><td class="num ${thresholdClass(r.reversalRate)}">${pct(r.reversalRate)}</td><td class="num ${thresholdClass(r.vwapHitRate)}">${pct(r.vwapHitRate)}</td><td class="num">${numeric(r.medianMinutesToVwap) === null ? '—' : num(r.medianMinutesToVwap)+' min'}</td><td class="num ${classify(r.medianMfe)}">${pct(r.medianMfe)}</td><td class="num ${classify(r.medianMae,true)}">${pct(r.medianMae)}</td><td class="num">${numeric(r.rewardRisk) === null ? '—' : num(r.rewardRisk,2)+'R'}</td></tr>`).join('');
+    // Median MAE must NOT pass inverse=true here: classify()'s "inverse" flag
+    // means "low is favorable" (its only other caller, the FVG table's
+    // ifvgRate, is a 0..1 rate where a lower value is better) -- it flips
+    // which SIDE of zero counts as good, it does not scale with how severe
+    // the excursion is. MAE is already signed (adverse excursion = negative),
+    // so it takes the SAME plain classify() as the medianMfe cell right next
+    // to it: negative -> bad, zero -> warn (neutral, same treatment mfe's own
+    // zero case gets), positive -> good. With inverse=true this cell used to
+    // mark EVERY real drawdown "good" (green) regardless of depth and the
+    // zero-drawdown case "warn" -- a -60% median adverse excursion and a 0%
+    // one rendered identically, and the safer reading looked worse than the
+    // dangerous one.
+    body.innerHTML = rows.map((r) => `<tr><td>${esc(r.condition)}</td><td class="num">${num(r.n)}</td><td class="num ${thresholdClass(r.continuationRate)}">${pct(r.continuationRate)}</td><td class="num ${thresholdClass(r.reversalRate)}">${pct(r.reversalRate)}</td><td class="num ${thresholdClass(r.vwapHitRate)}">${pct(r.vwapHitRate)}</td><td class="num">${numeric(r.medianMinutesToVwap) === null ? '—' : num(r.medianMinutesToVwap)+' min'}</td><td class="num ${classify(r.medianMfe)}">${pct(r.medianMfe)}</td><td class="num ${classify(r.medianMae)}">${pct(r.medianMae)}</td><td class="num">${numeric(r.rewardRisk) === null ? '—' : num(r.rewardRisk,2)+'R'}</td></tr>`).join('');
   }
   function renderTiming(rows) {
     const root = $('timingHeatmap');
@@ -511,9 +523,12 @@
     restore(true);
   }
   // Test seam: the per-module loading-state bookkeeping is unit-tested from
-  // node (tests/research-engine.test.mjs) without a browser.
+  // node (tests/research-engine.test.mjs) without a browser. renderConditions
+  // and classify are exposed the same way so the Options module's colour
+  // coding (medianMfe/medianMae) can be driven with real rows instead of only
+  // grepped for -- that gap is what let the medianMae inverse-flag bug ship.
   if (typeof window !== 'undefined') {
-    window.__researchEngineInternals = { state, setModule, loadCurrent, loadOptions, loadStock, loadSectors, loadBiotech };
+    window.__researchEngineInternals = { state, setModule, loadCurrent, loadOptions, loadStock, loadSectors, loadBiotech, renderConditions, classify };
   }
 
   document.addEventListener('DOMContentLoaded',wire);
