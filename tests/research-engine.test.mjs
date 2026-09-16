@@ -257,6 +257,19 @@ assert.equal(detectContinuationModel([
   bar('2026-08-20T13:31:00Z', 100, 100.1, 99.9, 100),
   bar('2026-08-20T13:32:00Z', 100, 100.1, 99.9, 100),
 ], 0, 'high'), false, 'flat bars that never gap must fall through every candidate and report no continuation model');
+// A genuine FVG that IS retested but whose post-retest price never breaks
+// the pre-retest extreme is a distinct false path from the one above (which
+// never even finds a qualifying gap): here the outer scan must exhaust every
+// candidate zone and still report no continuation model, rather than the
+// break-detection loop mistaking "reached the end of its window" for a break.
+assert.equal(detectContinuationModel([
+  bar('2026-08-20T13:30:00Z', 99.9, 100, 99.8, 99.95),
+  bar('2026-08-20T13:31:00Z', 100, 100.15, 99.95, 100.1),
+  bar('2026-08-20T13:32:00Z', 100.2, 100.5, 100.2, 100.45), // gap: l(100.2) > bar0's h(100)
+  bar('2026-08-20T13:33:00Z', 100.1, 100.15, 100.05, 100.1), // retests the zone [100, 100.2]
+  bar('2026-08-20T13:34:00Z', 100.1, 100.3, 100.0, 100.2), // stays under the 100.5 extreme
+  bar('2026-08-20T13:35:00Z', 100.1, 100.2, 100.0, 100.1),
+], 0, 'high'), false, 'a retested gap that never breaks its pre-retest extreme must still report no continuation model');
 
 const summarized = summarizeConditions([
   { condition: 'PDH', continuation: true, reversal: false, continuationModel: true, mfe: 0.01, mae: -0.002 },
