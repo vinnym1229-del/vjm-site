@@ -2203,14 +2203,22 @@ function setGainMode(mode) {
 }
 
 function runGrowthSim() {
-  const start = parseFloat(document.getElementById('sim-start').value) || 1200;
-  const days = parseInt(document.getElementById('sim-days').value) || 20;
+  // parseFloat(...) || default would silently replace an explicitly typed 0
+  // (falsy) with the hardcoded default — isFinite keeps 0 as 0 and only
+  // falls back on a genuinely empty/invalid field.
+  const numOr = (id, fallback) => {
+    const v = parseFloat(document.getElementById(id).value);
+    return isFinite(v) ? v : fallback;
+  };
+  const start = numOr('sim-start', 1200);
+  const daysRaw = numOr('sim-days', 20);
+  const days = Math.trunc(daysRaw);
   let balance = start;
   if (gainMode === 'dollar') {
-    const daily = parseFloat(document.getElementById('sim-daily-dollar').value) || 200;
+    const daily = numOr('sim-daily-dollar', 200);
     balance = start + (daily * days);
   } else {
-    const pct = parseFloat(document.getElementById('sim-daily-pct').value) || 1;
+    const pct = numOr('sim-daily-pct', 1);
     for (let i = 0; i < days; i++) { balance *= (1 + pct / 100); }
   }
   const gain = balance - start;

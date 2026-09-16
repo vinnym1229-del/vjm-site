@@ -443,6 +443,37 @@ test('prop payout projector reads its own Starting Balance field, not just targe
     'changing Starting Balance must change the projected balance');
 });
 
+test('growth simulator respects an explicitly typed 0, does not silently substitute its default', () => {
+  // runGrowthSim() used `parseFloat(...) || default` for every field. In JS,
+  // 0 is falsy, so typing 0 into Daily Gain ($) or Daily Gain (%) silently
+  // fell back to the hardcoded default (200 / 1) instead of the 0 the visitor
+  // typed — the card's own copy promises "arithmetic on the numbers you
+  // type," so this fabricated growth nobody asked to model. Extract the live
+  // function so a future `||` reintroduction fails this test instead of
+  // shipping a lying calculator.
+  const fnSrc = index.match(/function runGrowthSim\(\) \{[\s\S]*?\n\}\n/)[0];
+  const els = {};
+  const el = (id) => (els[id] ||= { value: '0', textContent: '', style: {} });
+  const sandbox = { document: { getElementById: el }, gainMode: 'dollar' };
+  vm.createContext(sandbox);
+  vm.runInContext(fnSrc + '\nthis.runGrowthSim = runGrowthSim;', sandbox);
+
+  el('sim-start').value = '1200';
+  el('sim-days').value = '20';
+  el('sim-daily-dollar').value = '0';
+  sandbox.runGrowthSim();
+  assert.equal(els['sim-gain-val'].textContent, '+$0 (+0%)', 'typed 0 daily gain must show $0 growth, not the default');
+
+  el('sim-daily-dollar').value = '';
+  sandbox.runGrowthSim();
+  assert.equal(els['sim-gain-val'].textContent, '+$4,000 (+333%)', 'an empty field still falls back to the $200/day default');
+
+  sandbox.gainMode = 'pct';
+  el('sim-daily-pct').value = '0';
+  sandbox.runGrowthSim();
+  assert.equal(els['sim-gain-val'].textContent, '+$0 (+0%)', 'typed 0% daily gain must show $0 growth, not the 1% default');
+});
+
 test('session clock lives in the schedule section', () => {
   assert.match(index, /id="session-clock"/);
   assert.match(index, /tickSessionClock/);
