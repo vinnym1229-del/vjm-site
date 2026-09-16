@@ -13,8 +13,13 @@
 // index 10+ must still reach Discord — capping candidates instead of posts
 // would silently drop them forever. Also pins the auth gate (cron secret,
 // constant-time compare via timingSafeEqual), the config-missing 503s, a
-// bridge-unreachable 502, and that a malformed row is skipped rather than
-// upserted.
+// bridge-unreachable 502, that a malformed row is skipped rather than
+// upserted, the endpoint's own 20/min rate-limit guard (this file's own
+// header comment: "without a limit the shared secret is brute-forceable" --
+// every sibling secret-gated/public endpoint already has this exact test,
+// this one didn't), and that a Discord post failure doesn't get recorded as
+// posted, so a transient webhook outage is retried next sync instead of the
+// announcement being silently dropped forever.
 import assert from 'node:assert/strict';
 import { onRequestPost } from '../functions/api/content-sync.js';
 
@@ -208,8 +213,59 @@ try {
     assert.equal(data.discord.posted, 0);
     assert.equal(data.discord.dryRun, true);
   }
+
+  // A Discord post failure (non-204, e.g. rate-limited) must NOT be recorded
+  // in webhook_events -- postEmbed's own contract (discord-lib.test.mjs)
+  // returns false on anything but 204, and this handler only marks an
+  // announcement posted (and counts it toward the 10-per-sync cap) inside
+  // `if (ok)`. If a failed post were still recorded, the announcement would
+  // be silently dropped forever instead of retried on the next hourly sync.
+  {
+    const db = makeDb();
+    globalThis.fetch = async (url) => {
+      const href = String(url);
+      if (href === BRIDGE_URL) return Response.json({ ok: true, content: { announcements: [announcement('flaky-1')] } });
+      if (href.startsWith('https://discord.com/api/webhooks/')) return new Response(null, { status: 429 });
+      throw new Error('unexpected fetch target: ' + href);
+    };
+    const env = { ...baseEnv(db), DISCORD_ANNOUNCEMENTS_WEBHOOK: DISCORD_HOOK, CONTENT_DISCORD_DRYRUN: 'false' };
+    const { data } = await postSync(env);
+    assert.equal(data.discord.posted, 0, 'a failed post must not count toward the posted total');
+    assert.ok(!db.postedAnnouncementIds.has('flaky-1'), 'a failed post must not be recorded as delivered, so it is retried next sync');
+  }
 } finally {
   globalThis.fetch = originalFetch;
+}
+
+// The 20/min rate-limit guard is the first thing onRequestPost does -- ahead
+// of even the cron-secret check -- so it must trip regardless of whether the
+// caller is authorized. This file's own header comment names the limit as
+// the thing standing between the shared cron secret and a brute-force
+// guesser; every sibling secret-gated endpoint (research-engine's cron path,
+// verify-premium, analytics) already pins this exact guarantee and this file
+// didn't.
+{
+  const ip = '10.2.9.1';
+  const headers = { 'X-Research-Cron': CRON_SECRET, 'CF-Connecting-IP': ip };
+  // No CONTENT_BRIDGE_URL/SECRET configured, so every allowed request 503s
+  // deterministically without ever touching the network -- the point here is
+  // only whether the 21st request in a minute gets through the rate gate.
+  const env = { RESEARCH_CRON_SECRET: CRON_SECRET, RESEARCH_DB: makeDb() };
+  let last;
+  for (let i = 0; i < 20; i++) {
+    last = await onRequestPost({
+      request: new Request('https://example.com/api/content-sync', { method: 'POST', headers }),
+      env,
+    });
+  }
+  assert.equal(last.status, 503, 'sanity: the 20th request still reaches the CONTENT_BRIDGE_URL config check');
+  const limited = await onRequestPost({
+    request: new Request('https://example.com/api/content-sync', { method: 'POST', headers }),
+    env,
+  });
+  assert.equal(limited.status, 429);
+  const limitedData = await limited.json();
+  assert.equal(limitedData.ok, false);
 }
 
 console.log('# VJM content-sync API tests passed.');
