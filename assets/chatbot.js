@@ -242,6 +242,8 @@
   function toggle(open) {
     ensurePanel();
     panel.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', String(open));
+    btn.setAttribute('aria-label', open ? 'Close market assistant' : 'Open market assistant');
     if (open) {
       input.focus();
     } else {
@@ -254,6 +256,7 @@
     btn.type = 'button';
     btn.innerHTML = '<span aria-hidden="true">💬</span>';
     btn.setAttribute('aria-label', 'Open market assistant');
+    btn.setAttribute('aria-expanded', 'false');
     btn.addEventListener('click', () => toggle(!panel || !panel.classList.contains('open')));
     document.body.append(btn);
 

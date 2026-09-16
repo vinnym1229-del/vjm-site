@@ -161,3 +161,29 @@ test('assistant widget: Escape still returns focus to the FAB (no regression, no
   assert.equal(panel.classList.contains('open'), false, 'Escape did not close the panel');
   assert.equal(stub.focused, stub.findByClass('vjm-chat-fab')[0], 'Escape must still return focus to the FAB');
 });
+
+// The hamburger and mega-nav toggle buttons elsewhere on the site both flip
+// aria-expanded when their panel opens/closes (index.html's toggleMobileMenu
+// and the nav-top dropdown handlers). The chat FAB is the same pattern — a
+// floating button that toggles visibility of a panel — but never adopted the
+// convention: its aria-label was fixed at "Open market assistant" forever,
+// including while the panel was already open, and it carried no
+// aria-expanded at all. A screen reader/voice-control user got no signal the
+// panel was expanded, and the announced name misdescribed what activating
+// the control would do.
+test('assistant widget: FAB exposes aria-expanded and swaps its label as the panel opens/closes', () => {
+  const stub = makeDomStub();
+  run(stub);
+
+  const fab = stub.findByClass('vjm-chat-fab')[0];
+  assert.equal(fab.getAttribute('aria-expanded'), 'false', 'FAB must start collapsed');
+  assert.equal(fab.getAttribute('aria-label'), 'Open market assistant');
+
+  fab.listeners.click[0]();
+  assert.equal(fab.getAttribute('aria-expanded'), 'true', 'FAB must report expanded once the panel opens');
+  assert.equal(fab.getAttribute('aria-label'), 'Close market assistant');
+
+  fab.listeners.click[0]();
+  assert.equal(fab.getAttribute('aria-expanded'), 'false', 'FAB must report collapsed again once the panel closes');
+  assert.equal(fab.getAttribute('aria-label'), 'Open market assistant');
+});
