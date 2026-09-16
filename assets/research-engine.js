@@ -378,7 +378,7 @@
     setKpi('stockSetups', num(s.setups)); setKpi('stockBestFib', s.bestFib || 'Insufficient N');
     const breakdown = d.timeframeBreakdown || [];
     const rows = breakdown.length ? breakdown.flatMap((group) => (group.stats || []).map((row) => ({...row,timeframe:group.timeframe}))) : (d.fibStats || []).map((row) => ({...row,timeframe:''}));
-    $('fibBody').innerHTML = rows.length ? rows.map((r) => `<tr><td>${r.timeframe ? `<span class="mono">${esc(r.timeframe)}</span> · ` : ''}${pct(r.level,1)}</td><td class="num">${num(r.touches)}</td><td class="num ${r.touches >= 5 ? classify((r.fillRate ?? 0)-.5) : 'warn'}">${pct(r.fillRate)}</td><td class="num ${r.touches >= 5 ? classify((r.newHighRate ?? 0)-.5) : 'warn'}">${pct(r.newHighRate)}</td><td class="num">${num(r.medianDays,1)}</td><td class="num good">${pct(r.medianMfe)}</td><td class="num bad">${pct(r.medianMae)}</td></tr>`).join('') : '<tr><td colspan="7">No qualified swing events were found.</td></tr>';
+    $('fibBody').innerHTML = rows.length ? rows.map((r) => `<tr><td>${r.timeframe ? `<span class="mono">${esc(r.timeframe)}</span> · ` : ''}${pct(r.level,1)}</td><td class="num">${num(r.touches)}</td><td class="num ${r.touches >= 5 ? classify((r.fillRate ?? 0)-.5) : 'warn'}">${pct(r.fillRate)}</td><td class="num ${r.touches >= 5 ? classify((r.newHighRate ?? 0)-.5) : 'warn'}">${pct(r.newHighRate)}</td><td class="num">${num(r.medianDays,1)}</td><td class="num ${classify(r.medianMfe)}">${pct(r.medianMfe)}</td><td class="num ${classify(r.medianMae)}">${pct(r.medianMae)}</td></tr>`).join('') : '<tr><td colspan="7">No qualified swing events were found.</td></tr>';
     renderGroupedBar($('fibChart'), rows.map((r) => ({label:(r.level*100).toFixed(1)+'%',fill:r.fillRate,newHigh:r.newHighRate})), {series:[['fill','Fill rate',COLORS.green],['newHigh','New-high rate',COLORS.red]]});
     const w = d.latestSwing;
     $('swingBody').innerHTML = w ? `<tr><td>${esc(w.lowDate)}</td><td class="num">${money(w.low)}</td><td>${esc(w.highDate)}</td><td class="num">${money(w.high)}</td><td class="num">${money(w.levels?.['0.382'])}</td><td class="num">${money(w.levels?.['0.5'])}</td><td class="num">${money(w.levels?.['0.618'])}</td><td>${esc(w.status || 'Observed')}</td></tr>` : '<tr><td colspan="8">No current swing could be resolved from the selected sample.</td></tr>';
@@ -523,12 +523,14 @@
     restore(true);
   }
   // Test seam: the per-module loading-state bookkeeping is unit-tested from
-  // node (tests/research-engine.test.mjs) without a browser. renderConditions
-  // and classify are exposed the same way so the Options module's colour
-  // coding (medianMfe/medianMae) can be driven with real rows instead of only
-  // grepped for -- that gap is what let the medianMae inverse-flag bug ship.
+  // node (tests/research-engine.test.mjs) without a browser. renderConditions,
+  // renderStock and classify are exposed the same way so the Options and
+  // Stock modules' colour coding (medianMfe/medianMae) can be driven with
+  // real rows instead of only grepped for -- that gap is what let the
+  // medianMae inverse-flag bug (renderConditions) and the hardcoded
+  // good/bad classes (renderStock's fib table) both ship.
   if (typeof window !== 'undefined') {
-    window.__researchEngineInternals = { state, setModule, loadCurrent, loadOptions, loadStock, loadSectors, loadBiotech, renderConditions, classify };
+    window.__researchEngineInternals = { state, setModule, loadCurrent, loadOptions, loadStock, loadSectors, loadBiotech, renderConditions, renderStock, classify };
   }
 
   document.addEventListener('DOMContentLoaded',wire);

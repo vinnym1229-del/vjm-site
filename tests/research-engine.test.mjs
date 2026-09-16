@@ -618,6 +618,37 @@ function loadResearchEngineClient() {
 }
 
 // ---------------------------------------------------------------------------
+// Stock module "Fib outcome matrix" table (fibBody): the Median MFE and
+// Median MAE cells were hardcoded to class="num good" / class="num bad"
+// respectively, instead of being classified by value like their exact
+// analogues two doors down in the Options module's renderConditions() (the
+// medianMae inverse-flag bug fixed above). analyseFib()'s outcome window
+// (functions/api/research-engine.js) opens on the bar AFTER the touch and is
+// not bounded to be non-negative, so a fib level that fails and never
+// recovers produces a NEGATIVE medianMfe -- that row rendered bright green
+// (hardcoded "good"), indistinguishable from a genuinely favorable level,
+// while every other level's Median MAE rendered red regardless of how mild.
+// Fixed by classifying both cells with the same plain classify() the Options
+// table already uses for its own medianMfe/medianMae pair.
+// ---------------------------------------------------------------------------
+{
+  const { internal, getElementById } = loadResearchEngineClient();
+  const row = (medianMfe, medianMae) => ({
+    level: .382, touches: 6, fillRate: .5, newHighRate: .3, medianDays: 4, medianMfe, medianMae,
+  });
+  // renderStock() fully replaces fibBody's innerHTML each call, so a single-row
+  // render per case needs no anchor text to disambiguate rows.
+  const numClass = (fibStats, cellIndex) => {
+    internal.renderStock({ data: { fibStats: [row(...fibStats)] } });
+    const cells = [...getElementById('fibBody').innerHTML.matchAll(/class="num( [a-z]+)?"/g)];
+    return cells[cellIndex][1] ? cells[cellIndex][1].trim() : ''; // 5th class="num ..." is Median MFE, 6th is Median MAE
+  };
+  assert.equal(numClass([-.185, -.02], 4), 'bad', 'a fib level that never bounced back (negative medianMfe) must not render as good');
+  assert.equal(numClass([.02, .01], 4), 'good', 'a genuinely favorable medianMfe must still render as good');
+  assert.equal(numClass([-.185, -.02], 5), 'bad', 'a real adverse excursion must not render as good');
+}
+
+// ---------------------------------------------------------------------------
 // LOOK-AHEAD: grouped (5m/15m/60m) bars carry a completed candle's values but
 // are timestamped at the group's OPEN.
 //
