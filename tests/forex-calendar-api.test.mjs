@@ -153,6 +153,41 @@ try {
   }
 }
 
+// normalizeEvent/impactClass sanitize whatever ForexFactory's public feed
+// sends -- a third party this site doesn't control. Every prior test fixture
+// only ever sent well-formed rows with a recognized impact string, so the
+// guards against a malformed or unrecognized row had never actually run,
+// even though the feed can plausibly send a row missing a title/date (a
+// blank placeholder slot) or an impact label outside High/Medium/Low (e.g.
+// "Holiday", "Tentative").
+{
+  const originalFetch6 = globalThis.fetch;
+  const originalCaches6 = globalThis.caches;
+  const MALFORMED_FIXTURE = [
+    { title: 'CPI m/m', country: 'USD', date: '2026-09-01T12:30:00Z', impact: 'High' },
+    { title: 'No Date Event', country: 'USD', impact: 'High' },
+    { country: 'USD', date: '2026-09-02T12:30:00Z', impact: 'High' },
+    { title: 'Bad Date', country: 'USD', date: 'not-a-date', impact: 'High' },
+    { title: 'Holiday Notice', country: 'USD', date: '2026-09-03T12:30:00Z', impact: 'Holiday' },
+  ];
+  globalThis.fetch = async () => Response.json(MALFORMED_FIXTURE);
+  globalThis.caches = { default: { put: async () => {}, match: async () => null } };
+  try {
+    const res = await call('https://example.com/api/forex-calendar?impact=major', '10.5.0.6');
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.ok, true);
+    assert.deepEqual(
+      data.events.map((e) => e.title),
+      ['CPI m/m'],
+      'a row with no title, no date, or an unparseable date must be dropped rather than surfaced with fabricated fields, and a row with an unrecognized impact label (not High/Medium/Low) must be excluded from every impact filter rather than silently bucketed into one',
+    );
+  } finally {
+    globalThis.fetch = originalFetch6;
+    globalThis.caches = originalCaches6;
+  }
+}
+
 // The page's own "API note" tells the owner a paid/private feed can be
 // swapped in via FOREX_CALENDAR_SOURCE_URL "without rebuilding" -- prove the
 // handler actually reads it instead of always hitting the hardcoded public
