@@ -49,7 +49,7 @@ function node(tag, classes) {
   return self;
 }
 
-function makeStub(nodesPresentAtLoad) {
+function makeStub(nodesPresentAtLoad, matchMedia) {
   const listeners = {};
   const document = {
     addEventListener(type, fn) { (listeners[type] ||= []).push(fn); },
@@ -63,9 +63,11 @@ function makeStub(nodesPresentAtLoad) {
   const rafQueue = [];
   const window = {
     document,
-    // Simulates a desktop mouse user: not reduced-motion, and hover-capable
-    // with a fine pointer (the two guards tilt.js checks before doing anything).
-    matchMedia: (q) => ({ matches: !q.includes('prefers-reduced-motion') }),
+    // Simulates a desktop mouse user by default: not reduced-motion, and
+    // hover-capable with a fine pointer (the two guards tilt.js checks before
+    // doing anything). Callers that need a different visitor (reduced-motion,
+    // touch-only) pass their own matchMedia.
+    matchMedia: matchMedia || ((q) => ({ matches: !q.includes('prefers-reduced-motion') })),
     requestAnimationFrame: (fn) => { rafQueue.push(fn); return rafQueue.length; },
     cancelAnimationFrame() {},
   };
@@ -74,12 +76,13 @@ function makeStub(nodesPresentAtLoad) {
     window,
     fire(type, e) { (listeners[type] || []).forEach((fn) => fn(e)); },
     runRaf() { while (rafQueue.length) rafQueue.shift()(); },
+    listenerCount(type) { return (listeners[type] || []).length; },
   };
 }
 
-function runTiltScript(nodesPresentAtLoad = []) {
+function runTiltScript(nodesPresentAtLoad = [], matchMedia) {
   const src = read('assets/tilt.js');
-  const stub = makeStub(nodesPresentAtLoad);
+  const stub = makeStub(nodesPresentAtLoad, matchMedia);
   const sandbox = {
     document: stub.document,
     window: stub.window,
@@ -132,4 +135,28 @@ test('tilt.js resets the tilt when the pointer leaves the window from over a car
   stub.fire('pointerout', { relatedTarget: null }); // left the browser window
   assert.equal(card.style.props['--rx'], '0deg');
   assert.equal(card.style.props['--ry'], '0deg');
+});
+
+// The module's own header comment says the effect is "Off entirely for
+// reduced-motion users and for touch-only devices" -- but every test above
+// runs through the default matchMedia stub, which always resolves both
+// guards as "not reduced motion, hover-capable, fine pointer". Nothing
+// exercised the guards themselves: a visitor stub for either excluded case
+// never touched the module before now.
+test('tilt.js registers no listeners at all for a reduced-motion visitor', () => {
+  const card = node('div', ['tier-card']);
+  const stub = runTiltScript([card], (q) => ({ matches: q.includes('prefers-reduced-motion') }));
+  assert.equal(stub.listenerCount('pointermove'), 0);
+  assert.equal(stub.listenerCount('pointerout'), 0);
+  pointermoveOn(stub, card, 75, 25);
+  assert.equal(card.style.props['--ry'], undefined, 'a reduced-motion visitor must never get a tilt angle');
+});
+
+test('tilt.js registers no listeners at all for a touch-only visitor (no fine hover pointer)', () => {
+  const card = node('div', ['tier-card']);
+  const stub = runTiltScript([card], (q) => ({ matches: false }));
+  assert.equal(stub.listenerCount('pointermove'), 0);
+  assert.equal(stub.listenerCount('pointerout'), 0);
+  pointermoveOn(stub, card, 75, 25);
+  assert.equal(card.style.props['--ry'], undefined, 'a touch-only visitor must never get the finger-jitter tilt effect');
 });
