@@ -113,6 +113,35 @@ function req(ip, headers = {}) {
   }
 }
 
+// checkRateLimit, in-isolate Map fallback: the minute-rollover guard for when
+// the function's two internal Date.now() reads (once inside bucketKey to
+// embed the minute in the map key, once more for the local `minute` used to
+// judge staleness) straddle a real minute boundary. The map key already
+// bakes the minute in, so a lookup under a key built from the *older* read
+// can only ever return an entry stored under that same older minute — this
+// mismatch is the only case this reset guard exists for, and no prior test
+// ever forced the two reads apart, so it had zero coverage. Mocks Date.now
+// to advance mid-call rather than waiting for a real boundary race.
+{
+  const scope = 'lib-test-mem-boundary-race-' + Math.random();
+  const r = req('198.51.100.9');
+  const originalNow = Date.now;
+  try {
+    const baseMs = 2_000_000 * 60_000;
+    Date.now = () => baseMs;
+    const primed = await checkRateLimit({}, r, scope, 5);
+    assert.equal(primed.count, 1);
+
+    let call = 0;
+    Date.now = () => (call++ === 0 ? baseMs : baseMs + 60_000);
+    const raced = await checkRateLimit({}, r, scope, 5);
+    assert.equal(raced.allowed, true);
+    assert.equal(raced.count, 1, 'a stale entry surfaced across the boundary must reset, not compound to 2');
+  } finally {
+    Date.now = originalNow;
+  }
+}
+
 // checkRateLimit, D1-backed path: the actual production persistence layer.
 // Verify the increment SQL runs, the returned count drives the allowed
 // decision, and the stale-bucket sweep fires only on the bucket's first hit
