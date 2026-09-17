@@ -81,6 +81,12 @@
       // more than one widget on the page.
       var widgetId = window.turnstile.render(slot, {
         sitekey: turnstile.siteKey,
+        // Cloudflare's default theme is "auto", which follows the visitor's OS
+        // prefers-color-scheme -- but assets/theme.js deliberately ignores that
+        // and boots every visitor into light-mode unless they've explicitly
+        // opted into dark. An OS-dark visitor would otherwise get a dark
+        // widget floating on this page's light chrome. Match the page instead.
+        theme: document.body.classList.contains('light-mode') ? 'light' : 'dark',
         callback: function (token) { form.dataset.turnstileToken = token; },
         'expired-callback': function () { delete form.dataset.turnstileToken; },
         'error-callback': function () { delete form.dataset.turnstileToken; }

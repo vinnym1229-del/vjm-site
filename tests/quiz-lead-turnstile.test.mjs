@@ -39,7 +39,7 @@ function makeEl() {
  * two real ones on index.html, so the fetch-config guard (`if (!forms.length)
  * return`) behaves the way it does on the real page.
  */
-function load({ required = true, siteKey = 'sk_test' } = {}) {
+function load({ required = true, siteKey = 'sk_test', lightMode = true } = {}) {
   const staticForm = makeEl();
   staticForm._children['.nl-turnstile'] = makeEl();
   staticForm.addEventListener = () => {};
@@ -60,6 +60,7 @@ function load({ required = true, siteKey = 'sk_test' } = {}) {
         return el;
       },
       head: { appendChild() {} },
+      body: { classList: { contains: (cls) => cls === 'light-mode' && lightMode } },
       querySelectorAll(sel) {
         if (sel === 'form.nl-signup') return [staticForm];
         return [];
@@ -106,6 +107,24 @@ test('mount() on a form built after page load still gets the Turnstile widget on
 
   assert.equal(win.vjmTurnstile.required(), true);
   assert.equal(win.vjmTurnstile.misconfigured(), false);
+});
+
+test('the widget theme matches the page\'s actual light/dark class, not Cloudflare\'s OS-following "auto" default', async () => {
+  // assets/theme.js boots every visitor into light-mode by default and only
+  // goes dark on an explicit opt-in -- it deliberately ignores the OS's
+  // prefers-color-scheme. Turnstile's own default theme is "auto", which DOES
+  // follow the OS setting, so an OS-dark visitor on this site's (light) page
+  // would get a dark widget floating on light chrome unless render() is told
+  // the page's real theme explicitly.
+  const light = load({ required: true, siteKey: 'sk_test', lightMode: true });
+  await settle();
+  light.fireScriptLoad();
+  assert.equal(light.staticForm._children['.nl-turnstile']._renderOpts.theme, 'light');
+
+  const dark = load({ required: true, siteKey: 'sk_test', lightMode: false });
+  await settle();
+  dark.fireScriptLoad();
+  assert.equal(dark.staticForm._children['.nl-turnstile']._renderOpts.theme, 'dark');
 });
 
 test('misconfigured (secret set, no site key) is reported rather than silently dropping submits', async () => {
@@ -170,6 +189,7 @@ test('a failed submit resets only that form\'s own widget by id, not a bare/glob
         return el;
       },
       head: { appendChild() {} },
+      body: { classList: { contains: () => true } },
       querySelectorAll(sel) { return sel === 'form.nl-signup' ? [formA, formB] : []; },
     },
     location: { search: '', pathname: '/' },
