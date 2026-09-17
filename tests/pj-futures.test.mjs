@@ -345,6 +345,35 @@ test('calcFutures computes real P&L per contract, not a flat per-point rate', ()
   assert.equal(els['fc-details'].textContent, '2.00 points (20 ticks) × 1 contract × $50/pt');
 });
 
+test('calcFutures respects an explicitly typed 0 contracts, does not silently substitute 1', () => {
+  // Same falsy-zero bug class already fixed in runGrowthSim (2026-09-16):
+  // `parseInt(...) || 1` treats a typed "0" the same as an empty field, so the
+  // very next line's `contracts < 1` guard can never see a real zero — a
+  // visitor who types 0 into Contracts and hits CALCULATE gets a fabricated
+  // 1-contract P&L instead of the tool doing nothing. Extract the live
+  // function so a future `||` reintroduction fails this test instead of
+  // shipping a lying calculator.
+  const fnSrc = index.match(/function calcFutures\(\) \{[\s\S]*?\n\}\n/)[0];
+  const els = {};
+  const el = (id) => (els[id] ||= { value: '0', textContent: '', style: {} });
+  const sandbox = { document: { getElementById: el } };
+  vm.createContext(sandbox);
+  vm.runInContext(fnSrc + '\nthis.calcFutures = calcFutures;', sandbox);
+
+  el('fc-contract').value = 'ES';
+  el('fc-entry').value = '21500';
+  el('fc-exit').value = '21568';
+  el('fc-contracts').value = '0';
+  sandbox.calcFutures();
+  assert.ok(!('fc-pnl' in els), 'typed 0 contracts must not render a P&L at all');
+
+  // An empty field is a genuinely different case (nothing typed) and must
+  // still fall back to the 1-contract default.
+  el('fc-contracts').value = '';
+  sandbox.calcFutures();
+  assert.equal(els['fc-pnl'].textContent, '+$3,400', 'an empty field still falls back to 1 contract');
+});
+
 test('calcPropRisk floors the trade count and keys its cushion color off it', () => {
   const fnSrc = index.match(/function calcPropRisk\(\) \{[\s\S]*?\n\}\n/)[0];
   const els = {};

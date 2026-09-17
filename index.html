@@ -2431,7 +2431,8 @@ function calcFutures() {
   const perPt = spec ? spec.perPt : 0;
   const entry = parseFloat(document.getElementById('fc-entry').value);
   const exit = parseFloat(document.getElementById('fc-exit').value);
-  const contracts = parseInt(document.getElementById('fc-contracts').value) || 1;
+  const parsedContracts = parseInt(document.getElementById('fc-contracts').value, 10);
+  const contracts = Number.isFinite(parsedContracts) ? parsedContracts : 1;
   if (!perPt || !Number.isFinite(entry) || !Number.isFinite(exit) || contracts < 1) return;
   const pts = exit - entry;
   const pnl = pts * perPt * contracts;
