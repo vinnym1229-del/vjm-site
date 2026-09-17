@@ -1646,19 +1646,6 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && document.getElementById('post-modal').classList.contains('active')) closePost();
 });
 
-// ─── EXPAND / COLLAPSE SECTIONS ───
-function toggleSection(id, btn) {
-  const el = document.getElementById(id);
-  const isOpen = el.style.maxHeight && el.style.maxHeight !== '0px';
-  if (isOpen) {
-    el.style.maxHeight = '0';
-    btn.textContent = btn.textContent.replace('▲', '▼').replace('Hide', 'Show More');
-  } else {
-    el.style.maxHeight = el.scrollHeight + 'px';
-    btn.textContent = btn.textContent.replace('▼', '▲').replace('Show More', 'Hide');
-  }
-}
-
 // ─── DARK / LIGHT MODE ───
 function themeButtonHtml(isLight) {
   return (isLight ? '☀️ <span class="theme-label-text">Light</span>' : '🌙 <span class="theme-label-text">Dark</span>');
