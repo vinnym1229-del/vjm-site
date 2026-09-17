@@ -107,7 +107,12 @@
       holder.className = 'cf-turnstile';
       holder.id = 'curr-ts-' + i;
       holder.dataset.sitekey = TURNSTILE_SITE_KEY;
-      holder.dataset.theme = 'dark';
+      // Light is the site's default theme (assets/theme.js) and every one of
+      // these four pages ships a light-mode stylesheet, but a hardcoded
+      // 'dark' here rendered the widget's own chrome dark regardless — a
+      // black CAPTCHA box floating on the light gate panel most visitors see.
+      // Match the widget to whichever theme is actually active.
+      holder.dataset.theme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
       const btn = form.querySelector('button[type="submit"], .quiz-submit, button');
       if (btn) form.insertBefore(holder, btn); else form.appendChild(holder);
     });

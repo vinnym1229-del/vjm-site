@@ -1670,3 +1670,93 @@ test('no page loads Google Fonts via a plain render-blocking <link rel="styleshe
   }
   assert.deepEqual(offenders, [], `render-blocking font <link rel="stylesheet"> found in:\n  ${offenders.join('\n  ')}`);
 });
+
+// ---------------------------------------------------------------------------
+// Incident: every Cloudflare Turnstile widget guarding a premium-access-code
+// gate (premium-guidance.html's sign-in, research-engine.html's and
+// stock-lab.html's unlock gates, plus the one curriculum.js injects on all
+// four course pages) hardcoded `data-theme="dark"`. assets/theme.js makes
+// LIGHT the default theme for every visitor who has never explicitly opted
+// into dark (owner decision, 2026-09-01), and every one of these pages'
+// gate/lock-gate panel already goes light (near-white/white) in that mode
+// (see body.light-mode .gate / .curr .lock-gate rules) -- so the one widget
+// a visitor must interact with to actually redeem their code rendered as a
+// black CAPTCHA box on a white panel for the majority-default theme. The
+// site's OTHER Turnstile mount point (assets/newsletter.js's signup forms)
+// never hardcoded a theme at all and was never affected. Fixed by reading
+// the live `body.light-mode` class at render time on all four mount points
+// instead of hardcoding 'dark'. The three static-markup pages already run
+// synchronously (script order, not async/defer) immediately after the div in
+// markup, so it corrects the attribute before the async Turnstile script
+// (loaded far later in the document) ever reads it; curriculum.js sets it at
+// the point it creates the element, same timing it already relied on to get
+// the (hardcoded) attribute onto the widget at all.
+test('every premium-gate Turnstile widget matches the active site theme, not a hardcoded dark', () => {
+  const staticPages = [
+    ['premium-guidance.html', 'pg-ts'],
+    ['research-engine.html', 're-ts'],
+    ['stock-lab.html', 'stocklab-ts'],
+  ];
+  for (const [page, id] of staticPages) {
+    const html = read(page);
+    const divMatch = html.match(new RegExp(`<div class="cf-turnstile" id="${id}"[^>]*data-theme="([^"]+)"[^>]*></div>`));
+    assert.ok(divMatch, `${page}: could not find the #${id} Turnstile div`);
+    // The static attribute is left as a fallback for a browser with no JS at
+    // all (same "progressive enhancement" stance as the rest of the site),
+    // but a same-document, non-deferred <script> must immediately follow it
+    // and overwrite dataset.theme from the live body class -- that script is
+    // the actual fix, not the static attribute.
+    const fixScript = html.slice(divMatch.index + divMatch[0].length, divMatch.index + divMatch[0].length + 400);
+    assert.match(
+      fixScript,
+      /^\s*<script>document\.currentScript\.previousElementSibling\.dataset\.theme=document\.body\.classList\.contains\('light-mode'\)\?'light':'dark';<\/script>/,
+      `${page}: #${id}'s hardcoded data-theme="dark" has no immediately-following theme-correcting <script>`,
+    );
+    // Prove the script actually does what it claims: run it in a sandbox for
+    // both theme states and check the div's dataset.theme flips.
+    for (const light of [true, false]) {
+      const div = { dataset: { theme: divMatch[1] } };
+      const sandbox = {
+        document: {
+          currentScript: { previousElementSibling: div },
+          body: { classList: { contains: (c) => c === 'light-mode' && light } },
+        },
+      };
+      vm.createContext(sandbox);
+      vm.runInContext(fixScript.match(/<script>([\s\S]*?)<\/script>/)[1], sandbox);
+      assert.equal(div.dataset.theme, light ? 'light' : 'dark', `${page}: #${id} did not switch to '${light ? 'light' : 'dark'}'`);
+    }
+  }
+});
+
+test("curriculum.js's injected lock-form Turnstile widget matches the active site theme, not a hardcoded dark", () => {
+  const src = read('assets/curriculum.js');
+  const fnMatch = src.match(/function injectTurnstileWidgets\(\) \{[\s\S]*?\n  \}/);
+  assert.ok(fnMatch, 'injectTurnstileWidgets() not found in assets/curriculum.js');
+  assert.doesNotMatch(fnMatch[0], /dataset\.theme = 'dark'/, "injectTurnstileWidgets() still hardcodes dataset.theme = 'dark'");
+  for (const light of [true, false]) {
+    const created = [];
+    const form = {
+      _children: [],
+      querySelector(sel) {
+        if (sel === '.cf-turnstile') return null;
+        if (sel.includes('button')) return { tagName: 'BUTTON' };
+        return null;
+      },
+      insertBefore(node) { this._children.push(node); },
+      appendChild(node) { this._children.push(node); },
+    };
+    const sandbox = {
+      document: {
+        querySelectorAll: (sel) => (sel === '.lock-form' ? [form] : []),
+        body: { classList: { contains: (c) => c === 'light-mode' && light } },
+        createElement: () => { const el = { dataset: {}, className: '' }; created.push(el); return el; },
+      },
+      TURNSTILE_SITE_KEY: 'test-key',
+    };
+    vm.createContext(sandbox);
+    vm.runInContext(`(function(){ ${fnMatch[0]}; injectTurnstileWidgets(); })();`, sandbox);
+    assert.equal(created.length, 1, 'expected exactly one Turnstile div to be created');
+    assert.equal(created[0].dataset.theme, light ? 'light' : 'dark', `expected dataset.theme '${light ? 'light' : 'dark'}'`);
+  }
+});
