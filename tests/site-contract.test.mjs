@@ -228,6 +228,32 @@ test('every page canonical uses the single origin and the root path shape', () =
   }
 });
 
+test('every page carrying an og:image also carries a title/description for every social preview surface', () => {
+  // 14 of 16 pages ship og:url/og:image (a shared link preview banner) but,
+  // until this test, only index.html and research-engine.html actually paired
+  // it with og:title/og:description -- the other 12 relied on a fallback to
+  // <title>/meta description that Discord/Slack/iMessage unfurl previews and
+  // Twitter/X card renderers don't reliably provide, so a shared link on any
+  // of those pages could unfurl with a banner image and a blank or generic
+  // title. 404.html/unsubscribe.html deliberately carry no og:image at all
+  // (transient/utility pages, not meant to be shared) and are exempt.
+  const pages = readdirSync(ROOT).filter((f) => f.endsWith('.html'));
+  for (const page of pages) {
+    const html = read(page);
+    if (!/<meta property="og:image"/.test(html)) continue;
+    for (const tag of [
+      '<meta property="og:title" content="',
+      '<meta property="og:description" content="',
+      '<meta name="twitter:title" content="',
+      '<meta name="twitter:description" content="',
+    ]) {
+      const m = html.match(new RegExp(tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^"]*)"'));
+      assert.ok(m, `${page}: missing ${tag}...">`);
+      assert.ok(m[1].length > 0, `${page}: ${tag}...">  must not be empty`);
+    }
+  }
+});
+
 test('sitemap lists only canonical, indexable URLs and matches every page canonical', () => {
   const origin = canonicalOrigin();
   const sitemap = read('sitemap.xml');
