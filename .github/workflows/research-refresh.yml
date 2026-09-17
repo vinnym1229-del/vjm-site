@@ -41,16 +41,33 @@ jobs:
           failed=0
           refresh() {
             local endpoint="$1"
-            local response
-            if ! response="$(curl --fail-with-body --silent --show-error --retry 3 --max-time 90 \
+            local http_code response
+            # Deliberately NOT --fail-with-body: `set -e` isn't on in this
+            # loop so a failed curl never aborted the job, but the old
+            # `if ! response="$(curl --fail-with-body ...)"` branch only ever
+            # logged a generic "refresh request failed" — the actual error
+            # body curl captured (e.g. "Alpaca snapshot timed out") was
+            # thrown away, same class of bug already fixed in
+            # content-sync.yml/morning-automation.yml. -o/-w capture status
+            # and body separately so the real detail always reaches the log.
+            http_code="$(curl --silent --show-error --retry 3 --max-time 90 \
+              -o /tmp/research-refresh-response.json -w '%{http_code}' \
               -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
-              "${RESEARCH_REFRESH_URL%/}${endpoint}")"; then
-              echo "::warning::refresh request failed: ${endpoint}"
-              failed=1
-              return
-            fi
-            if ! RESPONSE="$response" node -e "const p=JSON.parse(process.env.RESPONSE); if(!p.ok) process.exit(1); console.log(p.module, p.asOf)"; then
-              echo "::warning::refresh returned ok:false: ${endpoint}"
+              "${RESEARCH_REFRESH_URL%/}${endpoint}")" || true
+            response="$(cat /tmp/research-refresh-response.json 2>/dev/null || true)"
+            if ! RESPONSE="$response" HTTP_CODE="$http_code" node -e '
+              const code = Number(process.env.HTTP_CODE);
+              let p = null;
+              try { p = JSON.parse(process.env.RESPONSE); } catch {}
+              if (!p || !p.ok) {
+                const detail = p ? (p.error || "refresh reported failure") :
+                  "no parseable JSON body — Cloudflare/edge error page, not the Function itself";
+                console.error(`refresh failed (HTTP ${code}): ${detail}`);
+                process.exit(1);
+              }
+              console.log(p.module, p.asOf);
+            '; then
+              echo "::warning::${endpoint} failed"
               failed=1
             fi
           }
@@ -75,16 +92,29 @@ jobs:
           failed=0
           refresh() {
             local endpoint="$1"
-            local response
-            if ! response="$(curl --fail-with-body --silent --show-error --retry 3 --max-time 120 \
+            local http_code response
+            # See the options job's identical helper for why this isn't
+            # --fail-with-body: that pattern silently threw away the real
+            # error body on failure. -o/-w capture status and body
+            # separately so the actual detail always reaches the log.
+            http_code="$(curl --silent --show-error --retry 3 --max-time 120 \
+              -o /tmp/research-refresh-response.json -w '%{http_code}' \
               -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
-              "${RESEARCH_REFRESH_URL%/}${endpoint}")"; then
-              echo "::warning::refresh request failed: ${endpoint}"
-              failed=1
-              return
-            fi
-            if ! RESPONSE="$response" node -e "const p=JSON.parse(process.env.RESPONSE); if(!p.ok) process.exit(1); console.log(p.module, p.asOf)"; then
-              echo "::warning::refresh returned ok:false: ${endpoint}"
+              "${RESEARCH_REFRESH_URL%/}${endpoint}")" || true
+            response="$(cat /tmp/research-refresh-response.json 2>/dev/null || true)"
+            if ! RESPONSE="$response" HTTP_CODE="$http_code" node -e '
+              const code = Number(process.env.HTTP_CODE);
+              let p = null;
+              try { p = JSON.parse(process.env.RESPONSE); } catch {}
+              if (!p || !p.ok) {
+                const detail = p ? (p.error || "refresh reported failure") :
+                  "no parseable JSON body — Cloudflare/edge error page, not the Function itself";
+                console.error(`refresh failed (HTTP ${code}): ${detail}`);
+                process.exit(1);
+              }
+              console.log(p.module, p.asOf);
+            '; then
+              echo "::warning::${endpoint} failed"
               failed=1
             fi
           }
