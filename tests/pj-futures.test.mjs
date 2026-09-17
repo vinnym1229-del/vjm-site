@@ -503,6 +503,41 @@ test('growth simulator respects an explicitly typed 0, does not silently substit
   assert.equal(els['sim-gain-val'].textContent, '+$0 (+0%)', 'typed 0% daily gain must show $0 growth, not the 1% default');
 });
 
+test('growth simulator renders nothing for a non-positive starting balance instead of Infinity%/NaN%', () => {
+  // Starting Balance is the divisor of the "(+N%)" line, and the 0-preserving
+  // numOr fix above (2026-09-16) is what finally let a typed 0 reach that
+  // division — the `|| 1200` it replaced had always swallowed it. A typed 0
+  // rendered "+$4,000 (+Infinity%)" ($200/day x 20 days), a 0 balance with a
+  // 0 gain rendered "+$0 (+NaN%)", and a negative balance rendered the
+  // double-signed "(+-4000%)". The field is min="1" and every sibling
+  // calculator on this page bails on a non-positive input, so this one must
+  // too: no output at all rather than a junk figure.
+  const fnSrc = index.match(/function runGrowthSim\(\) \{[\s\S]*?\n\}\n/)[0];
+  const els = {};
+  const el = (id) => (els[id] ||= { value: '0', textContent: '', style: {} });
+  const sandbox = { document: { getElementById: el }, gainMode: 'dollar' };
+  vm.createContext(sandbox);
+  vm.runInContext(fnSrc + '\nthis.runGrowthSim = runGrowthSim;', sandbox);
+
+  el('sim-days').value = '20';
+  el('sim-daily-dollar').value = '200';
+
+  el('sim-start').value = '0';
+  sandbox.runGrowthSim();
+  assert.equal(el('sim-gain-val').textContent, '', 'a typed 0 starting balance must render no result');
+  assert.equal(el('sim-result').style.display, undefined, 'the result panel must stay hidden');
+
+  el('sim-start').value = '-100';
+  sandbox.runGrowthSim();
+  assert.equal(el('sim-gain-val').textContent, '', 'a negative starting balance must render no result either');
+
+  // A real balance still computes exactly as before.
+  el('sim-start').value = '1200';
+  sandbox.runGrowthSim();
+  assert.equal(els['sim-gain-val'].textContent, '+$4,000 (+333%)');
+  assert.equal(els['sim-result'].style.display, 'block');
+});
+
 test('session clock lives in the schedule section', () => {
   assert.match(index, /id="session-clock"/);
   assert.match(index, /tickSessionClock/);

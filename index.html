@@ -2198,6 +2198,14 @@ function runGrowthSim() {
     return isFinite(v) ? v : fallback;
   };
   const start = numOr('sim-start', 1200);
+  // Starting Balance is the divisor of the % line below, so a typed 0 (or a
+  // negative) renders "+$4,000 (+Infinity%)" / "(+NaN%)" / "(+-4000%)". Since
+  // the 0-preserving numOr above (2026-09-16) stopped substituting the 1200
+  // default here, this field can actually reach the math. Do nothing instead,
+  // matching the field's own min="1" and every sibling calculator on this page
+  // (calcPropRisk, calcSizingSim, runPropPayout all bail on a non-positive
+  // input rather than rendering a junk figure).
+  if (!(start > 0)) return;
   const daysRaw = numOr('sim-days', 20);
   const days = Math.trunc(daysRaw);
   let balance = start;
