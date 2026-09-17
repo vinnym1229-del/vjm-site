@@ -1,0 +1,36 @@
+# Run the test suite on every push and pull request.
+#
+# Every other workflow in this repo is workflow_dispatch/schedule-only, so
+# `npm test` (474 tests covering security auth, quiz-grading integrity,
+# entitlements, accessibility regressions, and every functions/api/*.js
+# endpoint) never ran automatically anywhere — a push straight to `pj` (the
+# branch Cloudflare Pages deploys from) or a PR against it got zero
+# feedback, indistinguishable from a passing check. This closes that gap.
+
+name: Test suite
+
+on:
+  push:
+    branches: [pj]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vjm-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run test suite
+        run: npm test
