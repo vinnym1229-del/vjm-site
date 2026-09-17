@@ -33,6 +33,7 @@ export const ALLOWED_EVENTS = new Set([
   'core_to_complete_upgrade',
   'quiz_start',
   'quiz_complete',
+  'quiz_track_alt',
   'lead_submit',
 ]);
 

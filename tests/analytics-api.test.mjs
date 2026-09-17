@@ -7,7 +7,7 @@
 // identifying recorded. These tests pin all three.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { onRequestPost, ALLOWED_EVENTS } from '../functions/api/analytics.js';
 
 /** A D1 fake that records what would have been written. */
@@ -153,6 +153,37 @@ test('nothing identifying is recorded', async () => {
   const db = fakeDb();
   await post({ visit: 'v', events: [{ name: 'plan_cta', path: '/' }] }, envWith(db));
   assert.equal(db.written[0].length, 4, 'name, props, visit_id, path — and nothing else');
+});
+
+test('every event name emitted anywhere in site code is accepted by the collector', () => {
+  // The 'every stage the client can emit is accepted' test above only proves
+  // ALLOWED_EVENTS accepts its own members — it can never catch a name that
+  // got wired into a page or script but was never added to the allowlist.
+  // That's exactly what happened to the homepage quiz's "your answers point
+  // at X too" alt-track link: it was tagged data-vjm-event="quiz_track_alt",
+  // funnel.js dutifully sent it, and the collector silently dropped every
+  // click (200 {ok:true, stored:0}, no error anywhere) because the name was
+  // never allowlisted. This scans every page and client script for the name
+  // literals themselves, independent of ALLOWED_EVENTS, so a repeat of that
+  // mistake fails here instead of just under-counting forever.
+  const root = new URL('../', import.meta.url);
+  const files = [
+    ...readdirSync(root).filter((f) => f.endsWith('.html')),
+    ...readdirSync(new URL('assets/', root)).filter((f) => f.endsWith('.js')).map((f) => `assets/${f}`),
+  ];
+  const patterns = [
+    /data-vjm-event=[\\'"]([a-z_]+)[\\'"]/g,
+    /setAttribute\(\s*['"]data-vjm-event['"]\s*,\s*['"]([a-z_]+)['"]\s*\)/g,
+    /vjmTrack\(\s*['"]([a-z_]+)['"]/g,
+  ];
+  const found = new Set();
+  for (const f of files) {
+    const src = readFileSync(new URL(f, root), 'utf8');
+    for (const re of patterns) for (const m of src.matchAll(re)) found.add(m[1]);
+  }
+  assert.ok(found.size > 0, 'sanity check: the scan itself must find events, or it is testing nothing');
+  const missing = [...found].filter((name) => !ALLOWED_EVENTS.has(name));
+  assert.deepEqual(missing, [], `emitted in site code but missing from ALLOWED_EVENTS: ${missing.join(', ')}`);
 });
 
 test('the funnel report covers every stage the collector accepts', async () => {

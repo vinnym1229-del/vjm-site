@@ -40,6 +40,7 @@ const FUNNEL = [
   ['free_level_complete', 'Finished the free level'],
   ['quiz_start', 'Started the "what kind of trader" quiz'],
   ['quiz_complete', 'Finished the quiz'],
+  ['quiz_track_alt', 'Clicked the quiz result\'s alt-track link'],
   ['lead_submit', 'Gave us an email address'],
   ['lock_view', 'Hit a paywall'],
   ['plan_cta', 'Clicked a pricing button'],
