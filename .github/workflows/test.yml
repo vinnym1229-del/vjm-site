@@ -30,7 +30,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # package.json's test script passes node --test a quoted glob
+          # ("tests/*.test.mjs") for it to expand itself rather than the
+          # shell. Node 20.20.2 doesn't support that and fails with
+          # "Could not find 'tests/*.test.mjs'" (reproduced directly);
+          # Node 22 resolves the glob correctly, matching local dev.
+          node-version: '22'
 
       - name: Run test suite
         run: npm test
