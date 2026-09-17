@@ -54,11 +54,34 @@ jobs:
       - name: Generate today's pre-market brief
         run: |
           set -euo pipefail
-          response="$(curl --fail-with-body --silent --show-error --retry 2 --max-time 120 \
+          # Deliberately NOT --fail-with-body: that makes curl's own non-zero
+          # exit trip `set -e` on the very next line, which killed the script
+          # before the response body was ever read (see content-sync.yml,
+          # which hits the same pattern against /api/content-sync). -o/-w
+          # capture status and body separately so both get printed regardless
+          # of outcome, and the JSON is what decides success here.
+          http_code="$(curl --silent --show-error --retry 2 --max-time 120 \
+            -o /tmp/brief-response.json -w '%{http_code}' \
             -X POST \
             -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
             "${RESEARCH_REFRESH_URL%/}/api/market-brief")"
-          RESPONSE="$response" node -e "const p=JSON.parse(process.env.RESPONSE); console.log('brief ok:', p.ok, '| discord:', p.discordDetail || p.brief && p.discordPosted)"
+          echo "HTTP status: $http_code"
+          echo "--- response body ---"
+          cat /tmp/brief-response.json || true
+          echo ""
+          echo "---------------------"
+          RESPONSE="$(cat /tmp/brief-response.json)" HTTP_CODE="$http_code" node -e '
+            const code = Number(process.env.HTTP_CODE);
+            let p = null;
+            try { p = JSON.parse(process.env.RESPONSE); } catch {}
+            if (!p || !p.ok) {
+              const detail = p ? (p.error || "brief generation reported failure") :
+                "no parseable JSON body — this is a Cloudflare/edge error page, not a response from the Function itself";
+              console.error(`Brief generation failed (HTTP ${code}): ${detail}`);
+              process.exit(1);
+            }
+            console.log("brief ok: true | discordPosted:", p.discordPosted, "| discordDetail:", p.discordDetail || "(none)");
+          '
 
   content:
     if: github.event.schedule == '30 12 * * 1-5' || inputs.job == 'content' || inputs.job == 'all'
@@ -71,8 +94,31 @@ jobs:
       - name: Sync owner content from Google Sheets
         run: |
           set -euo pipefail
-          response="$(curl --fail-with-body --silent --show-error --retry 2 --max-time 60 \
+          # Deliberately NOT --fail-with-body: see content-sync.yml, which
+          # hits this same endpoint and documents why (`set -e` trips on the
+          # `response=$(...)` line before the diagnostic ever runs, throwing
+          # away the real error). -o/-w capture status and body separately.
+          http_code="$(curl --silent --show-error --retry 2 --max-time 60 \
+            -o /tmp/content-response.json -w '%{http_code}' \
             -X POST \
             -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
             "${RESEARCH_REFRESH_URL%/}/api/content-sync")"
-          RESPONSE="$response" node -e "const p=JSON.parse(process.env.RESPONSE); console.log('sync ok:', p.ok, JSON.stringify(p.summary||{}))"
+          echo "HTTP status: $http_code"
+          echo "--- response body ---"
+          cat /tmp/content-response.json || true
+          echo ""
+          echo "---------------------"
+          RESPONSE="$(cat /tmp/content-response.json)" HTTP_CODE="$http_code" node -e '
+            const code = Number(process.env.HTTP_CODE);
+            let p = null;
+            try { p = JSON.parse(process.env.RESPONSE); } catch {}
+            if (!p || !p.ok) {
+              const detail = p ? (p.error || "sync reported failure") :
+                "no parseable JSON body — this is a Cloudflare/edge error page, not a response from the Function itself";
+              console.error(`Sync failed (HTTP ${code}): ${detail}`);
+              process.exit(1);
+            }
+            const s = p.summary || {};
+            const rows = Object.entries(s).map(([k, v]) => `${k}=${typeof v === "object" ? JSON.stringify(v) : v}`);
+            console.log("sync ok: true |", rows.length ? rows.join("  ") : "(no rows returned)");
+          '
