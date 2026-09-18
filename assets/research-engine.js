@@ -486,9 +486,13 @@
     // this field's own min="5" floor that Math.max is supposed to enforce.
     // parseFloat('') is NaN (unlike Number('')===0), so isFinite still tells
     // a genuinely empty field apart from a typed 0, which stays 0 and lets
-    // Math.max clamp it to 5 instead.
+    // Math.max clamp it to 5 instead. labSpot has no min attribute and no
+    // step-driven floor of its own either, so the same fix applies to it --
+    // Number(x)||600 was clamping a typed 0 to the unrelated 600 default
+    // instead of this field's real .01 floor.
     const minutesTyped=parseFloat($('labMinutes').value);
-    const spot=Math.max(.01,Number($('labSpot').value)||600),targetMove=Number($('labMove').value)||0,horizon=Math.max(5,isFinite(minutesTyped)?minutesTyped:90),ivPoints=Number($('labIv').value)||0,qty=Math.max(1,Number($('labQty').value)||1),hedgeQty=Math.max(0,Number($('labHedge').value)||0);
+    const spotTyped=parseFloat($('labSpot').value);
+    const spot=Math.max(.01,isFinite(spotTyped)?spotTyped:600),targetMove=Number($('labMove').value)||0,horizon=Math.max(5,isFinite(minutesTyped)?minutesTyped:90),ivPoints=Number($('labIv').value)||0,qty=Math.max(1,Number($('labQty').value)||1),hedgeQty=Math.max(0,Number($('labHedge').value)||0);
     const profiles=[
       {name:'ITM call',premium:6.5,delta:.72,gamma:.018,theta:-.10,vega:.11,color:COLORS.blue,qty},
       {name:'ATM call',premium:3.8,delta:.52,gamma:.026,theta:-.16,vega:.14,color:COLORS.green,qty},

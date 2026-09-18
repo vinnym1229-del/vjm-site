@@ -714,6 +714,33 @@ function loadResearchEngineClient() {
 }
 
 // ---------------------------------------------------------------------------
+// Same falsy-zero shape, same function: labSpot read as Number(x)||600, so an
+// explicitly typed 0 was silently replaced with the unrelated 600 default
+// instead of clamping to the field's own .01 floor -- the movePct the
+// rendered summary reports (targetMove/spot) was computed against the
+// stale 600, not the 0 the member actually typed.
+// ---------------------------------------------------------------------------
+{
+  const { internal, getElementById } = loadResearchEngineClient();
+  getElementById('labSpot').value = '0';
+  getElementById('labMove').value = '3';
+  internal.renderSlopeLab();
+  assert.match(
+    getElementById('hedgeSummary').textContent,
+    /\(\+30000\.0%\)/,
+    'a typed 0 in Spot must clamp to the field\'s own .01 floor (3 / .01 = +30000.0%), not fall back to the unrelated 600 default',
+  );
+}
+{
+  // An empty/invalid field is the actual case the 600 default exists for.
+  const { internal, getElementById } = loadResearchEngineClient();
+  getElementById('labSpot').value = '';
+  getElementById('labMove').value = '3';
+  internal.renderSlopeLab();
+  assert.match(getElementById('hedgeSummary').textContent, /\(\+0\.5%\)/, 'an empty field must still fall back to the 600 default (3 / 600 = +0.5%)');
+}
+
+// ---------------------------------------------------------------------------
 // Options module "Complete model outcome matrix" table: the Median MAE cell
 // used to pass classify(value, inverse=true) -- classify()'s only other
 // caller (thresholdClass(ifvgRate, .5, true), the FVG table) uses inverse to
