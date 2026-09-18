@@ -73,6 +73,12 @@ test('timingSafeEqual accepts equal / rejects unequal incl. length mismatch', ()
   assert.equal(timingSafeEqual('abc', 'abd'), false);
   assert.equal(timingSafeEqual('abc', 'abcd'), false);
   assert.equal(timingSafeEqual('', ''), true);
+  // The length-mismatch fallback path divides the comparison index by
+  // `ab.length || 1` / `bb.length || 1` to avoid a mod-by-zero when one side
+  // is empty. An empty secret or token (e.g. a signature that failed to
+  // load) must still compare unequal to a non-empty one, not throw.
+  assert.equal(timingSafeEqual('', 'abc'), false);
+  assert.equal(timingSafeEqual('abc', ''), false);
 });
 
 test('signing secret resolution fails closed', () => {
