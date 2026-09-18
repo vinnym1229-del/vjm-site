@@ -104,6 +104,22 @@ test('options-lab calc(): contracts scale the $100 multiplier, not just the raw 
   assert.equal(out.maxLoss, '-$600');
 });
 
+// A visitor typing 0 (or a negative) contracts must get a real $0 position,
+// not a fabricated 1-contract payoff -- the same falsy-zero/forced-minimum
+// bug this repo has already fixed on calcSizingSim, research-engine's
+// labSpot, and index.html's own calcFutures, never checked here. The long
+// call's max profit is hardcoded 'Unlimited' independent of contracts, so a
+// zero-contract "position" needs its own $0 override, not just the shared
+// contracts clamp.
+test('options-lab calc(): 0 or negative contracts render a real $0 position, not a fabricated 1-contract payoff', () => {
+  const zero = runOptionCalc({ type: 'call', side: 'long', strike: 100, premium: 3, contracts: 0 });
+  assert.equal(zero.maxProfit, '$0');
+  assert.equal(zero.maxLoss, '$0');
+  const negative = runOptionCalc({ type: 'call', side: 'long', strike: 100, premium: 3, contracts: -2 });
+  assert.equal(negative.maxProfit, '$0');
+  assert.equal(negative.maxLoss, '$0');
+});
+
 // --- stock-breakdown.html: Position-Size & Risk Calculator (#risk-tool) ----
 
 const stockBreakdown = readFileSync(join(ROOT, 'stock-breakdown.html'), 'utf8');

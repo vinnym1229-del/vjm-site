@@ -1017,6 +1017,15 @@ test('futures-dissection tool: calc() writes correct point/tick/P&L math across 
   assert.deepEqual(run('NQ', 15000, 14980, 3), { points: '-20.00', ticks: '-80', pnl: '-$1,200' });
   // Contracts input rounds to the nearest whole contract rather than truncating.
   assert.deepEqual(run('MES', 100, 108, 2.6), { points: '8.00', ticks: '32', pnl: '$120' });
+  // A visitor typing 0 (or a negative) contracts must get a real $0, not a
+  // fabricated 1-contract P&L -- the same falsy-zero/forced-minimum bug this
+  // repo has already fixed on calcSizingSim, research-engine's labSpot, and
+  // index.html's own calcFutures. This page's own Lesson 17, right above this
+  // tool, teaches "if one micro still exceeds risk, the correct size is
+  // zero" / "do not force a one-contract minimum" -- the tool contradicted
+  // its own lesson.
+  assert.deepEqual(run('ES', 21500, 21568, 0), { points: '68.00', ticks: '272', pnl: '$0' });
+  assert.deepEqual(run('ES', 21500, 21568, -3), { points: '68.00', ticks: '272', pnl: '$0' });
 });
 
 test('the vendored Three.js/model files get a long, cache-header path of their own', () => {

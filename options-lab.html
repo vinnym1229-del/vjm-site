@@ -617,7 +617,9 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
     function calc(){
       var type=document.getElementById('op-type').value;
       var side=document.getElementById('op-side').value;
-      var strike=num('op-strike'), premium=num('op-premium'), contracts=Math.max(1,Math.round(num('op-contracts')));
+      var strike=num('op-strike'), premium=num('op-premium');
+      var opContractsRaw=document.getElementById('op-contracts').value;
+      var contracts=opContractsRaw===''?1:Math.max(0,Math.round(num('op-contracts')));
       var mult=100*contracts;
       var lo=strike*0.6, hi=strike*1.4;
       var points=[];
@@ -637,6 +639,7 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
         maxProfit=premium*mult;
         maxLoss=type==='call'?-Infinity:-(strike-premium)*mult;
       }
+      if(contracts===0){maxProfit=0;maxLoss=0;}
       document.getElementById('op-out-be').textContent='$'+be.toFixed(2);
       document.getElementById('op-out-maxp').textContent=isFinite(maxProfit)?fmtUsd(maxProfit):'Unlimited';
       document.getElementById('op-out-maxl').textContent=isFinite(maxLoss)?fmtUsd(maxLoss):'Unlimited';

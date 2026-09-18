@@ -206,7 +206,9 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
       var sym=document.getElementById('fu-contract').value;
       var spec=specFor(sym);
       var mult=spec[2], tickVal=spec[3], tickSize=spec[4];
-      var entry=num('fu-entry'), exit=num('fu-exit'), contracts=Math.max(1,Math.round(num('fu-contracts')));
+      var entry=num('fu-entry'), exit=num('fu-exit');
+      var fuContractsRaw=document.getElementById('fu-contracts').value;
+      var contracts=fuContractsRaw===''?1:Math.max(0,Math.round(num('fu-contracts')));
       var points=exit-entry;
       var ticks=points/tickSize;
       var pnl=points*mult*contracts;
