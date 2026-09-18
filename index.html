@@ -283,13 +283,36 @@
              already documents for the bolt layer. Both are WebP, re-encoded
              from the source PNGs (quality 90, ~140KB each vs. >1.5MB) since
              the light one loads eagerly as the hero's LCP element. -->
-        <img class="pj-car-image pj-car-light" src="assets/ferrari-reference-light.webp" alt="" width="1536" height="1024" fetchpriority="high" decoding="async">
-        <img class="pj-car-image pj-car-dark" src="assets/ferrari-reference-dark.webp" alt="" width="1536" height="1024" decoding="async">
+        <img class="pj-car-image pj-car-light" data-src="assets/ferrari-reference-light.webp" alt="" width="1536" height="1024" fetchpriority="high" decoding="async">
+        <img class="pj-car-image pj-car-dark" data-src="assets/ferrari-reference-dark.webp" alt="" width="1536" height="1024" decoding="async">
         <div class="fs-loading" id="fsLoading" aria-hidden="true"><span class="fs-loading-pulse"></span></div>
         <canvas id="fsCanvas" aria-hidden="true"></canvas>
       </div>
     </div>
   </div>
+  <script>
+  // Both car photos above are declared with data-src, not src, so the
+  // browser's preload scanner never fetches either one on its own. A plain
+  // src on both meant every visit downloaded ~290KB of WebP no matter what:
+  // the whole section is display:none on phones/small tablets and under
+  // reduced motion (assets/site.css's @media (max-width: 1099px),
+  // (prefers-reduced-motion: reduce) rule -- same one the WebGL branch below
+  // bails out on), and even on wide screens only one of the two theme
+  // variants is ever visible at a time. This hydrates only the variant that
+  // will actually be shown, and re-checks on resize/orientation-change so a
+  // tablet rotated past the breakpoint after load still gets its image.
+  (function () {
+    var mq = window.matchMedia('(max-width: 1099px), (prefers-reduced-motion: reduce)');
+    function hydrate() {
+      if (mq.matches) return;
+      var img = document.querySelector(document.body.classList.contains('light-mode') ? '.pj-car-light' : '.pj-car-dark');
+      if (img && !img.getAttribute('src') && img.dataset.src) img.src = img.dataset.src;
+    }
+    hydrate();
+    mq.addEventListener('change', hydrate);
+    window.pjHydrateCarImage = hydrate;
+  })();
+  </script>
   <div class="liquid-bg" aria-hidden="true">
     <div class="liquid-blob lb-1"></div>
     <div class="liquid-blob lb-2"></div>
@@ -1657,6 +1680,11 @@ function toggleTheme() {
   const btn = document.getElementById('theme-toggle');
   btn.innerHTML = themeButtonHtml(isLight);
   localStorage.setItem('st-theme', isLight ? 'light' : 'dark');
+  // The just-revealed car photo (see the hydrate script beside its <img>
+  // tags) was never fetched for a visitor who hasn't switched theme before --
+  // load it now instead of showing a blank frame. Guarded because other
+  // pages share this function and don't have the Ferrari showcase at all.
+  if (window.pjHydrateCarImage) window.pjHydrateCarImage();
   // Third-party embeds bake their colour scheme in at construction, so they
   // need telling rather than inheriting. One event, no polling.
   window.dispatchEvent(new CustomEvent('vjm:themechange', { detail: { theme: isLight ? 'light' : 'dark' } }));
