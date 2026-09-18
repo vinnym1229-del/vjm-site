@@ -229,6 +229,21 @@ import {
   assert.equal(review.result, 'win');
   assert.equal(review.rMultiple, 2.57);
 
+  // trade_reviews fallback branches: the row above only ever exercised the
+  // truthy/valid side of direction/result/r_multiple. A sheet row with a
+  // blank or unrecognized value in any of these must degrade to a safe
+  // default instead of throwing or fabricating a classification.
+  const reviewDefaults = sanitizeContentRow('trade_reviews', { id: 't3', ticker: 'ES' });
+  assert.equal(reviewDefaults.direction, 'long', 'missing direction must default to long, not short');
+  assert.equal(reviewDefaults.result, 'unclassified', 'missing result must default to unclassified, not win/loss');
+  assert.equal(reviewDefaults.rMultiple, null, 'missing r_multiple must be null, not 0 or NaN');
+  const reviewBadFields = sanitizeContentRow('trade_reviews', {
+    id: 't4', ticker: 'ES', direction: 'sideways', result: 'jackpot', r_multiple: 'not-a-number',
+  });
+  assert.equal(reviewBadFields.direction, 'long', 'an unrecognized direction must fall back to long');
+  assert.equal(reviewBadFields.result, 'unclassified', 'an unrecognized result must fall back to unclassified');
+  assert.equal(reviewBadFields.rMultiple, null, 'a non-numeric r_multiple must be null, not NaN');
+
   assert.equal(sanitizeContentRow('schedule', { id: 's1', day: 'Xyz', session: 'NYAM' }), null, 'unknown day must reject');
   assert.equal(sanitizeContentRow('schedule', { id: 's2', day: 'Mon', session: 'BADSESSION' }), null, 'unknown session must reject');
   const session = sanitizeContentRow('schedule', { id: 's3', day: 'Tue', session: 'nypm', active: 'no' });
@@ -284,6 +299,15 @@ import {
   assert.equal(propFirm.active, 1, 'active defaults to true when unset');
   const inactiveFirm = sanitizeContentRow('prop_firms', { id: 'p4', name: 'F', url: 'https://f.example.com', active: 'false' });
   assert.equal(inactiveFirm.active, 0);
+
+  // announcements' pinned truthy branch: content-api.test.mjs asserts
+  // pinned-first sort order but mocks D1 with an already-sanitized payload,
+  // so it never actually calls sanitizeContentRow with pinned set -- this
+  // is the only place the sheet-value -> pinned:1 coercion itself is pinned.
+  const pinnedAnnouncement = sanitizeContentRow('announcements', { id: 'a2', title: 'Pinned notice', pinned: 'yes' });
+  assert.equal(pinnedAnnouncement.pinned, 1, 'a "yes" sheet value must coerce to pinned:1');
+  const unpinnedAnnouncement = sanitizeContentRow('announcements', { id: 'a3', title: 'Regular notice' });
+  assert.equal(unpinnedAnnouncement.pinned, 0, 'pinned defaults to 0 when the sheet leaves it blank');
 }
 
 console.log('# VJM integrations-core lib tests passed.');
