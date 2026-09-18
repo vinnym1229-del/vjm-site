@@ -301,6 +301,70 @@ try {
     assert.equal(data.discordPosted, false);
     assert.equal(data.discordDetail, 'webhook rejected or timed out');
   }
+
+  // BRIEF_UNIVERSE (owner-configurable per the file's own header comment) had
+  // never been exercised with a valid value anywhere -- every prior test left
+  // it unset, so parseUniverse's success branch (lowercase/whitespace input,
+  // >=2 symbols) only ever ran the null/fallback-to-DEFAULT_UNIVERSE path.
+  // The official movers screener is forced to fail so computedMovers(universe)
+  // runs; its own `source` string reports the universe size it actually used,
+  // which distinguishes "used my 2-symbol override" from "silently fell back
+  // to the 10-symbol default" without needing to inspect internals.
+  {
+    const todayIso = new Date().toISOString();
+    globalThis.fetch = async (url) => {
+      const href = String(url);
+      if (href.startsWith('https://data.alpaca.markets/v1beta1/screener/stocks/movers')) {
+        return new Response('', { status: 500 });
+      }
+      if (href.startsWith('https://data.alpaca.markets/v2/stocks/snapshots')) {
+        const symbols = new URL(href).searchParams.get('symbols');
+        if (symbols === 'FOO,BAR') {
+          return new Response(JSON.stringify({
+            FOO: { latestTrade: { p: 10, t: todayIso }, prevDailyBar: { c: 9 } },
+            BAR: { latestTrade: { p: 20, t: todayIso }, prevDailyBar: { c: 22 } },
+          }), { status: 200 });
+        }
+        return new Response(JSON.stringify({}), { status: 200 });
+      }
+      return new Response('', { status: 500 });
+    };
+    const env = {
+      RESEARCH_CRON_SECRET: CRON_SECRET,
+      RESEARCH_DB: makeDb(),
+      ALPACA_API_KEY: 'k', ALPACA_SECRET_KEY: 's',
+      BRIEF_UNIVERSE: ' foo, bar ',
+    };
+    const { status, data } = await postBrief(env);
+    assert.equal(status, 200);
+    assert.equal(data.brief.movers.source, 'computed from 2-symbol IEX snapshot universe',
+      'a 2-symbol override must not silently widen to the 10-symbol DEFAULT_UNIVERSE');
+    assert.equal(data.brief.movers.gainers[0].symbol, 'FOO');
+    assert.equal(data.brief.movers.losers[0].symbol, 'BAR');
+  }
+
+  // onRequestPost's outer catch (line 59-60) is the last-resort safety net
+  // for a genuinely unexpected failure -- every documented third-party/D1
+  // failure mode above already degrades gracefully inside generateBrief
+  // itself and never reaches here. Nothing in this suite had ever forced
+  // that catch to actually fire, so its "truncate to 160 chars, never leak
+  // more" contract was unverified. storeBrief's `if (env.RESEARCH_DB)` check
+  // is the first env access after generateBrief succeeds and sits outside
+  // storeBrief's own D1 try/catch, so a throwing getter there reaches
+  // onRequestPost's catch without needing a real production bug.
+  {
+    globalThis.fetch = alwaysFailFetch;
+    const longMessage = 'x'.repeat(200);
+    const throwingEnv = {
+      RESEARCH_CRON_SECRET: CRON_SECRET,
+      get RESEARCH_DB() { throw new Error(longMessage); },
+    };
+    const { status, data } = await postBrief(throwingEnv);
+    assert.equal(status, 502);
+    assert.equal(data.ok, false);
+    assert.equal(data.error, 'Brief generation failed: ' + 'x'.repeat(160),
+      'the error detail must be truncated to 160 chars, not the full message');
+  }
 } finally {
   globalThis.fetch = originalFetch;
 }
