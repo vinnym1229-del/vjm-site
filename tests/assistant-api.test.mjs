@@ -564,4 +564,24 @@ function fullSnapshot(price) {
   }
 }
 
+// onRequestPost's own outer try/catch (its last line of defence, distinct
+// from the null-body case above which is caught *inside* handle() and never
+// reaches it) had no test reaching it: every other error path in this file
+// is handle()'s own explicit branch. A request-like object with no `.headers`
+// -- not a real Request, but exactly what a future refactor of the caller
+// could pass by mistake -- makes checkRateLimit's clientIp() throw
+// synchronously before handle() gets anywhere near its own try/catches, so
+// only the outer catch-all can turn it into a clean response instead of an
+// unhandled exception reaching the client.
+{
+  const res = await onRequestPost({
+    request: { method: 'POST', json: async () => ({ question: 'hi' }) },
+    env: alpacaEnv(),
+  });
+  const data = await res.json();
+  assert.equal(res.status, 502);
+  assert.equal(data.ok, false);
+  assert.equal(data.error, 'Assistant is temporarily unavailable.');
+}
+
 console.log('VJM assistant API tests passed.');
