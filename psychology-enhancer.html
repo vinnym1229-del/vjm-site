@@ -236,7 +236,8 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
       var wr=num('py-winrate')/100, avgW=num('py-avgwin'), avgL=num('py-avgloss'), fric=num('py-friction'), oneR=num('py-oner');
       var lr=1-wr;
       var er=(wr*avgW)-(lr*avgL)-fric;
-      var beWr = (avgL+fric)/(avgW+avgL);
+      var beDenom = avgW+avgL;
+      var beWr = beDenom>0 ? (avgL+fric)/beDenom : 0;
       document.getElementById('py-out-er').textContent=er.toFixed(2)+'R';
       document.getElementById('py-out-erd').textContent='$'+(er*oneR).toLocaleString(undefined,{maximumFractionDigits:2});
       document.getElementById('py-out-be').textContent=(beWr*100).toFixed(1)+'%';

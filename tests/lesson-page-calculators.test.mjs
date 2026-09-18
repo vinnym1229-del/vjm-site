@@ -198,3 +198,15 @@ test('psychology-enhancer calc(): equal avg win/loss with zero friction crosses 
   assert.equal(out.breakeven, '50.0%');
   assert.equal(out.er, '0.00R');
 });
+
+// Avg win and avg loss have no min attribute and calc() re-runs on every
+// input event, so a member can reach avgW+avgL === 0 just by clearing or
+// zeroing both fields while typing. The undivided formula rendered "NaN%"
+// (both zero) or "Infinity%" (both blank) instead of a real number -- the
+// same divide-by-zero class already guarded on stock-breakdown's riskPerShare.
+test('psychology-enhancer calc(): avg win and avg loss both zero must not divide by zero', () => {
+  const zero = runExpectancyCalc({ winrate: 50, avgwin: 0, avgloss: 0, friction: 0.05, oner: 250 });
+  assert.equal(zero.breakeven, '0.0%');
+  const blank = runExpectancyCalc({ winrate: 50, avgwin: '', avgloss: '', friction: 0.05, oner: 250 });
+  assert.equal(blank.breakeven, '0.0%');
+});
