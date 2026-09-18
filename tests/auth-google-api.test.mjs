@@ -107,25 +107,40 @@ async function callAuth(env, body) {
 // bogus credentials can't be used to hammer Google's tokeninfo endpoint or
 // probe RESEARCH_DB. Own bucket, independent of verify-premium.js's 'verify'
 // scope, so it needs its own fixed-IP trip test.
+//
+// The first 10 requests here are the ones NOT yet rate-limited, so they fall
+// through to the real verifyGoogleIdToken() -> fetch() call. Stub fetch so
+// those 10 resolve immediately instead of hitting the live tokeninfo
+// endpoint: on a slow or blocked network each real call can take seconds,
+// and the rate-limit bucket is keyed by wall-clock minute (see
+// bucketKey() in _lib/http.js) -- 10 slow requests can cross a minute
+// boundary and land the 11th in a fresh, empty bucket, failing this test
+// for a reason that has nothing to do with the rate limiter itself.
 {
-  const ip = '10.2.0.1';
-  const req = () => onRequestPost({
-    request: new Request('https://example.com/api/auth-google', {
-      method: 'POST',
-      headers: { 'CF-Connecting-IP': ip },
-      body: JSON.stringify({ credential: 'tok' }),
-    }),
-    env: baseEnv(),
-  });
-  for (let i = 0; i < 10; i++) {
-    const res = await req();
-    assert.notEqual(res.status, 429, `request ${i + 1} of 10 must not be rate-limited yet`);
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response('invalid_token', { status: 400 });
+  try {
+    const ip = '10.2.0.1';
+    const req = () => onRequestPost({
+      request: new Request('https://example.com/api/auth-google', {
+        method: 'POST',
+        headers: { 'CF-Connecting-IP': ip },
+        body: JSON.stringify({ credential: 'tok' }),
+      }),
+      env: baseEnv(),
+    });
+    for (let i = 0; i < 10; i++) {
+      const res = await req();
+      assert.notEqual(res.status, 429, `request ${i + 1} of 10 must not be rate-limited yet`);
+    }
+    const limited = await req();
+    assert.equal(limited.status, 429);
+    const data = await limited.json();
+    assert.equal(data.ok, false);
+    assert.equal(data.error, 'Too many attempts. Wait a minute and try again.');
+  } finally {
+    globalThis.fetch = originalFetch;
   }
-  const limited = await req();
-  assert.equal(limited.status, 429);
-  const data = await limited.json();
-  assert.equal(data.ok, false);
-  assert.equal(data.error, 'Too many attempts. Wait a minute and try again.');
 }
 
 const originalFetch = globalThis.fetch;
