@@ -481,7 +481,14 @@
   }
 
   function renderSlopeLab() {
-    const spot=Math.max(.01,Number($('labSpot').value)||600),targetMove=Number($('labMove').value)||0,horizon=Math.max(5,Number($('labMinutes').value)||90),ivPoints=Number($('labIv').value)||0,qty=Math.max(1,Number($('labQty').value)||1),hedgeQty=Math.max(0,Number($('labHedge').value)||0);
+    // Number(x)||90 would treat an explicitly typed 0 (falsy) the same as an
+    // empty field and jump straight to the 90-minute default, skipping past
+    // this field's own min="5" floor that Math.max is supposed to enforce.
+    // parseFloat('') is NaN (unlike Number('')===0), so isFinite still tells
+    // a genuinely empty field apart from a typed 0, which stays 0 and lets
+    // Math.max clamp it to 5 instead.
+    const minutesTyped=parseFloat($('labMinutes').value);
+    const spot=Math.max(.01,Number($('labSpot').value)||600),targetMove=Number($('labMove').value)||0,horizon=Math.max(5,isFinite(minutesTyped)?minutesTyped:90),ivPoints=Number($('labIv').value)||0,qty=Math.max(1,Number($('labQty').value)||1),hedgeQty=Math.max(0,Number($('labHedge').value)||0);
     const profiles=[
       {name:'ITM call',premium:6.5,delta:.72,gamma:.018,theta:-.10,vega:.11,color:COLORS.blue,qty},
       {name:'ATM call',premium:3.8,delta:.52,gamma:.026,theta:-.16,vega:.14,color:COLORS.green,qty},
@@ -530,7 +537,7 @@
   // medianMae inverse-flag bug (renderConditions) and the hardcoded
   // good/bad classes (renderStock's fib table) both ship.
   if (typeof window !== 'undefined') {
-    window.__researchEngineInternals = { state, setModule, loadCurrent, loadOptions, loadStock, loadSectors, loadBiotech, renderConditions, renderStock, classify };
+    window.__researchEngineInternals = { state, setModule, loadCurrent, loadOptions, loadStock, loadSectors, loadBiotech, renderConditions, renderStock, classify, renderSlopeLab };
   }
 
   document.addEventListener('DOMContentLoaded',wire);

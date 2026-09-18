@@ -686,6 +686,34 @@ function loadResearchEngineClient() {
 }
 
 // ---------------------------------------------------------------------------
+// Options module "Interactive contract slope & hedge lab": renderSlopeLab()
+// read the Minutes field as Number($('labMinutes').value)||90, so an
+// explicitly typed 0 (falsy) was treated the same as an empty field and
+// silently replaced with the unrelated 90-minute default -- the surrounding
+// Math.max(5, ...) meant to enforce the field's own min="5" floor never got
+// the chance to run, because ||90 already short-circuited past it. A member
+// who cleared the field and typed 0 to see the immediate P/L never got a
+// 5-minute horizon; they got 90 with no indication their input was ignored.
+// ---------------------------------------------------------------------------
+{
+  const { internal, getElementById } = loadResearchEngineClient();
+  getElementById('labMinutes').value = '0';
+  internal.renderSlopeLab();
+  assert.match(
+    getElementById('hedgeSummary').textContent,
+    /over 5 minutes/,
+    'a typed 0 must clamp to the field\'s own 5-minute floor, not fall back to the unrelated 90-minute default',
+  );
+}
+{
+  // An empty/invalid field is the actual case the 90-minute default exists for.
+  const { internal, getElementById } = loadResearchEngineClient();
+  getElementById('labMinutes').value = '';
+  internal.renderSlopeLab();
+  assert.match(getElementById('hedgeSummary').textContent, /over 90 minutes/, 'an empty field must still fall back to the 90-minute default');
+}
+
+// ---------------------------------------------------------------------------
 // Options module "Complete model outcome matrix" table: the Median MAE cell
 // used to pass classify(value, inverse=true) -- classify()'s only other
 // caller (thresholdClass(ifvgRate, .5, true), the FVG table) uses inverse to
