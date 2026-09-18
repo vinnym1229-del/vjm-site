@@ -154,6 +154,38 @@ try {
     assert.equal(data.items[0].title, 'Has link');
   }
 
+  // fixMojibake's catch branch (TextDecoder throwing mid-repair) was
+  // untested -- every prior mojibake case here exercises the regex guard and
+  // a clean decode, never the fallback that must return the string AS-IS
+  // rather than 500 if the decode step itself fails. Stub the global
+  // TextDecoder so a title that matches the mojibake pattern trips the
+  // guard, then blows up inside the try; the title must come back
+  // unrepaired, not crash the request.
+  {
+    const originalTextDecoder = globalThis.TextDecoder;
+    globalThis.TextDecoder = class {
+      decode() { throw new Error('forced decode failure'); }
+    };
+    try {
+      const correctTitle = 'café-fueled market open';
+      const mojibakeTitle = Array.from(Buffer.from(correctTitle, 'utf8'))
+        .map((b) => String.fromCharCode(b)).join('');
+      globalThis.fetch = async () => Response.json({
+        news: [{
+          title: mojibakeTitle,
+          link: 'https://finance.yahoo.com/news/e',
+          providerPublishTime: 1735689600,
+        }],
+      });
+      const { status, data } = await fetchNews('?symbol=AAPL');
+      assert.equal(status, 200);
+      assert.equal(data.ok, true);
+      assert.equal(data.items[0].title, mojibakeTitle, 'a failed repair must fall back to the original string, not throw');
+    } finally {
+      globalThis.TextDecoder = originalTextDecoder;
+    }
+  }
+
   // Duplicate links (same story surfaced twice) are deduped.
   {
     globalThis.fetch = async () => Response.json({
