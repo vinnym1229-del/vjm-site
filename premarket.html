@@ -210,7 +210,14 @@ body.light-mode .nav-top{ background:rgba(0,0,0,.05); }
 (function(){
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-  const pctCls = (v) => v >= 0 ? 'pos' : 'neg';
+  // Number.isFinite guard, not `m.changePct||0`: alpaca.js's movers() screener
+  // path (unlike its own computedMovers fallback) never filters out a row
+  // whose upstream price_change_percent was missing, so a real loser can
+  // reach here with changePct:null. `||0` collapsed that to 0, and 0 reads
+  // as non-negative, so an unavailable mover rendered class="num pos" --
+  // green, the gain color -- right next to fmtPct's own "—" for the same
+  // value. Matches assets/live-ticker.js's identical guard for the same feed.
+  const pctCls = (v) => Number.isFinite(v) ? (v >= 0 ? 'pos' : 'neg') : '';
   const fmtPct = (v) => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(2) + '%';
 
   function statusChip(text, cls){ $('statusRow').innerHTML = '<span class="vjm-chip ' + cls + '">' + esc(text) + '</span>'; }
@@ -218,7 +225,7 @@ body.light-mode .nav-top{ background:rgba(0,0,0,.05); }
   function moverRows(list){
     if (!list || !list.length) return '<em style="color:var(--vjm-muted)">Unavailable this morning.</em>';
     return list.slice(0,6).map(m =>
-      '<div class="mover-row"><strong>' + esc(m.symbol) + '</strong><span class="num ' + pctCls(m.changePct||0) + '">' +
+      '<div class="mover-row"><strong>' + esc(m.symbol) + '</strong><span class="num ' + pctCls(m.changePct) + '">' +
       fmtPct(m.changePct) + '</span></div>').join('');
   }
 
