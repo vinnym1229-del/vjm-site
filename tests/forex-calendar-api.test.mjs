@@ -211,4 +211,61 @@ try {
   }
 }
 
+// The two cache operations that sit outside the request's own success/fail
+// path -- writing a fresh good copy, and reading back a previously-held one
+// -- are each wrapped in their own best-effort .catch(), separate from the
+// try/catch around the live fetch. Neither had ever been made to actually
+// reject: a cache.put() failure and a corrupted held entry were both
+// unverified. cache.put() rejecting is the sharper of the two, since that
+// call sits inside the same try block as the live fetch -- without its own
+// catch, a transient KV/cache write failure would be caught by the outer
+// try and misreported as an upstream feed failure (502) even though the
+// live fetch just succeeded and good data is in hand.
+{
+  const originalFetch7 = globalThis.fetch;
+  const originalCaches7 = globalThis.caches;
+  globalThis.fetch = async () => Response.json(FIXTURE);
+  globalThis.caches = {
+    default: {
+      put: async () => { throw new Error('cache write quota exceeded'); },
+      match: async () => null,
+    },
+  };
+  try {
+    const res = await call('https://example.com/api/forex-calendar?impact=major', '10.5.0.7');
+    assert.equal(res.status, 200, 'a cache-write failure must not turn a successful live fetch into a fake upstream-unavailable response');
+    const data = await res.json();
+    assert.equal(data.ok, true);
+    assert.equal(data.stale, false);
+    assert.deepEqual(data.events.map((e) => e.title), ['CPI m/m', 'Retail Sales m/m']);
+  } finally {
+    globalThis.fetch = originalFetch7;
+    globalThis.caches = originalCaches7;
+  }
+}
+
+// A held cache entry whose body isn't valid JSON (a corrupted or truncated
+// write from a prior run) must be treated the same as no cache at all --
+// fail closed with 502, not crash with an uncaught SyntaxError that would
+// surface on Cloudflare Pages as a generic 500.
+{
+  const originalFetch8 = globalThis.fetch;
+  const originalCaches8 = globalThis.caches;
+  const corrupted = new Response('not json{{{', {
+    headers: { 'Content-Type': 'application/json', 'X-Fetched-At': '2026-08-30T09:00:00.000Z' },
+  });
+  globalThis.fetch = async () => { throw new Error('feed throttled'); };
+  globalThis.caches = { default: { put: async () => {}, match: async () => corrupted } };
+  try {
+    const res = await call('https://example.com/api/forex-calendar?impact=major', '10.5.0.8');
+    assert.equal(res.status, 502, 'a corrupted held cache entry must fail closed like no cache at all, not crash the handler');
+    const data = await res.json();
+    assert.equal(data.ok, false);
+    assert.match(data.detail, /feed throttled/, 'the reported failure must be the real upstream error, not the JSON-parse error from the corrupted cache read');
+  } finally {
+    globalThis.fetch = originalFetch8;
+    globalThis.caches = originalCaches8;
+  }
+}
+
 console.log('VJM forex-calendar API tests passed.');
