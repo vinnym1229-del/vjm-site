@@ -36,7 +36,7 @@ async function hmacHex(secret, message) {
 // Minimal D1 fake covering exactly the queries whop-webhook.js issues,
 // matched by a distinguishing substring of each SQL statement. State lives
 // in the Maps/Sets passed in so a test can assert on it directly.
-function makeDb({ claimedEvents = new Set(), codes = new Map(), notes = new Map() } = {}) {
+function makeDb({ claimedEvents = new Set(), codes = new Map(), notes = new Map(), failOn = [] } = {}) {
   return {
     claimedEvents,
     codes,
@@ -47,6 +47,14 @@ function makeDb({ claimedEvents = new Set(), codes = new Map(), notes = new Map(
           return {
             async first() { return null; },
             async run() {
+              // Simulates a transient D1 outage on whichever query a test
+              // opts into failing, so the five best-effort `.catch(() => {})`
+              // writes (claim release, audit notes, rollback delete) can be
+              // proven to swallow a real rejection instead of just looking
+              // like they would.
+              if (failOn.some((needle) => sql.includes(needle))) {
+                throw new Error('simulated D1 outage: ' + sql);
+              }
               if (sql.includes('INSERT OR IGNORE INTO webhook_events')) {
                 const [eventId] = args;
                 const key = 'whop:' + eventId;
@@ -323,6 +331,79 @@ try {
     assert.equal(db.codes.size, 1, 'an email-backed grant survives a failed code delivery');
     assert.equal([...db.codes.values()][0].status, 'active');
     assert.match(db.notes.get('grant-email'), /undelivered_email_fallback/);
+  }
+  // ─────────────────────────────────────────────────────────────────────
+  // Best-effort D1 writes (claim release, audit notes, rollback delete) are
+  // each wrapped in `.catch(() => {})` because they are bookkeeping, not the
+  // access decision itself — a transient D1 blip on one of them must never
+  // turn into an unhandled exception (which for a webhook means Whop sees a
+  // generic 500 and blind-retries instead of the documented fail-closed
+  // response). None of these five writes had ever actually been made to
+  // reject before, so the catches were unexercised.
+  // ─────────────────────────────────────────────────────────────────────
+
+  // releaseClaim()'s DELETE FROM webhook_events rejecting must not stop the
+  // documented 422 "missing member id" response from reaching the caller.
+  {
+    const db = makeDb({ failOn: ['DELETE FROM webhook_events'] });
+    const env = baseEnv(db);
+    const { status, data } = await postWebhook(env, revokeBody('claim-release-fails', null));
+    assert.equal(status, 422);
+    assert.match(data.error, /missing member id/i);
+  }
+
+  // The "no_grant" audit-note UPDATE rejecting must not stop the 200
+  // ignored/granted:false response for an unallowlisted product.
+  {
+    const db = makeDb({ failOn: ['UPDATE webhook_events'] });
+    const env = { ...baseEnv(db), ...{ WHOP_PRODUCTS_COMPLETE: 'prod_complete_129' } };
+    const { status, data } = await postWebhook(env, grantBody('no-grant-note-fails', 'member-Z', 'prod_indicator_29'));
+    assert.equal(status, 200);
+    assert.equal(data.granted, false);
+    assert.equal(data.reason, 'not_allowlisted');
+  }
+
+  // The undeliverable-grant rollback's DELETE FROM whop_codes rejecting must
+  // not stop the 503 "will retry"/"not configured" response, and the claim
+  // (a separate query) must still be released so the retry can actually run.
+  {
+    const db = makeDb({ failOn: ['DELETE FROM whop_codes'] });
+    const env = baseEnv(db); // no DISCORD_WHOP_CODES_WEBHOOK
+    const { status, data } = await postWebhook(env, grantBody('rollback-delete-fails', 'member-R'));
+    assert.equal(status, 503);
+    assert.match(data.error, /not configured/);
+    assert.equal(db.claimedEvents.size, 0, 'claim release is a separate query and must still succeed');
+  }
+
+  // The successful-grant audit-note UPDATE rejecting must not stop the code
+  // from being provisioned and delivered — the note is bookkeeping, not the
+  // access decision.
+  {
+    const db = makeDb({ failOn: ['UPDATE webhook_events'] });
+    const env = { ...baseEnv(db), DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    globalThis.fetch = async () => new Response(null, { status: 204 });
+    const { status, data } = await postWebhook(env, grantBody('grant-note-fails', 'member-N'));
+    assert.equal(status, 200);
+    assert.equal(data.action, 'grant');
+    assert.equal(data.delivered, true);
+    assert.equal(data.provisioned, true);
+    assert.equal(db.codes.size, 1, 'the grant itself must land even though its audit note failed to write');
+  }
+
+  // The revoke audit-note UPDATE rejecting must not stop the actual
+  // status/session_epoch flip that reaches an already-signed-in member.
+  {
+    const db = makeDb({ failOn: ['UPDATE webhook_events'] });
+    const env = { ...baseEnv(db), DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    globalThis.fetch = async () => new Response(null, { status: 204 });
+    await postWebhook(env, grantBody('revoke-note-fails-grant', 'member-Q'));
+
+    const { status, data } = await postWebhook(env, revokeBody('revoke-note-fails', 'member-Q'));
+    assert.equal(status, 200);
+    assert.equal(data.action, 'revoke');
+    assert.equal(data.revoked, 1, 'the revoke must actually apply even though its audit note failed to write');
+    assert.equal([...db.codes.values()][0].status, 'revoked');
+    assert.equal([...db.codes.values()][0].session_epoch, 2);
   }
   // ─────────────────────────────────────────────────────────────────────
   // Entitlement tier (functions/api/_lib/entitlements.js + migration 0005).
