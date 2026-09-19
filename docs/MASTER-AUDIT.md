@@ -21,18 +21,22 @@ Findings:
 
 ## 2. Frontend → API contract audit
 
-Verified by scanning every `fetch(` call in shipped HTML vs existing Functions:
+Verified by scanning every `fetch(` call in shipped HTML vs existing Functions.
+This table is a point-in-time snapshot from this audit's own commit (`6b5f811`,
+2026-08-23) — the four ❌ rows below have all since been implemented and the
+iframe reference removed; do not read the ❌/MISSING statuses as describing
+the `pj` branch today. See `docs/API.md` for current, live endpoint status.
 
 | Frontend calls | Used by | Backend exists? | Status |
 |---|---|---|---|
 | `POST /api/verify-premium`, `GET /api/verify-premium?token=` | index, stock-lab, premium-guidance, research-engine.js | ✅ `functions/api/verify-premium.js` | Insecure (see §3) |
 | `GET /api/check-member-status?discord=` | index.html:2662 | ✅ `functions/api/check-member-status.js` | Enumeration risk (see §3) |
-| `GET /api/forex-calendar?currency=USD&impact=major` | forex-calendar.html:60 | ❌ **MISSING** | Page shows perpetual "loading" then dead state |
-| `GET /api/yahoo-news?symbol=` | stock-lab.html:59 | ❌ **MISSING** | News always falls to "unavailable" path |
-| `GET /api/stock-research?symbol=` | stock-lab.html:60 | ❌ **MISSING** | Quote block always "unavailable" |
-| `POST /api/logout-premium` | stock-lab.html:63 | ❌ **MISSING** | Sign-out silently 404s; localStorage cleared client-side only |
+| `GET /api/forex-calendar?currency=USD&impact=major` | forex-calendar.html:60 | ❌ **MISSING** at audit time | Implemented since: `functions/api/forex-calendar.js` |
+| `GET /api/yahoo-news?symbol=` | stock-lab.html:59 | ❌ **MISSING** at audit time | Implemented since: `functions/api/yahoo-news.js` |
+| `GET /api/stock-research?symbol=` | stock-lab.html:60 | ❌ **MISSING** at audit time | Implemented since: `functions/api/stock-research.js` |
+| `POST /api/logout-premium` | stock-lab.html:63 | ❌ **MISSING** at audit time | Implemented since: `functions/api/logout-premium.js` |
 | `GET /api/research-engine?module=…` | research-engine.html/assets/research-engine.js | ✅ codex branch | OK, bearer-token model |
-| `iframe src=/premium-screener.html` | stock-lab.html:63 (`showPremium()`) | ❌ file does not exist on any branch | Premium gate unlocks into a broken iframe |
+| `iframe src=/premium-screener.html` | stock-lab.html:63 (`showPremium()`) | ❌ file did not exist at audit time | Resolved since: `showPremium()` now toggles the premium panel inline via `classList`, no iframe |
 
 ## 3. Security audit — priority-zero findings (all verified)
 
@@ -86,7 +90,7 @@ Data-classification rule adopted repo-wide: every dynamic value carries `{source
 
 - index.html = **2,496,321 bytes (~2.4 MB)**, 2,865 lines, minified CSS+JS inline, as measured at this audit's own commit (`6b5f811`, 2026-08-23). Confirmed monolith. This is a point-in-time figure, not a live one — the site was rebuilt substantially afterward (fabricated widgets removed, research engine merged in, ongoing maintenance since) and the `pj` branch's current index.html is **213,253 bytes (~208 KB)**, 3,376 lines. Do not read the 2.4 MB figure as describing the file today.
 - Duplicate IDs (verified by extraction): index.html `theme-label`×4, `member-wins`×2; options-lab.html `theme-label`×4; premium-guidance.html `signin-title`×2. Fixed in this branch.
-- Broken internal reference: `/premium-screener.html` (stock-lab) — no such file anywhere in history.
+- Broken internal reference: `/premium-screener.html` (stock-lab) — no such file existed at audit time. Resolved since (see §2): `showPremium()` toggles the premium panel inline, no iframe.
 - Emoji-as-icon dependency throughout; base64/photographic weight concentrated in index.html hero/wins imagery.
 - No package.json test runner wired to CI beyond ad-hoc node tests on codex; tests exist but don't cover auth/security.
 
