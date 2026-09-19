@@ -1123,6 +1123,26 @@ test('every course page quotes its own real lesson count, and every aggregate qu
   assert.equal(Number(trust[1]), total, 'premium-guidance.html: curriculum lessons trust badge total is stale');
 });
 
+// Incident: index.html's review-summary widget (`.review-bars`) hand-types a
+// per-star breakdown next to a headline "<n> ratings" count, and the two were
+// never reconciled: 2188 (5★) + 68 (4★) + 0 + 0 + 1 (1★) = 2257, one more than
+// the "2,256 ratings" headline directly above it -- and that 2,256 figure is
+// independently corroborated elsewhere on the page (#hb-reviews, the static
+// "5.0★ (2,256)" caption), so the breakdown's 5★ count was the stale number,
+// not the headline. A reader who adds up the star-count column, the widget's
+// own obvious sanity check, would get a total the widget itself contradicts.
+test("index.html's review-bar star counts sum to its own headline rating count", () => {
+  const index = read('index.html');
+  const headline = /<div class="count">([\d,]+) ratings<\/div>/.exec(index);
+  assert.ok(headline, 'index.html: expected the review-summary "<n> ratings" headline');
+  const total = Number(headline[1].replace(/,/g, ''));
+
+  const bars = [...index.matchAll(/<div class="review-bar">.*?\((\d+)\)<\/span><\/div>/g)];
+  assert.equal(bars.length, 5, 'index.html: expected 5 review-bar rows (5★ through 1★)');
+  const sum = bars.reduce((acc, m) => acc + Number(m[1]), 0);
+  assert.equal(sum, total, 'index.html: review-bar star counts do not sum to the "ratings" headline');
+});
+
 // Incident: docs/ENTITLEMENTS.md quotes the same four-course lesson total
 // ("can read all 206 lessons straight from source", describing the
 // public-repo lesson-body exposure) as the HTML pages fixed above, but this

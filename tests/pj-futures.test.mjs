@@ -54,7 +54,10 @@ test('whop listing facts showcased (owner screenshots, 2026-09-08)', () => {
   assert.match(index, /id="hb-reviews">2,256<\/span> reviews/);
   assert.match(index, /49,762/, 'joined count missing');
   assert.match(index, /2\.8K members/);
-  assert.match(index, /97% \(2188\)/, '5-star review bar missing');
+  // 2188 was the original owner-screenshot figure but never summed correctly
+  // against the "2,256 ratings" headline (2188+68+0+0+1=2257); corrected to
+  // 2187 (see the review-bar reconciliation test in regressions.test.mjs).
+  assert.match(index, /97% \(2187\)/, '5-star review bar missing');
   assert.match(index, /win up to \$50,000/i, 'giveaway line missing');
 });
 
