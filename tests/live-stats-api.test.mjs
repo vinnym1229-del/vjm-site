@@ -10,8 +10,9 @@
 // attempted) when WHOP_API_KEY/WHOP_PRODUCT_ID are absent, a non-200 or
 // throwing response from either upstream degrades that half to null without
 // touching the other, a fully successful pull shapes both halves correctly,
-// and the 5-minute edge-cache header the run cycle depends on to absorb
-// polling from every page load.
+// a response missing its count fields falls back to null per field rather
+// than shipping `undefined` in the JSON, and the 5-minute edge-cache header
+// the run cycle depends on to absorb polling from every page load.
 import assert from 'node:assert/strict';
 import { onRequestGet } from '../functions/api/live-stats.js';
 
@@ -115,6 +116,35 @@ try {
     assert.equal(data.ok, true);
     assert.equal(data.whop, null);
     assert.deepEqual(data.discord, { memberCount: 5000, onlineCount: 800 });
+  }
+
+  // Whop upstream errors (non-200): degrades to null, Discord half
+  // unaffected. This mirrors the Discord non-200 case above but was never
+  // exercised for Whop -- only its success and throw paths were covered.
+  {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes('api.whop.com')) return new Response('down', { status: 500 });
+      return Response.json({ approximate_member_count: 5000, approximate_presence_count: 800 });
+    };
+    const { status, data } = await call(whopEnv(), nextIp());
+    assert.equal(status, 200);
+    assert.deepEqual(data.discord, { memberCount: 5000, onlineCount: 800 });
+    assert.equal(data.whop, null);
+  }
+
+  // Both upstreams answer 200 but omit their count fields: each field's
+  // `?? null` fallback must fire independently rather than the response
+  // shipping `undefined` (which JSON.stringify would silently drop,
+  // changing the response shape the frontend expects).
+  {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes('api.whop.com')) return Response.json({});
+      return Response.json({});
+    };
+    const { status, data } = await call(whopEnv(), nextIp());
+    assert.equal(status, 200);
+    assert.deepEqual(data.discord, { memberCount: null, onlineCount: null });
+    assert.deepEqual(data.whop, { memberCount: null, reviewCount: null });
   }
 } finally {
   globalThis.fetch = originalFetch;
