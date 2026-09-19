@@ -1960,9 +1960,15 @@ function showQuizResult() {
   cta.textContent = t.cta;
   cta.setAttribute('data-vjm-course', t.href.replace('.html', ''));
   cta.setAttribute('data-vjm-location', 'quiz-result');
-  // The free starter course is the free-tier entry point; the gated tracks are
-  // a lock the visitor is being shown, so they are counted as different stages.
-  cta.setAttribute('data-vjm-event', rec.track === 'futures' ? 'free_course_start' : 'lock_view');
+  // The free starter course and the free discipline essay are both free-tier
+  // entry points; stocks/options are a lock the visitor is being shown, so
+  // only those count as a different stage. (Was `rec.track === 'futures'`
+  // only, which mistagged every psychology-track result — including every
+  // "gambler" persona and the Q4 "my process needs fixing" answer, both
+  // mainline paths, not edge cases — as lock_view, inflating that funnel
+  // stage with clicks that never saw a paywall.)
+  const FREE_TRACKS = new Set(['futures', 'psychology']);
+  cta.setAttribute('data-vjm-event', FREE_TRACKS.has(rec.track) ? 'free_course_start' : 'lock_view');
   document.getElementById('quiz-track-note').textContent = t.note;
 
   renderQuizLead(rec.track);

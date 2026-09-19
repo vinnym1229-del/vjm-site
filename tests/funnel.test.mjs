@@ -273,6 +273,27 @@ test('quiz routing maps answers to the track they imply', () => {
   assert.equal(gambler.overridden, true);
 });
 
+test('quiz CTA tags the free psychology essay as free_course_start, not lock_view', () => {
+  // Evaluate the shipped event-tagging logic rather than a copy of it. The
+  // psychology essay is one of only two free things on the whole site
+  // (tests/regressions.test.mjs pins that), but every "gambler" persona
+  // result and the Q4 "my process needs fixing" answer route rec.track to
+  // 'psychology' via mainline (not edge-case) paths, so a stale futures-only
+  // check here would tag real free-content clicks as lock_view.
+  const start = index.indexOf('const FREE_TRACKS = new Set');
+  const end = index.indexOf(';', index.indexOf("cta.setAttribute('data-vjm-event'", start)) + 1;
+  const snippet = index.slice(start, end);
+  const eventFor = vm.runInNewContext(`(function(rec) {
+    const cta = { setAttribute(_, v) { this.event = v; } };
+    ${snippet}
+    return cta.event;
+  })`);
+  assert.equal(eventFor({ track: 'futures' }), 'free_course_start');
+  assert.equal(eventFor({ track: 'psychology' }), 'free_course_start');
+  assert.equal(eventFor({ track: 'stocks' }), 'lock_view');
+  assert.equal(eventFor({ track: 'options' }), 'lock_view');
+});
+
 // ─────────────────────────────────────────────────────────────────────────
 // Declarative auto-binding: handleClick/bindViews/closestWith/propsFrom/
 // isWhopLink. This is the mechanism that actually fires plan_cta, lock_view
