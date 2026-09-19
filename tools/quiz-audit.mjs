@@ -142,7 +142,10 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const pages = args.length ? args : DEFAULT_PAGES;
   const resolve = (p) => (existsSync(p) ? p : join(ROOT, p));
   const rows = auditPages(pages, (p) => readFileSync(resolve(p), 'utf8'));
-  const currSrc = readFileSync(join(ROOT, 'assets/curriculum.js'), 'utf8');
+  // Overridable so tests can drive the position-leak FAIL/WARN branches
+  // against a synthetic curriculum.js without touching the real, shipped one.
+  const curriculumPath = process.env.QUIZ_AUDIT_CURRICULUM_PATH || join(ROOT, 'assets/curriculum.js');
+  const currSrc = readFileSync(curriculumPath, 'utf8');
   const v = verdict(rows, currSrc);
 
   for (const r of rows) {
