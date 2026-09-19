@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "check:syntax": "node tools/check-syntax.mjs",
-    "test": "npm run check:syntax && node --experimental-test-module-mocks --test \"tests/*.test.mjs\""
+    "test": "npm run check:syntax && node --experimental-test-module-mocks --test \"tests/*.test.mjs\"",
+    "test:coverage": "node --experimental-test-module-mocks --experimental-test-coverage --test \"tests/*.test.mjs\""
   }
 }
