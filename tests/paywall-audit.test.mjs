@@ -154,7 +154,14 @@ test('the repo-exposure figure quoted in docs/PAYWALL.md is still the real one',
   assert.ok(totals.paidWords < 65000, `paid prose grew to ${totals.paidWords} words — regenerate docs/PAYWALL.md`);
   assert.ok(totals.paidBytes > 400 * 1024);
   const doc = read(join('docs', 'PAYWALL.md'));
-  assert.match(doc, /49,967/, 'PAYWALL.md must quote the measured word count');
+  // Compared against the live measurement, not a copy-pasted literal — a
+  // hardcoded number here would keep matching itself even after it drifts
+  // from the tree, which is exactly how the doc went stale (9,749 vs. the
+  // real 9,750 on futures-dissection.html) without this test ever failing.
+  const wordsStr = totals.paidWords.toLocaleString('en-US');
+  assert.match(doc, new RegExp(`${wordsStr} words`), `PAYWALL.md must quote the current measured word count (${wordsStr})`);
+  const bytesStr = totals.paidBytes.toLocaleString('en-US');
+  assert.match(doc, new RegExp(`${bytesStr} bytes`), `PAYWALL.md must quote the current measured paid-byte count (${bytesStr})`);
 });
 
 // The "page source" column is the whole file, not just the paid markup — it
@@ -179,4 +186,19 @@ test('the per-page and total "page source" KB figures in docs/PAYWALL.md match t
   const totalCells = totalMatch[0].split('|').map((c) => c.trim()).filter(Boolean);
   const statedTotal = Number(totalCells[totalCells.length - 1].replace(/[^\d]/g, ''));
   assert.equal(statedTotal, kbOf(totals.bytes), `PAYWALL.md's total page source is ${statedTotal} KB, working tree is ${kbOf(totals.bytes)} KB`);
+});
+
+// The per-page "paid words" cells drifted from the working tree with nothing
+// catching it: the total-only word-count test above only ever checked the
+// document's own prose sentence, never the table rows it was summed from, so
+// futures-dissection.html's row could sit one word stale indefinitely.
+test('the per-page "paid words" figures in docs/PAYWALL.md match the working tree', () => {
+  const doc = read(join('docs', 'PAYWALL.md'));
+  for (const r of rows) {
+    const lineMatch = doc.match(new RegExp('^\\|\\s*`' + r.path.replace(/\./g, '\\.') + '`.*$', 'm'));
+    assert.ok(lineMatch, `docs/PAYWALL.md has no table row for ${r.path}`);
+    const cells = lineMatch[0].split('|').map((c) => c.trim()).filter(Boolean);
+    const stated = Number(cells[5].replace(/[^\d]/g, ''));
+    assert.equal(stated, r.paidWords, `${r.path}: PAYWALL.md says ${stated} paid words, working tree is ${r.paidWords}`);
+  }
 });

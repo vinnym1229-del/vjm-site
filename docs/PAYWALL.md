@@ -28,18 +28,18 @@ Audit run against the working tree (`node tools/paywall-audit.mjs`):
 
 | page | gated regions | gated lessons | free lessons | worked cases | paid words | paid markup | page source |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `futures-dissection.html` | 3 | 43 | 7 | 3 | 9,749 | 86 KB | 117 KB |
+| `futures-dissection.html` | 3 | 43 | 7 | 3 | 9,750 | 86 KB | 117 KB |
 | `options-lab.html` | 4 | 51 | 0 | 3 | 11,381 | 99 KB | 155 KB |
 | `psychology-enhancer.html` | 13 | 62 | 0 | 3 | 16,048 | 157 KB | 208 KB |
 | `stock-breakdown.html` | 4 | 46 | 0 | 3 | 12,789 | 112 KB | 130 KB |
-| **total** | **24** | **202** | **7** | **12** | **49,967** | **454 KB** | **609 KB** |
+| **total** | **24** | **202** | **7** | **12** | **49,968** | **454 KB** | **609 KB** |
 
 Read that as:
 
 - **202 paid lessons** are gated at the edge and readable in public source.
 - **All twelve worked cases** — the long-form, fully-computed examples that are
   the most expensive thing on this site to produce — are in public source.
-- **49,967 words** of paid prose (roughly a 200-page book) and **465,322 bytes**
+- **49,968 words** of paid prose (roughly a 200-page book) and **465,328 bytes**
   of paid markup are in the public repository right now.
 - **Seven lessons are free by design** (futures Level 1) and one essay
   (psychology). That is the entire intended free tier, and the audit knows it
