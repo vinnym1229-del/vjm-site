@@ -26,11 +26,20 @@ import './helpers/html-rewriter.mjs';
 
 // ---------------------------------------------------------------------------
 // Fixture: a stand-in for a real course page (see futures-dissection.html
-// for the real structure this mirrors).
+// for the real structure this mirrors). Crucially, the gated wrapper itself
+// nests <div>s (lesson-body, then correct, then a sibling key-takeaways div
+// after they close) the same way every real lesson does — the html-rewriter
+// test double locates the matching close tag by tracking same-tag-name
+// nesting depth, and until now no fixture ever gave it a nested `<div>` to
+// track depth through, so that logic (tests/helpers/html-rewriter.mjs lines
+// ~50-56) ran uncovered. A double that stops at the first `</div>` it finds
+// (the innermost one, `.correct`'s) instead of counting nesting would end
+// the match early and let everything after it — here, the key-takeaways
+// div's paid text — fall through to the output unstripped.
 // ---------------------------------------------------------------------------
 const PAGE_HTML = `<!doctype html><html><body>
 <h1>Course</h1>
-<div class="gated-content" hidden><details class="lesson-card"><p>paid lesson text</p></details></div>
+<div class="gated-content" hidden><details class="lesson-card"><div class="lesson-body"><p>paid lesson text</p><div class="correct"><p>paid watch-for text</p></div></div></details><div class="key-takeaways"><p>paid takeaway text</p></div></div>
 <div class="free-content"><p>free teaser</p></div>
 </body></html>`;
 
@@ -78,6 +87,9 @@ async function unlocked(path, opts) {
   const body = await res.text();
   assert.equal(res.status, 200);
   assert.ok(!body.includes('paid lesson text'), 'paid lesson text leaked to an unauthenticated request');
+  assert.ok(!body.includes('paid watch-for text'), 'paid content inside a nested <div> survived the strip');
+  assert.ok(!body.includes('paid takeaway text'),
+    'paid content after a nested <div> closed leaked past the strip — the rewriter stopped at the wrong closing tag');
   assert.ok(body.includes('free teaser'), 'unrelated free content was wrongly touched');
   assert.match(body, /data-locked="1"/, 'stripped wrapper must be marked locked');
 }
@@ -89,6 +101,7 @@ async function unlocked(path, opts) {
   const res = await promise;
   const body = await res.text();
   assert.ok(body.includes('paid lesson text'), 'authenticated member was denied their own paid content');
+  assert.ok(body.includes('paid takeaway text'), 'authenticated member lost content past a nested <div>');
 }
 
 // A garbage/tampered cookie must fail closed to the unauthenticated (stripped)
