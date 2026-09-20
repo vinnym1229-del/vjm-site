@@ -1789,3 +1789,48 @@ test("curriculum.js's injected lock-form Turnstile widget matches the active sit
     assert.equal(created[0].dataset.theme, light ? 'light' : 'dark', `expected dataset.theme '${light ? 'light' : 'dark'}'`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Incident: options-lab.html ships two of its own tab-style widgets --
+// #tabs (Options Basics / Gamma Exposure / Full Curriculum) and #subtabs
+// (GEX 101 / Worked Scenarios / Where to Get Data / Translation) -- driven
+// by a page-local inline <script>, not assets/curriculum.js. Every other
+// tab widget on the site (curriculum level/group tabs, index.html's
+// billing-period tabs, stock-lab's #sectorTabs) already carries
+// role="tablist"/role="tab"/aria-selected; these two were missed because
+// they predate that pattern and nothing ever swept this page's own inline
+// script. A screen-reader visitor on this paid course page's top-of-page
+// navigation heard only "button, button, button" with no tab-group or
+// selection state announced.
+test('options-lab.html #tabs and #subtabs carry ARIA tab semantics', () => {
+  const html = read('options-lab.html');
+  const bars = [
+    { name: '#tabs', re: /<div class="tabs" id="tabs"[^>]*>/, btnRe: /<button class="tab-btn( active)?"[^>]*>/g },
+    { name: '#subtabs', re: /<div class="subtabs" id="subtabs"[^>]*>/, btnRe: /<button class="subtab-btn( active)?"[^>]*>/g },
+  ];
+  for (const { name, re, btnRe } of bars) {
+    const bar = re.exec(html);
+    assert.ok(bar && /role="tablist"/.test(bar[0]), `${name} bar missing role="tablist"`);
+    const buttons = [...html.matchAll(btnRe)];
+    assert.ok(buttons.length >= 3, `expected at least 3 buttons in ${name}`);
+    for (const btn of buttons) {
+      assert.match(btn[0], /role="tab"/, `${name} button missing role="tab": ${btn[0]}`);
+      const expected = btn[1] ? 'true' : 'false';
+      assert.ok(btn[0].includes(`aria-selected="${expected}"`),
+        `${name} button aria-selected should be "${expected}": ${btn[0]}`);
+    }
+  }
+});
+
+test('options-lab.html #tabs/#subtabs click handlers keep aria-selected in sync with the .active class', () => {
+  const html = read('options-lab.html');
+  const script = html.slice(html.indexOf('<script>\ndocument.getElementById(\'tabs\')'));
+  const tabsFn = script.slice(script.indexOf("getElementById('tabs')"), script.indexOf("getElementById('subtabs')"));
+  const subtabsFn = script.slice(script.indexOf("getElementById('subtabs')"), script.indexOf('function themeButtonHtml'));
+  for (const [name, fn] of [['#tabs', tabsFn], ['#subtabs', subtabsFn]]) {
+    assert.match(fn, /setAttribute\('aria-selected',\s*'true'\)/,
+      `${name} click handler must set aria-selected 'true' on the newly active button`);
+    assert.match(fn, /setAttribute\('aria-selected',\s*'false'\)/,
+      `${name} click handler must set aria-selected 'false' on the buttons losing .active`);
+  }
+});

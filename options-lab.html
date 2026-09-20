@@ -294,10 +294,10 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
   <p>Start with how options actually work and how to trade them, then go deeper into gamma exposure — how to read a GEX chart, where to get real-time data cheap, and how to translate it into QQQ/NQ and SPY/ES intraday.</p>
 </div>
 
-<div class="tabs" id="tabs">
-  <button class="tab-btn active" data-tab="basics">Options Basics</button>
-  <button class="tab-btn" data-tab="gex">Gamma Exposure (GEX)</button>
-  <button class="tab-btn" data-tab="curriculum">Full Curriculum</button>
+<div class="tabs" id="tabs" role="tablist" aria-label="Options Lab section">
+  <button class="tab-btn active" data-tab="basics" role="tab" aria-selected="true">Options Basics</button>
+  <button class="tab-btn" data-tab="gex" role="tab" aria-selected="false">Gamma Exposure (GEX)</button>
+  <button class="tab-btn" data-tab="curriculum" role="tab" aria-selected="false">Full Curriculum</button>
 </div>
 
 <!-- ============ PANEL: OPTIONS BASICS ============ -->
@@ -371,11 +371,11 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
 <!-- ============ PANEL: GEX (with its own sub-tabs) ============ -->
 <div class="tab-panel" id="panel-gex">
 
-  <div class="subtabs" id="subtabs">
-    <button class="subtab-btn active" data-subtab="gex101">GEX 101</button>
-    <button class="subtab-btn" data-subtab="scenarios">Worked Scenarios</button>
-    <button class="subtab-btn" data-subtab="data">Where to Get Data</button>
-    <button class="subtab-btn" data-subtab="translate">QQQ/NQ · SPY/ES Translation</button>
+  <div class="subtabs" id="subtabs" role="tablist" aria-label="Gamma exposure section">
+    <button class="subtab-btn active" data-subtab="gex101" role="tab" aria-selected="true">GEX 101</button>
+    <button class="subtab-btn" data-subtab="scenarios" role="tab" aria-selected="false">Worked Scenarios</button>
+    <button class="subtab-btn" data-subtab="data" role="tab" aria-selected="false">Where to Get Data</button>
+    <button class="subtab-btn" data-subtab="translate" role="tab" aria-selected="false">QQQ/NQ · SPY/ES Translation</button>
   </div>
 
   <!-- SUB: GEX 101 -->
@@ -971,9 +971,13 @@ expiry P&L:  $88.00 -> +$675   $90.00 -> +$675   $96.75 -> $0   $100.00 -> -$325
 document.getElementById('tabs').addEventListener('click', function(e) {
   const btn = e.target.closest('.tab-btn');
   if (!btn) return;
-  document.querySelectorAll('#tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#tabs .tab-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
+  btn.setAttribute('aria-selected', 'true');
   document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
@@ -981,9 +985,13 @@ document.getElementById('tabs').addEventListener('click', function(e) {
 document.getElementById('subtabs').addEventListener('click', function(e) {
   const btn = e.target.closest('.subtab-btn');
   if (!btn) return;
-  document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.subtab-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
   document.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
   btn.classList.add('active');
+  btn.setAttribute('aria-selected', 'true');
   document.getElementById('subpanel-' + btn.dataset.subtab).classList.add('active');
   window.scrollTo({ top: document.getElementById('subtabs').offsetTop - 8, behavior: 'smooth' });
 });
