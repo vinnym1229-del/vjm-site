@@ -2341,11 +2341,33 @@ const BUNDLE_PERIODS = {
 const BUNDLE_FALLBACK = { futures: 'monthly', allmarkets: 'monthly', ifvg: 'monthly' };
 const PERIOD_LABELS = { monthly: 'Monthly', sixmo: '6-Month', yearly: 'Yearly', lifetime: 'Lifetime' };
 
+// Same arrow-key/Home/End + roving-tabindex pattern options-lab.html's own
+// #tabs/#subtabs and assets/curriculum.js's shared bars already carry —
+// this bar is neither, so it gets its own copy rather than a new shared
+// module for a single four-button widget.
+function wireTabKeyboardNav(bar, tabSelector, activate) {
+  bar.addEventListener('keydown', function(e) {
+    const tabs = Array.from(bar.querySelectorAll(tabSelector));
+    const from = tabs.indexOf(document.activeElement);
+    if (from === -1) return;
+    let to;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') to = (from + 1) % tabs.length;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') to = (from - 1 + tabs.length) % tabs.length;
+    else if (e.key === 'Home') to = 0;
+    else if (e.key === 'End') to = tabs.length - 1;
+    else return;
+    e.preventDefault();
+    tabs[to].focus();
+    activate(tabs[to]);
+  });
+}
+
 function setBundlePeriod(period) {
   document.querySelectorAll('.period-tab').forEach((btn) => {
     const active = btn.dataset.period === period;
     btn.classList.toggle('active', active);
     btn.setAttribute('aria-selected', String(active));
+    btn.tabIndex = active ? 0 : -1;
   });
   Object.keys(BUNDLE_PERIODS).forEach((tier) => {
     const priceEl = document.getElementById('price-' + tier);
@@ -2406,6 +2428,7 @@ function applyPlanCtas(period) {
 }
 
 setBundlePeriod('monthly');
+wireTabKeyboardNav(document.querySelector('.period-tabs'), '.period-tab', (btn) => setBundlePeriod(btn.dataset.period));
 
 // ─── INTRO VIDEO FACADE ───
 // Nothing loads until click (protects LCP). Priority: YouTube URL in
