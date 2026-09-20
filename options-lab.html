@@ -968,33 +968,63 @@ expiry P&L:  $88.00 -> +$675   $90.00 -> +$675   $96.75 -> $0   $100.00 -> -$325
 </footer>
 
 <script>
-document.getElementById('tabs').addEventListener('click', function(e) {
-  const btn = e.target.closest('.tab-btn');
-  if (!btn) return;
+// Both bars below declare role="tablist"/role="tab" but, like every other
+// tab widget on the site before assets/curriculum.js's wireTabKeyboardNav
+// fix, only ever handled clicks. These two are driven by this page's own
+// inline script (not assets/curriculum.js), so the same arrow-key/Home/End
+// + roving-tabindex behavior is reimplemented here rather than shared.
+function wireTabKeyboardNav(bar, tabSelector, activate) {
+  bar.addEventListener('keydown', function(e) {
+    const tabs = Array.from(bar.querySelectorAll(tabSelector));
+    const from = tabs.indexOf(document.activeElement);
+    if (from === -1) return;
+    let to;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') to = (from + 1) % tabs.length;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') to = (from - 1 + tabs.length) % tabs.length;
+    else if (e.key === 'Home') to = 0;
+    else if (e.key === 'End') to = tabs.length - 1;
+    else return;
+    e.preventDefault();
+    tabs[to].focus();
+    activate(tabs[to]);
+  });
+}
+
+function activateTab(btn) {
   document.querySelectorAll('#tabs .tab-btn').forEach(b => {
-    b.classList.remove('active');
-    b.setAttribute('aria-selected', 'false');
+    const active = b === btn;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-selected', String(active));
+    b.tabIndex = active ? 0 : -1;
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  btn.setAttribute('aria-selected', 'true');
   document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.querySelectorAll('#tabs .tab-btn').forEach(b => { b.tabIndex = b.classList.contains('active') ? 0 : -1; });
+document.getElementById('tabs').addEventListener('click', function(e) {
+  const btn = e.target.closest('.tab-btn');
+  if (btn) activateTab(btn);
 });
+wireTabKeyboardNav(document.getElementById('tabs'), '.tab-btn', activateTab);
 
-document.getElementById('subtabs').addEventListener('click', function(e) {
-  const btn = e.target.closest('.subtab-btn');
-  if (!btn) return;
+function activateSubtab(btn) {
   document.querySelectorAll('.subtab-btn').forEach(b => {
-    b.classList.remove('active');
-    b.setAttribute('aria-selected', 'false');
+    const active = b === btn;
+    b.classList.toggle('active', active);
+    b.setAttribute('aria-selected', String(active));
+    b.tabIndex = active ? 0 : -1;
   });
   document.querySelectorAll('.sub-panel').forEach(p => p.classList.remove('active'));
-  btn.classList.add('active');
-  btn.setAttribute('aria-selected', 'true');
   document.getElementById('subpanel-' + btn.dataset.subtab).classList.add('active');
   window.scrollTo({ top: document.getElementById('subtabs').offsetTop - 8, behavior: 'smooth' });
+}
+document.querySelectorAll('.subtab-btn').forEach(b => { b.tabIndex = b.classList.contains('active') ? 0 : -1; });
+document.getElementById('subtabs').addEventListener('click', function(e) {
+  const btn = e.target.closest('.subtab-btn');
+  if (btn) activateSubtab(btn);
 });
+wireTabKeyboardNav(document.getElementById('subtabs'), '.subtab-btn', activateSubtab);
 
 function themeButtonHtml(isLight) {
   return (isLight ? '☀️ <span class="theme-label-text">Light</span>' : '🌙 <span class="theme-label-text">Dark</span>');

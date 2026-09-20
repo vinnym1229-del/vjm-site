@@ -1822,15 +1822,15 @@ test('options-lab.html #tabs and #subtabs carry ARIA tab semantics', () => {
   }
 });
 
-test('options-lab.html #tabs/#subtabs click handlers keep aria-selected in sync with the .active class', () => {
+test('options-lab.html #tabs/#subtabs activate() functions keep aria-selected in sync with the .active class', () => {
   const html = read('options-lab.html');
-  const script = html.slice(html.indexOf('<script>\ndocument.getElementById(\'tabs\')'));
-  const tabsFn = script.slice(script.indexOf("getElementById('tabs')"), script.indexOf("getElementById('subtabs')"));
-  const subtabsFn = script.slice(script.indexOf("getElementById('subtabs')"), script.indexOf('function themeButtonHtml'));
+  const script = html.slice(html.indexOf('<script>\n// Both bars below'));
+  const tabsFn = script.slice(script.indexOf('function activateTab'), script.indexOf('function activateSubtab'));
+  const subtabsFn = script.slice(script.indexOf('function activateSubtab'), script.indexOf('function themeButtonHtml'));
   for (const [name, fn] of [['#tabs', tabsFn], ['#subtabs', subtabsFn]]) {
-    assert.match(fn, /setAttribute\('aria-selected',\s*'true'\)/,
-      `${name} click handler must set aria-selected 'true' on the newly active button`);
-    assert.match(fn, /setAttribute\('aria-selected',\s*'false'\)/,
-      `${name} click handler must set aria-selected 'false' on the buttons losing .active`);
+    assert.match(fn, /const active = b === btn;/,
+      `${name} activate() must compute active from the target button`);
+    assert.match(fn, /setAttribute\('aria-selected',\s*String\(active\)\)/,
+      `${name} activate() must set aria-selected from the same active flag driving .active`);
   }
 });
