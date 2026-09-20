@@ -47,3 +47,15 @@ test('entitlement-check still alarms on an unlisted product once an allowlist is
   assert.match(stdout, /an UNLISTED product\s+-> NOTHING \(correct\)/);
   assert.equal(status, 0);
 });
+
+test('entitlement-check notes when only one of the two lists is set', () => {
+  const { stdout, status } = run({ ...process.env, WHOP_DEFAULT_TIER: '', WHOP_PRODUCTS_FUTURES: 'prod_futures_only', WHOP_PRODUCTS_COMPLETE: '' });
+  assert.match(stdout, /only one list is set/);
+  assert.equal(status, 0);
+});
+
+test('entitlement-check flags an id listed in both WHOP_PRODUCTS_FUTURES and WHOP_PRODUCTS_COMPLETE', () => {
+  const { stdout, status } = run({ ...process.env, WHOP_DEFAULT_TIER: '', WHOP_PRODUCTS_FUTURES: 'prod_shared_id', WHOP_PRODUCTS_COMPLETE: 'prod_shared_id' });
+  assert.match(stdout, /"prod_shared_id" is in BOTH lists\. Complete wins/);
+  assert.equal(status, 1);
+});
