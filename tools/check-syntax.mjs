@@ -66,8 +66,11 @@ export function filesToCheck(root = ROOT) {
   ].sort();
 }
 
-function main() {
-  const files = filesToCheck();
+// Accepts an explicit file list so tests can drive the real pass/fail/exit-code
+// path (execFileSync'd as a subprocess, same as tools/quiz-audit.mjs's CLI
+// tests) against synthetic fixtures instead of the repo's own always-valid
+// source files, which can never exercise the failure branch.
+function main(files = filesToCheck()) {
   let failed = 0;
   for (const file of files) {
     try {
@@ -86,4 +89,7 @@ function main() {
   console.log(`check:syntax — ${files.length} files OK (assets/*.js auto-discovered + ${EXPLICIT_FUNCTIONS_FILES.length} named functions/api/*.js files).`);
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) main();
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const argFiles = process.argv.slice(2);
+  main(argFiles.length ? argFiles : undefined);
+}
