@@ -42,43 +42,77 @@
   }
   window.currToggleMenu = toggleMenu;
 
+  // Both tab bars below declare role="tablist"/role="tab" but, until now,
+  // only ever handled clicks — the WAI-ARIA Tabs pattern that markup implies
+  // also requires arrow-key movement between tabs (Left/Right, Home/End)
+  // with a roving tabindex so Tab itself skips straight from the tablist to
+  // the panel instead of stopping on every tab. A screen-reader user landing
+  // on a tab hears "tab, 1 of 4" and expects the arrow keys to work; without
+  // this they silently do nothing. Shared here since every tab bar on the
+  // site (group tabs, level tabs) needs the identical behavior.
+  function wireTabKeyboardNav(bar, tabSelector, activate) {
+    bar.addEventListener('keydown', (e) => {
+      const tabs = Array.from(bar.querySelectorAll(tabSelector));
+      const from = tabs.indexOf(document.activeElement);
+      if (from === -1) return;
+      let to;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') to = (from + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') to = (from - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') to = 0;
+      else if (e.key === 'End') to = tabs.length - 1;
+      else return;
+      e.preventDefault();
+      tabs[to].focus();
+      activate(tabs[to]);
+    });
+  }
+
   function initGroupTabs() {
     document.querySelectorAll('.group-tabs').forEach((bar) => {
-      bar.addEventListener('click', (e) => {
-        const btn = e.target.closest('.group-tab');
-        if (!btn) return;
-        const group = bar.dataset.group;
+      const group = bar.dataset.group;
+      const activate = (btn) => {
         bar.querySelectorAll('.group-tab').forEach((b) => {
           const active = b === btn;
           b.classList.toggle('active', active);
           b.setAttribute('aria-selected', String(active));
+          b.tabIndex = active ? 0 : -1;
         });
         document.querySelectorAll(`.group-panel[data-group="${group}"]`).forEach((p) => {
           p.classList.toggle('active', p.dataset.groupValue === btn.dataset.groupValue);
         });
+      };
+      bar.querySelectorAll('.group-tab').forEach((b) => { b.tabIndex = b.classList.contains('active') ? 0 : -1; });
+      bar.addEventListener('click', (e) => {
+        const btn = e.target.closest('.group-tab');
+        if (btn) activate(btn);
       });
+      wireTabKeyboardNav(bar, '.group-tab', activate);
     });
   }
 
   function initLevelTabs() {
     document.querySelectorAll('.level-tabs').forEach((bar) => {
-      bar.addEventListener('click', (e) => {
-        const btn = e.target.closest('.level-tab');
-        if (!btn) return;
-        const bar2 = btn.closest('.level-tabs');
-        bar2.querySelectorAll('.level-tab').forEach((b) => {
+      // Panels are matched to their tab bar by a shared data-pair id, so
+      // multiple independent tab groups (Psychology Enhancer's A/B/C/D
+      // subsections) can coexist on one page without cross-talk.
+      const pairId = bar.dataset.pair;
+      const activate = (btn) => {
+        bar.querySelectorAll('.level-tab').forEach((b) => {
           const active = b === btn;
           b.classList.toggle('active', active);
           b.setAttribute('aria-selected', String(active));
+          b.tabIndex = active ? 0 : -1;
         });
-        // Panels are matched to their tab bar by a shared data-pair id, so
-        // multiple independent tab groups (Psychology Enhancer's A/B/C/D
-        // subsections) can coexist on one page without cross-talk.
-        const pairId = bar2.dataset.pair;
         document.querySelectorAll(`.level-panel[data-pair="${pairId}"]`).forEach((p) => {
           p.classList.toggle('active', p.dataset.level === btn.dataset.level);
         });
+      };
+      bar.querySelectorAll('.level-tab').forEach((b) => { b.tabIndex = b.classList.contains('active') ? 0 : -1; });
+      bar.addEventListener('click', (e) => {
+        const btn = e.target.closest('.level-tab');
+        if (btn) activate(btn);
       });
+      wireTabKeyboardNav(bar, '.level-tab', activate);
     });
   }
 
