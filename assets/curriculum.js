@@ -67,6 +67,29 @@
     });
   }
 
+  // The ARIA Tabs pattern also requires each tab to name the panel it
+  // controls (aria-controls) and each panel to name the tab that owns it
+  // (role="tabpanel" + aria-labelledby) -- without this pairing a
+  // screen-reader user hears "tab, 1 of 4" and can arrow between tabs (the
+  // keyboard-nav fix above) but gets no programmatic link to the content
+  // region that just became visible. IDs are derived from the same
+  // data-group/data-pair + value attributes the click/activate logic
+  // already keys off of, so they stay unique per page without hand-authored
+  // markup changes.
+  function wireTabPanelIds(tabs, valueAttr, panelSelectorBase, panelValueAttr, idPrefix) {
+    tabs.forEach((b) => {
+      const value = b.dataset[valueAttr];
+      const panel = document.querySelector(`${panelSelectorBase}[data-${panelValueAttr}="${value}"]`);
+      b.id = b.id || `${idPrefix}-tab-${value}`;
+      if (panel) {
+        panel.id = panel.id || `${idPrefix}-panel-${value}`;
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('aria-labelledby', b.id);
+        b.setAttribute('aria-controls', panel.id);
+      }
+    });
+  }
+
   function initGroupTabs() {
     document.querySelectorAll('.group-tabs').forEach((bar) => {
       const group = bar.dataset.group;
@@ -82,6 +105,13 @@
         });
       };
       bar.querySelectorAll('.group-tab').forEach((b) => { b.tabIndex = b.classList.contains('active') ? 0 : -1; });
+      wireTabPanelIds(
+        Array.from(bar.querySelectorAll('.group-tab')),
+        'groupValue',
+        `.group-panel[data-group="${group}"]`,
+        'group-value',
+        `group-${group}`
+      );
       bar.addEventListener('click', (e) => {
         const btn = e.target.closest('.group-tab');
         if (btn) activate(btn);
@@ -108,6 +138,13 @@
         });
       };
       bar.querySelectorAll('.level-tab').forEach((b) => { b.tabIndex = b.classList.contains('active') ? 0 : -1; });
+      wireTabPanelIds(
+        Array.from(bar.querySelectorAll('.level-tab')),
+        'level',
+        `.level-panel[data-pair="${pairId}"]`,
+        'level',
+        `level-${pairId}`
+      );
       bar.addEventListener('click', (e) => {
         const btn = e.target.closest('.level-tab');
         if (btn) activate(btn);

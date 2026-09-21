@@ -74,14 +74,23 @@ function makeTabStub({ barClass, tabClass, panelClass, pairAttr, valueAttr, valu
     return self;
   }
   function findAll(root, sel) {
-    const m = /^\.([\w-]+)(?:\[data-([\w-]+)="([^"]*)"\])?$/.exec(sel.trim());
+    // wireTabPanelIds() chains a second [data-x="y"] clause onto the
+    // pair/group-scoped selector initLevelTabs/initGroupTabs already build
+    // (e.g. `.level-panel[data-pair="p"]` plus `[data-level="2"]`), so this
+    // needs to match zero or more attribute clauses, not just one.
+    const m = /^\.([\w-]+)((?:\[data-[\w-]+="[^"]*"\])*)$/.exec(sel.trim());
     assert.ok(m, `unsupported selector in test stub: ${sel}`);
-    const [, cls, attr, value] = m;
-    const key = attr ? attr.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) : null;
+    const [, cls, attrsStr] = m;
+    const attrRe = /\[data-([\w-]+)="([^"]*)"\]/g;
+    const filters = [];
+    let am;
+    while ((am = attrRe.exec(attrsStr))) {
+      filters.push([am[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase()), am[2]]);
+    }
     const out = [];
     (function walk(n) {
       n.children.forEach((c) => {
-        if (c.classList.contains(cls) && (!key || c.dataset[key] === value)) out.push(c);
+        if (c.classList.contains(cls) && filters.every(([key, value]) => c.dataset[key] === value)) out.push(c);
         walk(c);
       });
     })(root);
@@ -98,6 +107,7 @@ function makeTabStub({ barClass, tabClass, panelClass, pairAttr, valueAttr, valu
   const document = {
     get activeElement() { return activeElement; },
     querySelectorAll: (sel) => root.querySelectorAll(sel),
+    querySelector: (sel) => root.querySelectorAll(sel)[0] || null,
   };
   return { document, bar, tabs, panels, focus: (n) => { activeElement = n; } };
 }
@@ -105,6 +115,7 @@ function makeTabStub({ barClass, tabClass, panelClass, pairAttr, valueAttr, valu
 function runArrowKeyScenario({ initFnName, barClass, tabClass, panelClass, pairAttr, valueAttr, values }) {
   const src = read('assets/curriculum.js');
   const snippet = extractBlock(src, 'function wireTabKeyboardNav(bar, tabSelector, activate)')
+    + '\n' + extractBlock(src, 'function wireTabPanelIds(tabs, valueAttr, panelSelectorBase, panelValueAttr, idPrefix)')
     + '\n' + extractBlock(src, `function ${initFnName}()`)
     + `\n${initFnName}();`;
   const stub = makeTabStub({ barClass, tabClass, panelClass, pairAttr, valueAttr, values });
