@@ -1221,6 +1221,25 @@ test('the legal pages\' nav strip calls the stock tool "Stock Lab", not its old 
   }
 });
 
+// Incident: futures-dissection.html, stock-breakdown.html and
+// psychology-enhancer.html -- three of the site's four paid curriculum pages,
+// sharing near-identical nav/hero/lock-gate markup with options-lab.html --
+// carried a footer link row with no path to privacy.html or terms.html
+// anywhere on the page (checked the full page, not just the footer: nav and
+// mobile menu don't link them either). options-lab.html's footer already
+// includes both, so a visitor reading the free psychology essay, or a paying
+// member on Futures Dissection/Stock Breakdown, had no on-page way to reach
+// either legal page without first navigating back to the homepage.
+test('every paid curriculum page\'s footer links to Privacy and Terms', () => {
+  for (const page of ['futures-dissection.html', 'stock-breakdown.html', 'psychology-enhancer.html', 'options-lab.html']) {
+    const html = read(page);
+    const footer = /<footer>[\s\S]*?<\/footer>/.exec(html);
+    assert.ok(footer, `${page}: no <footer> found`);
+    assert.match(footer[0], /href="privacy\.html"/, `${page}: footer missing the Privacy link`);
+    assert.match(footer[0], /href="terms\.html"/, `${page}: footer missing the Terms link`);
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Incident: the same silent-status-change pattern once more, on the
 // homepage's "Am I Active" Discord status checker. checkStatus() rewrites
