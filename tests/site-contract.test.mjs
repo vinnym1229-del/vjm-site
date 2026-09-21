@@ -354,3 +354,27 @@ test('stock-lab.html premium research 403 is not shown as a re-unlock prompt', (
   assert.match(catchBranch, /err\.planLocked\s*\?/, 'the plan-locked case must render different copy than a generic failure');
   assert.ok(!/planLocked\?'Unlock again/.test(catchBranch), 'a plan-locked 403 must not tell the member to unlock again');
 });
+
+// env(safe-area-inset-*) only resolves to a non-zero value when the page's
+// own viewport meta tag carries viewport-fit=cover (WebKit's "Designing
+// Websites for iPhone X" spec) -- without it every browser treats the inset
+// as 0px, silently turning any `calc(... + env(safe-area-inset-bottom))`
+// padding into a no-op. index.html's #mobile-cta (the sticky mobile buy bar)
+// relies on exactly that calc() in assets/site.css to keep its button clear
+// of the iPhone Home Indicator gesture strip, so a page whose CSS references
+// the inset without declaring viewport-fit=cover has silently dead code
+// sitting on its primary mobile conversion element.
+test('a page whose CSS uses env(safe-area-inset-*) declares viewport-fit=cover', () => {
+  for (const page of readdirSync(ROOT).filter((f) => f.endsWith('.html'))) {
+    const html = read(page);
+    const cssHrefs = [...html.matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*\bhref="([^"]+)"/g)].map((m) => m[1].split('?')[0]);
+    const usesSafeArea = cssHrefs.some((href) => {
+      const cssPath = join(ROOT, href);
+      return existsSync(cssPath) && read(href).includes('env(safe-area-inset');
+    }) || html.includes('env(safe-area-inset');
+    if (!usesSafeArea) continue;
+    const viewportMatch = html.match(/<meta name="viewport" content="([^"]*)"/);
+    assert.ok(viewportMatch, `${page} uses env(safe-area-inset-*) but has no viewport meta tag`);
+    assert.match(viewportMatch[1], /viewport-fit=cover/, `${page} uses env(safe-area-inset-*) so its viewport meta must include viewport-fit=cover, or the inset always resolves to 0px`);
+  }
+});
