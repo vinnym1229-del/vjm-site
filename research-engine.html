@@ -164,11 +164,11 @@
 
     <p class="panel-note red" id="planNotice" role="status" aria-live="polite" hidden>Your plan does not include the Research Engine. It is part of The Trifecta membership.</p>
 
-    <div class="module-nav" role="tablist" aria-label="Research modules">
-      <button class="module-tab active" type="button" data-module="options" role="tab" aria-selected="true">Options</button>
-      <button class="module-tab" type="button" data-module="stocks" role="tab" aria-selected="false">Stocks</button>
-      <button class="module-tab" type="button" data-module="sectors" role="tab" aria-selected="false">Sectors</button>
-      <button class="module-tab" type="button" data-module="biotech" role="tab" aria-selected="false">Biotech</button>
+    <div class="module-nav" id="moduleTabs" role="tablist" aria-label="Research modules">
+      <button class="module-tab active" type="button" data-module="options" role="tab" aria-selected="true" tabindex="0">Options</button>
+      <button class="module-tab" type="button" data-module="stocks" role="tab" aria-selected="false" tabindex="-1">Stocks</button>
+      <button class="module-tab" type="button" data-module="sectors" role="tab" aria-selected="false" tabindex="-1">Sectors</button>
+      <button class="module-tab" type="button" data-module="biotech" role="tab" aria-selected="false" tabindex="-1">Biotech</button>
     </div>
 
     <article class="module active" id="module-options" data-module-panel="options">

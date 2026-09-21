@@ -159,9 +159,31 @@
     document.querySelectorAll('.module-tab').forEach((button) => {
       const active = button.dataset.module === module;
       button.classList.toggle('active', active); button.setAttribute('aria-selected', String(active));
+      button.tabIndex = active ? 0 : -1;
     });
     document.querySelectorAll('[data-module-panel]').forEach((panel) => panel.classList.toggle('active', panel.dataset.modulePanel === module));
     loadCurrent();
+  }
+  // #moduleTabs never got the WAI-ARIA Tabs pattern's keyboard half -- role="tab"
+  // makes a screen reader announce "tab, 1 of 4" and expect arrow keys to move
+  // between tabs, but only click handlers existed. Same defect class as the
+  // curriculum.js/index.html/options-lab.html tab bars already fixed; this one
+  // is its own page-local copy since this file isn't shared with those pages.
+  function wireTabKeyboardNav(bar, tabSelector, activate) {
+    bar.addEventListener('keydown', function (e) {
+      const tabs = Array.from(bar.querySelectorAll(tabSelector));
+      const from = tabs.indexOf(document.activeElement);
+      if (from === -1) return;
+      let to;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') to = (from + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') to = (from - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') to = 0;
+      else if (e.key === 'End') to = tabs.length - 1;
+      else return;
+      e.preventDefault();
+      tabs[to].focus();
+      activate(tabs[to]);
+    });
   }
   function loading(button, active, label) {
     if (!button) return;
@@ -527,6 +549,7 @@
     $('unlockButton').addEventListener('click',unlock); $('restoreButton').addEventListener('click',restore); $('premiumCode').addEventListener('keydown',(e)=>{if(e.key==='Enter')unlock()});
     $('signOutButton').addEventListener('click',signOut); $('refreshButton').addEventListener('click',refreshCurrent); $('exportButton').addEventListener('click',exportCurrent);
     document.querySelectorAll('.module-tab').forEach((b)=>b.addEventListener('click',()=>setModule(b.dataset.module)));
+    wireTabKeyboardNav($('moduleTabs'), '.module-tab', (btn) => setModule(btn.dataset.module));
     $('loadOptions').addEventListener('click',()=>{delete state.data.options;loadOptions()}); $('loadStock').addEventListener('click',()=>{delete state.data.stocks;loadStock()}); $('loadSectors').addEventListener('click',()=>{delete state.data.sectors;loadSectors()}); $('loadBiotech').addEventListener('click',()=>{delete state.data.biotech;loadBiotech()});
     document.querySelectorAll('.lab-control').forEach((input)=>input.addEventListener('input',renderSlopeLab));
     renderSlopeLab(); loadHealth();
