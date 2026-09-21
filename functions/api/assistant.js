@@ -39,10 +39,16 @@ const UNIVERSE = ['SPY', 'QQQ', 'NVDA', 'AAPL', 'MSFT', 'TSLA', 'AMD', 'META'];
 // never hand a Futures Core member text from a Complete-only course. Adding a
 // lesson here is the ONLY way to make it askable.
 //
-// COVERAGE (honest state): the Foundational (level 1) lessons of all four
-// course tracks — 24 lessons — plus the free foundation overview. The deeper
-// levels (Intermediate / Advanced / Expert) of each track are NOT wired yet,
-// and the UI lists exactly what is here rather than claiming the whole
+// COVERAGE (honest state): mostly the Foundational (level 1) lessons of all
+// four course tracks, plus the free foundation overview, plus five entries
+// whose `id` still carries the legacy "l1-0N" naming but whose source page
+// actually shelves them under Intermediate (level 2) — three psychology
+// lessons (psychology-l1-04/05/06) and two options lessons
+// (options-l1-05/06). `level` below is what's authoritative, not the id; see
+// tests/assistant-lesson-level-drift.test.mjs, which re-derives each entry's
+// level from the shipped course HTML so this can't drift silently again. The
+// remaining Intermediate/Advanced/Expert lessons of each track are NOT wired
+// yet, and the UI lists exactly what is here rather than claiming the whole
 // curriculum.
 // TODO(owner): extend LESSON_LIBRARY to levels 2-4 of each track, ideally by
 // generating this array from the course HTML at build time instead of by hand,
@@ -167,7 +173,7 @@ export const LESSON_LIBRARY = Object.freeze([
   {
     id: "psychology-l1-04",
     course: "Psychology Enhancer",
-    level: 'Foundational',
+    level: 'Intermediate',
     resource: "/psychology-enhancer.html",
     title: "Setup selectivity, boredom tolerance, and the \"valid opportunity\" mindset",
     sections: [
@@ -178,7 +184,7 @@ export const LESSON_LIBRARY = Object.freeze([
   {
     id: "psychology-l1-05",
     course: "Psychology Enhancer",
-    level: 'Foundational',
+    level: 'Intermediate',
     resource: "/psychology-enhancer.html",
     title: "Tilt taxonomy and matched recovery protocols",
     sections: [
@@ -189,7 +195,7 @@ export const LESSON_LIBRARY = Object.freeze([
   {
     id: "psychology-l1-06",
     course: "Psychology Enhancer",
-    level: 'Foundational',
+    level: 'Intermediate',
     resource: "/psychology-enhancer.html",
     title: "Premarket scenario planning without prediction attachment",
     sections: [
@@ -310,7 +316,7 @@ export const LESSON_LIBRARY = Object.freeze([
   {
     id: "options-l1-05",
     course: "Options Lab",
-    level: 'Foundational',
+    level: 'Intermediate',
     resource: "/options-lab.html",
     title: "Delta in practice: directional exposure, share equivalence, and changing probability",
     sections: [
@@ -321,7 +327,7 @@ export const LESSON_LIBRARY = Object.freeze([
   {
     id: "options-l1-06",
     course: "Options Lab",
-    level: 'Foundational',
+    level: 'Intermediate',
     resource: "/options-lab.html",
     title: "Gamma and convexity: how delta accelerates, especially near expiration",
     sections: [
@@ -331,6 +337,21 @@ export const LESSON_LIBRARY = Object.freeze([
     ],
   },
 ]);
+
+// Built from LESSON_LIBRARY's own `level` values rather than hand-typed, so a
+// future lesson added at a non-Foundational level can't silently make this
+// claim wrong again the way five entries above did (`level` sat as
+// 'Foundational' while their source page shelved them under its Intermediate
+// tab). Exported so tests can pin the counts against LESSON_LIBRARY directly
+// instead of re-deriving them.
+export const LESSON_COVERAGE_NOTE = (() => {
+  const foundational = LESSON_LIBRARY.filter((l) => l.level === 'Foundational').length;
+  const deeper = LESSON_LIBRARY.filter((l) => l.level !== 'Foundational' && l.level !== 'Free start-here');
+  const deeperClause = deeper.length
+    ? `, plus ${deeper.length} lesson${deeper.length === 1 ? '' : 's'} wired from a deeper level`
+    : '';
+  return `${foundational} Foundational (level 1) lessons across all four course tracks${deeperClause}. The rest of each track's deeper levels are not wired into the assistant yet.`;
+})();
 
 /**
  * Immutable content version for a lesson (FNV-1a over its serialized text).
@@ -393,7 +414,7 @@ export async function onRequestGet(context) {
     // Say out loud that this is a subset, so no UI can imply full coverage.
     coverage: {
       wired: lessons.length,
-      note: 'Foundational (level 1) lessons only. Deeper levels are not wired into the assistant yet.',
+      note: LESSON_COVERAGE_NOTE,
     },
   });
 }
