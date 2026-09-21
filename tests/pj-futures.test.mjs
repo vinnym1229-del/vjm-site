@@ -69,6 +69,31 @@ test('FAQ matches Whop verbatim + JSON-LD schema present', () => {
   assert.match(index, /FAQPage/);
 });
 
+// The comment above index.html's FAQ section promises the visible <details>
+// answers and the <head> FAQPage JSON-LD stay byte-identical, but the prior
+// version of the test above only substring-matched each answer's opening
+// clause — so the JSON-LD's refund answer silently fell out of sync with the
+// visible paragraph (a later auto-renew disclaimer was added to the visible
+// copy but never propagated to the schema) and nothing caught it. Compare
+// every question/answer pair exactly instead of just their opening words.
+test('FAQ JSON-LD answers are byte-identical to the visible FAQ, not just prefix matches', () => {
+  const ldBlocks = [...index.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+    .map(m => JSON.parse(m[1]));
+  const faq = ldBlocks.find(b => b['@type'] === 'FAQPage');
+  assert.ok(faq, 'FAQPage JSON-LD block not found');
+  const jsonPairs = faq.mainEntity.map(q => [q.name, q.acceptedAnswer.text]);
+
+  const faqListMatch = index.match(/<div class="faq-list"[^>]*>([\s\S]*?)<\/div>\s*<\/div>\s*<\/section>/);
+  assert.ok(faqListMatch, 'visible #faq-list block not found');
+  const stripTags = s => s.replace(/<[^>]+>/g, '').trim();
+  const detailsRe = /<summary>([\s\S]*?)<\/summary>\s*<p>([\s\S]*?)<\/p>/g;
+  const visiblePairs = [...faqListMatch[1].matchAll(detailsRe)]
+    .map(m => [stripTags(m[1]), stripTags(m[2])]);
+
+  assert.ok(visiblePairs.length > 0, 'no visible FAQ entries parsed');
+  assert.deepStrictEqual(jsonPairs, visiblePairs, 'FAQPage JSON-LD has drifted from the visible FAQ copy');
+});
+
 test('video sits above bundles with a PJ video-frame poster and lazy facade', () => {
   const videoIdx = index.indexOf('id="video"');
   const bundleIdx = index.indexOf('Bundles</div>');
