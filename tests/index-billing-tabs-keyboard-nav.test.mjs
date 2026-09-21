@@ -89,14 +89,24 @@ function makeFixture() {
   const tabs = periods.map((p, i) =>
     tabsBar.append(makeNode('button', { classes: ['period-tab', ...(i === 0 ? ['active'] : [])], dataset: { period: p } })));
 
+  // The same script block now also wires .prem-tabs (index.html's member-tools
+  // Dashboard/Am I Active? switcher) through the identical wireTabKeyboardNav
+  // helper -- this stub must exist or that call's document.querySelector
+  // returns null and the script throws before the period-tabs test below
+  // ever runs, since both wiring calls live in the one extracted block.
+  const premTabsBar = root.append(makeNode('div', { classes: ['prem-tabs'] }));
+  const premTabIds = ['dashboard', 'status'];
+  const premTabs = premTabIds.map((t) =>
+    premTabsBar.append(makeNode('button', { classes: ['prem-tab'], dataset: { tab: t }, id: 'ptab-' + t })));
+
   const document = {
     get activeElement() { return activeElement; },
-    getElementById: () => null,
+    getElementById: (id) => findById(root, id),
     querySelector: (sel) => queryFrom(root, sel)[0] || null,
     querySelectorAll: (sel) => queryFrom(root, sel),
   };
   return {
-    document, tabs, tabsBar,
+    document, tabs, tabsBar, premTabs, premTabsBar,
     focus: (n) => { activeElement = n; },
   };
 }

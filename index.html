@@ -999,9 +999,9 @@
     </div>
 
 <!-- Tab Nav -->
-<div class="prem-tabs" style="display:flex;gap:8px;justify-content:center;margin-bottom:28px;flex-wrap:wrap;">
-  <button onclick="premTab('dashboard')" id="ptab-dashboard" style="flex:1;max-width:170px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:var(--gold);color:#fff;">Dashboard</button>
-  <button onclick="premTab('status')" id="ptab-status" style="flex:1;max-width:170px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:transparent;color:var(--muted);">Am I Active?</button>
+<div class="prem-tabs" role="tablist" aria-label="Member tools" style="display:flex;gap:8px;justify-content:center;margin-bottom:28px;flex-wrap:wrap;">
+  <button class="prem-tab" data-tab="dashboard" role="tab" aria-selected="true" tabindex="0" onclick="premTab('dashboard')" id="ptab-dashboard" style="flex:1;max-width:170px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:var(--gold);color:#fff;">Dashboard</button>
+  <button class="prem-tab" data-tab="status" role="tab" aria-selected="false" tabindex="-1" onclick="premTab('status')" id="ptab-status" style="flex:1;max-width:170px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:transparent;color:var(--muted);">Am I Active?</button>
 </div>
     <!-- DASHBOARD TAB -->
     <div id="pcontent-dashboard" style="display:block;max-width:700px;margin:0 auto;">
@@ -2121,11 +2121,15 @@ function premTab(tab) {
     const btn = document.getElementById('ptab-'+t);
     btn.style.background = 'transparent';
     btn.style.color = 'var(--muted)';
+    btn.setAttribute('aria-selected', 'false');
+    btn.tabIndex = -1;
   });
   document.getElementById('pcontent-'+tab).style.display = 'block';
   const active = document.getElementById('ptab-'+tab);
   active.style.background = 'var(--gold)';
   active.style.color = '#fff';
+  active.setAttribute('aria-selected', 'true');
+  active.tabIndex = 0;
 }
 
 // ─── AM I ACTIVE STATUS CHECKER ───
@@ -2429,6 +2433,7 @@ function applyPlanCtas(period) {
 
 setBundlePeriod('monthly');
 wireTabKeyboardNav(document.querySelector('.period-tabs'), '.period-tab', (btn) => setBundlePeriod(btn.dataset.period));
+wireTabKeyboardNav(document.querySelector('.prem-tabs'), '.prem-tab', (btn) => premTab(btn.dataset.tab));
 
 // ─── INTRO VIDEO FACADE ───
 // Nothing loads until click (protects LCP). Priority: YouTube URL in

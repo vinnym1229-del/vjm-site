@@ -1610,6 +1610,46 @@ test('setBundlePeriod keeps aria-selected in sync with the .active class it togg
 });
 
 // ---------------------------------------------------------------------------
+// Incident: index.html's own "Already a Member?" Dashboard/"Am I Active?"
+// switcher (.prem-tabs, driven by premTab()) is a real two-panel tab widget
+// on the homepage -- visible to every visitor, not just signed-in members --
+// but was never included in any of the tablist/keyboard-nav sweeps above that
+// fixed this exact defect class on .period-tabs, #sectorTabs, curriculum.js
+// and options-lab.html's bars. It carried no role="tablist"/role="tab"/
+// aria-selected at all, and premTab() conveyed the active tab purely through
+// inline background/color, so a screen-reader user got two identical-sounding
+// buttons with no indication which panel was open or that they were a pair.
+test('index.html member-tools tabs (.prem-tabs) carry ARIA tab semantics', () => {
+  const html = read('index.html');
+  const bar = /<div class="prem-tabs"[^>]*>/.exec(html);
+  assert.ok(bar && /role="tablist"/.test(bar[0]), 'prem-tabs bar missing role="tablist"');
+  const buttons = [...html.matchAll(/<button class="prem-tab"[^>]*>/g)];
+  assert.equal(buttons.length, 2, 'expected exactly 2 prem-tab buttons (dashboard, status)');
+  for (const btn of buttons) {
+    assert.match(btn[0], /role="tab"/, `prem-tab button missing role="tab": ${btn[0]}`);
+    const expected = btn[0].includes('data-tab="dashboard"') ? 'true' : 'false';
+    assert.ok(btn[0].includes(`aria-selected="${expected}"`),
+      `prem-tab button aria-selected should be "${expected}": ${btn[0]}`);
+  }
+});
+
+test('premTab keeps aria-selected and roving tabindex in sync with the tab it activates', () => {
+  const js = read('index.html');
+  const fn = js.slice(js.indexOf('function premTab'), js.indexOf('function premTab') + 700);
+  assert.match(fn, /setAttribute\('aria-selected',\s*'false'\)/,
+    'premTab must clear aria-selected on the inactive tab');
+  assert.match(fn, /setAttribute\('aria-selected',\s*'true'\)/,
+    'premTab must set aria-selected on the newly-active tab');
+  assert.match(fn, /active\.tabIndex\s*=\s*0/, 'premTab must give the active tab tabIndex 0');
+});
+
+test('index.html wires .prem-tabs into the shared arrow-key/Home/End tab keyboard navigation', () => {
+  const js = read('index.html');
+  assert.match(js, /wireTabKeyboardNav\(document\.querySelector\('\.prem-tabs'\),\s*'\.prem-tab',\s*\(btn\)\s*=>\s*premTab\(btn\.dataset\.tab\)\)/,
+    'prem-tabs must be wired through wireTabKeyboardNav the same way period-tabs is');
+});
+
+// ---------------------------------------------------------------------------
 // Incident: stock-lab.html's premium sector-group switcher (#sectorTabs) is
 // the same tab-widget defect class as index.html's period-tabs and the
 // curriculum level/group tabs above -- a `role="tablist"` container whose
