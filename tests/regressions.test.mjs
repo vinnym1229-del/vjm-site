@@ -1650,6 +1650,55 @@ test('index.html wires .prem-tabs into the shared arrow-key/Home/End tab keyboar
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the Growth Simulator's two toggle-button pairs -- #sim-mode-trading/
+// #sim-mode-prop (trading vs. prop-firm mode) and #gain-dollar-btn/#gain-pct-btn
+// (target unit) -- are the same tab-widget defect class as .period-tabs and
+// .prem-tabs above, on the same homepage, but were missed by every prior sweep:
+// setSimMode()/setGainMode() conveyed the active button purely through inline
+// background/color, with no role="tablist"/role="tab"/aria-selected anywhere
+// and no keyboard support, so a screen-reader user got two indistinguishable
+// button pairs with no signal of which mode was active.
+test('index.html Growth Simulator toggle pairs carry ARIA tab semantics', () => {
+  const html = read('index.html');
+  const bars = [
+    { name: 'sim-mode-tabs', selector: 'sim-mode-tabs', tabClass: 'sim-mode-tab', selectedData: 'data-mode="trading"' },
+    { name: 'gain-mode-tabs', selector: 'gain-mode-tabs', tabClass: 'gain-mode-tab', selectedData: 'data-mode="dollar"' },
+  ];
+  for (const { name, selector, tabClass, selectedData } of bars) {
+    const bar = new RegExp(`<div class="${selector}"[^>]*>`).exec(html);
+    assert.ok(bar && /role="tablist"/.test(bar[0]), `${name} bar missing role="tablist"`);
+    const buttons = [...html.matchAll(new RegExp(`<button class="${tabClass}"[^>]*>`, 'g'))];
+    assert.equal(buttons.length, 2, `expected exactly 2 ${tabClass} buttons`);
+    for (const btn of buttons) {
+      assert.match(btn[0], /role="tab"/, `${tabClass} button missing role="tab": ${btn[0]}`);
+      const expected = btn[0].includes(selectedData) ? 'true' : 'false';
+      assert.ok(btn[0].includes(`aria-selected="${expected}"`),
+        `${tabClass} button aria-selected should be "${expected}": ${btn[0]}`);
+    }
+  }
+});
+
+test('setSimMode and setGainMode keep aria-selected and roving tabindex in sync with the tab they activate', () => {
+  const js = read('index.html');
+  for (const fnName of ['setSimMode', 'setGainMode']) {
+    const start = js.indexOf(`function ${fnName}`);
+    const fn = js.slice(start, start + 1400);
+    const selectedCount = (fn.match(/setAttribute\('aria-selected',\s*String\(/g) || []).length;
+    assert.ok(selectedCount >= 2, `${fnName} must set aria-selected on both buttons it toggles`);
+    const tabIndexCount = (fn.match(/\.tabIndex\s*=\s*mode\s*===/g) || []).length;
+    assert.ok(tabIndexCount >= 2, `${fnName} must give exactly one button tabIndex 0 based on the active mode`);
+  }
+});
+
+test('index.html wires the Growth Simulator toggle pairs into the shared arrow-key/Home/End tab keyboard navigation', () => {
+  const js = read('index.html');
+  assert.match(js, /wireTabKeyboardNav\(document\.querySelector\('\.sim-mode-tabs'\),\s*'\.sim-mode-tab',\s*\(btn\)\s*=>\s*setSimMode\(btn\.dataset\.mode\)\)/,
+    'sim-mode-tabs must be wired through wireTabKeyboardNav the same way period-tabs is');
+  assert.match(js, /wireTabKeyboardNav\(document\.querySelector\('\.gain-mode-tabs'\),\s*'\.gain-mode-tab',\s*\(btn\)\s*=>\s*setGainMode\(btn\.dataset\.mode\)\)/,
+    'gain-mode-tabs must be wired through wireTabKeyboardNav the same way period-tabs is');
+});
+
+// ---------------------------------------------------------------------------
 // Incident: stock-lab.html's premium sector-group switcher (#sectorTabs) is
 // the same tab-widget defect class as index.html's period-tabs and the
 // curriculum level/group tabs above -- a `role="tablist"` container whose

@@ -721,9 +721,9 @@
         <p style="font-size:0.72rem;line-height:1.55;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-bottom:14px;">This tool does arithmetic on the numbers you type. It is not a forecast, and no figure it shows has been achieved by PJ Trades, by a member, or by anyone. A fixed daily dollar target is not a trading edge: markets do not pay a set amount per day, losing days and losing weeks are normal, and the tool ignores losses, drawdown, commissions, slippage, taxes and prop-firm rules. Results are not typical and most traders lose money.</p>
 
         <!-- Mode toggle -->
-        <div style="display:flex;background:var(--accent);border-radius:10px;padding:3px;margin-bottom:18px;gap:3px;">
-          <button id="sim-mode-trading" onclick="setSimMode('trading')" style="flex:1;padding:8px;border:none;border-radius:8px;background:var(--gold);color:#fff;font-weight:800;font-size:0.8rem;cursor:pointer;transition:all .2s;">📈 Trading</button>
-          <button id="sim-mode-prop" onclick="setSimMode('prop')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-weight:700;font-size:0.8rem;cursor:pointer;transition:all .2s;">🏢 Prop</button>
+        <div class="sim-mode-tabs" role="tablist" aria-label="Simulator mode" style="display:flex;background:var(--accent);border-radius:10px;padding:3px;margin-bottom:18px;gap:3px;">
+          <button class="sim-mode-tab" data-mode="trading" role="tab" aria-selected="true" tabindex="0" id="sim-mode-trading" onclick="setSimMode('trading')" style="flex:1;padding:8px;border:none;border-radius:8px;background:var(--gold);color:#fff;font-weight:800;font-size:0.8rem;cursor:pointer;transition:all .2s;">📈 Trading</button>
+          <button class="sim-mode-tab" data-mode="prop" role="tab" aria-selected="false" tabindex="-1" id="sim-mode-prop" onclick="setSimMode('prop')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-weight:700;font-size:0.8rem;cursor:pointer;transition:all .2s;">🏢 Prop</button>
         </div>
 
         <!-- Trading mode inputs -->
@@ -732,10 +732,10 @@
           <input id="sim-start" type="number" value="1200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;">
 
           <!-- % or $ toggle -->
-          <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
+          <div class="gain-mode-tabs" role="tablist" aria-label="Target gain unit" style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
             <span style="font-size:0.82rem;color:var(--muted);">Target $/day:</span>
-            <button id="gain-dollar-btn" onclick="setGainMode('dollar')" style="padding:4px 12px;border:1.5px solid var(--gold);border-radius:20px;background:var(--gold);color:#fff;font-weight:700;font-size:0.75rem;cursor:pointer;">$ Per Day</button>
-            <button id="gain-pct-btn" onclick="setGainMode('pct')" style="padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);font-weight:700;font-size:0.75rem;cursor:pointer;">% Per Day</button>
+            <button class="gain-mode-tab" data-mode="dollar" role="tab" aria-selected="true" tabindex="0" id="gain-dollar-btn" onclick="setGainMode('dollar')" style="padding:4px 12px;border:1.5px solid var(--gold);border-radius:20px;background:var(--gold);color:#fff;font-weight:700;font-size:0.75rem;cursor:pointer;">$ Per Day</button>
+            <button class="gain-mode-tab" data-mode="pct" role="tab" aria-selected="false" tabindex="-1" id="gain-pct-btn" onclick="setGainMode('pct')" style="padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);font-weight:700;font-size:0.75rem;cursor:pointer;">% Per Day</button>
           </div>
 
           <div id="sim-dollar-input">
@@ -2211,8 +2211,12 @@ function setSimMode(mode) {
   document.getElementById('sim-prop-inputs').style.display = mode === 'prop' ? 'block' : 'none';
   document.getElementById('sim-mode-trading').style.background = mode === 'trading' ? 'var(--gold)' : 'transparent';
   document.getElementById('sim-mode-trading').style.color = mode === 'trading' ? '#fff' : 'var(--muted)';
+  document.getElementById('sim-mode-trading').setAttribute('aria-selected', String(mode === 'trading'));
+  document.getElementById('sim-mode-trading').tabIndex = mode === 'trading' ? 0 : -1;
   document.getElementById('sim-mode-prop').style.background = mode === 'prop' ? 'var(--gold)' : 'transparent';
   document.getElementById('sim-mode-prop').style.color = mode === 'prop' ? '#fff' : 'var(--muted)';
+  document.getElementById('sim-mode-prop').setAttribute('aria-selected', String(mode === 'prop'));
+  document.getElementById('sim-mode-prop').tabIndex = mode === 'prop' ? 0 : -1;
   document.getElementById('sim-result').style.display = 'none';
   document.getElementById('sim-prop-result').style.display = 'none';
 }
@@ -2224,9 +2228,13 @@ function setGainMode(mode) {
   document.getElementById('gain-dollar-btn').style.background = mode === 'dollar' ? 'var(--gold)' : 'transparent';
   document.getElementById('gain-dollar-btn').style.color = mode === 'dollar' ? '#fff' : 'var(--muted)';
   document.getElementById('gain-dollar-btn').style.borderColor = mode === 'dollar' ? 'var(--gold)' : 'var(--border)';
+  document.getElementById('gain-dollar-btn').setAttribute('aria-selected', String(mode === 'dollar'));
+  document.getElementById('gain-dollar-btn').tabIndex = mode === 'dollar' ? 0 : -1;
   document.getElementById('gain-pct-btn').style.background = mode === 'pct' ? 'var(--gold)' : 'transparent';
   document.getElementById('gain-pct-btn').style.color = mode === 'pct' ? '#fff' : 'var(--muted)';
   document.getElementById('gain-pct-btn').style.borderColor = mode === 'pct' ? 'var(--gold)' : 'var(--border)';
+  document.getElementById('gain-pct-btn').setAttribute('aria-selected', String(mode === 'pct'));
+  document.getElementById('gain-pct-btn').tabIndex = mode === 'pct' ? 0 : -1;
 }
 
 function runGrowthSim() {
@@ -2434,6 +2442,8 @@ function applyPlanCtas(period) {
 setBundlePeriod('monthly');
 wireTabKeyboardNav(document.querySelector('.period-tabs'), '.period-tab', (btn) => setBundlePeriod(btn.dataset.period));
 wireTabKeyboardNav(document.querySelector('.prem-tabs'), '.prem-tab', (btn) => premTab(btn.dataset.tab));
+wireTabKeyboardNav(document.querySelector('.sim-mode-tabs'), '.sim-mode-tab', (btn) => setSimMode(btn.dataset.mode));
+wireTabKeyboardNav(document.querySelector('.gain-mode-tabs'), '.gain-mode-tab', (btn) => setGainMode(btn.dataset.mode));
 
 // ─── INTRO VIDEO FACADE ───
 // Nothing loads until click (protects LCP). Priority: YouTube URL in

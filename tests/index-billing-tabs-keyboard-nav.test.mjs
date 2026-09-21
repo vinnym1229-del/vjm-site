@@ -99,6 +99,17 @@ function makeFixture() {
   const premTabs = premTabIds.map((t) =>
     premTabsBar.append(makeNode('button', { classes: ['prem-tab'], dataset: { tab: t }, id: 'ptab-' + t })));
 
+  // Same reasoning as premTabsBar above: the extracted script also wires
+  // .sim-mode-tabs and .gain-mode-tabs (the Growth Simulator's two toggle
+  // pairs) through wireTabKeyboardNav now -- both stubs must exist or their
+  // document.querySelector calls return null and crash the script.
+  const simModeTabsBar = root.append(makeNode('div', { classes: ['sim-mode-tabs'] }));
+  const simModeTabs = ['trading', 'prop'].map((m) =>
+    simModeTabsBar.append(makeNode('button', { classes: ['sim-mode-tab'], dataset: { mode: m }, id: 'sim-mode-' + m })));
+  const gainModeTabsBar = root.append(makeNode('div', { classes: ['gain-mode-tabs'] }));
+  const gainModeTabs = ['dollar', 'pct'].map((m) =>
+    gainModeTabsBar.append(makeNode('button', { classes: ['gain-mode-tab'], dataset: { mode: m }, id: 'gain-' + m + '-btn' })));
+
   const document = {
     get activeElement() { return activeElement; },
     getElementById: (id) => findById(root, id),
@@ -106,7 +117,7 @@ function makeFixture() {
     querySelectorAll: (sel) => queryFrom(root, sel),
   };
   return {
-    document, tabs, tabsBar, premTabs, premTabsBar,
+    document, tabs, tabsBar, premTabs, premTabsBar, simModeTabs, simModeTabsBar, gainModeTabs, gainModeTabsBar,
     focus: (n) => { activeElement = n; },
   };
 }
