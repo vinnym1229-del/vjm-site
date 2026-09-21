@@ -109,6 +109,32 @@ test('static homepage tier-price markup matches BUNDLE_PERIODS[...].monthly exac
   }
 });
 
+// Every savings claim ("N% off" / "$X off", wherever it appears in `sub` or
+// `off`) needs a way to check it: either a `was` reference price on the same
+// entry, or a period covered by the monthly-rate x months check above. A
+// one-time period like `lifetime` has neither — there's no recurring rate to
+// multiply and no `was` lifetime price anywhere in the codebase — so a
+// savings badge there is an unverifiable claim shipped straight to a
+// paying-customer-facing pricing tile.
+test('every BUNDLE_PERIODS savings badge has a verifiable basis', () => {
+  const periods = extractBundlePeriods(index);
+  const verifiedPeriods = new Set(Object.keys(MONTHS_IN_PERIOD));
+  for (const tier of Object.keys(periods)) {
+    for (const period of Object.keys(periods[tier])) {
+      const entry = periods[tier][period];
+      const claimText = `${entry.sub || ''} ${entry.off || ''}`;
+      if (!/(\d+%\s*off|\$[0-9.,]+\s*off)/i.test(claimText)) continue;
+      const verifiable = Boolean(entry.was) || verifiedPeriods.has(period);
+      assert.ok(
+        verifiable,
+        `${tier}/${period}: copy claims a savings ("${claimText.trim()}") but has neither a "was" reference ` +
+          `price nor a monthly-rate x months basis (period "${period}" isn't in MONTHS_IN_PERIOD) -- ` +
+          `this is an unverifiable discount claim`
+      );
+    }
+  }
+});
+
 test('bundle period "% off" badges match the tier\'s own monthly rate x months', () => {
   const periods = extractBundlePeriods(index);
   const checked = [];
