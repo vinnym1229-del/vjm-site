@@ -363,14 +363,18 @@ test('stock-lab.html premium research 403 is not shown as a re-unlock prompt', (
 // relies on exactly that calc() in assets/site.css to keep its button clear
 // of the iPhone Home Indicator gesture strip, so a page whose CSS references
 // the inset without declaring viewport-fit=cover has silently dead code
-// sitting on its primary mobile conversion element.
+// sitting on its primary mobile conversion element. assets/chatbot.js's
+// floating widget is the same hazard from a <script src> instead of a <link
+// rel=stylesheet>: it builds its own <style> text at runtime, so a plain
+// stylesheet-href scan would miss it -- checked here too.
 test('a page whose CSS uses env(safe-area-inset-*) declares viewport-fit=cover', () => {
   for (const page of readdirSync(ROOT).filter((f) => f.endsWith('.html'))) {
     const html = read(page);
     const cssHrefs = [...html.matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*\bhref="([^"]+)"/g)].map((m) => m[1].split('?')[0]);
-    const usesSafeArea = cssHrefs.some((href) => {
-      const cssPath = join(ROOT, href);
-      return existsSync(cssPath) && read(href).includes('env(safe-area-inset');
+    const jsHrefs = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map((m) => m[1].split('?')[0]).filter((h) => !/^https?:\/\//.test(h));
+    const usesSafeArea = [...cssHrefs, ...jsHrefs].some((href) => {
+      const path = join(ROOT, href.replace(/^\//, ''));
+      return existsSync(path) && read(href.replace(/^\//, '')).includes('env(safe-area-inset');
     }) || html.includes('env(safe-area-inset');
     if (!usesSafeArea) continue;
     const viewportMatch = html.match(/<meta name="viewport" content="([^"]*)"/);

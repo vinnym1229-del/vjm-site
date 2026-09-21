@@ -270,12 +270,12 @@
   // Inject styles once (kept tiny; tokens.css covers the design language).
   function injectStyles() {
     const css = `
-.vjm-chat-fab{position:fixed;right:18px;bottom:2px;z-index:9990;width:54px;height:54px;border-radius:50%;
+.vjm-chat-fab{position:fixed;right:calc(18px + env(safe-area-inset-right));bottom:calc(2px + env(safe-area-inset-bottom));z-index:9990;width:54px;height:54px;border-radius:50%;
  border:none;background:linear-gradient(135deg,var(--vjm-red,#d14343),var(--vjm-red-deep,#a63333));color:#fff;font-size:1.3rem;cursor:pointer;
  box-shadow:0 10px 30px rgba(0,0,0,.5);transition:transform ${REDUCED ? '0s' : '.15s'} ease;}
 .vjm-chat-fab:hover{transform:translateY(-2px);}
 .vjm-chat-fab:focus-visible{outline:2px solid #d9d9dd;outline-offset:2px;}
-.vjm-chat-panel{position:fixed;right:18px;bottom:68px;z-index:9991;width:min(380px,calc(100vw - 24px));
+.vjm-chat-panel{position:fixed;right:calc(18px + env(safe-area-inset-right));bottom:calc(68px + env(safe-area-inset-bottom));z-index:9991;width:min(380px,calc(100vw - 24px));
  height:min(540px,70vh);display:none;flex-direction:column;background:#161618;border:1px solid #2a2a2e;
  border-radius:16px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.6);}
 .vjm-chat-panel.open{display:flex;}
