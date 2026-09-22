@@ -721,13 +721,9 @@ test('PWA manifest + theme color + PJ 404', () => {
   assert.match(index, /<link rel="manifest" href="manifest\.json">/);
   // These drifted apart once when the palette changed: index.html was swept,
   // manifest.json was not — so they are normally asserted equal.
-  // TRANSITIONAL (2026-09-01): index.html is owned by a parallel lane this
-  // cycle and its meta tag is updated there. Once it ships
-  //   <meta name="theme-color" content="#ffffff">
-  // restore the strict equality below and drop the '#0c0c0d' alternative.
   const metaTheme = index.match(/<meta name="theme-color" content="(#[0-9a-f]{6})">/i);
   assert.ok(metaTheme, 'theme-color meta missing');
-  assert.ok([LIGHT_BG, '#0c0c0d'].includes(metaTheme[1].toLowerCase()),
+  assert.equal(metaTheme[1].toLowerCase(), LIGHT_BG,
     `theme-color meta is ${metaTheme[1]}; it must be ${LIGHT_BG} to match the manifest`);
   const notFound = readFileSync(join(ROOT, '404.html'), 'utf8');
   assert.match(notFound, /PJ Trades/);
