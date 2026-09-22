@@ -164,6 +164,26 @@
     document.querySelectorAll('[data-module-panel]').forEach((panel) => panel.classList.toggle('active', panel.dataset.modulePanel === module));
     loadCurrent();
   }
+  // #moduleTabs never got the WAI-ARIA Tabs pattern's second half either: a
+  // tab must name the panel it controls (aria-controls) and the panel must
+  // name the tab that owns it (role="tabpanel" + aria-labelledby). Without
+  // that pairing, activating a tab gives a screen-reader user no signal that
+  // a specific content region just became visible. Same fix curriculum.js's
+  // wireTabPanelIds() already applied to the course pages; this is its own
+  // copy since this file isn't shared with those pages. Panel ids are
+  // already stable (module-options etc.) so only the tab side needs one minted.
+  function wireModuleTabPanelIds() {
+    document.querySelectorAll('.module-tab').forEach((tab) => {
+      const module = tab.dataset.module;
+      const panel = document.querySelector(`[data-module-panel="${module}"]`);
+      tab.id = tab.id || `module-tab-${module}`;
+      if (panel) {
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('aria-labelledby', tab.id);
+        tab.setAttribute('aria-controls', panel.id);
+      }
+    });
+  }
   // #moduleTabs never got the WAI-ARIA Tabs pattern's keyboard half -- role="tab"
   // makes a screen reader announce "tab, 1 of 4" and expect arrow keys to move
   // between tabs, but only click handlers existed. Same defect class as the
@@ -550,6 +570,7 @@
     $('signOutButton').addEventListener('click',signOut); $('refreshButton').addEventListener('click',refreshCurrent); $('exportButton').addEventListener('click',exportCurrent);
     document.querySelectorAll('.module-tab').forEach((b)=>b.addEventListener('click',()=>setModule(b.dataset.module)));
     wireTabKeyboardNav($('moduleTabs'), '.module-tab', (btn) => setModule(btn.dataset.module));
+    wireModuleTabPanelIds();
     $('loadOptions').addEventListener('click',()=>{delete state.data.options;loadOptions()}); $('loadStock').addEventListener('click',()=>{delete state.data.stocks;loadStock()}); $('loadSectors').addEventListener('click',()=>{delete state.data.sectors;loadSectors()}); $('loadBiotech').addEventListener('click',()=>{delete state.data.biotech;loadBiotech()});
     document.querySelectorAll('.lab-control').forEach((input)=>input.addEventListener('input',renderSlopeLab));
     renderSlopeLab(); loadHealth();
@@ -564,7 +585,7 @@
   // medianMae inverse-flag bug (renderConditions) and the hardcoded
   // good/bad classes (renderStock's fib table) both ship.
   if (typeof window !== 'undefined') {
-    window.__researchEngineInternals = { state, setModule, loadCurrent, loadOptions, loadStock, loadSectors, loadBiotech, renderConditions, renderStock, classify, renderSlopeLab };
+    window.__researchEngineInternals = { state, setModule, loadCurrent, loadOptions, loadStock, loadSectors, loadBiotech, renderConditions, renderStock, classify, renderSlopeLab, wireModuleTabPanelIds };
   }
 
   document.addEventListener('DOMContentLoaded',wire);

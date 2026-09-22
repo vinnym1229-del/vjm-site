@@ -75,6 +75,11 @@ function queryFrom(root, sel) {
     const key = attr[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase());
     return collectAll(root, (c) => key in c.dataset);
   }
+  const attrValue = /^\[data-([\w-]+)="([^"]*)"\]$/.exec(sel);
+  if (attrValue) {
+    const key = attrValue[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    return collectAll(root, (c) => c.dataset[key] === attrValue[2]);
+  }
   throw new Error(`unsupported selector in test stub: ${sel}`);
 }
 
@@ -98,6 +103,7 @@ function makeFixture() {
   const document = {
     get activeElement() { return activeElement; },
     getElementById: (id) => findById(root, id) || fallbackEl(id),
+    querySelector: (sel) => queryFrom(root, sel)[0] || null,
     querySelectorAll: (sel) => queryFrom(root, sel),
     addEventListener(type, fn) { if (type === 'DOMContentLoaded') fn(); },
     body: makeNode('div', { id: '__body' }),
