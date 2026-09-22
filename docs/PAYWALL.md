@@ -28,18 +28,18 @@ Audit run against the working tree (`node tools/paywall-audit.mjs`):
 
 | page | gated regions | gated lessons | free lessons | worked cases | paid words | paid markup | page source |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| `futures-dissection.html` | 3 | 43 | 7 | 3 | 9,750 | 86 KB | 118 KB |
-| `options-lab.html` | 4 | 51 | 0 | 3 | 11,381 | 99 KB | 158 KB |
-| `psychology-enhancer.html` | 13 | 62 | 0 | 3 | 16,048 | 157 KB | 208 KB |
-| `stock-breakdown.html` | 4 | 46 | 0 | 3 | 12,789 | 112 KB | 130 KB |
-| **total** | **24** | **202** | **7** | **12** | **49,968** | **454 KB** | **613 KB** |
+| `futures-dissection.html` | 3 | 43 | 7 | 3 | 9,750 | 87 KB | 118 KB |
+| `options-lab.html` | 4 | 51 | 0 | 3 | 11,381 | 100 KB | 159 KB |
+| `psychology-enhancer.html` | 13 | 62 | 0 | 3 | 16,048 | 158 KB | 209 KB |
+| `stock-breakdown.html` | 4 | 46 | 0 | 3 | 12,789 | 113 KB | 131 KB |
+| **total** | **24** | **202** | **7** | **12** | **49,968** | **457 KB** | **617 KB** |
 
 Read that as:
 
 - **202 paid lessons** are gated at the edge and readable in public source.
 - **All twelve worked cases** — the long-form, fully-computed examples that are
   the most expensive thing on this site to produce — are in public source.
-- **49,968 words** of paid prose (roughly a 200-page book) and **465,328 bytes**
+- **49,968 words** of paid prose (roughly a 200-page book) and **468,232 bytes**
   of paid markup are in the public repository right now.
 - **Seven lessons are free by design** (futures Level 1) and one essay
   (psychology). That is the entire intended free tier, and the audit knows it
@@ -48,7 +48,7 @@ Read that as:
   server-side gate covers everything it is supposed to cover. This is the part
   that is working, and the part not to break.
 
-The value at risk is not 454 KB of bytes. It is the only thing on the site that
+The value at risk is not 457 KB of bytes. It is the only thing on the site that
 a competitor cannot generate in an afternoon.
 
 ## 3. Why the existing defenses do not address this
@@ -184,8 +184,8 @@ CREATE TABLE IF NOT EXISTS lesson_blocks (
 ```
 
 One `SELECT block_index, html FROM lesson_blocks WHERE page = ?1 ORDER BY
-block_index` per authorized request. Largest page is 157 KB across 13 rows —
-comfortably inside D1's limits, but it is 157 KB of row data on every authorized
+block_index` per authorized request. Largest page is 158 KB across 13 rows —
+comfortably inside D1's limits, but it is 158 KB of row data on every authorized
 page view.
 
 **KV** is the better fit for this shape of data: one key per page

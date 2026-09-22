@@ -2062,3 +2062,27 @@ test('pages that statically load Cloudflare Turnstile preconnect to its origin',
       `${p} missing preconnect for the Turnstile origin its own widget depends on`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Incident: every data table on the site (contract-spec tables, ATR/RSI
+// worked examples, options Greeks reference, research-engine result tables,
+// the premium stock-lab watchlist, etc.) rendered its <th> header cells with
+// no `scope` attribute -- 0 hits for `scope=` across every page that ships a
+// <table>. A screen reader navigating one of these in table mode (NVDA
+// Ctrl+Alt+arrows, JAWS table nav) announces each cell with no header
+// context, which turns a 9-column contract-spec table with two columns both
+// literally labeled "Multiplier"/"Minimum tick"/"Tick value" (E-mini vs.
+// Micro) into an unusable list of unlabeled numbers. None of these tables
+// use a row-header <th> in the body (checked: zero <th> inside any <tbody>
+// site-wide), so every <th> is a column header and belongs scope="col".
+test('every table header cell declares scope="col"', () => {
+  const missing = [];
+  for (const p of PAGES) {
+    const html = read(p);
+    if (!html.includes('<table')) continue;
+    for (const m of html.matchAll(/<th(?![a-zA-Z])[^>]*>/g)) {
+      if (!/\bscope=/.test(m[0])) missing.push(`${p}: ${m[0]}`);
+    }
+  }
+  assert.deepEqual(missing, [], `<th> cells missing a scope attribute:\n  ${missing.join('\n  ')}`);
+});
