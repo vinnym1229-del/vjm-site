@@ -175,6 +175,14 @@ test('every event name emitted anywhere in site code is accepted by the collecto
     /data-vjm-event=[\\'"]([a-z_]+)[\\'"]/g,
     /setAttribute\(\s*['"]data-vjm-event['"]\s*,\s*['"]([a-z_]+)['"]\s*\)/g,
     /vjmTrack\(\s*['"]([a-z_]+)['"]/g,
+    // assets/curriculum.js and assets/newsletter.js each define their own
+    // local `function track(name, props)` wrapper around window.vjmTrack and
+    // fire literal calls like track('plan_cta', ...) — none of the three
+    // patterns above match a bare track(...) call, so this scan produced zero
+    // matches in either file despite curriculum.js emitting 4 event names and
+    // newsletter.js emitting 1. Same blind spot as the quiz_track_alt bug
+    // this test was written to catch, just on a different call shape.
+    /\btrack\(\s*['"]([a-z_]+)['"]/g,
   ];
   const found = new Set();
   for (const f of files) {
