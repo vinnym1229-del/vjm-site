@@ -1699,6 +1699,50 @@ test('index.html wires the Growth Simulator toggle pairs into the shared arrow-k
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the aria-controls/role=tabpanel sweep that closed the shared
+// curriculum.js tabs, research-engine.html's #moduleTabs and options-lab.html's
+// #tabs/#subtabs (see .opencode/decisions.md, 2026-09-21/22) left index.html's
+// own tab widgets untouched. Three of them -- .prem-tabs (Dashboard/"Am I
+// Active?"), .sim-mode-tabs (Trading/Prop) and .gain-mode-tabs ($/% per day)
+// -- are real two-panel switches: premTab()/setSimMode()/setGainMode() all
+// toggle a distinct panel's `style.display`, the same shape every other fixed
+// widget had. A screen-reader user could already hear "tab, 1 of 2" and arrow
+// between them, but got no programmatic link telling them which content
+// region the active tab actually owns. .period-tabs is deliberately left out
+// here: setBundlePeriod() doesn't switch a single panel, it rewrites the price
+// text inside every pricing tier at once, so there is no one tabpanel for a
+// period tab's aria-controls to name.
+//
+// Unlike stock-lab.html's #sectorTabs below, every button/panel pair here is
+// static markup (ids and the tab/panel relationship never change at runtime),
+// so this is a plain static check -- no need to execute renderTabs()-style
+// JS to see the real attributes.
+test('index.html .prem-tabs, .sim-mode-tabs and .gain-mode-tabs wire aria-controls to a role="tabpanel" they actually own', () => {
+  const html = read('index.html');
+  const pairs = [
+    { tabId: 'ptab-dashboard', panelId: 'pcontent-dashboard' },
+    { tabId: 'ptab-status', panelId: 'pcontent-status' },
+    { tabId: 'sim-mode-trading', panelId: 'sim-trading-inputs' },
+    { tabId: 'sim-mode-prop', panelId: 'sim-prop-inputs' },
+    { tabId: 'gain-dollar-btn', panelId: 'sim-dollar-input' },
+    { tabId: 'gain-pct-btn', panelId: 'sim-pct-input' },
+  ];
+  for (const { tabId, panelId } of pairs) {
+    const tab = new RegExp(`<button[^>]*\\bid="${tabId}"[^>]*>`).exec(html);
+    assert.ok(tab, `tab button #${tabId} not found`);
+    assert.match(tab[0], /role="tab"/, `#${tabId} missing role="tab"`);
+    assert.ok(tab[0].includes(`aria-controls="${panelId}"`),
+      `#${tabId} must carry aria-controls="${panelId}"`);
+
+    const panel = new RegExp(`<div[^>]*\\bid="${panelId}"[^>]*>`).exec(html);
+    assert.ok(panel, `panel #${panelId} not found`);
+    assert.match(panel[0], /role="tabpanel"/, `#${panelId} missing role="tabpanel"`);
+    assert.ok(panel[0].includes(`aria-labelledby="${tabId}"`),
+      `#${panelId} must carry aria-labelledby="${tabId}"`);
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Incident: stock-lab.html's premium sector-group switcher (#sectorTabs) is
 // the same tab-widget defect class as index.html's period-tabs and the
 // curriculum level/group tabs above -- a `role="tablist"` container whose

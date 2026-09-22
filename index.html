@@ -722,27 +722,27 @@
 
         <!-- Mode toggle -->
         <div class="sim-mode-tabs" role="tablist" aria-label="Simulator mode" style="display:flex;background:var(--accent);border-radius:10px;padding:3px;margin-bottom:18px;gap:3px;">
-          <button class="sim-mode-tab" data-mode="trading" role="tab" aria-selected="true" tabindex="0" id="sim-mode-trading" onclick="setSimMode('trading')" style="flex:1;padding:8px;border:none;border-radius:8px;background:var(--gold);color:#fff;font-weight:800;font-size:0.8rem;cursor:pointer;transition:all .2s;">📈 Trading</button>
-          <button class="sim-mode-tab" data-mode="prop" role="tab" aria-selected="false" tabindex="-1" id="sim-mode-prop" onclick="setSimMode('prop')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-weight:700;font-size:0.8rem;cursor:pointer;transition:all .2s;">🏢 Prop</button>
+          <button class="sim-mode-tab" data-mode="trading" role="tab" aria-selected="true" tabindex="0" id="sim-mode-trading" aria-controls="sim-trading-inputs" onclick="setSimMode('trading')" style="flex:1;padding:8px;border:none;border-radius:8px;background:var(--gold);color:#fff;font-weight:800;font-size:0.8rem;cursor:pointer;transition:all .2s;">📈 Trading</button>
+          <button class="sim-mode-tab" data-mode="prop" role="tab" aria-selected="false" tabindex="-1" id="sim-mode-prop" aria-controls="sim-prop-inputs" onclick="setSimMode('prop')" style="flex:1;padding:8px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-weight:700;font-size:0.8rem;cursor:pointer;transition:all .2s;">🏢 Prop</button>
         </div>
 
         <!-- Trading mode inputs -->
-        <div id="sim-trading-inputs">
+        <div id="sim-trading-inputs" role="tabpanel" aria-labelledby="sim-mode-trading">
           <label for="sim-start" style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Starting Balance ($)</label>
           <input id="sim-start" type="number" value="1200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;">
 
           <!-- % or $ toggle -->
           <div class="gain-mode-tabs" role="tablist" aria-label="Target gain unit" style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
             <span style="font-size:0.82rem;color:var(--muted);">Target $/day:</span>
-            <button class="gain-mode-tab" data-mode="dollar" role="tab" aria-selected="true" tabindex="0" id="gain-dollar-btn" onclick="setGainMode('dollar')" style="padding:4px 12px;border:1.5px solid var(--gold);border-radius:20px;background:var(--gold);color:#fff;font-weight:700;font-size:0.75rem;cursor:pointer;">$ Per Day</button>
-            <button class="gain-mode-tab" data-mode="pct" role="tab" aria-selected="false" tabindex="-1" id="gain-pct-btn" onclick="setGainMode('pct')" style="padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);font-weight:700;font-size:0.75rem;cursor:pointer;">% Per Day</button>
+            <button class="gain-mode-tab" data-mode="dollar" role="tab" aria-selected="true" tabindex="0" id="gain-dollar-btn" aria-controls="sim-dollar-input" onclick="setGainMode('dollar')" style="padding:4px 12px;border:1.5px solid var(--gold);border-radius:20px;background:var(--gold);color:#fff;font-weight:700;font-size:0.75rem;cursor:pointer;">$ Per Day</button>
+            <button class="gain-mode-tab" data-mode="pct" role="tab" aria-selected="false" tabindex="-1" id="gain-pct-btn" aria-controls="sim-pct-input" onclick="setGainMode('pct')" style="padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;background:transparent;color:var(--muted);font-weight:700;font-size:0.75rem;cursor:pointer;">% Per Day</button>
           </div>
 
-          <div id="sim-dollar-input">
+          <div id="sim-dollar-input" role="tabpanel" aria-labelledby="gain-dollar-btn">
             <label for="sim-daily-dollar" style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Daily Gain ($)</label>
             <input id="sim-daily-dollar" type="number" value="200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;">
           </div>
-          <div id="sim-pct-input" style="display:none;">
+          <div id="sim-pct-input" role="tabpanel" aria-labelledby="gain-pct-btn" style="display:none;">
             <label for="sim-daily-pct" style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Daily Gain (%)</label>
             <input id="sim-daily-pct" type="number" value="1" min="0.1" step="0.1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;">
           </div>
@@ -753,7 +753,7 @@
         </div>
 
         <!-- Prop mode inputs -->
-        <div id="sim-prop-inputs" style="display:none;margin-top:12px;">
+        <div id="sim-prop-inputs" role="tabpanel" aria-labelledby="sim-mode-prop" style="display:none;margin-top:12px;">
           <label for="sim-prop-start" style="font-size:0.82rem;color:var(--muted);display:block;margin-bottom:6px;">Starting Balance ($)</label>
           <input id="sim-prop-start" type="number" value="1200" min="1" style="width:100%;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;margin-bottom:12px;box-sizing:border-box;">
           <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;">
@@ -1000,11 +1000,11 @@
 
 <!-- Tab Nav -->
 <div class="prem-tabs" role="tablist" aria-label="Member tools" style="display:flex;gap:8px;justify-content:center;margin-bottom:28px;flex-wrap:wrap;">
-  <button class="prem-tab" data-tab="dashboard" role="tab" aria-selected="true" tabindex="0" onclick="premTab('dashboard')" id="ptab-dashboard" style="flex:1;max-width:170px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:var(--gold);color:#fff;">Dashboard</button>
-  <button class="prem-tab" data-tab="status" role="tab" aria-selected="false" tabindex="-1" onclick="premTab('status')" id="ptab-status" style="flex:1;max-width:170px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:transparent;color:var(--muted);">Am I Active?</button>
+  <button class="prem-tab" data-tab="dashboard" role="tab" aria-selected="true" tabindex="0" onclick="premTab('dashboard')" id="ptab-dashboard" aria-controls="pcontent-dashboard" style="flex:1;max-width:170px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:var(--gold);color:#fff;">Dashboard</button>
+  <button class="prem-tab" data-tab="status" role="tab" aria-selected="false" tabindex="-1" onclick="premTab('status')" id="ptab-status" aria-controls="pcontent-status" style="flex:1;max-width:170px;padding:10px 6px;border:none;border-radius:10px;font-weight:800;cursor:pointer;background:transparent;color:var(--muted);">Am I Active?</button>
 </div>
     <!-- DASHBOARD TAB -->
-    <div id="pcontent-dashboard" style="display:block;max-width:700px;margin:0 auto;">
+    <div id="pcontent-dashboard" role="tabpanel" aria-labelledby="ptab-dashboard" style="display:block;max-width:700px;margin:0 auto;">
       <div id="dash-gate" style="text-align:center;">
         <p style="color:var(--muted);margin-bottom:20px;">Sign in to see your dashboard, or grab premium to get started.</p>
         <a href="#premium" class="btn btn-gold" style="width:100%;max-width:360px;display:inline-block;">Buy Premium Subscription Now</a>
@@ -1052,7 +1052,7 @@
     </div>
 
     <!-- AM I ACTIVE TAB -->
-    <div id="pcontent-status" style="display:none;max-width:500px;margin:0 auto;text-align:center;">
+    <div id="pcontent-status" role="tabpanel" aria-labelledby="ptab-status" style="display:none;max-width:500px;margin:0 auto;text-align:center;">
       <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px 28px;">
         <div style="font-size:2rem;margin-bottom:12px;">🔍</div>
         <h3 style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;margin-bottom:8px;">Check Your Status</h3>
