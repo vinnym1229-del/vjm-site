@@ -990,6 +990,27 @@ function wireTabKeyboardNav(bar, tabSelector, activate) {
   });
 }
 
+// #tabs/#subtabs declare role="tab"/role="tablist" but never paired a tab
+// with the panel it drives -- no aria-controls on the tab, no role="tabpanel"
+// or aria-labelledby on the panel. Same gap assets/curriculum.js's
+// wireTabPanelIds() and assets/research-engine.js's wireModuleTabPanelIds()
+// already closed for the four course pages and research-engine.html; this
+// is its own copy since these two bars are driven by this page's own inline
+// script. Panel ids here are already stable (panel-basics, subpanel-gex101,
+// etc.), so only the tab side needs one minted.
+function wireTabPanelIds(bar, tabSelector, datasetKey, panelIdPrefix) {
+  bar.querySelectorAll(tabSelector).forEach(function(tab) {
+    const value = tab.dataset[datasetKey];
+    const panel = document.getElementById(panelIdPrefix + value);
+    tab.id = tab.id || (bar.id + '-tab-' + value);
+    if (panel) {
+      panel.setAttribute('role', 'tabpanel');
+      panel.setAttribute('aria-labelledby', tab.id);
+      tab.setAttribute('aria-controls', panel.id);
+    }
+  });
+}
+
 function activateTab(btn) {
   document.querySelectorAll('#tabs .tab-btn').forEach(b => {
     const active = b === btn;
@@ -1007,6 +1028,7 @@ document.getElementById('tabs').addEventListener('click', function(e) {
   if (btn) activateTab(btn);
 });
 wireTabKeyboardNav(document.getElementById('tabs'), '.tab-btn', activateTab);
+wireTabPanelIds(document.getElementById('tabs'), '.tab-btn', 'tab', 'panel-');
 
 function activateSubtab(btn) {
   document.querySelectorAll('.subtab-btn').forEach(b => {
@@ -1025,6 +1047,7 @@ document.getElementById('subtabs').addEventListener('click', function(e) {
   if (btn) activateSubtab(btn);
 });
 wireTabKeyboardNav(document.getElementById('subtabs'), '.subtab-btn', activateSubtab);
+wireTabPanelIds(document.getElementById('subtabs'), '.subtab-btn', 'subtab', 'subpanel-');
 
 function themeButtonHtml(isLight) {
   return (isLight ? '☀️ <span class="theme-label-text">Light</span>' : '🌙 <span class="theme-label-text">Dark</span>');
