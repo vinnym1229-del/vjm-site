@@ -1652,7 +1652,21 @@ const SocialStats = (function () {
 // button (WCAG dialog pattern); closePost() returns it, the same
 // focus-restore the chatbot panel and nav dropdowns already do. Escape
 // closes it for keyboard parity with every other overlay on the site.
+// This is the site's only real aria-modal="true" dialog (chatbot panel and
+// nav dropdowns are non-modal popovers, not modals), and its promise of
+// modality wasn't backed by a focus trap: Shift+Tab off the close button
+// walked straight into the footer links sitting behind the opaque overlay.
+// postModalFocusables() names the two focusable elements the dialog
+// actually contains (queried by class rather than hardcoded once, so the
+// wrap logic doesn't care which one is "first" in source order) and Tab
+// wraps between them while the dialog is open.
 let postModalTrigger = null;
+function postModalFocusables() {
+  return [
+    document.querySelector('#post-modal .modal-close'),
+    document.querySelector('#post-modal .btn-gold'),
+  ];
+}
 function openPost() {
   postModalTrigger = document.activeElement;
   document.getElementById('post-modal').classList.add('active');
@@ -1668,7 +1682,13 @@ document.getElementById('insight-card-trigger').addEventListener('keydown', (e) 
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPost(); }
 });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && document.getElementById('post-modal').classList.contains('active')) closePost();
+  if (!document.getElementById('post-modal').classList.contains('active')) return;
+  if (e.key === 'Escape') { closePost(); return; }
+  if (e.key === 'Tab') {
+    const [first, last] = postModalFocusables();
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
 });
 
 // ─── DARK / LIGHT MODE ───

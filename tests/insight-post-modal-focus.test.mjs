@@ -12,6 +12,16 @@
 // tests/nav-dropdown-focus.test.mjs already pin for the chatbot panel and
 // nav dropdowns), with Escape closing the modal for parity with every
 // other overlay on the site.
+//
+// That still left a second, deeper gap: this is the site's only real
+// role="dialog" aria-modal="true" element (chatbot panel and nav dropdowns
+// are non-modal popovers), but nothing actually trapped focus inside it --
+// Shift+Tab off the close button walked straight past the dialog boundary
+// into the footer links sitting behind the opaque overlay, and Tab off the
+// "Back to Insights" button would have walked forward into whatever came
+// after the modal in source order. Fixed by having the shared keydown
+// listener wrap Tab/Shift+Tab between the dialog's two focusable elements
+// while it's open.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -43,9 +53,9 @@ test('insight-card trigger markup is keyboard-focusable and the modal is a label
 function extractBlogPostScript(source) {
   const start = source.indexOf('let postModalTrigger = null;');
   assert.ok(start > -1, 'postModalTrigger declaration not found in index.html');
-  const endMarker = "if (e.key === 'Escape' && document.getElementById('post-modal').classList.contains('active')) closePost();\n});";
+  const endMarker = "    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }\n  }\n});";
   const endIdx = source.indexOf(endMarker, start);
-  assert.ok(endIdx > -1, 'Escape listener for post-modal not found after postModalTrigger declaration');
+  assert.ok(endIdx > -1, 'Tab-trap keydown listener for post-modal not found after postModalTrigger declaration');
   return source.slice(start, endIdx + endMarker.length);
 }
 
@@ -75,18 +85,20 @@ function makeSandbox() {
   const trigger = makeNode('insight-card-trigger');
   const modal = makeNode('post-modal');
   const closeBtn = makeNode('modal-close-btn');
+  const backBtn = makeNode('modal-back-btn');
   const body = { style: {} };
   const els = { 'insight-card-trigger': trigger, 'post-modal': modal };
+  const selectors = { '#post-modal .modal-close': closeBtn, '#post-modal .btn-gold': backBtn };
   const document = {
     get activeElement() { return activeElement; },
     body,
     getElementById: (id) => els[id] || null,
-    querySelector: (sel) => (sel === '#post-modal .modal-close' ? closeBtn : null),
+    querySelector: (sel) => selectors[sel] || null,
     addEventListener(type, fn) { (docListeners[type] ||= []).push(fn); },
   };
   const sandbox = { document };
   vm.createContext(sandbox);
-  return { sandbox, trigger, modal, closeBtn, body, docListeners, getActiveElement: () => activeElement };
+  return { sandbox, trigger, modal, closeBtn, backBtn, body, docListeners, getActiveElement: () => activeElement };
 }
 
 test('openPost() moves focus into the dialog and remembers the trigger', () => {
@@ -126,4 +138,33 @@ test('Escape closes the modal only while it is open', () => {
   vm.runInContext('openPost()', sandbox);
   escapeHandler({ key: 'Escape' });
   assert.equal(modal.classList.contains('active'), false, 'Escape should close the open modal');
+});
+
+test('Tab off the last focusable element wraps forward to the first while the dialog is open', () => {
+  const { sandbox, closeBtn, backBtn, docListeners, getActiveElement } = makeSandbox();
+  vm.runInContext(blogPostScript, sandbox);
+  vm.runInContext('openPost()', sandbox);
+  backBtn.focus();
+  let defaultPrevented = false;
+  docListeners.keydown[0]({ key: 'Tab', shiftKey: false, preventDefault: () => { defaultPrevented = true; } });
+  assert.equal(defaultPrevented, true, 'Tab off the back-to-insights button should be intercepted, not left to native tab order');
+  assert.equal(getActiveElement(), closeBtn, 'Tab off the back-to-insights button should wrap focus to the close button');
+});
+
+test('Shift+Tab off the first focusable element wraps backward to the last while the dialog is open', () => {
+  const { sandbox, backBtn, docListeners, getActiveElement } = makeSandbox();
+  vm.runInContext(blogPostScript, sandbox);
+  vm.runInContext('openPost()', sandbox); // openPost() already focuses the close button
+  let defaultPrevented = false;
+  docListeners.keydown[0]({ key: 'Tab', shiftKey: true, preventDefault: () => { defaultPrevented = true; } });
+  assert.equal(defaultPrevented, true, 'Shift+Tab off the close button should be intercepted, not escape into the page behind the overlay');
+  assert.equal(getActiveElement(), backBtn, 'Shift+Tab off the close button should wrap focus to the back-to-insights button');
+});
+
+test('Tab is left alone entirely while the dialog is closed', () => {
+  const { sandbox, docListeners } = makeSandbox();
+  vm.runInContext(blogPostScript, sandbox);
+  let defaultPrevented = false;
+  docListeners.keydown[0]({ key: 'Tab', shiftKey: false, preventDefault: () => { defaultPrevented = true; } });
+  assert.equal(defaultPrevented, false, 'Tab should be a no-op while the dialog is not active, same as Escape');
 });
