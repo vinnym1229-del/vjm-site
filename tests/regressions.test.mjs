@@ -2034,3 +2034,31 @@ test("psychology-enhancer.html's expectancy sample-size cross-check computes the
   assert.equal(Number(shown.replace(/,/g, '')), expected,
     `psychology-enhancer.html: n > (1.96 x ${se} / ${expectancy})^2 rounds to ${expected}, not ${shown}`);
 });
+
+// ---------------------------------------------------------------------------
+// Incident: the earlier font-preconnect fix (above) warmed up
+// fonts.googleapis.com/fonts.gstatic.com on every page but missed a third
+// third-party origin these 7 pages also depend on: each loads Cloudflare
+// Turnstile via a static `<script src="https://challenges.cloudflare.com/...">`
+// at the very end of <body>, powering a `.cf-turnstile` widget that renders
+// near the top of the same page's premium-gate/sign-in/lesson-unlock form.
+// async/defer only control execution timing, not when the browser opens the
+// connection, and the tag's own position (last in <body>) already delays
+// that; with no preconnect hint in <head>, the DNS+TCP+TLS handshake to
+// challenges.cloudflare.com doesn't even start until the browser finishes
+// parsing the whole page, adding a fresh connection's latency directly in
+// front of the widget that gates the page's core action. index.html and
+// prop-firms.html are deliberately excluded: they load Turnstile lazily via
+// assets/newsletter.js's loadTurnstileScript(), gated behind an env check,
+// so a static preconnect there could warm a connection that's never used.
+test('pages that statically load Cloudflare Turnstile preconnect to its origin', () => {
+  const pages = ['stock-lab.html', 'premium-guidance.html', 'research-engine.html',
+    'options-lab.html', 'futures-dissection.html', 'psychology-enhancer.html', 'stock-breakdown.html'];
+  for (const p of pages) {
+    const html = read(p);
+    assert.match(html, /<script src="https:\/\/challenges\.cloudflare\.com\/turnstile\/v0\/api\.js" async defer><\/script>/,
+      `${p}: expected the static Turnstile script tag this test targets`);
+    assert.match(html, /<link rel="preconnect" href="https:\/\/challenges\.cloudflare\.com">/,
+      `${p} missing preconnect for the Turnstile origin its own widget depends on`);
+  }
+});
