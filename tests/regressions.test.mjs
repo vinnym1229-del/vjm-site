@@ -1068,6 +1068,36 @@ test('the committed-once intro video and its poster get the same long-cache trea
   }
 });
 
+test('the committed-once brand/hero images get the same long-cache treatment as vendor/models/intro-video', () => {
+  // assets/pj-logo.jpg (every page's favicon/apple-touch-icon/nav-brand),
+  // assets/pj-banner.jpg (index.html's hero/LCP image and every page's
+  // og:image/twitter:image), assets/ferrari-reference-light.webp/-dark.webp
+  // (index.html's own comment calls these a "committed-once... owner-approved
+  // reference" image), and assets/testimonials.webp are referenced with no
+  // ?v= cache-busting anywhere in the repo and are swapped only by a
+  // deliberate replacement commit, the same rationale the vendor/models/
+  // intro-video rules above already rely on. Without their own rule they
+  // fall through to the blanket 5-minute /assets/* default -- pj-logo.jpg
+  // gets needlessly revalidated on essentially every page view site-wide.
+  const headers = read('_headers');
+  const blanket = /\/assets\/\*\n\s*Cache-Control: public, max-age=(\d+)/.exec(headers);
+  assert.ok(blanket, '_headers must still set a blanket /assets/* Cache-Control');
+  const blanketMaxAge = Number(blanket[1]);
+
+  for (const path of [
+    '/assets/pj-logo.jpg',
+    '/assets/pj-banner.jpg',
+    '/assets/ferrari-reference-light.webp',
+    '/assets/ferrari-reference-dark.webp',
+    '/assets/testimonials.webp',
+  ]) {
+    const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rule = new RegExp(`${escaped}\\n\\s*Cache-Control: public, max-age=(\\d+), immutable`).exec(headers);
+    assert.ok(rule, `_headers has no long-cache rule for ${path}`);
+    assert.ok(Number(rule[1]) > blanketMaxAge, `${path}'s max-age must exceed the general /assets/* default`);
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Incident: psychology-enhancer.html grew from 59 to 62 lesson-card entries
 // over time, but its own hero stat ("59 Lessons"), index.html's curriculum

@@ -64,6 +64,34 @@
 /assets/pj-intro-poster.jpg
   Cache-Control: public, max-age=604800, immutable
 
+# assets/pj-logo.jpg (11KB, referenced with no ?v= on every one of the 16
+# HTML pages' favicon/apple-touch-icon/nav-brand), assets/pj-banner.jpg
+# (95KB, index.html's above-the-fold hero/LCP image and every page's
+# og:image/twitter:image), assets/ferrari-reference-{light,dark}.webp
+# (140KB/143KB, index.html already calls these a "committed-once...
+# owner-approved reference" image in its own comment), and
+# assets/testimonials.webp (173KB) are the same "committed once, no ?v=
+# bump mechanism" case as vendor/models/intro-video above: none of them
+# has ever needed an in-place edit, a replacement is a new commit under
+# the same rationale. Without their own rule they fell through to the
+# blanket 5-minute /assets/* default and got needlessly revalidated —
+# pj-logo.jpg on essentially every page view site-wide, the other four on
+# the homepage's highest-traffic load.
+/assets/pj-logo.jpg
+  Cache-Control: public, max-age=604800, immutable
+
+/assets/pj-banner.jpg
+  Cache-Control: public, max-age=604800, immutable
+
+/assets/ferrari-reference-light.webp
+  Cache-Control: public, max-age=604800, immutable
+
+/assets/ferrari-reference-dark.webp
+  Cache-Control: public, max-age=604800, immutable
+
+/assets/testimonials.webp
+  Cache-Control: public, max-age=604800, immutable
+
 # ── PERMANENT noindex — survives lifting the switch above ──
 # Member/app tools, the research engine, premium guidance, API and video
 # routes, and the /pj/* static preview copies must never be indexed at any
