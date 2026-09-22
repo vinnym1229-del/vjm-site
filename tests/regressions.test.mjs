@@ -2016,3 +2016,21 @@ test('options-lab.html #tabs/#subtabs activate() functions keep aria-selected in
       `${name} activate() must set aria-selected from the same active flag driving .active`);
   }
 });
+
+// Incident: psychology-enhancer.html's small-sample-size lesson (Step 4,
+// "How many trades would it take?") cross-checks its win-rate sample-size
+// requirement against the expectancy formula -- n > (1.96 x SE / expectancy)^2
+// -- and the hand-typed result was wrong: displayed as "3,670 trades" when
+// the page's own inputs (1.96, 1.390, 0.045) give 3,665.36, i.e. 3,665. No
+// test caught it because the figure is never reused elsewhere on the page.
+// Re-derives the number from those same inputs so a future edit can't
+// silently reintroduce a wrong cross-check.
+test("psychology-enhancer.html's expectancy sample-size cross-check computes the number it displays", () => {
+  const html = read('psychology-enhancer.html');
+  const m = /Cross-checked on expectancy: n &gt; \(1\.96 &times; ([\d.]+) \/ ([\d.]+)\)&sup2; = [\d.]+&sup2; = <b>([\d,]+) trades<\/b>/.exec(html);
+  assert.ok(m, 'psychology-enhancer.html: expected the expectancy sample-size cross-check sentence');
+  const [, se, expectancy, shown] = m;
+  const expected = Math.round(((1.96 * Number(se)) / Number(expectancy)) ** 2);
+  assert.equal(Number(shown.replace(/,/g, '')), expected,
+    `psychology-enhancer.html: n > (1.96 x ${se} / ${expectancy})^2 rounds to ${expected}, not ${shown}`);
+});
