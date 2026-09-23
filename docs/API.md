@@ -56,9 +56,11 @@ closed allowlist mapped to a fixed query (used by forex-calendar.html's headline
 `{ ok, items:[{title,link,publisher,pubDate,description}], source, fetchedAt }`
 502 with explicit unavailable state on feed failure — no placeholder items.
 
-## GET /api/forex-calendar?currency=USD&impact=major|medium
+## GET /api/forex-calendar?currency=USD&impact=major|high|medium
 
 ForexFactory weekly calendar (public feed), USD high/medium events, ≤120 rows.
+`impact` defaults to `major` (red + orange folders combined); `high` is red-folder-only,
+`medium` is orange-folder-only. Any other value 400s.
 `{ ok, events:[{title,currency,date(ISO),impact,forecast,previous,actual}], source, notice }`
 Actual values appear only after release. 502 explicit-unavailable on failure.
 

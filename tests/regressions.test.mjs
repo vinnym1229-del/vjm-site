@@ -670,6 +670,25 @@ test('yahoo-news docs describe the real JSON endpoint and the topic parameter, n
     'docs/SECURITY.md must name the actual allowlisted Yahoo host');
 });
 
+// Incident: functions/api/forex-calendar.js accepts three impact values --
+// 'major' (default, red+orange combined), 'high' (red-folder-only), and
+// 'medium' (orange-folder-only); anything else 400s. forex-calendar.html's
+// own quick-filter buttons call the API with all three (data-impact="High"
+// is "Red Folder Only") and tests/forex-calendar-api.test.mjs regression-
+// tests 'high' explicitly. But docs/API.md's forex-calendar heading only
+// ever listed `impact=major|medium`, never mentioning 'high' -- the exact
+// value the site's own UI depends on -- so a developer reading the doc alone
+// would reasonably assume it was unsupported.
+test('docs/API.md documents forex-calendar\'s high impact filter, not just major/medium', () => {
+  assert.match(read('functions/api/forex-calendar.js'), /\['major', 'high', 'medium'\]/,
+    'expected forex-calendar.js to still accept major/high/medium as its only impact values');
+  const doc = read('docs/API.md');
+  const heading = doc.match(/## GET \/api\/forex-calendar[^\n]*/);
+  assert.ok(heading, 'docs/API.md must have a forex-calendar heading');
+  assert.match(heading[0], /impact=.*\bhigh\b/,
+    'docs/API.md: forex-calendar heading omits the high impact filter');
+});
+
 // Incident: removing the homepage's "Live From PJ's Desk" section (2026-09-08)
 // deleted the site's only consumer of the announcements/trade_reviews CMS
 // content types (loadLatest(), #latest, .ann-card/.review-card), but
