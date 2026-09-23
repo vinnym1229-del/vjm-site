@@ -53,7 +53,6 @@
    * silently breaks a report, so add rather than rename. */
   var STAGES = {
     FREE_COURSE_START: 'free_course_start', // clicked into the free starter course
-    LESSON_COMPLETE: 'lesson_complete',     // finished a free lesson (course pages)
     LOCK_VIEW: 'lock_view',                 // saw a members-only lock
     PLAN_CTA: 'plan_cta',                   // clicked a specific plan's CTA
     WHOP_CHECKOUT: 'whop_checkout',         // left the site for Whop checkout

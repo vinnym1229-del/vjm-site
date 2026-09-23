@@ -194,6 +194,54 @@ test('every event name emitted anywhere in site code is accepted by the collecto
   assert.deepEqual(missing, [], `emitted in site code but missing from ALLOWED_EVENTS: ${missing.join(', ')}`);
 });
 
+test('every allowlisted event is actually emitted somewhere in site code', () => {
+  // The two tests above check emitted->allowlisted and allowlisted<->reported,
+  // but neither catches a stage that was declared and allowlisted at the
+  // funnel's inception yet never wired into an actual page or script -- it
+  // reads as "nobody ever does this" in the report forever, indistinguishable
+  // from a real zero, because there's no code path where the report test
+  // above's own "reported but never collectible" check would catch it (the
+  // stage IS collectible, it's just never sent). Reuses the same file/pattern
+  // scan as the 'emitted anywhere in site code' test above, just checked in
+  // the opposite direction.
+  const root = new URL('../', import.meta.url);
+  const files = [
+    ...readdirSync(root).filter((f) => f.endsWith('.html')),
+    ...readdirSync(new URL('assets/', root)).filter((f) => f.endsWith('.js')).map((f) => `assets/${f}`),
+  ];
+  const patterns = [
+    /data-vjm-event=[\\'"]([a-z_]+)[\\'"]/g,
+    /setAttribute\(\s*['"]data-vjm-event['"]\s*,\s*['"]([a-z_]+)['"]\s*\)/g,
+    /vjmTrack\(\s*['"]([a-z_]+)['"]/g,
+    /\btrack\(\s*['"]([a-z_]+)['"]/g,
+    // curriculum.js's planCtaButton takes an optional dynamic 'extraEvent'
+    // built as { name: 'core_to_complete_upgrade', props: {...} } and fires
+    // it via track(extraEvent.name, ...) -- the literal-call patterns above
+    // never see the name in that shape.
+    /\bname:\s*['"]([a-z_]+)['"]/g,
+  ];
+  const found = new Set();
+  const sources = new Map();
+  for (const f of files) {
+    const src = readFileSync(new URL(f, root), 'utf8');
+    sources.set(f, src);
+    for (const re of patterns) for (const m of src.matchAll(re)) found.add(m[1]);
+  }
+  // funnel.js fires whop_checkout symbolically -- track(STAGES.WHOP_CHECKOUT,
+  // ...) -- rather than a string literal. Resolve STAGES's own key->value
+  // literals and follow any STAGES.KEY reference anywhere in site code.
+  const funnelSrc = sources.get('assets/funnel.js');
+  const stagesBlock = funnelSrc.slice(funnelSrc.indexOf('var STAGES = {'), funnelSrc.indexOf('\n  };', funnelSrc.indexOf('var STAGES = {')));
+  const stageValues = new Map([...stagesBlock.matchAll(/([A-Z_]+):\s*'([a-z_]+)'/g)].map((m) => [m[1], m[2]]));
+  for (const src of sources.values()) {
+    for (const m of src.matchAll(/\bSTAGES\.([A-Z_]+)/g)) {
+      if (stageValues.has(m[1])) found.add(stageValues.get(m[1]));
+    }
+  }
+  const neverEmitted = [...ALLOWED_EVENTS].filter((name) => !found.has(name));
+  assert.deepEqual(neverEmitted, [], `allowlisted (and reported) but never emitted anywhere: ${neverEmitted.join(', ')}`);
+});
+
 test('the funnel report covers every stage the collector accepts', async () => {
   // Drift here is silent and one-directional: add a stage to the collector,
   // forget the report, and the new stage is invisible in the only place anyone

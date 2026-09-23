@@ -36,7 +36,6 @@ const DAYS = Number(arg('days', '30'));
 const FUNNEL = [
   ['free_course_start', 'Started the free course'],
   ['lesson_expand', 'Opened a lesson'],
-  ['lesson_complete', 'Finished a lesson'],
   ['free_level_complete', 'Finished the free level'],
   ['quiz_start', 'Started the "what kind of trader" quiz'],
   ['quiz_complete', 'Finished the quiz'],

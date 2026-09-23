@@ -24,7 +24,6 @@ import { json, checkRateLimit } from './_lib/http.js';
 export const ALLOWED_EVENTS = new Set([
   'free_course_start',
   'lesson_expand',
-  'lesson_complete',
   'free_level_complete',
   'lock_view',
   'plan_cta',
