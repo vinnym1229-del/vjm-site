@@ -85,6 +85,16 @@ try {
   assert.ok(requested.some((url) => url.pathname === '/v2/stocks/bars' && url.searchParams.get('feed') === 'boats'), 'futures-style proxy must request BOATS overnight history');
   assert.equal(intradayData.source.proxy, 'QQQ/SPY—not NQ/ES');
 
+  // The source text's stated delay must match the delay the request actually
+  // used (functions/api/research-engine.js's `delayedEnd`), not a hardcoded
+  // guess -- these two independently drifted apart before (source said
+  // "15-minute", the request and every other description in the file/HTML/
+  // docs said 16).
+  const barsRequest = requested.find((url) => url.pathname === '/v2/stocks/bars' && url.searchParams.get('feed') === 'sip');
+  const delayMinutes = Math.round((Date.now() - new Date(barsRequest.searchParams.get('end')).getTime()) / 60000);
+  assert.equal(intradayData.source.regularAndExtended, `Alpaca SIP historical bars (${delayMinutes}-minute delayed on Free)`);
+  assert.equal(intradayData.source.overnight, `Alpaca BOATS historical bars (${delayMinutes}-minute delayed on Free)`);
+
   // Provenance: a paid study result has to carry enough for the UI to say what
   // the numbers are. They are hypothetical and gross -- no fill model, no
   // costs -- and they are computed under one stated, versioned timing

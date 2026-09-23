@@ -205,7 +205,7 @@ async function intradayModule(params, env) {
   const model = buildPriceActionModel(primary, days);
   const allEvents = events.concat(smt, model.events);
   return {
-    mode:'observed ETF proxy', source:{regularAndExtended:'Alpaca SIP historical bars (15-minute delayed on Free)',overnight:'Alpaca BOATS historical bars (15-minute delayed on Free)',proxy:'QQQ/SPY—not NQ/ES'}, parameters:{symbol,paired,days},
+    mode:'observed ETF proxy', source:{regularAndExtended:'Alpaca SIP historical bars (16-minute delayed on Free)',overnight:'Alpaca BOATS historical bars (16-minute delayed on Free)',proxy:'QQQ/SPY—not NQ/ES'}, parameters:{symbol,paired,days},
     provenance:studyProvenance('Intraday sweep / FVG / SMT event study'),
     data:{
       conditions:summarizeConditions(allEvents), timing:summarizeTiming(allEvents),
