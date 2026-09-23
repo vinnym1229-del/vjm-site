@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const HTML_PAGES = ['index.html', 'stock-lab.html', 'options-lab.html', 'premium-guidance.html', 'forex-calendar.html', 'research-engine.html', '404.html'];
@@ -282,6 +283,52 @@ test('sitemap lists only canonical, indexable URLs and matches every page canoni
 
   // robots.txt must point at the sitemap on the same origin.
   assert.match(read('robots.txt'), new RegExp('^Sitemap: ' + origin + '/sitemap\\.xml$', 'm'));
+});
+
+// Incident: every <lastmod> in sitemap.xml was frozen at 2026-08-31 while the
+// pages they describe kept shipping real content changes (aria-controls
+// wiring, arithmetic fixes, footer links, JSON-LD corrections -- see
+// decisions.md) for three weeks with zero reflection here. Indexing is held
+// off site-wide today (_headers), so there's no live SEO harm yet, but the
+// sitemap is exactly the artifact that hands search engines freshness
+// signals the instant the owner lifts that hold, and nothing else in the
+// suite checked <lastmod> against anything real.
+//
+// A git-log-based check would be the ideal source of truth, but this repo's
+// CI checks out with the default shallow depth (1), so `git log -- <page>`
+// comes back empty for any page not touched by the exact commit under test
+// -- unusable here. Instead this pins each page's real content to a hash at
+// the moment its <lastmod> was last verified correct; if the page changes
+// again without sitemap.xml being updated alongside it, the hash mismatch
+// fails loudly instead of silently drifting for weeks like the original bug.
+const SITEMAP_LASTMOD_PINS = {
+  'index.html': { lastmod: '2026-09-23', sha256: 'a10fd3c07eda56106b3bcd530f6d2352bf34e0ee00dfbe913eea0bad754bffe9' },
+  'stock-breakdown.html': { lastmod: '2026-09-23', sha256: '77b6b64536cc53cd62396834bed6a3135b567fc003a75d25923003f3653dccd2' },
+  'futures-dissection.html': { lastmod: '2026-09-23', sha256: '5b4ac3a3f051d2b84e2850617d33641503227ae3e18725c7317a2401dd9725af' },
+  'psychology-enhancer.html': { lastmod: '2026-09-23', sha256: '312e4f0c633ee27da59849e9f2bbceb462f1f554f6dbf360fecb28e8b384f2ac' },
+  'options-lab.html': { lastmod: '2026-09-23', sha256: 'f9a2668bac4831717eb32a00e16de73835e4aeea57a421295db3fd5d723f836a' },
+  'premarket.html': { lastmod: '2026-09-23', sha256: '725b8d795ba35a4389fbcacb8b90f48053060ef91e8f2d3dc090e12c8a21c3e1' },
+  'forex-calendar.html': { lastmod: '2026-09-21', sha256: '1cc11f4dba478a7cc5508a078ae5c0b174d9a73caef69d006c3e361c021b5934' },
+  'prop-firms.html': { lastmod: '2026-09-23', sha256: '8fcdf60e71c9c90078775ff34f7ce7adc8211cecb9c062abe5c00ffc0ac628e4' },
+  'risk-disclosure.html': { lastmod: '2026-09-21', sha256: '3435b570bd55109004eec0616a7d73d0539b80c47346696b7d906d8c562fef41' },
+  'terms.html': { lastmod: '2026-09-21', sha256: '075e33ae4d4db303b5446f6230fb86f883936aa2e1fd48a4e2282a3756a26a33' },
+  'privacy.html': { lastmod: '2026-09-21', sha256: 'bcc06ea206e0b59350db887f94a730bbc88026739fcb3fa627815a39b78d3ba1' },
+};
+
+test('sitemap.xml <lastmod> values stay pinned to the page content they were last verified against', () => {
+  const origin = canonicalOrigin();
+  const sitemap = read('sitemap.xml');
+  for (const [page, { lastmod, sha256 }] of Object.entries(SITEMAP_LASTMOD_PINS)) {
+    const html = read(page);
+    const actualHash = createHash('sha256').update(html).digest('hex');
+    assert.equal(actualHash, sha256,
+      `${page} changed since sitemap.xml's <lastmod> was last verified -- update both the pinned hash in this test and sitemap.xml's <lastmod> for ${page}`);
+
+    const loc = origin + pathForPage(page);
+    const m = sitemap.match(new RegExp(`<loc>${loc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</loc><lastmod>([^<]+)</lastmod>`));
+    assert.ok(m, `sitemap.xml has no <lastmod> entry for ${loc}`);
+    assert.equal(m[1], lastmod, `sitemap.xml <lastmod> for ${page} does not match the pinned value`);
+  }
 });
 
 test('indexing stays off, coherently, in one place', () => {
