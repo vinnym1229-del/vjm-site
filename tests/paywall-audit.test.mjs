@@ -102,6 +102,31 @@ test('a clean fixture exits zero', async () => {
   assert.doesNotMatch(out, /OUTSIDE ANY GATED REGION/);
 });
 
+// docs/PAYWALL.md tells the owner to reproduce every number with
+// `node tools/paywall-audit.mjs --json` for a machine-readable version of the
+// same report — but every CLI test above only ever drove the plain-text table
+// branch, so the --json branch (tools/paywall-audit.mjs's own JSON.stringify
+// call) had zero coverage. A regression there (a crash, a dropped field, or
+// invalid JSON) would only be discovered by an owner running that exact
+// documented command.
+test('--json emits rows/totals/stray as valid, parseable JSON', async () => {
+  const { mkdtempSync, writeFileSync, mkdirSync, cpSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { execFileSync } = await import('node:child_process');
+
+  const dir = mkdtempSync(join(tmpdir(), 'paywall-json-'));
+  mkdirSync(join(dir, 'functions'));
+  cpSync(join(ROOT, 'functions', '_middleware.js'), join(dir, 'functions', '_middleware.js'));
+  for (const p of gatedPages(ROOT, read)) {
+    writeFileSync(join(dir, p), `<html><body><div class="gated-content">${LESSON}</div></body></html>`);
+  }
+  const out = execFileSync(process.execPath, [join(ROOT, 'tools', 'paywall-audit.mjs'), '--root', dir, '--json'], { encoding: 'utf8' });
+  const parsed = JSON.parse(out);
+  assert.equal(parsed.rows.length, 4, 'rows must list the four gated pages');
+  assert.equal(parsed.totals.lessonsGated, 4, 'one gated lesson per fixture page');
+  assert.deepEqual(parsed.stray, [], 'no stray course markup in this fixture');
+});
+
 // ---------------------------------------------------------------------------
 // The real site
 // ---------------------------------------------------------------------------
