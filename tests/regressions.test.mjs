@@ -2146,3 +2146,33 @@ test('every mobile hamburger button names the menu panel it opens via aria-contr
     .filter((p) => !(p in HAMBURGERS));
   assert.deepEqual(untracked, [], `pages with a hamburger button not covered by this test:\n  ${untracked.join('\n  ')}`);
 });
+
+// Incident: docs/ARCHITECTURE.md's Session design section described a v1
+// session shape -- {v, mr, dn, exp} in a plain `vjm_session` cookie, "no
+// session table yet", revocation "the next step" -- that shipped code left
+// behind. functions/api/_lib/session.js actually names the cookie
+// `__Host-vjm_session` (the prefix is the whole point: browser-enforced
+// Secure/Path=//no-Domain, so a subdomain can't plant or override it, per
+// that file's own header comment). verify-premium.js and auth-google.js mint
+// tokens carrying `t` (tier) and `sv`/`src` (entitlement epoch + D1-vs-Sheet
+// provenance) alongside {v, mr, dn, exp} -- SESSION_VERSION is 2
+// (entitlements.js) precisely because those fields were added. Revocation
+// is live, not planned: session.js's sessionEntitlementCheck() denies a
+// cookie once `whop_codes.session_epoch` (bumped by the webhook on cancel)
+// exceeds the cookie's own `sv` claim -- no separate D1 `sessions` table
+// exists or is referenced anywhere else, and MASTER-AUDIT.md doesn't even
+// have a section 14 (it stops at 7), so that citation was already dead.
+// A maintainer trusting the doc could check the wrong cookie name, assume
+// tier/revocation aren't in the token, or re-build a denylist that already
+// shipped as an epoch column.
+test('ARCHITECTURE.md describes the real session cookie name and payload shape', () => {
+  const doc = read('docs/ARCHITECTURE.md');
+  assert.match(doc, /__Host-vjm_session/, 'must name the actual __Host- prefixed cookie');
+  assert.doesNotMatch(doc, /`vjm_session`\s+cookie/, 'must not describe the un-prefixed cookie name');
+  for (const field of ['t(tier)', 'sv(entitlement epoch)', 'src(d1|sheet)']) {
+    assert.ok(doc.includes(field), `session payload description must include ${field}`);
+  }
+  assert.doesNotMatch(doc, /revocation denylist is\s+the next step/,
+    'must not claim revocation is unimplemented -- session_epoch/sv makes it live today');
+  assert.doesNotMatch(doc, /MASTER-AUDIT §14/, 'must not cite a MASTER-AUDIT section that no longer exists');
+});

@@ -35,15 +35,21 @@ _headers               CSP/HSTS/etc for static assets
 
 ## Session design
 
-Opaque HMAC-signed token `{v, mr(member-ref hash), dn(display name), exp}` in
-`vjm_session` cookie. Server holds no session table yet; revocation denylist is
-the next step (D1 `sessions` table designed in MASTER-AUDIT §14 target model).
+Opaque HMAC-signed token `{v, mr(member-ref hash), dn(display name), t(tier),
+sv(entitlement epoch), src(d1|sheet), exp}` in the `__Host-vjm_session` cookie
+— the `__Host-` prefix is browser-enforced (Secure, Path=/, no Domain), so a
+subdomain or sibling site can't plant or override it. `SESSION_VERSION` is `2`
+(entitlements.js) since `t`/`sv`/`src` were added for tier-aware sessions;
 `mr` is a truncated SHA-256 of the code — codes never ride in cookies.
+Revocation is live today via `sv`, not a future table: bumping a member's
+`whop_codes.session_epoch` column (webhook-driven on cancel) invalidates
+every outstanding cookie for that member the next time `sessionEntitlementCheck()`
+compares it against the cookie's `sv` claim — see session.js.
 
 ## Data ownership
 
-- **D1**: sessions/revocation (planned), audit events, rate limits, research
-  snapshots/metadata.
+- **D1**: entitlement state incl. epoch-based session revocation (live — see
+  Session design), audit events, rate limits, research snapshots/metadata.
 - **Google Sheet**: owner-managed membership roster via authenticated bridge.
   View layer, not public storage.
 - **Alpaca**: market data, keys server-side only.
