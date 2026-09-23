@@ -2083,6 +2083,26 @@ test('pages that statically load Cloudflare Turnstile preconnect to its origin',
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the Turnstile preconnect sweep above covered every page's own
+// third-party dependency except stock-lab.html's actual heaviest one.
+// stock-lab.html's init() unconditionally calls runBasicResearch() on
+// DOMContentLoaded (the "Basic Stock Research" section is free, ungated, and
+// loads for every visitor), which calls loadTradingView() -> loadTvScript(),
+// injecting <script src="https://s3.tradingview.com/tv.js"> -- the script
+// that renders the page's main above-the-fold chart. loadScreener() (the
+// premium TradingView screener) depends on the same origin. index.html
+// already preconnects to s3.tradingview.com for a far less critical widget
+// (the ticker tape), but stock-lab.html, whose primary chart depends on it
+// on every single page load, had no preconnect hint at all -- the DNS+TCP+TLS
+// handshake to that origin didn't start until the script tag was created.
+test('stock-lab.html preconnects to the TradingView origin its unconditional chart load depends on', () => {
+  const html = read('stock-lab.html');
+  assert.match(html, /s3\.tradingview\.com\/tv\.js/, 'stock-lab.html: expected the TradingView script load this test targets');
+  assert.match(html, /<link rel="preconnect" href="https:\/\/s3\.tradingview\.com">/,
+    'stock-lab.html missing preconnect for the TradingView origin its unconditional basic-research chart depends on');
+});
+
+// ---------------------------------------------------------------------------
 // Incident: every data table on the site (contract-spec tables, ATR/RSI
 // worked examples, options Greeks reference, research-engine result tables,
 // the premium stock-lab watchlist, etc.) rendered its <th> header cells with
