@@ -111,7 +111,7 @@ export const LESSON_LIBRARY = Object.freeze([
     resource: "/futures-dissection.html",
     title: "Performance Bonds, Leverage, and Mark-to-Market",
     sections: [
-      { id: "s1", heading: "Why it matters", text: "Exchange initial margin, maintenance margin, a broker's house requirement, and a broker's discounted intraday margin are different numbers; all can change as volatility changes. Futures margin is a good-faith performance bond, while the trader's actual exposure is the full notional and gains/losses are credited or debited through variation settlement; CME explains these distinctions in Margin: Know What's Needed ." },
+      { id: "s1", heading: "Why it matters", text: "Exchange initial margin, maintenance margin, a broker's house requirement, and a broker's discounted intraday margin are different numbers; all can change as volatility changes. Futures margin is a good-faith performance bond, while the trader's actual exposure is the full notional and gains/losses are credited or debited through variation settlement; CME explains these distinctions in Margin: Know What's Needed." },
       { id: "s2", heading: "Watch for", text: "\"My broker lets me open one NQ with $1,000\" does not mean $1,000 is an appropriate account size or maximum loss; discounted day margin is a liquidation threshold/entry requirement, not a risk budget, and a broker may liquidate before an exchange-level margin call." },
     ],
   },
