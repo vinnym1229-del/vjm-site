@@ -12,6 +12,7 @@ import {
   resolveTier, sessionTier, isLegacySession, authorizeResource,
   requiredTierFor, RESOURCE_TIERS,
 } from '../functions/api/_lib/entitlements.js';
+import { GATED_PAGES } from '../functions/_middleware.js';
 
 const ALLOWLIST = {
   WHOP_PRODUCTS_FUTURES: 'prod_futures_100, plan_futures_monthly',
@@ -160,4 +161,24 @@ test('authorizeResource: the full matrix a $100 buyer and a $129 buyer see', () 
   const denied = authorizeResource(core, '/options-lab', {});
   assert.equal(denied.held, TIERS.FUTURES_CORE);
   assert.equal(denied.required, TIERS.COMPLETE);
+});
+
+// _middleware.js's GATED_PAGES (which paths get the HTMLRewriter strip at
+// all) and this file's RESOURCE_TIERS (what tier a stripped path requires)
+// are two independently hand-maintained lists. requiredTierFor() returns
+// null for a path missing from RESOURCE_TIERS, and authorizeResource()
+// treats a null requirement as "allowed" unconditionally -- so a page added
+// to GATED_PAGES but not RESOURCE_TIERS would still hit the strip branch,
+// get authorizeResource(session, path, env) back with allowed: true for
+// literally any session including none at all, and ship its full paid HTML
+// to anonymous visitors. Nothing else in the suite cross-checks these two
+// tables against each other.
+test('every page the middleware gates also has a required tier -- a page in one table but not the other ships unlocked', () => {
+  for (const path of GATED_PAGES) {
+    assert.notEqual(
+      requiredTierFor(path), null,
+      `${path} is in _middleware.js's GATED_PAGES but missing from entitlements.js's RESOURCE_TIERS -- ` +
+        'authorizeResource() would return allowed: true for it unconditionally, stripping nothing.'
+    );
+  }
 });

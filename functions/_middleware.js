@@ -25,7 +25,12 @@ import { getSession } from './api/_lib/session.js';
 import { authorizeResource } from './api/_lib/entitlements.js';
 import { isIndexable } from './api/_lib/indexing.js';
 
-const GATED_PAGES = new Set([
+// Exported so tests/entitlements-lib.test.mjs can assert every entry here
+// also has a tier in entitlements.js's RESOURCE_TIERS -- these are two
+// independently hand-maintained lists, and a page added to this one but
+// not that one would skip the tier check entirely (authorizeResource
+// treats "not in RESOURCE_TIERS" as "freely allowed", not "fail closed").
+export const GATED_PAGES = new Set([
   '/stock-breakdown', '/stock-breakdown.html',
   '/options-lab', '/options-lab.html',
   '/futures-dissection', '/futures-dissection.html',
