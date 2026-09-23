@@ -2105,3 +2105,44 @@ test('every table header cell declares scope="col"', () => {
   }
   assert.deepEqual(missing, [], `<th> cells missing a scope attribute:\n  ${missing.join('\n  ')}`);
 });
+
+// ---------------------------------------------------------------------------
+// Incident: every previous aria-controls sweep (curriculum.js/research-engine
+// #moduleTabs/options-lab #tabs+#subtabs/index.html .prem-tabs+.sim-mode-tabs
+// +.gain-mode-tabs/stock-lab #sectorTabs, see .opencode/decisions.md 2026-09-21
+// and 2026-09-22) only ever covered `role="tab"` widgets. The mobile hamburger
+// disclosure button -- a different, simpler ARIA pattern (a plain toggle
+// button with aria-expanded that shows/hides one panel, not a tablist) -- was
+// never in scope for any of those passes and ships aria-expanded/aria-label
+// on all 8 pages that have one, but never aria-controls naming the panel it
+// actually opens. A screen-reader user tabbing to it hears "Menu, button,
+// collapsed" with no indication of what expands or where it lives in the DOM.
+// research-engine.html and the other 7 pages without a hamburger (this page's
+// own comment at research-engine.html:73 says so explicitly) are correctly
+// excluded -- this only checks pages that ship one.
+test('every mobile hamburger button names the menu panel it opens via aria-controls', () => {
+  const HAMBURGERS = {
+    'index.html': { buttonId: 'hamburger', panelId: 'mobile-menu' },
+    'futures-dissection.html': { buttonId: 'curr-hamb', panelId: 'curr-mmenu' },
+    'options-lab.html': { buttonId: 'curr-hamb', panelId: 'curr-mmenu' },
+    'psychology-enhancer.html': { buttonId: 'curr-hamb', panelId: 'curr-mmenu' },
+    'stock-breakdown.html': { buttonId: 'curr-hamb', panelId: 'curr-mmenu' },
+    'premarket.html': { buttonId: 'hamb', panelId: 'mmenu' },
+    'prop-firms.html': { buttonId: 'hamb', panelId: 'mmenu' },
+    'stock-lab.html': { buttonId: 'hamb', panelId: 'menu' },
+  };
+  for (const [page, { buttonId, panelId }] of Object.entries(HAMBURGERS)) {
+    const html = read(page);
+    const button = new RegExp(`<button[^>]*\\bid="${buttonId}"[^>]*>`).exec(html);
+    assert.ok(button, `${page}: hamburger button #${buttonId} not found`);
+    assert.ok(button[0].includes(`aria-controls="${panelId}"`),
+      `${page}: #${buttonId} must carry aria-controls="${panelId}"`);
+    assert.match(html, new RegExp(`\\bid="${panelId}"`), `${page}: menu panel #${panelId} not found`);
+  }
+  // Every page without a hamburger must stay that way, so this list can't
+  // silently go stale if a hamburger gets added to a page that isn't tracked
+  // above.
+  const untracked = PAGES.filter((p) => read(p).includes('class="hamburger') || read(p).includes('class="hamb"'))
+    .filter((p) => !(p in HAMBURGERS));
+  assert.deepEqual(untracked, [], `pages with a hamburger button not covered by this test:\n  ${untracked.join('\n  ')}`);
+});
