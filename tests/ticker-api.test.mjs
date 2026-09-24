@@ -146,6 +146,41 @@ try {
     assert.ok(!data.items.some((it) => it.asset === 'crypto'));
   }
 
+  // BTC lookup returns 200 but the snapshot itself is unusable (no
+  // latestTrade.p, e.g. a pair Alpaca lists with no trade yet): cryptoBtc's
+  // `!Number.isFinite(last)` guard must treat this the same as a non-200 or
+  // a throw, not push a null/NaN price into the tape.
+  {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes('crypto')) return Response.json({ snapshots: { 'BTC/USD': { latestTrade: {} } } });
+      return Response.json(fullEquitySnapshots());
+    };
+    const { status, data } = await call(configuredEnv(), nextIp());
+    assert.equal(status, 200);
+    assert.equal(data.ok, true);
+    assert.equal(data.items.length, ALL_SYMBOLS.length, 'BTC dropped, equities still ship');
+    assert.ok(!data.items.some((it) => it.asset === 'crypto'));
+  }
+
+  // BTC snapshot has a usable price but is missing prevDailyBar/latestTrade.t
+  // (a newly listed pair has no prior day to diff against): the item still
+  // ships, just with changePct/asOf as null instead of the handler crashing
+  // or silently coercing "no prior close" into a bogus 0%/undefined.
+  {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes('crypto')) return Response.json({ snapshots: { 'BTC/USD': { latestTrade: { p: 65000.4 } } } });
+      return Response.json(fullEquitySnapshots());
+    };
+    const { status, data } = await call(configuredEnv(), nextIp());
+    assert.equal(status, 200);
+    assert.equal(data.ok, true);
+    const btcItem = data.items.find((it) => it.symbol === 'BTCUSD');
+    assert.ok(btcItem, 'BTC item missing despite a usable price');
+    assert.equal(btcItem.price, 65000);
+    assert.equal(btcItem.changePct, null);
+    assert.equal(btcItem.asOf, null);
+  }
+
   // Too few usable snapshots (< 4) overall: treated as a failure, not a
   // half-empty tape -- and the caught error stays generic, no upstream
   // detail leaked into the public payload.
