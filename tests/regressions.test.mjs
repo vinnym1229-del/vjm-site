@@ -689,6 +689,23 @@ test('docs/API.md documents forex-calendar\'s high impact filter, not just major
     'docs/API.md: forex-calendar heading omits the high impact filter');
 });
 
+// Incident: docs/API.md documents every market-data endpoint in this family
+// (stock-research, yahoo-news, forex-calendar, research-engine) but never
+// mentioned /api/market-brief at all, despite it being the endpoint behind
+// an entire top-level page (premarket.html) with its own deliberate 200
+// pending state and X-Research-Cron-gated POST -- a developer reading the
+// doc to learn the site's data surface would miss the endpoint entirely.
+test('docs/API.md documents /api/market-brief', () => {
+  const doc = read('docs/API.md');
+  assert.match(doc, /## GET \/api\/market-brief/, 'docs/API.md must have a market-brief GET heading');
+  assert.match(doc, /## POST \/api\/market-brief/, 'docs/API.md must have a market-brief POST heading');
+  const section = doc.slice(doc.indexOf('## GET /api/market-brief'), doc.indexOf('## GET /api/research-engine'));
+  assert.match(section, /pending:true/, 'docs/API.md: market-brief section omits the deliberate pending state');
+  assert.match(section, /X-Research-Cron/, 'docs/API.md: market-brief section omits its cron-only POST auth');
+  assert.match(read('functions/api/market-brief.js'), /X-Research-Cron/,
+    'expected market-brief.js to still gate POST on X-Research-Cron');
+});
+
 // Incident: removing the homepage's "Live From PJ's Desk" section (2026-09-08)
 // deleted the site's only consumer of the announcements/trade_reviews CMS
 // content types (loadLatest(), #latest, .ann-card/.review-card), but

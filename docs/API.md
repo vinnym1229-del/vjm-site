@@ -64,6 +64,25 @@ ForexFactory weekly calendar (public feed), USD high/medium events, ≤120 rows.
 `{ ok, events:[{title,currency,date(ISO),impact,forecast,previous,actual}], source, notice }`
 Actual values appear only after release. 502 explicit-unavailable on failure.
 
+## GET /api/market-brief
+
+Today's Pre-Market Brief (cached), the feed behind premarket.html. 200
+`{ ok:false, pending:true, error, date }` until the scheduled morning POST has run for
+the day — a normal "not generated yet" state, not an error; callers gate on `ok`/`pending`,
+not the status code. Once generated: 200 `{ ok:true, module, date, generatedAt, lean,
+proxies, movers, headlines, calendarEventCountToday, narrative, narrativeEngine, dataOnly,
+warnings, disclaimer }`. `lean` is the same ETF-proxy heuristic as `/api/research-engine`'s
+intraday module (low confidence); `dataOnly` is true when the Workers AI narrative failed
+and only the raw data survived. 429 rate limited (30/min).
+
+## POST /api/market-brief
+
+Regenerates and stores the brief. Authorized by `X-Research-Cron` only (constant-time
+compare against `RESEARCH_CRON_SECRET`, same pattern as research-engine's cron auth) —
+401 otherwise. Optionally posts to `DISCORD_ANNOUNCEMENTS_WEBHOOK` if configured (dry-run,
+`discordPosted:false`, if not). `{ ok, stored, discordPosted, discordDetail, brief }`;
+502 on generation failure.
+
 ## GET /api/research-engine?module=health|options|intraday|stock|sectors|biotech
 
 Premium-gated research (cookie session or `X-Research-Cron`). See
