@@ -540,6 +540,84 @@ function fullSnapshot(price) {
   }
 }
 
+// A losing symbol, and a snapshot with no prevDailyBar at all: every prior
+// test in this file used fullSnapshot(), which hardcodes prevDailyBar.c to
+// price - 1, so changePct has only ever been positive and finite. That left
+// the '+' vs '-' sign branch, the Number.isFinite(changePct) false branch
+// (no prevDailyBar to compute a change from), and the asOf-missing branch
+// (no latestTrade.t) all unexercised -- exactly the formatting-on-a-real-
+// number class of bug this file's YM point-value regression already taught
+// this repo to distrust when untested.
+{
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes('/v2/stocks/snapshots')) {
+        return Response.json({
+          SPY: { latestTrade: { p: 500, t: '2026-08-30T13:30:00Z' }, prevDailyBar: { c: 505 } },
+          QQQ: { latestTrade: { p: 400 } },
+        });
+      }
+      if (String(url).includes('/screener/stocks/movers')) {
+        return Response.json({ gainers: [], losers: [] });
+      }
+      return new Response('not found', { status: 404 });
+    };
+    const { status, data } = await ask(alpacaEnv(), { question: 'How is SPY doing?' });
+    assert.equal(status, 200);
+    assert.equal(data.mode, 'data-only');
+    // A down day must render with a bare '-', never a stray '+' glued in front of it.
+    assert.match(data.dataBlock, /SPY: \$500 \(-0\.99% vs prior close, IEX feed, asOf 2026-08-30T13:30:00Z\)/);
+    assert.doesNotMatch(data.dataBlock, /\+-/);
+    // No prevDailyBar -> changePct isn't finite -> the "% vs prior close" clause
+    // is skipped entirely, and no latestTrade.t -> no ", asOf" suffix either.
+    assert.match(data.dataBlock, /QQQ: \$400 \(IEX feed\)/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+// The official movers screener failing (not just returning empty arrays, but
+// erroring so alpaca.js's movers() catches and returns null) must fall
+// through to computedMovers() over the fixed UNIVERSE -- every existing test
+// mocks /screener/stocks/movers with a 200 + empty gainers/losers, so that
+// `mv` is always truthy from movers() itself and computedMovers() has never
+// actually run inside this handler.
+{
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes('/v2/stocks/snapshots')) {
+        // Every UNIVERSE symbol needs a usable row so computedMovers() has a
+        // real mix of gainers and losers to sort, not an all-null universe.
+        return Response.json({
+          SPY: { latestTrade: { p: 100 }, prevDailyBar: { c: 98 } },   // +2.04%
+          QQQ: { latestTrade: { p: 100 }, prevDailyBar: { c: 101 } },  // -0.99%
+          NVDA: { latestTrade: { p: 100 }, prevDailyBar: { c: 95 } },  // +5.26%
+          AAPL: { latestTrade: { p: 100 }, prevDailyBar: { c: 103 } }, // -2.91%
+          MSFT: { latestTrade: { p: 100 }, prevDailyBar: { c: 99 } },  // +1.01%
+          TSLA: { latestTrade: { p: 100 }, prevDailyBar: { c: 102 } }, // -1.96%
+          AMD: { latestTrade: { p: 100 }, prevDailyBar: { c: 97 } },   // +3.09%
+          META: { latestTrade: { p: 100 }, prevDailyBar: { c: 104 } }, // -3.85%
+        });
+      }
+      if (String(url).includes('/screener/stocks/movers')) {
+        return new Response('rate limited', { status: 429 });
+      }
+      return new Response('not found', { status: 404 });
+    };
+    const { status, data } = await ask(alpacaEnv(), { question: 'What is moving today?' });
+    assert.equal(status, 200);
+    assert.equal(data.mode, 'data-only');
+    // Proves the fallback path actually ran, not the screener-sourced one.
+    assert.match(data.dataBlock, /source: computed from 8-symbol IEX snapshot universe/);
+    assert.match(data.dataBlock, /gainers: NVDA \+5\.26%/);
+    assert.match(data.dataBlock, /losers: META -3\.85%/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
 // Alpaca configured + AI configured + narrative returned: grounded mode.
 {
   const originalFetch = globalThis.fetch;
