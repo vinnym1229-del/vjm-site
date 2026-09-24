@@ -2230,3 +2230,25 @@ test("psychology-enhancer.html's Bossaerts et al. citation names its real public
     /Bossaerts.*?<i>Management Science<\/i>, vol\. 70, no\. 6, 2024, pp\. 3381-3397\./,
     'Bossaerts et al. is Management Science vol. 70 no. 6 (2024), not 2023 -- 2023 is only the SSRN/online-first year');
 });
+
+// Incident: 9 of 14 <nav> landmarks site-wide (forex-calendar, futures-dissection,
+// index, options-lab, premarket, prop-firms, psychology-enhancer, stock-breakdown,
+// stock-lab) shipped with no aria-label while the other 5 (premium-guidance,
+// privacy, research-engine, risk-disclosure, terms) already had one -- not a
+// functional break since each page only has one <nav>, but a screen-reader user
+// navigating by landmark hears an unlabeled "navigation" region on 9 of 14 pages
+// and a named one on the rest, an inconsistency with no reason to exist. Every
+// page now carries a label; premium-guidance.html's "Guidance navigation" is its
+// own deliberate distinct label (it's a sign-in flow, not the main site nav), the
+// other 13 all use "Main navigation".
+test('every page with a <nav> has exactly one and it carries an aria-label', () => {
+  const missing = [];
+  for (const p of PAGES) {
+    const html = read(p);
+    const navs = [...html.matchAll(/<nav\b[^>]*>/g)];
+    if (navs.length === 0) continue; // 404.html and unsubscribe.html have no site nav
+    assert.equal(navs.length, 1, `${p}: expected exactly one <nav>, found ${navs.length}`);
+    if (!/\baria-label="/.test(navs[0][0])) missing.push(`${p}: ${navs[0][0]}`);
+  }
+  assert.deepEqual(missing, [], `<nav> missing aria-label:\n  ${missing.join('\n  ')}`);
+});
