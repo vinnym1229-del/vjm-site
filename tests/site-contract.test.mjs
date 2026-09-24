@@ -255,6 +255,25 @@ test('every page carrying an og:image also carries a title/description for every
   }
 });
 
+test('every page carrying an og:image also declares og:type and og:site_name', () => {
+  // research-engine.html has always carried og:type="website" and
+  // og:site_name="PJ Trades" alongside its og:url; the other 15 pages never
+  // did, so a link to any of them (the site's main growth channel is
+  // Discord link-sharing) unfurled without a site-attribution line while
+  // research-engine.html's did -- an inconsistent, brand-invisible preview
+  // for the pages people actually share. Both are per-spec constants here
+  // (one type, one brand name), not page-specific content, so they belong
+  // in this fixed-value contract test rather than the title/description one
+  // above, which checks per-page uniqueness instead.
+  const pages = readdirSync(ROOT).filter((f) => f.endsWith('.html'));
+  for (const page of pages) {
+    const html = read(page);
+    if (!/<meta property="og:image"/.test(html)) continue;
+    assert.ok(html.includes('<meta property="og:type" content="website">'), `${page}: missing og:type="website"`);
+    assert.ok(html.includes('<meta property="og:site_name" content="PJ Trades">'), `${page}: missing og:site_name="PJ Trades"`);
+  }
+});
+
 test('sitemap lists only canonical, indexable URLs and matches every page canonical', () => {
   const origin = canonicalOrigin();
   const sitemap = read('sitemap.xml');
@@ -302,17 +321,17 @@ test('sitemap lists only canonical, indexable URLs and matches every page canoni
 // again without sitemap.xml being updated alongside it, the hash mismatch
 // fails loudly instead of silently drifting for weeks like the original bug.
 const SITEMAP_LASTMOD_PINS = {
-  'index.html': { lastmod: '2026-09-24', sha256: '354362eeb92510624cfc12c856808aea11d420ef945ed2d245d1ee543b948849' },
-  'stock-breakdown.html': { lastmod: '2026-09-24', sha256: 'efc24467b38da972226e5e2e0dd114914672e1cd0dc998a20cd0bd077a87fd39' },
-  'futures-dissection.html': { lastmod: '2026-09-24', sha256: '20fc473d1be7a03dac1c0fa8336cbfdbde8eeb671312611941ec895e5c41817e' },
-  'psychology-enhancer.html': { lastmod: '2026-09-24', sha256: 'b655e6a79c716c9ced08f922726b016be207d87c1b4006d18a98c896eba8a2fe' },
-  'options-lab.html': { lastmod: '2026-09-24', sha256: 'a2835cdee3b93a21b99d112355d548cb5071e2bae90a859e0099f7526ea7da1b' },
-  'premarket.html': { lastmod: '2026-09-24', sha256: '7642afa7877aa325326e35c240d1e9fbb58a806360190bf1ec23eb0bc0cde6b5' },
-  'forex-calendar.html': { lastmod: '2026-09-24', sha256: '49755313c7398d5bcf0954b539505b86dbd70e085f4770af64d92225054aae80' },
-  'prop-firms.html': { lastmod: '2026-09-24', sha256: '78928b79e8a4a738dddcd0b71138b5bda80b2929ddb9f3c8ac00ba4fbf6049dd' },
-  'risk-disclosure.html': { lastmod: '2026-09-21', sha256: '3435b570bd55109004eec0616a7d73d0539b80c47346696b7d906d8c562fef41' },
-  'terms.html': { lastmod: '2026-09-21', sha256: '075e33ae4d4db303b5446f6230fb86f883936aa2e1fd48a4e2282a3756a26a33' },
-  'privacy.html': { lastmod: '2026-09-21', sha256: 'bcc06ea206e0b59350db887f94a730bbc88026739fcb3fa627815a39b78d3ba1' },
+  'index.html': { lastmod: '2026-09-24', sha256: '2e3fa8b3b0691dec4d9b3238a9ac84bd1f6eeae1beb0d45e7b0afcd1be8bf4f5' },
+  'stock-breakdown.html': { lastmod: '2026-09-24', sha256: 'bdfa15d39925acce08a8691b86d1cd252a81aa2d9b8961c6c354a437e9237201' },
+  'futures-dissection.html': { lastmod: '2026-09-24', sha256: 'da20a2dab9b4f5905bd8780e14e79326e56f40e400fd961e7cc5e18149e169bd' },
+  'psychology-enhancer.html': { lastmod: '2026-09-24', sha256: 'd022a64a9d27209932d1704a9efac5f2d30feabb4046594c2cff750ce5cb258a' },
+  'options-lab.html': { lastmod: '2026-09-24', sha256: '2c2b2f02df9999d13b6b18f10fe4e33290e0c6f76489817810ff97605074b6c5' },
+  'premarket.html': { lastmod: '2026-09-24', sha256: '34e556d1aec634dacbd24626009d116d8f9e5fa21554e5a16b09265830074701' },
+  'forex-calendar.html': { lastmod: '2026-09-24', sha256: '0438bf9ca971ba9789133b789eb165cf8f3757c8227820ad935740deb382bf24' },
+  'prop-firms.html': { lastmod: '2026-09-24', sha256: 'af3d9b25eb777fa0cad9b165ef4ea07579b74d702afcc38b4530f62052048fdd' },
+  'risk-disclosure.html': { lastmod: '2026-09-24', sha256: 'd786fafc72615ef746b1ad4a8956e56bbefe2ccc3e93a5e025380d749ad4b493' },
+  'terms.html': { lastmod: '2026-09-24', sha256: 'f25d8d53ae0100cf8d34f05293cc44fb3dafeccd6ef8ccba0172b220459f370f' },
+  'privacy.html': { lastmod: '2026-09-24', sha256: 'eb3b673a9901bbafb2e742c5d4b3c6a10f20034930bd4106b3869a3cfb587217' },
 };
 
 test('sitemap.xml <lastmod> values stay pinned to the page content they were last verified against', () => {
