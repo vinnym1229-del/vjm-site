@@ -145,4 +145,49 @@ async function sessionCookie(mr = 'abcd1234abcd1234') {
   assert.equal(setCookie, buildClearCookie());
 }
 
+// A session payload with no `mr` claim (a shape older than the field, or a
+// hand-crafted token) must still write an audit row rather than throwing on
+// `String(session.mr || '')` — subject_hash falls back to ''. Every other
+// test signs a session with `mr` set, so that fallback had never run.
+{
+  const calls = [];
+  const env = {
+    SESSION_SIGNING_SECRET: SECRET,
+    RATELIMIT_DB: {
+      prepare(sql) {
+        return {
+          bind(...args) {
+            calls.push({ sql, args });
+            return { run: async () => ({ success: true }) };
+          },
+        };
+      },
+    },
+  };
+  const token = await signSession({ v: 1, dn: '', exp: Date.now() + 60000 }, SECRET);
+  const { status, data, setCookie } = await logout(env, `__Host-vjm_session=${token}`);
+  assert.equal(status, 200);
+  assert.equal(data.ok, true);
+  assert.equal(setCookie, buildClearCookie());
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].args, ['logout', 'ok', '']);
+}
+
+// The file's own comment promises the whole handler "never blocks logout"
+// even if session verification itself throws — but nothing in this file
+// (readSessionCookie / verifySessionToken) actually ever throws, so that
+// promise had never been exercised. Force the throw the try/catch exists
+// for by giving `request.headers.get` a landmine instead of a real Headers
+// object, standing in for whatever future refactor might one day make
+// verifySessionCookie throw instead of returning null.
+{
+  const env = { SESSION_SIGNING_SECRET: SECRET, RATELIMIT_DB: { prepare() { throw new Error('must not be reached'); } } };
+  const request = { headers: { get() { throw new Error('boom'); } } };
+  const res = await onRequestPost({ request, env });
+  const data = await res.json();
+  assert.equal(res.status, 200);
+  assert.equal(data.ok, true);
+  assert.equal(res.headers.get('Set-Cookie'), buildClearCookie());
+}
+
 console.log('VJM logout-premium API tests passed.');
