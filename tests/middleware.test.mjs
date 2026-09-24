@@ -191,6 +191,17 @@ async function unlocked(path, opts) {
   const res = await promise;
   assert.equal(res, nextResponse);
 }
+// A response with no content-type header at all (`response.headers.get(...)`
+// returns null, not '') is the one branch c8 showed uncovered on this file:
+// the `|| ''` fallback on the line above. Without it, `null.includes(...)`
+// throws and onRequest() rejects instead of failing closed to passthrough —
+// this fixture is the only one that actually exercises that fallback.
+{
+  const nextResponse = new Response(PAGE_HTML, { status: 200 });
+  const { promise } = run('/futures-dissection', { nextResponse });
+  const res = await promise;
+  assert.equal(res, nextResponse, 'a response with no content-type header must be passthrough, not treated as strippable HTML');
+}
 
 // Spot-check the other three gated pages (both route forms) actually strip —
 // regressions.test.mjs already pins that the source text mentions each path;
