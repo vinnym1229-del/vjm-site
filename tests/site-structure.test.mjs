@@ -133,7 +133,7 @@ for (const page of ['index.html', 'options-lab.html']) {
 // since its order was the deliberate, documented change.
 {
   const COURSE_LINK = /href="(futures-dissection\.html|stock-breakdown\.html|options-lab\.html|psychology-enhancer\.html)"/g;
-  const NAV_DROP = /Curriculum<span class="caret"[^>]*>[^<]*<\/span><\/button>\s*<div class="nav-drop">([\s\S]*?)<\/div>/;
+  const NAV_DROP = /Curriculum<span class="caret"[^>]*>[^<]*<\/span><\/button>\s*<div class="nav-drop"[^>]*>([\s\S]*?)<\/div>/;
   const MMENU_GROUP = /<div class="mm-group">Curriculum<\/div>([\s\S]*?)<div class="mm-group">/;
 
   const expected = [...html.matchAll(COURSE_LINK)].map((m) => m[1]).slice(0, 4);

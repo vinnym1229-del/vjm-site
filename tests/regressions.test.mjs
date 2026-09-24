@@ -2144,6 +2144,41 @@ test('every table header cell declares scope="col"', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the desktop mega-nav's 6 `.nav-top` dropdown-disclosure buttons
+// (Membership/Curriculum/Tools/Markets/Live/Community, on every nav-bearing
+// page) shipped aria-expanded/aria-haspopup but never aria-controls -- and
+// their `.nav-drop` panels had no id at all -- so a screen-reader user tabbing
+// to any of the 60 instances sitewide heard only "button, collapsed" with no
+// indication of what it expands or where that content lives in the DOM. This
+// is a distinct widget from the role="tab" widgets the aria-controls sweeps
+// above already cover (a menu-button disclosure, not a tablist) and from the
+// mobile hamburger below (one button opening a whole nav, not six buttons
+// each opening their own submenu), so neither prior sweep touched it.
+test('every desktop nav-top dropdown button names its own nav-drop panel via aria-controls', () => {
+  const NAV_PAIR = /<button type="button" class="nav-top" aria-expanded="false" aria-haspopup="true"([^>]*)>([^<]+)<span class="caret"[^>]*>[^<]*<\/span><\/button>\s*<div class="nav-drop"([^>]*)>/g;
+  for (const p of PAGES) {
+    const html = read(p);
+    const matches = [...html.matchAll(NAV_PAIR)];
+    if (matches.length === 0) continue; // pages with no desktop mega-nav
+    const seenIds = new Set();
+    for (const [, buttonAttrs, label, divAttrs] of matches) {
+      const idMatch = /\bid="([^"]+)"/.exec(divAttrs);
+      assert.ok(idMatch, `${p}: "${label}" nav-drop panel has no id`);
+      const panelId = idMatch[1];
+      assert.ok(buttonAttrs.includes(`aria-controls="${panelId}"`),
+        `${p}: "${label}" nav-top button must carry aria-controls="${panelId}"`);
+      assert.ok(!seenIds.has(panelId), `${p}: duplicate nav-drop id "${panelId}"`);
+      seenIds.add(panelId);
+    }
+  }
+  // Any page that ships the widget at all must wire the full set -- catches
+  // a future nav item added without its aria-controls/id pair.
+  const withNav = PAGES.filter((p) => read(p).includes('class="nav-top"'));
+  const unwired = withNav.filter((p) => [...read(p).matchAll(NAV_PAIR)].length === 0);
+  assert.deepEqual(unwired, [], `pages with .nav-top but no matched aria-controls pairs:\n  ${unwired.join('\n  ')}`);
+});
+
+// ---------------------------------------------------------------------------
 // Incident: every previous aria-controls sweep (curriculum.js/research-engine
 // #moduleTabs/options-lab #tabs+#subtabs/index.html .prem-tabs+.sim-mode-tabs
 // +.gain-mode-tabs/stock-lab #sectorTabs, see .opencode/decisions.md 2026-09-21
