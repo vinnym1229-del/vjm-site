@@ -2196,3 +2196,20 @@ test('ARCHITECTURE.md describes the real session cookie name and payload shape',
     'must not claim revocation is unimplemented -- session_epoch/sv makes it live today');
   assert.doesNotMatch(doc, /MASTER-AUDIT §14/, 'must not cite a MASTER-AUDIT section that no longer exists');
 });
+
+// ---------------------------------------------------------------------------
+// Incident: psychology-enhancer.html's free psychology essay (one of only
+// two genuinely free-tier pieces of content on the site) advertises "8 cited
+// sources" as a trust signal in its Works Cited list, but the Bossaerts et
+// al. "Emotional Engagement and Trading Performance" entry cited 2023 --
+// the paper's SSRN/online-first year -- when its actual home, Management
+// Science vol. 70 no. 6, is the June 2024 print issue (DOI
+// 10.1287/mnsc.2023.4883; confirmed against INFORMS PubsOnline's own
+// volume-70-issue-6 table of contents and the RePEc/IDEAS record). Volume
+// and page range were already correct; only the year had drifted.
+test("psychology-enhancer.html's Bossaerts et al. citation names its real publication year", () => {
+  const html = read('psychology-enhancer.html');
+  assert.match(html,
+    /Bossaerts.*?<i>Management Science<\/i>, vol\. 70, no\. 6, 2024, pp\. 3381-3397\./,
+    'Bossaerts et al. is Management Science vol. 70 no. 6 (2024), not 2023 -- 2023 is only the SSRN/online-first year');
+});
