@@ -14,7 +14,23 @@
 // serve the last good copy (labeled stale) when there is one, since
 // faireconomy throttles Cloudflare's shared egress IPs for stretches.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { onRequestGet } from '../functions/api/forex-calendar.js';
+
+// The header comment's stated cache duration must match the real cf.cacheTtl
+// passed to fetch(), not a hardcoded guess -- these two drifted apart before
+// (comment said "~10 minutes", cacheTtl was actually 1800s/30 minutes),
+// the same defect class as research-engine.js's 15-vs-16-minute delay drift.
+{
+  const src = readFileSync(fileURLToPath(new URL('../functions/api/forex-calendar.js', import.meta.url)), 'utf8');
+  const ttlMatch = src.match(/cacheTtl:\s*(\d+)/);
+  assert.ok(ttlMatch, 'forex-calendar.js must set cf.cacheTtl on its upstream fetch');
+  const cacheMinutes = Number(ttlMatch[1]) / 60;
+  const commentMatch = src.match(/Cached ~(\d+) minutes/);
+  assert.ok(commentMatch, 'forex-calendar.js header comment must state the cache duration in minutes');
+  assert.equal(Number(commentMatch[1]), cacheMinutes, `header comment claims ${commentMatch[1]} minutes but cacheTtl is ${ttlMatch[1]}s (${cacheMinutes} minutes)`);
+}
 
 const FIXTURE = [
   { title: 'CPI m/m', country: 'USD', date: '2026-09-01T12:30:00Z', impact: 'High' },

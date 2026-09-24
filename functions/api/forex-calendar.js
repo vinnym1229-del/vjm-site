@@ -1,8 +1,9 @@
 // Cloudflare Pages Function: GET /api/forex-calendar?currency=USD&impact=major
 //
 // Economic calendar sourced from the public weekly ForexFactory JSON feed
-// (nfs.faireconomy.media). Cached ~10 minutes. On upstream failure this
-// endpoint returns an explicit unavailable state — never placeholder events.
+// (nfs.faireconomy.media). Cached ~30 minutes (see cf.cacheTtl below). On
+// upstream failure this endpoint returns an explicit unavailable state —
+// never placeholder events.
 //
 // Response envelope:
 // { ok, source, fetchedAt, asOf, cached, events: [{title,currency,date,
