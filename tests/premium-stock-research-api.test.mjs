@@ -115,6 +115,59 @@ async function lookup(env, symbol, headers = {}) {
   assert.equal(status, 401);
 }
 
+// The 30/min rate-limit guard (scope 'premium-stock', keyed by ip+symbol)
+// trips before the 31st request reaches Alpaca -- same guard the free
+// /api/stock-research sibling already pins (tests/stock-research-api.test.mjs),
+// but never checked here even though this is the paid route paying members
+// hit repeatedly from stock-lab.html's live watchlist.
+{
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => { calls += 1; return Response.json({ AAPL: {} }); };
+  try {
+    const ip = '10.9.0.1';
+    const cookie = await (async () => {
+      const token = await signSession({ exp: Date.now() + 60000 }, SIGNING_SECRET);
+      return { Cookie: `__Host-vjm_session=${token}` };
+    })();
+    const req = () => onRequestGet({
+      request: new Request('https://example.com/api/premium-stock-research?symbol=AAPL', {
+        headers: { 'CF-Connecting-IP': ip, ...cookie },
+      }),
+      env: baseEnv(),
+    });
+    for (let i = 0; i < 30; i++) await req();
+    assert.equal(calls, 30);
+    const limited = await req();
+    assert.equal(limited.status, 429);
+    const limitedData = await limited.json();
+    assert.equal(limitedData.ok, false);
+    assert.equal(calls, 30, 'the limited request must never reach Alpaca');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+// Upstream HTTP error (Alpaca itself rate-limiting or down) surfaces as the
+// generic unavailable message with the specific "upstream status N" detail
+// -- proving the `!res.ok` guard fired, not that JSON.parse happened to fail
+// on the non-JSON body for an unrelated reason.
+{
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response('rate limited', { status: 429 });
+  try {
+    const { status, data } = await lookup(baseEnv(), 'AAPL', await (async () => {
+      const token = await signSession({ exp: Date.now() + 60000 }, SIGNING_SECRET);
+      return { Cookie: `__Host-vjm_session=${token}` };
+    })());
+    assert.equal(status, 502);
+    assert.equal(data.error, 'Quote is temporarily unavailable.');
+    assert.equal(data.detail, 'upstream status 429');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
 const originalFetch = globalThis.fetch;
 try {
   // Legacy Bearer token: valid signature + unexpired exp authorizes, same as
