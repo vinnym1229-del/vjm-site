@@ -208,6 +208,45 @@ try {
     assert.equal(data.ok, false);
     assert.equal(data.error, 'News feed is temporarily unavailable.');
   }
+
+  // A malformed-but-200 upstream body -- Yahoo's search endpoint reshaped or
+  // missing its `news` array entirely, not an outage -- must not throw.
+  // Array.isArray's `: []` fallback was untested since every prior 200
+  // always shipped a `news` array, even an empty one.
+  {
+    globalThis.fetch = async () => Response.json({ ok: true });
+    const { status, data } = await fetchNews('?symbol=AAPL');
+    assert.equal(status, 200);
+    assert.equal(data.ok, true);
+    assert.equal(data.count, 0);
+    assert.deepEqual(data.items, []);
+  }
+
+  // An item with no providerPublishTime (or a non-numeric one) must ship
+  // pubDate: null rather than a bogus computed date -- Number.isFinite's
+  // false branch was untested since every prior item carried a valid
+  // timestamp.
+  {
+    globalThis.fetch = async () => Response.json({
+      news: [{ title: 'No timestamp', link: 'https://finance.yahoo.com/news/f' }],
+    });
+    const { status, data } = await fetchNews('?symbol=AAPL');
+    assert.equal(status, 200);
+    assert.equal(data.items[0].pubDate, null);
+  }
+
+  // The catch block's error response echoes back symbol-or-topic just like
+  // the success path, but every prior upstream-failure test above used
+  // ?symbol=, so `topic ? topicKey : null` (and symbol's `|| null`
+  // fallback) had never fired from a ?topic= request failing upstream.
+  {
+    globalThis.fetch = async () => new Response('bad gateway', { status: 502 });
+    const { status, data } = await fetchNews('?topic=forex');
+    assert.equal(status, 502);
+    assert.equal(data.ok, false);
+    assert.equal(data.symbol, null);
+    assert.equal(data.topic, 'forex');
+  }
 } finally {
   globalThis.fetch = originalFetch;
 }
