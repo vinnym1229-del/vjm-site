@@ -284,4 +284,83 @@ try {
   }
 }
 
+// The two upstream-validation guards ahead of the generic try/catch --
+// a non-2xx status and a 200 response whose body isn't an array -- had only
+// ever been exercised indirectly via a thrown network error. A real feed
+// outage looks like a 500/503 with an HTML error page, or (a faireconomy
+// deploy quirk) a 200 with a JSON object instead of the expected array; both
+// must fail closed the same way a network exception does, not slip past the
+// `!res.ok`/`Array.isArray` checks and crash on `.map()`.
+{
+  const originalFetch9 = globalThis.fetch;
+  const originalCaches9 = globalThis.caches;
+  globalThis.fetch = async () => new Response('Service Unavailable', { status: 503 });
+  globalThis.caches = { default: { put: async () => {}, match: async () => null } };
+  try {
+    const res = await call('https://example.com/api/forex-calendar?impact=major', '10.5.0.9');
+    assert.equal(res.status, 502, 'a non-2xx upstream status with no cached copy must fail closed');
+    const data = await res.json();
+    assert.equal(data.ok, false);
+    assert.match(data.detail, /upstream status 503/);
+  } finally {
+    globalThis.fetch = originalFetch9;
+    globalThis.caches = originalCaches9;
+  }
+}
+{
+  const originalFetch10 = globalThis.fetch;
+  const originalCaches10 = globalThis.caches;
+  globalThis.fetch = async () => Response.json({ error: 'not the array the feed usually sends' });
+  globalThis.caches = { default: { put: async () => {}, match: async () => null } };
+  try {
+    const res = await call('https://example.com/api/forex-calendar?impact=major', '10.5.0.10');
+    assert.equal(res.status, 502, 'a 200 response whose body is not an array must fail closed, not crash on .map()');
+    const data = await res.json();
+    assert.equal(data.ok, false);
+    assert.match(data.detail, /unexpected feed shape/);
+  } finally {
+    globalThis.fetch = originalFetch10;
+    globalThis.caches = originalCaches10;
+  }
+}
+
+// normalizeEvent's forecast/previous/actual fields, and its e.currency
+// fallback when a feed row has no e.country, had never been exercised with
+// a truthy value -- every prior fixture (including MALFORMED_FIXTURE) either
+// omitted these fields or supplied country. These three numbers are the
+// entire point of an economic calendar (what was expected vs. what printed),
+// so a silent bug turning them into '' on the way through would ship
+// invisibly: every existing assertion only ever checked event titles.
+{
+  const originalFetch11 = globalThis.fetch;
+  const originalCaches11 = globalThis.caches;
+  const RESULTS_FIXTURE = [
+    {
+      title: 'Non-Farm Payrolls',
+      currency: 'USD', // no e.country -- must fall back to e.currency
+      date: '2026-09-05T12:30:00Z',
+      impact: 'High',
+      forecast: '180K',
+      previous: '150K',
+      actual: '210K',
+    },
+  ];
+  globalThis.fetch = async () => Response.json(RESULTS_FIXTURE);
+  globalThis.caches = { default: { put: async () => {}, match: async () => null } };
+  try {
+    const res = await call('https://example.com/api/forex-calendar?impact=major', '10.5.0.11');
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.events.length, 1);
+    const [event] = data.events;
+    assert.equal(event.currency, 'USD', 'e.currency must be used when e.country is absent');
+    assert.equal(event.forecast, '180K');
+    assert.equal(event.previous, '150K');
+    assert.equal(event.actual, '210K');
+  } finally {
+    globalThis.fetch = originalFetch11;
+    globalThis.caches = originalCaches11;
+  }
+}
+
 console.log('VJM forex-calendar API tests passed.');
