@@ -32,7 +32,7 @@ const DISCORD_HOOK = 'https://discord.com/api/webhooks/123/abc';
 // site_content upserts are just counted; webhook_events tracks which
 // announcement ids have already been posted, matching the real idempotency
 // table so the "already posted" skip path is exercised for real.
-function makeDb({ postedAnnouncementIds = new Set() } = {}) {
+function makeDb({ postedAnnouncementIds = new Set(), failInsertIds = new Set() } = {}) {
   return {
     postedAnnouncementIds,
     prepare(sql) {
@@ -48,6 +48,9 @@ function makeDb({ postedAnnouncementIds = new Set() } = {}) {
             },
             async run() {
               if (sql.includes('INSERT INTO site_content')) {
+                // args[1] is external_id (the ?2 bind) -- lets a test force a
+                // single row's write to fail without touching every row.
+                if (failInsertIds.has(args[1])) throw new Error('constraint violation');
                 return { meta: { changes: 1 } };
               }
               if (sql.includes('INSERT OR IGNORE INTO webhook_events')) {
@@ -148,6 +151,29 @@ try {
     assert.equal(status, 502);
   }
 
+  // A real non-2xx HTTP status must reject even when the body happens to
+  // parse as valid, well-shaped JSON -- e.g. an Apps Script proxy that
+  // wraps a genuine 503 in an otherwise-normal-looking response. Without
+  // its own explicit status check this would fall through to the ok:true
+  // shape check and succeed with the (empty) body instead of failing.
+  {
+    globalThis.fetch = async () => Response.json({ ok: true, content: {} }, { status: 503 });
+    const { status, data } = await postSync(baseEnv());
+    assert.equal(status, 502);
+    assert.match(data.error, /unreachable/);
+  }
+
+  // A thrown non-Error (fetch/AbortSignal can reject with a plain reason
+  // rather than an Error) has no .message property, so `err && err.message`
+  // is falsy and the detail string must fall back to the thrown value
+  // itself instead of stringifying to "undefined".
+  {
+    globalThis.fetch = async () => { throw 'upstream reset'; };
+    const { status, data } = await postSync(baseEnv());
+    assert.equal(status, 502);
+    assert.equal(data.detail, 'upstream reset');
+  }
+
   // content:null must also 502, not crash: typeof null === 'object', so a
   // naive `typeof data.content !== 'object'` check lets null through and the
   // per-type loop below throws on bridgeData[type] uncaught. This is a real
@@ -169,6 +195,78 @@ try {
     assert.equal(data.summary.announcements.received, 2);
     assert.equal(data.summary.announcements.upserted, 1);
     assert.equal(data.summary.announcements.skipped, 1);
+  }
+
+  // A single D1 insert failure (e.g. a constraint violation on one row)
+  // must skip just that row and keep processing the rest of the batch, not
+  // abort the whole sync -- one bad row from the sheet shouldn't cost the
+  // owner every other row in the same hourly run.
+  {
+    const db = makeDb({ failInsertIds: new Set(['fails']) });
+    globalThis.fetch = mockBridgeFetch({ announcements: [announcement('fails'), announcement('ok-1')] });
+    const { status, data } = await postSync(baseEnv(db));
+    assert.equal(status, 200);
+    assert.equal(data.summary.announcements.received, 2);
+    assert.equal(data.summary.announcements.upserted, 1);
+    assert.equal(data.summary.announcements.skipped, 1);
+  }
+
+  // Discord embed fallbacks: a row that sanitizeContentRow allows through
+  // with no title (body-only is valid) must not post an empty embed title,
+  // and a row with a real link must render the "Link:" line -- every prior
+  // fixture always set a title and never set a link, so neither fallback
+  // had ever actually rendered.
+  {
+    const db = makeDb();
+    const sentBodies = [];
+    globalThis.fetch = async (url, opts) => {
+      const href = String(url);
+      if (href === BRIDGE_URL) {
+        return Response.json({
+          ok: true,
+          content: {
+            announcements: [
+              { id: 'no-title', body: 'Body only, no title' },
+              { id: 'has-link', title: 'Linked', body: 'text', link: 'https://vjm.com/post' },
+            ],
+          },
+        });
+      }
+      if (href.startsWith('https://discord.com/api/webhooks/')) {
+        sentBodies.push(JSON.parse(opts.body));
+        return new Response(null, { status: 204 });
+      }
+      throw new Error('unexpected fetch target: ' + href);
+    };
+    const env = { ...baseEnv(db), DISCORD_ANNOUNCEMENTS_WEBHOOK: DISCORD_HOOK, CONTENT_DISCORD_DRYRUN: 'false' };
+    const { data } = await postSync(env);
+    assert.equal(data.discord.posted, 2);
+    assert.equal(sentBodies[0].embeds[0].title, 'Announcement', 'a row with no title falls back to a generic embed title, not an empty one');
+    assert.match(sentBodies[1].embeds[0].description, /Link: <https:\/\/vjm\.com\/post>/, 'a row with a real link renders the Link line in the embed');
+  }
+
+  // The 10-per-sync Discord cap must actually trip: 11 genuinely new
+  // announcements in one sync should post only the first 10, leaving the
+  // 11th unposted -- and unrecorded, so it's picked up on the next hourly
+  // sync instead of silently posting all 11 or crashing past the cap.
+  {
+    const db = makeDb();
+    const rows = Array.from({ length: 11 }, (_, i) => announcement(`cap-${i}`));
+    let discordCalls = 0;
+    globalThis.fetch = async (url) => {
+      const href = String(url);
+      if (href === BRIDGE_URL) return Response.json({ ok: true, content: { announcements: rows } });
+      if (href.startsWith('https://discord.com/api/webhooks/')) {
+        discordCalls++;
+        return new Response(null, { status: 204 });
+      }
+      throw new Error('unexpected fetch target: ' + href);
+    };
+    const env = { ...baseEnv(db), DISCORD_ANNOUNCEMENTS_WEBHOOK: DISCORD_HOOK, CONTENT_DISCORD_DRYRUN: 'false' };
+    const { data } = await postSync(env);
+    assert.equal(data.discord.posted, 10, 'the 10-per-sync cap must trip at exactly 10');
+    assert.equal(discordCalls, 10);
+    assert.ok(!db.postedAnnouncementIds.has('cap-10'), 'the 11th announcement must not be recorded as posted, so it is retried next sync');
   }
 
   // The documented bug: 12 announcements, the first 10 (by sheet order)
