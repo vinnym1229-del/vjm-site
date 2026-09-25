@@ -13,15 +13,17 @@ import { onRequestPost, ALLOWED_EVENTS } from '../functions/api/analytics.js';
 /** A D1 fake that records what would have been written. */
 function fakeDb() {
   const written = [];
+  let batchCalls = 0;
   return {
     written,
+    get batchCalls() { return batchCalls; },
     prepare(sql) {
       return {
         sql,
         bind(...args) { return { sql, args }; },
       };
     },
-    async batch(stmts) { stmts.forEach((s) => written.push(s.args)); return []; },
+    async batch(stmts) { batchCalls++; stmts.forEach((s) => written.push(s.args)); return []; },
   };
 }
 
@@ -72,6 +74,46 @@ test('an unrecognised event name is dropped, not stored', async () => {
   assert.equal(db.written[0][0], 'plan_cta');
 });
 
+test('malformed items inside the events array are skipped, not crashed on', async () => {
+  // The array comes straight from an anonymous POST body, so it can hold
+  // anything JSON allows -- a null, a bare number, a bare string -- not just
+  // well-formed event objects. `typeof evt !== 'object'` has to reject those
+  // before `evt.name` is ever read.
+  const db = fakeDb();
+  const res = await post(
+    { visit: 'v', events: [null, 42, 'oops', { name: 'plan_cta' }] },
+    envWith(db),
+  );
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).stored, 1, 'only the one well-formed event survives');
+  assert.equal(db.written.length, 1);
+});
+
+test('an event with a missing or non-string name is dropped like an unrecognised one', async () => {
+  const db = fakeDb();
+  const res = await post(
+    { events: [{}, { name: 42 }, { name: null }, { name: 'plan_cta' }] },
+    envWith(db),
+  );
+  assert.equal((await res.json()).stored, 1);
+});
+
+test('a batch of entirely invalid events reports stored: 0 instead of erroring', async () => {
+  // Every event in a batch can fail the shape/allowlist checks at once -- a
+  // client bug, a stale cached build, a probe against the URL -- and this
+  // must still answer 200 with nothing stored rather than fail past the
+  // now-empty rows array. It must also skip the D1 round-trip entirely
+  // rather than calling batch() with zero statements: whether a real D1
+  // binding tolerates that is not something worth relying on for a request
+  // that has nothing to write.
+  const db = fakeDb();
+  const res = await post({ events: [{ name: 'bogus' }, null, { name: 123 }] }, envWith(db));
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).stored, 0);
+  assert.equal(db.written.length, 0);
+  assert.equal(db.batchCalls, 0, 'no D1 call is made when there is nothing to write');
+});
+
 test('every stage the client can emit is accepted by the server', async () => {
   // A stage the client fires but the server rejects is a silently missing
   // funnel step, which is worse than no analytics at all.
@@ -103,6 +145,55 @@ test('oversized and hostile payloads are capped rather than stored', async () =>
   const db2 = fakeDb();
   await post({ events: [{ name: 'plan_cta', props: { nested: { a: 1 }, arr: [1, 2], ok: 'yes' } }] }, envWith(db2));
   assert.deepEqual(JSON.parse(db2.written[0][1]), { ok: 'yes' });
+});
+
+test('boolean prop values are kept, not dropped like objects and arrays', async () => {
+  const db = fakeDb();
+  await post({ events: [{ name: 'plan_cta', props: { success: true, retried: false } }] }, envWith(db));
+  assert.deepEqual(JSON.parse(db.written[0][1]), { success: true, retried: false });
+});
+
+test('a prop key with characters outside [a-z0-9_] is skipped', async () => {
+  const db = fakeDb();
+  await post({ events: [{ name: 'plan_cta', props: { 'bad-key': 1, ok: 2 } }] }, envWith(db));
+  assert.deepEqual(JSON.parse(db.written[0][1]), { ok: 2 });
+});
+
+test('props with only invalid keys sanitize to null, not an empty object', async () => {
+  const db = fakeDb();
+  await post({ events: [{ name: 'plan_cta', props: { 'bad key': 1, 'also-bad': 2 } }] }, envWith(db));
+  assert.equal(db.written[0][1], null);
+});
+
+test('more than 12 prop keys are truncated, not all stored', async () => {
+  const props = {};
+  for (let i = 0; i < 15; i++) props['k' + i] = i;
+  const db = fakeDb();
+  await post({ events: [{ name: 'plan_cta', props }] }, envWith(db));
+  const stored = JSON.parse(db.written[0][1]);
+  assert.equal(Object.keys(stored).length, 12);
+  assert.deepEqual(Object.keys(stored), Object.keys(props).slice(0, 12));
+});
+
+test('props that still exceed the size cap after per-value truncation are dropped whole', async () => {
+  // Five keys at the 120-char per-value cap already total past the 512-char
+  // whole-payload cap even though no single value was long enough to get
+  // truncated on its own -- the earlier "oversized payload" test's one huge
+  // string never actually crossed this cap after truncation, so this branch
+  // (as opposed to the plain-truncation branch) had never been exercised.
+  const props = {};
+  for (let i = 0; i < 5; i++) props['k' + i] = 'x'.repeat(120);
+  const db = fakeDb();
+  await post({ events: [{ name: 'plan_cta', props }] }, envWith(db));
+  assert.equal(db.written[0][1], null);
+});
+
+test('a whitespace-only or control-character-only visit/path sanitizes to null', async () => {
+  const db = fakeDb();
+  await post({ visit: '   ', events: [{ name: 'plan_cta', path: '\u0000\u0001' }] }, envWith(db));
+  const [, , visit, path] = db.written[0];
+  assert.equal(visit, null);
+  assert.equal(path, null);
 });
 
 test('malformed input is refused without touching storage', async () => {
