@@ -102,6 +102,16 @@ async function getContent(env, qs) {
   assert.ok(Array.isArray(data.supported) && data.supported.includes('schedule'));
 }
 
+// No `type` param at all takes the same path as an unknown one -- the
+// `(url.searchParams.get('type') || '')` fallback exists so a request with
+// no query string doesn't throw reading .toLowerCase() off null, and lands
+// in the same TYPES.has() rejection as a bogus value rather than a 500.
+{
+  const { status, data } = await getContent({}, '');
+  assert.equal(status, 400);
+  assert.equal(data.ok, false);
+}
+
 // RESEARCH_DB not bound: fails closed (503), not an empty 200.
 {
   const { status, data } = await getContent({}, 'type=schedule');
@@ -135,6 +145,34 @@ async function getContent(env, qs) {
   assert.deepEqual(data.items.map((i) => i.name), ['First', 'Second']);
 }
 
+// A row with no `order` field at all (not just 0) hits the
+// `(a.order || 0) - (b.order || 0)` fallback on both sides of the
+// comparator -- an owner adding a team member to the sheet before setting
+// an order value must sort it as if order were 0 (first), not compare as
+// NaN and leave its position undefined relative to a row that does have
+// an explicit order.
+{
+  const db = makeDb([
+    row('team', 1, { name: 'Explicit order 5', order: 5 }),
+    row('team', 2, { name: 'No order field' }),
+  ]);
+  const { status, data } = await getContent({ RESEARCH_DB: db }, 'type=team');
+  assert.equal(status, 200);
+  assert.deepEqual(data.items.map((i) => i.name), ['No order field', 'Explicit order 5'], 'missing order must sort as 0, ahead of an explicit order: 5');
+}
+
+// Same fallback, the other comparator argument: the missing-order row on
+// the opposite side of the pair, so both `a.order || 0` and `b.order || 0`
+// (not just one) get exercised.
+{
+  const db = makeDb([
+    row('team', 2, { name: 'Explicit order 2', order: 2 }),
+    row('team', 1, { name: 'No order field' }),
+  ]);
+  const { data } = await getContent({ RESEARCH_DB: db }, 'type=team');
+  assert.deepEqual(data.items.map((i) => i.name), ['No order field', 'Explicit order 2']);
+}
+
 // Types with no `order` field of their own (prop_firms, bundles) rely
 // entirely on SQL row position to reflect the owner's sheet order.
 // content-sync.js assigns position = rows.length - i (sheet row 0 gets the
@@ -157,6 +195,20 @@ async function getContent(env, qs) {
   ]);
   const { data } = await getContent({ RESEARCH_DB: db }, 'type=announcements');
   assert.deepEqual(data.items.map((i) => i.title), ['Pinned', 'Regular']);
+}
+
+// A row with no `pinned` field at all (not just 0) hits the
+// `(b.pinned || 0) - (a.pinned || 0)` fallback rather than comparing
+// against undefined -- an announcement synced before the owner's sheet
+// grew a pinned column must still sort in, unpinned, not throw or vanish.
+{
+  const db = makeDb([
+    row('announcements', 2, { title: 'No pinned field' }),
+    row('announcements', 1, { title: 'Pinned', pinned: 1 }),
+  ]);
+  const { status, data } = await getContent({ RESEARCH_DB: db }, 'type=announcements');
+  assert.equal(status, 200);
+  assert.deepEqual(data.items.map((i) => i.title), ['Pinned', 'No pinned field']);
 }
 
 // The documented bug: 70 trade_review rows for the same content_type, with
@@ -186,6 +238,18 @@ async function getContent(env, qs) {
   const { status, data } = await getContent({ RESEARCH_DB: db }, 'type=schedule');
   assert.equal(status, 502);
   assert.equal(data.ok, false);
+}
+
+// D1's own driver contract for `.all()` always includes `results`, but the
+// `(results || [])` fallback exists for the shape it doesn't promise --
+// resolving with no `results` key at all (rather than an empty array) must
+// read back as zero items, not throw reading `.map` off undefined.
+{
+  const db = { prepare() { return { bind() { return { async all() { return {}; } }; } }; } };
+  const { status, data } = await getContent({ RESEARCH_DB: db }, 'type=schedule');
+  assert.equal(status, 200);
+  assert.equal(data.ok, true);
+  assert.equal(data.count, 0);
 }
 
 console.log('# VJM content API tests passed.');
