@@ -549,4 +549,44 @@ function makeResearchDb() {
   }
 }
 
+// alpaca(), the single shared HTTP helper behind every module (options/
+// intraday/stock/sectors/biotech), had two of its own error branches never
+// driven by any fixture: every prior test either succeeded or threw a plain
+// network error (exercised incidentally above via the "must still pass
+// authorization" checks, which use a fetch mock that just throws). Alpaca
+// serving a non-JSON body (edge outage/maintenance page) or a real non-2xx
+// JSON error (e.g. rate-limited) are both real upstream failure modes, and
+// the second one matters specifically because alpaca() forwards Alpaca's own
+// status code to the caller rather than flattening everything to 502 -- a
+// regression here would report every upstream failure as "we could not
+// reach Alpaca" even when Alpaca answered and said something specific.
+{
+  const cronEnv = { ALPACA_API_KEY: 'test-key', ALPACA_SECRET_KEY: 'test-secret', RESEARCH_CRON_SECRET: 'cron-test-secret' };
+  const cronHeaders = { 'X-Research-Cron': 'cron-test-secret' };
+
+  {
+    const nonJsonFetch = globalThis.fetch;
+    globalThis.fetch = async () => new Response('<html>Service Unavailable</html>', { status: 503 });
+    try {
+      const { status, data } = await callEngine(cronEnv, 'module=options&symbol=QQQ', cronHeaders);
+      assert.equal(status, 502, 'a non-JSON upstream body must not crash the handler or masquerade as the upstream status');
+      assert.match(data.error, /Alpaca returned non-JSON/);
+    } finally {
+      globalThis.fetch = nonJsonFetch;
+    }
+  }
+
+  {
+    const rateLimitFetch = globalThis.fetch;
+    globalThis.fetch = async () => Response.json({ message: 'too many requests' }, { status: 429 });
+    try {
+      const { status, data } = await callEngine(cronEnv, 'module=options&symbol=QQQ', cronHeaders);
+      assert.equal(status, 429, "Alpaca's own status code must reach the caller, not a flattened 502");
+      assert.match(data.error, /Alpaca 429: too many requests/);
+    } finally {
+      globalThis.fetch = rateLimitFetch;
+    }
+  }
+}
+
 console.log('VJM research API route tests passed.');
