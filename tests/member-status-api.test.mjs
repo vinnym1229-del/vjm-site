@@ -63,6 +63,26 @@ try {
   assert.equal(lapsed.data.message, unknown.data.message,
     'inactive-but-known and never-seen handles must return the same message (no enumeration leak)');
   assert.equal(lapsed.data.ok, true, 'a not-active lookup is still ok:true — it is a successful, generic answer');
+
+  // The Sheet's own "ok:true" envelope with no statuses map at all (a
+  // deploy that changed the response shape, or an empty sheet) must not
+  // throw on `data.statuses[handle]` — it falls back to an empty object
+  // and reads as a normal "not active" outcome, not a 502.
+  {
+    globalThis.fetch = async () => Response.json({ ok: true });
+    const { status, data } = await lookup(env, 'anyhandle');
+    assert.equal(status, 404);
+    assert.equal(data.active, false);
+  }
+
+  // A body that isn't valid JSON (bad deploy, HTML error page served with a
+  // 200) must fail closed to the generic 502, not throw uncaught.
+  {
+    globalThis.fetch = async () => new Response('<html>not json</html>', { status: 200 });
+    const { status, data } = await lookup(env, 'anyhandle');
+    assert.equal(status, 502);
+    assert.equal(data.ok, false);
+  }
 } finally {
   globalThis.fetch = originalFetch;
 }
@@ -137,6 +157,29 @@ try {
     const env = { ...SHEET, RESEARCH_DB: { prepare() { throw new Error('D1 unavailable'); } } };
     const { status } = await lookup(env, 'sheetonly');
     assert.equal(status, 200);
+  }
+
+  // D1 responding but with a malformed shape (no `results` array — a driver
+  // hiccup, not a real "zero rows" answer) must read as "D1 has nothing to
+  // say" and defer to the Sheet, not throw.
+  {
+    globalThis.fetch = sheetSaysActive;
+    const malformedD1 = { prepare() { return { bind() { return { async all() { return {}; } }; } }; } };
+    const env = { ...SHEET, RESEARCH_DB: malformedD1 };
+    const { status, data } = await lookup(env, 'sheetonly');
+    assert.equal(status, 200);
+    assert.equal(data.active, true);
+  }
+
+  // A D1-only deployment (migration 0006's end state: no Sheet, no bridge)
+  // with no matching row must answer generically without ever contacting a
+  // bridge — lookupViaSheet's own "nothing configured" guard, not an error.
+  {
+    globalThis.fetch = async () => { throw new Error('no bridge may be contacted when neither Sheet nor bridge is configured'); };
+    const env = { RESEARCH_DB: d1([]) };
+    const { status, data } = await lookup(env, 'd1onlyuser');
+    assert.equal(status, 404);
+    assert.equal(data.active, false);
   }
 } finally {
   globalThis.fetch = originalFetch2;
@@ -251,6 +294,26 @@ try {
     globalThis.fetch = async () => { throw new Error('network unreachable'); };
     const { status } = await lookup(BRIDGE, 'unreachableuser');
     assert.equal(status, 502);
+  }
+
+  // Found but the record carries no `status` field at all (an odd but
+  // possible bridge response) must fall back to '' rather than throwing on
+  // `record.status.toLowerCase()`, and read as not active.
+  {
+    globalThis.fetch = async () => Response.json({ ok: true, found: true, discord: 'nostatususer' });
+    const { status, data } = await lookup(BRIDGE, 'nostatususer');
+    assert.equal(status, 404);
+    assert.equal(data.active, false);
+  }
+
+  // A 200 response whose body isn't valid JSON must be treated as "no
+  // record" by bridgeLookup's own res.json().catch(() => null), not throw
+  // uncaught — same fail-closed contract as the legacy Sheet fetch.
+  {
+    globalThis.fetch = async () => new Response('not json', { status: 200 });
+    const { status, data } = await lookup(BRIDGE, 'badjsonuser');
+    assert.equal(status, 404);
+    assert.equal(data.active, false);
   }
 } finally {
   globalThis.fetch = originalFetch3;
