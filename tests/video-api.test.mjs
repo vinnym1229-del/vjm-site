@@ -293,4 +293,166 @@ async function bodyBytes(res) {
   assert.equal(bytes.length, TOTAL);
 }
 
+// ---------------------------------------------------------------------------
+// sizeFromMetadata() fallback chain and validation (2026-09-25 coverage pass).
+// Every case above always uploads {size: N}; the `.length`/`.contentLength`
+// spellings, the string-vs-number coercion, and the "reject anything that
+// isn't a non-negative integer" guard the file's own comment promises had
+// never actually run.
+
+function metaEnv(metadata) {
+  return {
+    vjm_video: {
+      async getWithMetadata(key, opts) {
+        assert.equal(opts?.type, 'stream');
+        return { value: streamOf(makeVideoBuf(), { bytesPulled: 0 }), metadata };
+      },
+    },
+  };
+}
+
+// `.length` and `.contentLength` are accepted alongside `.size`.
+{
+  const res = await onRequestHead({ env: metaEnv({ length: TOTAL }) });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('Content-Length'), String(TOTAL));
+}
+{
+  const res = await onRequestHead({ env: metaEnv({ contentLength: TOTAL }) });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('Content-Length'), String(TOTAL));
+}
+
+// A size written as a string (some upload paths JSON-stringify metadata
+// fields) is coerced, not rejected.
+{
+  const res = await onRequestHead({ env: metaEnv({ size: String(TOTAL) }) });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('Content-Length'), String(TOTAL));
+}
+
+// A non-integer or negative value is untrusted, not passed through: the
+// handler must fall back to measuring the object by reading it, the same
+// degraded-but-correct path used when metadata is absent entirely.
+{
+  const env = kvEnv(makeVideoBuf(), { withSize: false });
+  env.vjm_video.getWithMetadata = async (key, opts) => {
+    assert.equal(opts?.type, 'stream');
+    return { value: streamOf(makeVideoBuf(), env.stats), metadata: { size: 'not-a-number' } };
+  };
+  const res = await onRequestHead({ env });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('Content-Length'), String(TOTAL),
+    'an invalid metadata.size must not be trusted verbatim — the handler should measure instead');
+}
+{
+  const env = kvEnv(makeVideoBuf(), { withSize: false });
+  env.vjm_video.getWithMetadata = async (key, opts) => {
+    assert.equal(opts?.type, 'stream');
+    return { value: streamOf(makeVideoBuf(), env.stats), metadata: { size: -5 } };
+  };
+  const res = await onRequestHead({ env });
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('Content-Length'), String(TOTAL),
+    'a negative metadata.size must not be trusted verbatim — the handler should measure instead');
+}
+
+// ---------------------------------------------------------------------------
+// cancel() swallows a throwing stream.cancel() rather than crashing the
+// request. KV stream implementations are not required to make cancel()
+// infallible, and a HEAD (which never wants the body) must still answer 200
+// even if the underlying stream misbehaves when told to stop.
+{
+  const throwingStream = { cancel() { throw new Error('stream.cancel() boom'); } };
+  const env = {
+    vjm_video: {
+      async getWithMetadata(key, opts) {
+        assert.equal(opts?.type, 'stream');
+        return { value: throwingStream, metadata: { size: TOTAL } };
+      },
+    },
+  };
+  const res = await onRequestHead({ env });
+  assert.equal(res.status, 200, 'a throwing stream.cancel() must not crash a HEAD that never reads the body');
+  assert.equal(res.headers.get('Content-Length'), String(TOTAL));
+}
+
+// ---------------------------------------------------------------------------
+// readSlice() against a stream that ends before delivering the requested
+// bytes — e.g. KV metadata claims a size larger than what is actually
+// stored. The reader hitting `done` mid-range must stop cleanly and hand
+// back exactly the bytes it did get (Content-Length reflects the real,
+// shorter slice — it never lies about how many bytes follow), not hang or
+// throw.
+{
+  const shortData = makeVideoBuf().slice(0, 950); // metadata below claims TOTAL=1000
+  const chunks = [];
+  for (let i = 0; i < shortData.byteLength; i += CHUNK) {
+    chunks.push(new Uint8Array(shortData).slice(i, Math.min(shortData.byteLength, i + CHUNK)));
+  }
+  const truncatedStream = {
+    getReader() {
+      let i = 0;
+      return {
+        async read() {
+          if (i >= chunks.length) return { value: undefined, done: true };
+          return { value: chunks[i++], done: false };
+        },
+        async cancel() { /* no-op */ },
+      };
+    },
+  };
+  const env = {
+    vjm_video: {
+      async getWithMetadata(key, opts) {
+        assert.equal(opts?.type, 'stream');
+        return { value: truncatedStream, metadata: { size: TOTAL } };
+      },
+    },
+  };
+  const res = await onRequestGet({ env, request: req('bytes=900-999') });
+  assert.equal(res.status, 206);
+  assert.equal(res.headers.get('Content-Range'), 'bytes 900-999/1000');
+  const bytes = await bodyBytes(res);
+  assert.equal(bytes.length, 50, 'only the 50 bytes actually present (900-949) can be returned');
+  assert.equal(res.headers.get('Content-Length'), '50',
+    'Content-Length must match the real slice, never the requested-but-unavailable length');
+  assert.equal(bytes[0], 900 % 256);
+}
+
+// readSlice()'s own reader.cancel() (the early-stop-once-satisfied path) can
+// itself throw — the finally block must swallow that too, not let it mask
+// the successful read it was trying to clean up after.
+{
+  const buf = makeVideoBuf();
+  const all = new Uint8Array(buf);
+  const cancelThrowsStream = {
+    getReader() {
+      let offset = 0;
+      return {
+        async read() {
+          if (offset >= all.length) return { value: undefined, done: true };
+          const next = all.slice(offset, Math.min(all.length, offset + CHUNK));
+          offset += next.length;
+          return { value: next, done: false };
+        },
+        async cancel() { throw new Error('reader.cancel() boom'); },
+      };
+    },
+  };
+  const env = {
+    vjm_video: {
+      async getWithMetadata(key, opts) {
+        assert.equal(opts?.type, 'stream');
+        return { value: cancelThrowsStream, metadata: { size: TOTAL } };
+      },
+    },
+  };
+  const res = await onRequestGet({ env, request: req('bytes=0-99') });
+  assert.equal(res.status, 206, 'a throwing reader.cancel() must not stop the already-satisfied slice from returning');
+  const bytes = await bodyBytes(res);
+  assert.equal(bytes.length, 100);
+  assert.equal(bytes[0], 0);
+}
+
 console.log('VJM video Range-request tests passed.');
