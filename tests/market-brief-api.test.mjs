@@ -365,6 +365,242 @@ try {
     assert.equal(data.error, 'Brief generation failed: ' + 'x'.repeat(160),
       'the error detail must be truncated to 160 chars, not the full message');
   }
+
+  // The truncated-error test above always threw a real Error, so `err.message`
+  // was always truthy. A rejection with no `.message` at all (a thrown
+  // string, or any other non-Error value) must still fall back to *something*
+  // useful via `|| err`, not stringify to the literal text "undefined".
+  {
+    globalThis.fetch = alwaysFailFetch;
+    const throwingEnv = {
+      RESEARCH_CRON_SECRET: CRON_SECRET,
+      get RESEARCH_DB() { throw 'plain string failure, not an Error'; },
+    };
+    const { status, data } = await postBrief(throwingEnv);
+    assert.equal(status, 502);
+    assert.equal(data.error, 'Brief generation failed: plain string failure, not an Error');
+  }
+
+  // Alpaca configured but the SPY/QQQ snapshot call itself failing outright
+  // (a 500, not just an empty/malformed shape) must degrade to a warning,
+  // not abort the whole brief. This is a distinct guard from movers()'s and
+  // computedMovers()'s own internal catches in alpaca.js (both of which
+  // already fail closed to null internally and so never actually reject) --
+  // every other Alpaca-configured test above has the snapshot call succeed,
+  // so this particular catch had never fired.
+  {
+    globalThis.fetch = async (url) => {
+      const href = String(url);
+      if (href.startsWith('https://data.alpaca.markets/v2/stocks/snapshots')) {
+        return new Response('', { status: 500 });
+      }
+      if (href.startsWith('https://data.alpaca.markets/v1beta1/screener/stocks/movers')) {
+        return new Response(JSON.stringify({ gainers: [], losers: [] }), { status: 200 });
+      }
+      if (href.startsWith('https://query1.finance.yahoo.com/v1/finance/search')) {
+        return new Response(JSON.stringify({ news: [] }), { status: 200 });
+      }
+      if (href === 'https://nfs.faireconomy.media/ff_calendar_thisweek.json') {
+        return new Response(JSON.stringify([]), { status: 200 });
+      }
+      throw new Error('unexpected fetch target: ' + href);
+    };
+    const env = {
+      RESEARCH_CRON_SECRET: CRON_SECRET,
+      RESEARCH_DB: makeDb(),
+      ALPACA_API_KEY: 'k', ALPACA_SECRET_KEY: 's',
+    };
+    const { status, data } = await postBrief(env);
+    assert.equal(status, 200);
+    assert.deepEqual(data.brief.proxies, []);
+    assert.ok(data.brief.warnings.includes('Index proxy quotes unavailable.'));
+    assert.equal(data.brief.lean.lean, 'neutral', 'a failed proxy read must fall back to 0/0 inputs, not skip the lean entirely');
+  }
+
+  // A proxy snapshot with a live trade price but no prior-close bar at all
+  // (a feed hiccup, or nothing to compare against yet) yields changePct:null,
+  // not a number -- Number.isFinite(null) is false, so the dataBlock line
+  // built from it must render as a bare price with no percentage suffix
+  // rather than interpolating "null%"/"undefined%" into the AI prompt. QQQ
+  // is given a NEGATIVE changePct in the same request so the inner
+  // `changePct >= 0 ? '+' : ''` sign ternary's other branch (no prior test
+  // had ever priced a proxy below its prior close) is exercised too.
+  {
+    const todayIso = new Date().toISOString();
+    globalThis.fetch = async (url) => {
+      const href = String(url);
+      if (href.startsWith('https://data.alpaca.markets/v2/stocks/snapshots')) {
+        return new Response(JSON.stringify({
+          SPY: { latestTrade: { p: 450, t: todayIso } }, // no prevDailyBar
+          QQQ: { latestTrade: { p: 370, t: todayIso }, prevDailyBar: { c: 380 } },
+        }), { status: 200 });
+      }
+      if (href.startsWith('https://data.alpaca.markets/v1beta1/screener/stocks/movers')) {
+        return new Response(JSON.stringify({ gainers: [], losers: [] }), { status: 200 });
+      }
+      if (href.startsWith('https://query1.finance.yahoo.com/v1/finance/search')) {
+        return new Response(JSON.stringify({ news: [] }), { status: 200 });
+      }
+      if (href === 'https://nfs.faireconomy.media/ff_calendar_thisweek.json') {
+        return new Response(JSON.stringify([]), { status: 200 });
+      }
+      throw new Error('unexpected fetch target: ' + href);
+    };
+    const env = {
+      RESEARCH_CRON_SECRET: CRON_SECRET,
+      RESEARCH_DB: makeDb(),
+      ALPACA_API_KEY: 'k', ALPACA_SECRET_KEY: 's',
+    };
+    const { status, data } = await postBrief(env);
+    assert.equal(status, 200);
+    assert.equal(data.brief.proxies[0].symbol, 'SPY');
+    assert.equal(data.brief.proxies[0].changePct, null);
+    assert.ok(data.brief._dataBlock.includes('SPY: $450\n'), 'no prior close means no "(±N% vs prior close)" suffix, not "null%"');
+    assert.match(data.brief._dataBlock, /QQQ: \$370 \(-2\.63% vs prior close\)/, 'a negative changePct must render with no "+" sign, not "-+2.63%" or similar');
+  }
+
+  // A Yahoo search response whose `news` field isn't an array at all (an
+  // object, e.g. an edge-case/error shape) must degrade that symbol to zero
+  // headlines instead of throwing on the for-of -- Array.isArray guards it
+  // explicitly, but every prior test always supplied a real array.
+  {
+    globalThis.fetch = async (url) => {
+      const href = String(url);
+      if (href.startsWith('https://query1.finance.yahoo.com/v1/finance/search')) {
+        return new Response(JSON.stringify({ news: {} }), { status: 200 });
+      }
+      if (href === 'https://nfs.faireconomy.media/ff_calendar_thisweek.json') {
+        return new Response(JSON.stringify([]), { status: 200 });
+      }
+      throw new Error('unexpected fetch target: ' + href);
+    };
+    const env = { RESEARCH_CRON_SECRET: CRON_SECRET, RESEARCH_DB: makeDb() };
+    const { status, data } = await postBrief(env);
+    assert.equal(status, 200);
+    assert.deepEqual(data.brief.headlines, []);
+    assert.ok(data.brief.warnings.includes('Headline feeds unreachable this run.'));
+  }
+
+  // Individual Yahoo news items with a missing title, a missing link, or a
+  // non-https link must each be skipped without throwing -- but an item
+  // missing only `providerPublishTime` (title/link both present) is still a
+  // real, usable headline and must be kept, with publishedAt:null rather
+  // than a fabricated timestamp or a dropped item.
+  {
+    globalThis.fetch = async (url) => {
+      const href = String(url);
+      if (href.startsWith('https://query1.finance.yahoo.com/v1/finance/search')) {
+        const symbol = new URL(href).searchParams.get('q');
+        if (symbol !== 'SPY') return new Response(JSON.stringify({ news: [] }), { status: 200 });
+        return new Response(JSON.stringify({
+          news: [
+            { link: 'https://finance.yahoo.com/news/no-title' },
+            { title: 'No link' },
+            { title: 'Bad scheme', link: 'http://finance.yahoo.com/news/bad' },
+            { title: 'No pub time', link: 'https://finance.yahoo.com/news/no-pub' },
+          ],
+        }), { status: 200 });
+      }
+      if (href === 'https://nfs.faireconomy.media/ff_calendar_thisweek.json') {
+        return new Response(JSON.stringify([]), { status: 200 });
+      }
+      throw new Error('unexpected fetch target: ' + href);
+    };
+    const env = { RESEARCH_CRON_SECRET: CRON_SECRET, RESEARCH_DB: makeDb() };
+    const { status, data } = await postBrief(env);
+    assert.equal(status, 200);
+    assert.equal(data.brief.headlines.length, 1, 'the three malformed items must be skipped, only the valid one kept');
+    assert.equal(data.brief.headlines[0].title, 'No pub time');
+    assert.equal(data.brief.headlines[0].publishedAt, null);
+  }
+
+  // A calendar event missing its `impact` field entirely must not silently
+  // count as high-impact (String(undefined) degrades to '', which correctly
+  // excludes it rather than throwing), and a malformed `date` on an
+  // otherwise-qualifying USD/High event must be skipped -- Invalid Date
+  // makes Intl.DateTimeFormat.format() throw a RangeError -- without
+  // aborting the loop for the real event that follows it.
+  {
+    const todayIso = new Date().toISOString();
+    globalThis.fetch = async (url) => {
+      const href = String(url);
+      if (href === 'https://nfs.faireconomy.media/ff_calendar_thisweek.json') {
+        return new Response(JSON.stringify([
+          { country: 'USD', date: todayIso },
+          { country: 'USD', impact: 'High', date: 'not-a-date' },
+          { country: 'USD', impact: 'High', date: todayIso },
+        ]), { status: 200 });
+      }
+      throw new Error('unexpected fetch target: ' + href);
+    };
+    const env = { RESEARCH_CRON_SECRET: CRON_SECRET, RESEARCH_DB: makeDb() };
+    const { status, data } = await postBrief(env);
+    assert.equal(status, 200);
+    assert.equal(data.brief.calendarEventCountToday, 1,
+      'the missing-impact and malformed-date rows must neither count nor crash the loop');
+  }
+
+  // storeBrief's own D1 write failure (not just an unset RESEARCH_DB) must
+  // still degrade to the in-memory fallback and report stored:false, rather
+  // than propagate up through onRequestPost's outer catch -- distinct from
+  // the throwing-getter case earlier, which fails before storeBrief is ever
+  // reached.
+  {
+    globalThis.fetch = alwaysFailFetch;
+    const failingDb = {
+      prepare() {
+        return { bind() { return { async run() { throw new Error('D1 write failed'); }, async first() { return null; } }; } };
+      },
+    };
+    const env = { RESEARCH_CRON_SECRET: CRON_SECRET, RESEARCH_DB: failingDb };
+    const { status, data } = await postBrief(env);
+    assert.equal(status, 200);
+    assert.equal(data.stored, false, 'a failed D1 write must fall back to the in-memory brief, not surface as an error');
+  }
+
+  // loadBrief's own D1 read failure (not just an absent RESEARCH_DB) must
+  // fall back to this isolate's in-memory brief rather than surfacing as an
+  // error or reporting "pending" as if nothing had been generated today --
+  // the failed-write test just above left memoryBrief populated for today.
+  {
+    const failingDb = {
+      prepare() {
+        return { bind() { return { async first() { throw new Error('D1 read failed'); } }; } };
+      },
+    };
+    const { status, data } = await getBrief({ RESEARCH_DB: failingDb });
+    assert.equal(status, 200);
+    assert.equal(data.ok, true);
+    assert.equal(data.date, TODAY);
+    assert.equal(data.lean.lean, 'neutral', 'falls back to the in-memory brief the prior D1-write-failure test left behind');
+  }
+
+  // BRIEF_UNIVERSE resolving to fewer than 2 valid symbols after filtering
+  // (a typo'd single value) must fall back to the 10-symbol DEFAULT_UNIVERSE,
+  // not run computedMovers over a 1-symbol universe -- every prior
+  // BRIEF_UNIVERSE test only exercised the >=2-symbol success path.
+  {
+    globalThis.fetch = async (url) => {
+      const href = String(url);
+      if (href.startsWith('https://data.alpaca.markets/v1beta1/screener/stocks/movers')) {
+        return new Response('', { status: 500 });
+      }
+      if (href.startsWith('https://data.alpaca.markets/v2/stocks/snapshots')) {
+        return new Response(JSON.stringify({}), { status: 200 });
+      }
+      return new Response('', { status: 500 });
+    };
+    const env = {
+      RESEARCH_CRON_SECRET: CRON_SECRET,
+      RESEARCH_DB: makeDb(),
+      ALPACA_API_KEY: 'k', ALPACA_SECRET_KEY: 's',
+      BRIEF_UNIVERSE: 'onlyone',
+    };
+    const { status, data } = await postBrief(env);
+    assert.equal(status, 200);
+    assert.equal(data.brief.movers.source, 'computed from 10-symbol IEX snapshot universe',
+      'a single-symbol override is invalid (parseUniverse requires >=2) and must silently fall back to DEFAULT_UNIVERSE');
+  }
 } finally {
   globalThis.fetch = originalFetch;
 }
