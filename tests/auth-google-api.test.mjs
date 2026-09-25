@@ -403,15 +403,32 @@ try {
     assert.equal(claims.src, 'd1');
   }
 
-  // A synchronous throw from RESEARCH_DB.prepare() — not the rejected promise
-  // the row query's own .catch() already absorbs — must still fail closed to
-  // the outer catch-all's generic 502, never leak a stack trace or crash the
+  // A synchronous throw from RESEARCH_DB.prepare() must fail closed to the
+  // outer catch-all's generic 502, never leak a stack trace or crash the
   // isolate uncaught.
   {
     const env = { ...baseEnv(), RESEARCH_DB: { prepare() { throw new Error('boom'); } } };
     const { status, data } = await callAuth(env, { credential: 'tok' });
     assert.equal(status, 502);
     assert.equal(data.ok, false);
+  }
+
+  // A rejected promise from the row query itself -- the async-shaped version
+  // of the exact same D1-outage event as the synchronous throw above -- must
+  // reach the SAME 502, not the empty-result-set path's 404 NO_MATCH. An
+  // outage must not be read as "this account has no membership": that would
+  // tell a real, paying member their account isn't linked during a transient
+  // database hiccup, not to retry.
+  {
+    const env = {
+      ...baseEnv(),
+      RESEARCH_DB: { prepare() { return { bind() { return { all() { return Promise.reject(new Error('boom')); } }; } }; } },
+    };
+    const { status, data } = await callAuth(env, { credential: 'tok' });
+    assert.equal(status, 502);
+    assert.equal(data.ok, false);
+    assert.notEqual(data.error, undefined);
+    assert.ok(!/isn’t linked/.test(data.error || ''), 'must not be the NO_MATCH message');
   }
 } finally {
   globalThis.fetch = originalFetch;

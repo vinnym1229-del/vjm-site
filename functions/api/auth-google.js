@@ -84,12 +84,20 @@ async function handle(context) {
   // ordering by created_at could hand back a newer dead row while an older
   // live one exists. Select the candidates and let the shared entitlement
   // rule — the same one the mid-session revocation check applies — decide.
+  // A D1 query failure here must NOT read as "no match" -- unlike
+  // check-member-status.js's lookupD1(), there is no fallback lookup to fall
+  // back to on this path, so swallowing the rejection into an empty result
+  // set used to turn a transient outage into a misleading 404 telling a real
+  // member their account isn't linked. Let it propagate to onRequestPost's
+  // outer catch-all instead, which already fails closed to 502 for the
+  // synchronous version of this same failure (RESEARCH_DB.prepare() itself
+  // throwing, tested below) -- the two should never have disagreed.
   const rows = await env.RESEARCH_DB.prepare(
     `SELECT code_hash, discord, plan_name, expires_at, whop_product, tier, status, session_epoch
      FROM whop_codes
      WHERE email_hash = ?1
      ORDER BY created_at DESC LIMIT 10`
-  ).bind(emailHash).all().catch(() => null);
+  ).bind(emailHash).all();
 
   const candidates = rows && Array.isArray(rows.results) ? rows.results : [];
   if (candidates.length === 0) {
