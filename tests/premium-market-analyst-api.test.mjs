@@ -38,6 +38,22 @@ function makeBars(n, start = 100) {
   return bars;
 }
 
+// Builds bars that rise for `riseN` days then decline for `fallN`, so
+// computeMetrics() sees a real peak-then-drawdown instead of the monotonic
+// rise every other fixture in this file produces.
+function makeDeclineBars(riseN, fallN, start = 100) {
+  const closes = [];
+  for (let i = 0; i < riseN; i++) closes.push(start + i);
+  const peak = closes[closes.length - 1];
+  for (let i = 1; i <= fallN; i++) closes.push(peak - i);
+  const base = new Date('2024-01-02T00:00:00Z');
+  return closes.map((c, i) => {
+    const d = new Date(base);
+    d.setUTCDate(d.getUTCDate() + i);
+    return { t: d.toISOString(), c };
+  });
+}
+
 let ipCounter = 0;
 async function analyze(env, years, headers = {}) {
   ipCounter += 1;
@@ -68,6 +84,23 @@ async function analyze(env, years, headers = {}) {
 {
   const { status } = await analyze(baseEnv(), 3, { Cookie: '__Host-vjm_session=garbage.notasignature' });
   assert.equal(status, 401);
+}
+
+// SESSION_SIGNING_SECRET itself missing (an owner misconfiguration, distinct
+// from a merely tampered cookie) fails closed at the very first check --
+// resolveSigningSecret() returns null before a cookie is even read.
+{
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('must not call Alpaca with no signing secret configured'); };
+  try {
+    const { status, data } = await analyze(
+      { ALPACA_API_KEY: 'key', ALPACA_SECRET_KEY: 'secret' }, 3, await sessionCookieHeader(),
+    );
+    assert.equal(status, 401);
+    assert.equal(data.error, 'A premium session is required.');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 }
 
 // Authenticated but years outside the allowed set (1/3/5) is rejected.
@@ -102,6 +135,56 @@ try {
     const { status, data } = await analyze(baseEnv(), 1, await sessionCookieHeader());
     assert.equal(status, 502);
     assert.equal(data.ok, false);
+  }
+
+  // The symbol key present but not an actual array (this exact shape has
+  // drifted once before, per _lib/alpaca.js) must fall back to null and fail
+  // the same insufficient-history guard -- not treat an array-like object's
+  // `.length` as real history and crash later in computeMetrics()'s `.map`.
+  {
+    globalThis.fetch = async () => Response.json({ bars: { QQQ: { length: 100 } } });
+    const { status, data } = await analyze(baseEnv(), 1, await sessionCookieHeader());
+    assert.equal(status, 502);
+    assert.equal(data.detail, 'insufficient history returned');
+  }
+
+  // Upstream HTTP error surfaces as 502 with the specific "upstream status N"
+  // detail -- proving the `!res.ok` guard fired, not that JSON.parse happened
+  // to fail on a non-JSON error body for an unrelated reason.
+  {
+    globalThis.fetch = async () => new Response('rate limited', { status: 429 });
+    const { status, data } = await analyze(baseEnv(), 1, await sessionCookieHeader());
+    assert.equal(status, 502);
+    assert.equal(data.detail, 'upstream status 429');
+  }
+
+  // A thrown non-Error (e.g. a raw string, which has no .message) must still
+  // produce a useful detail via the `|| err` fallback, not "undefined".
+  {
+    globalThis.fetch = async () => { throw 'network unreachable'; };
+    const { status, data } = await analyze(baseEnv(), 1, await sessionCookieHeader());
+    assert.equal(status, 502);
+    assert.equal(data.detail, 'network unreachable');
+  }
+
+  // No years param at all defaults to 3 -- every other test here always
+  // passes years explicitly, so the `|| 3` default had never actually run.
+  {
+    globalThis.fetch = async () => Response.json({ bars: { QQQ: makeBars(260) } });
+    const { status, data } = await analyze(baseEnv(), undefined, await sessionCookieHeader());
+    assert.equal(status, 200);
+    assert.equal(data.years, 3);
+  }
+
+  // A genuine decline must report a negative maxDrawdownPct. Every other bars
+  // fixture here rises monotonically, so peak === lastClose always and
+  // `dd < maxDd` never fires -- maxDrawdownPct had only ever been pinned at
+  // its initial, unset 0.
+  {
+    globalThis.fetch = async () => Response.json({ bars: { QQQ: makeDeclineBars(50, 30) } });
+    const { status, data } = await analyze(baseEnv(), 1, await sessionCookieHeader());
+    assert.equal(status, 200);
+    assert.ok(data.metrics.maxDrawdownPct < 0, 'a real decline must report a negative drawdown, not the unset 0');
   }
 
   // 90 bars: enough for sma50 (computable, real average) but not sma200
@@ -139,6 +222,35 @@ try {
   }
 } finally {
   globalThis.fetch = originalFetch;
+}
+
+// The 6/min rate-limit guard (scope 'market-analyst') trips before the 7th
+// request reaches Alpaca -- mirrors the guard premium-stock-research.js pins
+// in tests/premium-stock-research-api.test.mjs, never checked here even
+// though this route spends a real AI call per request.
+{
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => { calls += 1; return Response.json({ bars: { QQQ: makeBars(260) } }); };
+  try {
+    const ip = '10.9.9.1';
+    const cookie = await sessionCookieHeader();
+    const req = () => onRequestGet({
+      request: new Request('https://example.com/api/premium-market-analyst?years=1', {
+        headers: { 'CF-Connecting-IP': ip, ...cookie },
+      }),
+      env: baseEnv(),
+    });
+    for (let i = 0; i < 6; i++) await req();
+    assert.equal(calls, 6);
+    const limited = await req();
+    assert.equal(limited.status, 429);
+    const limitedData = await limited.json();
+    assert.equal(limitedData.ok, false);
+    assert.equal(calls, 6, 'the limited request must never reach Alpaca');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 }
 
 // ---------------------------------------------------------------------------
