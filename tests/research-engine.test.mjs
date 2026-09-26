@@ -1015,6 +1015,25 @@ assert.equal(
   null,
   'an event with no bar after entry has no measurable outcome and must be dropped, not scored from its own bar',
 );
+assert.equal(
+  classifyDirectionalOutcome([
+    { t: '2026-08-20T13:30:00Z', o: 100, h: 101, l: 99, c: null },
+    bar('2026-08-20T13:31:00Z', 100, 100.5, 99.5, 100),
+  ], 0, 'up', 'test', '2026-08-20'),
+  null,
+  'a bar with no usable close has no entry price to measure excursions from, and must be dropped rather than scored against a null entry',
+);
+
+// A 'down' expectation (mean-reversion setups, e.g. an SMT high-side break)
+// must be able to score a genuine continuation, not just a reversal -- the
+// 'up' case above only ever proved the mirror-image branch.
+const downContinuation = classifyDirectionalOutcome([
+  bar('2026-08-20T13:30:00Z', 100, 101, 99.9, 100),      // entry bar, close 100
+  bar('2026-08-20T13:31:00Z', 100, 100.05, 99.8, 99.85), // low breaches entry*0.9985 first
+  bar('2026-08-20T13:32:00Z', 99.85, 99.9, 99.7, 99.75),
+], 0, 'down', 'test', '2026-08-20');
+assert.equal(downContinuation.continuation, true, 'the tape kept falling past the continuation threshold before ever reversing');
+assert.equal(downContinuation.reversal, false, 'the high never reached the reversal threshold on this tape');
 
 // ---------------------------------------------------------------------------
 // Provenance: every study result must be able to say what it is.
