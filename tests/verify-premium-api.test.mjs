@@ -283,6 +283,33 @@ try {
       assert.equal(status, 401);
       assert.equal(data.error, GENERIC_BAD_CODE);
     }
+
+    // The Sheet response can omit `codes` entirely (an Apps Script edit that
+    // drops the field, not just an empty map) -- `(data.codes || {})[code]`
+    // must still land on "not found", not throw on indexing undefined.
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return Response.json({ ok: true });
+      };
+      const { status, data } = await callVerify(LEGACY_ENV, { code: 'ABCD-6664', turnstileToken: 'tok' });
+      assert.equal(status, 401);
+      assert.equal(data.error, GENERIC_BAD_CODE);
+    }
+
+    // An active Sheet row with no `discord` field (a member the owner added
+    // by hand before linking their Discord) must still grant a session --
+    // the response's discord must fall back to null, not throw on the
+    // missing property.
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return Response.json({ ok: true, codes: { 'ABCD-6665': { status: 'active' } } });
+      };
+      const { status, data } = await callVerify(LEGACY_ENV, { code: 'ABCD-6665', turnstileToken: 'tok' });
+      assert.equal(status, 200);
+      assert.equal(data.discord, null, 'a member with no linked discord must not crash the grant, just report null');
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────
@@ -597,6 +624,21 @@ const SECURE_BRIDGE = { MEMBERS_BRIDGE_URL: 'https://bridge.example.com/exec', M
       const { status, data } = await callVerify(env, { code: 'ABCD-1111', turnstileToken: 'tok' });
       assert.equal(status, 200);
       assert.equal(data.discord, 'renewedmember');
+    }
+
+    // An active bridge record with no `discord` field (same case as the
+    // legacy bridge above, on the preferred authenticated path) must still
+    // grant a session with discord reported as null, not crash on
+    // `String(data.discord || '')`.
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return Response.json({ ok: true, found: true, status: 'active' });
+      };
+      const env = { ...baseEnv(), TURNSTILE_SECRET_KEY: 'secret', ...SECURE_BRIDGE };
+      const { status, data } = await callVerify(env, { code: 'ABCD-9998', turnstileToken: 'tok' });
+      assert.equal(status, 200);
+      assert.equal(data.discord, null, 'a member with no linked discord must not crash the grant, just report null');
     }
 
     // Not found on the bridge: the generic bad-code message, not the
