@@ -468,6 +468,40 @@ console.log('# VJM backtest-core (Edge Lab) library tests passed.');
   assert.equal(targetRes.exitDate, 'd2');
 }
 
+// ─── simulateEvent: the SHORT side of hitStop/hitTarget (sign === -1) had
+// never run at all -- every stop/target test above, and the file's own
+// documented history (the short-side MFE/MAE sign bug pinned at the top of
+// this file), only ever drove `direction: 'long'` through this branch. For a
+// short, stopPx sits ABOVE entry and targetPx BELOW it, so a stop touch is
+// `high >= stopPx` and a target touch is `low <= targetPx` -- the mirror
+// image of the long checks. entry 100, atrValue 5: stopR 1 -> stopPx 105,
+// targetR 3 -> targetPx 85.
+{
+  const shortStopOnly = [
+    bar('d0', 100, 101, 99, 100),
+    bar('d1', 100, 101, 99, 100), // entry bar: no touch
+    bar('d2', 100, 106, 90, 95),  // high 106 >= stop 105; low 90 > target 85
+    bar('d3', 95, 96, 94, 95),
+  ];
+  const shortStopRes = simulateEvent(shortStopOnly, 0, { holdDays: 3, direction: 'short', stopR: 1, targetR: 3, atrValue: 5 });
+  assert.equal(shortStopRes.result, 'stop');
+  assert.equal(shortStopRes.ambiguousTouch, false);
+  assert.equal(shortStopRes.exitPx, 105);
+  assert.equal(shortStopRes.exitDate, 'd2', 'must exit on the day the stop actually touched, not run out the clock');
+
+  const shortTargetOnly = [
+    bar('d0', 100, 101, 99, 100),
+    bar('d1', 100, 101, 99, 100),
+    bar('d2', 100, 104, 80, 90),  // low 80 <= target 85; high 104 < stop 105
+    bar('d3', 90, 91, 89, 90),
+  ];
+  const shortTargetRes = simulateEvent(shortTargetOnly, 0, { holdDays: 3, direction: 'short', stopR: 1, targetR: 3, atrValue: 5 });
+  assert.equal(shortTargetRes.result, 'target');
+  assert.equal(shortTargetRes.ambiguousTouch, false);
+  assert.equal(shortTargetRes.exitPx, 85);
+  assert.equal(shortTargetRes.exitDate, 'd2');
+}
+
 // ─── runEventStudy: incomplete events at the tail of the series are
 // dropped and counted, not silently omitted or thrown.
 {
