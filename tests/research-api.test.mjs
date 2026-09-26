@@ -307,6 +307,34 @@ try {
     );
     assert.equal(status, 401);
   }
+
+  // getSession() is documented to never throw, but authorize()'s
+  // `try { session = await getSession(...); } catch { session = null; }` is
+  // the only thing standing between a future regression there and an
+  // unhandled exception — authorize() runs before onRequestGet's own
+  // try/catch (which wraps only the module dispatch), so an unguarded throw
+  // here would escape as a raw crash instead of a clean 401. Same
+  // "verification exception must fail closed" invariant already pinned for
+  // logout-premium.js's own catch. Force the throw by giving just the
+  // Cookie header read a landmine; every other header answers normally so
+  // rate-limiting and the fallthrough legacy-Bearer check still run as they
+  // would in production.
+  {
+    const headers = {
+      get(name) {
+        if (name === 'Cookie') throw new Error('boom');
+        if (name === 'CF-Connecting-IP') return '203.0.113.55';
+        return null;
+      },
+    };
+    const res = await onRequestGet({
+      request: { url: 'https://example.com/api/research-engine?module=options', headers },
+      env: engineEnv(),
+    });
+    const data = await res.json();
+    assert.equal(res.status, 401, 'a session-verification exception must fail closed, not crash');
+    assert.equal(data.code, undefined, 'a failed-closed exception is not an upgrade prompt');
+  }
 } finally {
   globalThis.fetch = noUpstream;
 }
