@@ -74,6 +74,49 @@ assert.ok(trend.return20 > 0);
 assert.ok(trend.atr14Pct > 0);
 assert.ok(trend.upDayShare > 0.99);
 
+// A brand-new symbol (first day ever synced, or a data gap) must report every
+// comparative stat as unavailable rather than crashing on an empty/singleton
+// history -- sectorsModule/biotechModule call metrics() on whatever Alpaca
+// happens to return, including a freshly-listed ticker.
+assert.deepEqual(
+  metrics([]),
+  { return1: null, return5: null, return20: null, atr14Pct: null, upDayShare: null, volumeRatio: null, gap: null },
+  'no bars at all must report every field as unavailable, not throw',
+);
+const oneBar = metrics([bar('2026-01-01T00:00:00Z', 10, 11, 9, 10, 500)]);
+assert.deepEqual(
+  oneBar,
+  { return1: null, return5: null, return20: null, atr14Pct: null, upDayShare: null, volumeRatio: null, gap: null },
+  'a single bar has no prior bar to compare against, so every field must be null, not NaN/Infinity',
+);
+
+// A bar missing its own volume (a known Alpaca gap on thin symbols) must not
+// let volumeRatio divide by or against a fabricated number.
+const noLastVolume = metrics(trendBars.map((b, i) => (i === trendBars.length - 1 ? { ...b, v: null } : b)));
+assert.equal(noLastVolume.volumeRatio, null, 'a missing volume on the most recent bar must not fabricate a ratio');
+assert.ok(noLastVolume.return20 > 0, 'the missing volume must not also null out unrelated fields');
+
+// Same for a missing open: gap compares today's open to yesterday's close, and
+// a missing open must report "unknown", not a NaN/negative-one gap.
+const noLastOpen = metrics(trendBars.map((b, i) => (i === trendBars.length - 1 ? { ...b, o: null } : b)));
+assert.equal(noLastOpen.gap, null, 'a missing open on the most recent bar must not fabricate a gap');
+
+// atr14Pct averages true ranges over the last 14 bars; one bar inside that
+// window missing its high/low must be skipped, not zero out the whole average.
+const atrOneGap = metrics(trendBars.map((b, i) => (i === 20 ? { ...b, h: null } : b)));
+assert.ok(atrOneGap.atr14Pct > 0, 'one bad bar inside the ATR window must not zero out the whole average');
+
+// If every bar in the ATR window is missing its high, there is no true range
+// to average at all -- must fail closed to null, never 0 or NaN.
+const atrAllGap = metrics(trendBars.map((b, i) => (i >= trendBars.length - 14 ? { ...b, h: null } : b)));
+assert.equal(atrAllGap.atr14Pct, null, 'a fully gapped ATR window must report null, not 0 or NaN');
+
+// The bar just before the ATR window supplies the prior close for the first
+// true-range calculation; a missing close there must fall back to the bar's
+// own high/low range rather than an unavailable prior-close comparison.
+const atrPriorCloseGap = metrics(trendBars.map((b, i) => (i === trendBars.length - 15 ? { ...b, c: null } : b)));
+assert.ok(Number.isFinite(atrPriorCloseGap.atr14Pct) && atrPriorCloseGap.atr14Pct > 0, 'a missing prior close must not break the first true-range calculation');
+
 // ---------------------------------------------------------------------------
 // LOOK-AHEAD: fib swing highs (analyseFib)
 //
