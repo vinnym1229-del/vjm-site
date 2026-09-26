@@ -466,6 +466,36 @@ function makeDailySeries(n, { start = 90, drift = 0.15 } = {}) {
     }
   }
 
+  // module=stock&timeframe=daily / timeframe=weekly: the Stock Swing Lab's
+  // "Daily only" and "Weekly only" dropdown options (research-engine.html's
+  // #stockTimeframe select) -- real, member-facing choices -- had only ever
+  // been reached through the default timeframe=combined branch above, so
+  // neither the single-leg `sets` array nor the weekly leg's derived
+  // pivot/horizon (fixed pivot:2, horizon:max(4,round(horizon/5))) had ever
+  // actually run.
+  {
+    const stockFetch = globalThis.fetch;
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/v2/stocks/bars') return Response.json({ bars: { NVDA: makeDailySeries(150) } });
+      return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
+    };
+    try {
+      const { status, data } = await callEngine(cronEnv, 'module=stock&symbol=NVDA&timeframe=daily&pivot=8&horizon=40', cronHeaders);
+      assert.equal(status, 200);
+      assert.equal(data.data.timeframeBreakdown.length, 1, 'timeframe=daily must run only the Daily leg, not also Weekly');
+      assert.deepEqual(data.data.timeframeBreakdown.map((t) => t.timeframe), ['Daily']);
+      assert.equal(data.parameters.pivot, 8, 'the requested pivot must reach the Daily leg unchanged');
+
+      const weekly = await callEngine(cronEnv, 'module=stock&symbol=NVDA&timeframe=weekly&horizon=60', cronHeaders);
+      assert.equal(weekly.status, 200);
+      assert.equal(weekly.data.data.timeframeBreakdown.length, 1, 'timeframe=weekly must run only the Weekly leg, not also Daily');
+      assert.deepEqual(weekly.data.data.timeframeBreakdown.map((t) => t.timeframe), ['Weekly']);
+    } finally {
+      globalThis.fetch = stockFetch;
+    }
+  }
+
   // module=sectors: relative strength must actually rank the outperformer
   // first and the underperformer last, not just return unsorted rows.
   {
