@@ -131,6 +131,102 @@ try {
     assert.equal(status, 502);
     assert.equal(data.error, 'Quote is temporarily unavailable.');
   }
+
+  // A literal JSON "null" body parses to `null`, not `{}` -- the `data &&
+  // data.snapshots` guard must not throw on it, and the missing-snapshot
+  // path (not the shape-detection branch) must be what rejects it.
+  {
+    globalThis.fetch = async () => new Response('null', { status: 200, headers: { 'Content-Type': 'application/json' } });
+    const { status, data } = await lookup(baseEnv(), 'AAPL');
+    assert.equal(status, 502);
+    assert.equal(data.ok, false);
+  }
+
+  // No latestTrade at all: price must fall back to the daily bar's close,
+  // not be treated as unavailable just because there was no trade tick.
+  {
+    globalThis.fetch = async () => Response.json({
+      AAPL: {
+        dailyBar: { c: 152.25, v: 800000 },
+        prevDailyBar: { c: 148, v: 900000 },
+      },
+    });
+    const { status, data } = await lookup(baseEnv(), 'AAPL');
+    assert.equal(status, 200);
+    assert.equal(data.quote.price, 152.25, 'falls back to dailyBar.c when there is no latestTrade');
+    assert.equal(data.quote.volume, 800000);
+  }
+
+  // No dailyBar either, only prevDailyBar: bar falls back to prevDailyBar for
+  // the close price, but volume/vwap (which only ever come from today's bar)
+  // must stay null rather than reporting yesterday's figures as today's.
+  {
+    globalThis.fetch = async () => Response.json({
+      AAPL: {
+        prevDailyBar: { c: 148, v: 900000 },
+      },
+    });
+    const { status, data } = await lookup(baseEnv(), 'AAPL');
+    assert.equal(status, 200);
+    assert.equal(data.quote.price, 148, 'falls back to prevDailyBar.c when there is no dailyBar');
+    assert.equal(data.quote.volume, 900000, 'volume comes from whichever bar was used, including prevDailyBar');
+    assert.equal(data.quote.vwap, null, 'vwap only ever reads dailyBar, never prevDailyBar');
+  }
+
+  // No bar and no latestTrade at all: there is nothing to price the quote
+  // with, so this must fail closed rather than return a fabricated price.
+  {
+    globalThis.fetch = async () => Response.json({ AAPL: { someOtherField: true } });
+    const { status, data } = await lookup(baseEnv(), 'AAPL');
+    assert.equal(status, 502);
+    assert.equal(data.ok, false);
+  }
+
+  // No prevDailyBar: change/changePercent must stay null (nothing to diff
+  // against) instead of computing against a missing baseline.
+  {
+    globalThis.fetch = async () => Response.json({
+      AAPL: {
+        latestTrade: { p: 150.5 },
+        dailyBar: { c: 150.5, v: 1000000 },
+      },
+    });
+    const { status, data } = await lookup(baseEnv(), 'AAPL');
+    assert.equal(status, 200);
+    assert.equal(data.quote.change, null);
+    assert.equal(data.quote.changePercent, null);
+  }
+
+  // asOf falls back to the current time when latestTrade has no timestamp
+  // (e.g. a bar-only quote with no trade tick at all).
+  {
+    globalThis.fetch = async () => Response.json({
+      AAPL: {
+        dailyBar: { c: 150.5, v: 1000000 },
+        prevDailyBar: { c: 148, v: 900000 },
+      },
+    });
+    const before = Date.now();
+    const { status, data } = await lookup(baseEnv(), 'AAPL');
+    assert.equal(status, 200);
+    assert.ok(Date.parse(data.asOf) >= before, 'asOf falls back to "now" when latestTrade.t is absent');
+  }
+
+  // A missing vwap field (e.g. Alpaca omitting it on a thin-volume bar) coerces
+  // to NaN via Number(undefined), so the isFinite guard must fall to null
+  // rather than leak NaN into the JSON response.
+  {
+    globalThis.fetch = async () => Response.json({
+      AAPL: {
+        latestTrade: { p: 150.5 },
+        dailyBar: { c: 150.5, v: 1000000 },
+        prevDailyBar: { c: 148, v: 900000 },
+      },
+    });
+    const { status, data } = await lookup(baseEnv(), 'AAPL');
+    assert.equal(status, 200);
+    assert.equal(data.quote.vwap, null);
+  }
 } finally {
   globalThis.fetch = originalFetch;
 }
