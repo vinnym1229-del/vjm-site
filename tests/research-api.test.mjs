@@ -154,13 +154,17 @@ function researchB64Url(binaryString) {
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-async function legacyBearer(payload, secret) {
-  const body = researchB64Url(JSON.stringify(payload));
+async function legacyBearerRaw(rawBody, secret) {
+  const body = researchB64Url(rawBody);
   const key = await crypto.subtle.importKey(
     'raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
   );
   const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body));
   return body + '.' + researchB64Url(String.fromCharCode(...new Uint8Array(sig)));
+}
+
+async function legacyBearer(payload, secret) {
+  return legacyBearerRaw(JSON.stringify(payload), secret);
 }
 
 let engineIp = 0;
@@ -287,6 +291,46 @@ try {
       { Authorization: `Bearer ${token}` },
     );
     assert.equal(status, 401);
+  }
+
+  // verifyToken()'s three internal failure returns -- wrong segment count,
+  // a signature that doesn't match, and a matching signature over a payload
+  // that isn't valid JSON -- had never been exercised: every existing legacy
+  // Bearer test builds its token through legacyBearer(), which always
+  // produces the well-formed two-segment, correctly-signed, JSON shape. Each
+  // of these instead sends something a forger or a bit-flip could plausibly
+  // produce, and pins that authorize() fails closed (401) rather than
+  // throwing, on all three.
+  {
+    // No '.' separator at all: parts.length !== 2.
+    const { status } = await callEngine(
+      engineEnv({ PREMIUM_ACCESS_CODES: 'legacy-codes' }), 'module=options',
+      { Authorization: 'Bearer not-a-valid-token' },
+    );
+    assert.equal(status, 401, 'a malformed (non two-segment) legacy Bearer token must not authorize');
+  }
+  {
+    // Well-formed and even carries a live expiry, but the signature has been
+    // flipped: timingSafeEqual(parts[1], expected) must fail.
+    const legacy = await legacyBearer({ exp: Date.now() + 60000 }, 'legacy-codes');
+    const tampered = legacy.slice(0, -4) + 'aaaa';
+    const { status } = await callEngine(
+      engineEnv({ PREMIUM_ACCESS_CODES: 'legacy-codes' }), 'module=options',
+      { Authorization: `Bearer ${tampered}` },
+    );
+    assert.equal(status, 401, 'a legacy Bearer token with a tampered signature must not authorize');
+  }
+  {
+    // The signature is correct for its payload, but the payload itself is not
+    // JSON -- verifyToken()'s JSON.parse is wrapped in its own try/catch
+    // specifically so a validly-signed non-JSON body cannot become an
+    // unhandled exception instead of a clean 401.
+    const garbage = await legacyBearerRaw('not-json-at-all', 'legacy-codes');
+    const { status } = await callEngine(
+      engineEnv({ PREMIUM_ACCESS_CODES: 'legacy-codes' }), 'module=options',
+      { Authorization: `Bearer ${garbage}` },
+    );
+    assert.equal(status, 401, 'a validly-signed but non-JSON legacy Bearer payload must not authorize');
   }
 
   // The scheduled refresh job still authorizes with its shared secret and no
