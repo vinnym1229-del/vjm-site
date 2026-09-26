@@ -231,6 +231,53 @@ try {
     assert.equal(data.ok, false);
   }
 
+  // tokeninfo answers 200 with a JSON body that parses but isn't an object
+  // (e.g. a bare string) -- verifyGoogleIdToken must treat this the same as
+  // a missing body, not try to read .aud/.iss/.exp off a primitive.
+  globalThis.fetch = async () => Response.json('not-an-object');
+  {
+    const { status, data } = await callAuth(baseEnv(), { credential: 'tok' });
+    assert.equal(status, 401);
+    assert.equal(data.ok, false);
+  }
+
+  // tokeninfo answers 200 but the body isn't valid JSON at all -- res.json()
+  // itself throws, and that throw is swallowed to null by the handler's own
+  // `.catch(() => null)`, not left to escape as an outer-catch-all 502.
+  globalThis.fetch = async () => new Response('not-json-at-all', { status: 200 });
+  {
+    const { status, data } = await callAuth(baseEnv(), { credential: 'tok' });
+    assert.equal(status, 401);
+    assert.equal(data.ok, false);
+  }
+
+  // A response with no `aud` claim at all (not just a mismatched one) must
+  // be rejected the same as a mismatched aud -- `data.aud || ''` must not
+  // let a missing claim slip past the comparison.
+  globalThis.fetch = async () => Response.json({
+    iss: 'https://accounts.google.com',
+    exp: String(Math.floor(Date.now() / 1000) + 3600),
+    email: 'trader@example.com',
+    email_verified: 'true',
+  });
+  {
+    const { status } = await callAuth(baseEnv(), { credential: 'tok' });
+    assert.equal(status, 401);
+  }
+
+  // A response with no `iss` claim at all must likewise be rejected, not
+  // coerced by `|| ''` into some default that happens to read as valid.
+  globalThis.fetch = async () => Response.json({
+    aud: CLIENT_ID,
+    exp: String(Math.floor(Date.now() / 1000) + 3600),
+    email: 'trader@example.com',
+    email_verified: 'true',
+  });
+  {
+    const { status } = await callAuth(baseEnv(), { credential: 'tok' });
+    assert.equal(status, 401);
+  }
+
   // Verified Google account with no matching Whop purchase on file.
   globalThis.fetch = async () => Response.json({
     aud: CLIENT_ID,
@@ -429,6 +476,26 @@ try {
     assert.equal(data.ok, false);
     assert.notEqual(data.error, undefined);
     assert.ok(!/isn’t linked/.test(data.error || ''), 'must not be the NO_MATCH message');
+  }
+  // .all() resolving successfully but without a `results` array at all --
+  // not a throw, not a rejected promise, a genuinely malformed success
+  // shape -- must read as "no candidates on file" (404), not crash trying
+  // to read .length off undefined.
+  globalThis.fetch = async () => Response.json({
+    aud: CLIENT_ID,
+    iss: 'https://accounts.google.com',
+    exp: String(Math.floor(Date.now() / 1000) + 3600),
+    email: 'malformed-db@example.com',
+    email_verified: 'true',
+  });
+  {
+    const env = {
+      ...baseEnv(),
+      RESEARCH_DB: { prepare() { return { bind() { return { async all() { return {}; } }; } }; } },
+    };
+    const { status, data } = await callAuth(env, { credential: 'tok' });
+    assert.equal(status, 404);
+    assert.equal(data.ok, false);
   }
 } finally {
   globalThis.fetch = originalFetch;
