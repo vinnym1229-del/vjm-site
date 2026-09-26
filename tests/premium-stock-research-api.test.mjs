@@ -115,6 +115,24 @@ async function lookup(env, symbol, headers = {}) {
   assert.equal(status, 401);
 }
 
+// Legacy Bearer token: signature checks out (so it passes the constant-time
+// compare and reaches the atob/JSON.parse of the payload), but the payload
+// itself is not valid JSON -- e.g. corrupted in transit. Must fail closed via
+// the handler's own catch rather than throwing out of isAuthorized().
+{
+  const body = base64UrlEncodeBytes(new TextEncoder().encode('not-json'));
+  const key = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(LEGACY_CODES),
+    { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body));
+  const token = `${body}.${base64UrlEncodeBytes(new Uint8Array(sig))}`;
+  const { status } = await lookup(
+    baseEnv({ PREMIUM_ACCESS_CODES: LEGACY_CODES }), 'AAPL', { Authorization: `Bearer ${token}` }
+  );
+  assert.equal(status, 401);
+}
+
 // The 30/min rate-limit guard (scope 'premium-stock', keyed by ip+symbol)
 // trips before the 31st request reaches Alpaca -- same guard the free
 // /api/stock-research sibling already pins (tests/stock-research-api.test.mjs),
@@ -163,6 +181,25 @@ async function lookup(env, symbol, headers = {}) {
     assert.equal(status, 502);
     assert.equal(data.error, 'Quote is temporarily unavailable.');
     assert.equal(data.detail, 'upstream status 429');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+// Not every rejection is an Error with a .message -- some environments throw
+// a bare value (a string, a plain object) straight out of fetch(). The
+// `err && err.message || err` fallback must still produce a readable detail
+// instead of leaking `undefined` or blowing up trying to slice() it.
+{
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw 'connection reset'; };
+  try {
+    const { status, data } = await lookup(baseEnv(), 'AAPL', await (async () => {
+      const token = await signSession({ exp: Date.now() + 60000 }, SIGNING_SECRET);
+      return { Cookie: `__Host-vjm_session=${token}` };
+    })());
+    assert.equal(status, 502);
+    assert.equal(data.detail, 'connection reset', 'falls back to the thrown value itself when it has no .message');
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -239,6 +276,44 @@ try {
   // error or a fabricated price.
   {
     globalThis.fetch = async () => Response.json({ MSFT: { latestTrade: { p: 400 } } });
+    const { status, data } = await lookup(baseEnv(), 'AAPL', await cookieHeaders());
+    assert.equal(status, 502);
+    assert.equal(data.ok, false);
+  }
+
+  // No latestTrade at all: price falls back to the daily bar's close (the
+  // same fallback stock-research.js's free sibling already has covered), and
+  // with no prevDailyBar, change/changePercent stay null rather than diffing
+  // against a missing baseline.
+  {
+    globalThis.fetch = async () => Response.json({
+      AAPL: { dailyBar: { c: 152.25, v: 800000 } },
+    });
+    const { status, data } = await lookup(baseEnv(), 'AAPL', await cookieHeaders());
+    assert.equal(status, 200);
+    assert.equal(data.quote.price, 152.25, 'falls back to dailyBar.c when there is no latestTrade');
+    assert.equal(data.quote.volume, 800000);
+    assert.equal(data.quote.change, null);
+    assert.equal(data.quote.changePercent, null);
+  }
+
+  // No dailyBar and no prevDailyBar at all: there is nothing to source volume
+  // from, so it must stay null instead of throwing while building the quote.
+  {
+    globalThis.fetch = async () => Response.json({
+      AAPL: { latestTrade: { p: 150.5 } },
+    });
+    const { status, data } = await lookup(baseEnv(), 'AAPL', await cookieHeaders());
+    assert.equal(status, 200);
+    assert.equal(data.quote.price, 150.5);
+    assert.equal(data.quote.volume, null, 'volume stays null when there is no dailyBar or prevDailyBar');
+    assert.equal(data.quote.prevClose, null);
+  }
+
+  // Neither a latestTrade nor any bar: there is nothing to price the quote
+  // with, so this must fail closed rather than return a fabricated price.
+  {
+    globalThis.fetch = async () => Response.json({ AAPL: { someOtherField: true } });
     const { status, data } = await lookup(baseEnv(), 'AAPL', await cookieHeaders());
     assert.equal(status, 502);
     assert.equal(data.ok, false);
