@@ -19,7 +19,10 @@
 // key's KV metadata, written at upload time as {"size": <bytes>}. Without
 // that metadata we fall back to one full read — still one, never two.
 //
-// Range semantics are unchanged, including the RFC 7233 §2.1 suffix form.
+// Range semantics are unchanged, including the RFC 7233 §2.1 suffix form. A
+// multi-range request ("bytes=0-99,200-299") is answered with a full 200
+// rather than a 206 covering only the first sub-range — see the comment at
+// the multi-range check for why.
 //
 // Env: vjm_video (KV binding, bound in both Preview and Production).
 
@@ -137,7 +140,17 @@ export async function onRequestGet(context) {
 
   const total = obj.size;
 
-  if (!range) {
+  // Multi-range requests ("bytes=0-99,200-299", RFC 7233 §2.1) are not caught
+  // by the single-spec regex below — it matches only the first "start-end"
+  // pair, so a client asking for two ranges used to silently get back a 206
+  // covering only the first one, indistinguishable from success. Per RFC 7233
+  // §3.1 a server that will not multipart-serve every requested range MUST
+  // NOT return a partial 206 for it; falling back to the full 200 here is the
+  // spec-sanctioned option and — unlike truncating to the first range — never
+  // hands back less than the client can tell it received.
+  const isMultiRange = Boolean(range) && range.includes(',');
+
+  if (!range || isMultiRange) {
     // Stream straight through rather than buffering the whole object first.
     const body = obj.body || obj.bytes;
     return new Response(body, {

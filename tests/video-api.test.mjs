@@ -174,6 +174,22 @@ async function bodyBytes(res) {
   assert.equal(bytes.length, 1000);
 }
 
+// A multi-range request ("bytes=0-99,200-299", RFC 7233 §2.1) used to match
+// only the first "start-end" pair against the single-spec regex and come
+// back as a 206 covering just bytes 0-99 — a request for two ranges silently
+// answered with one, no error anywhere, indistinguishable from a client that
+// only asked for the first range. Per RFC 7233 §3.1 a server unwilling to
+// multipart-serve every requested range must not return a partial 206 for
+// it, so this must fall back to the full 200 instead.
+{
+  const res = await onRequestGet({ env: kvEnv(), request: req('bytes=0-99,200-299') });
+  assert.equal(res.status, 200, 'a multi-range request must not come back as a 206 covering only the first range');
+  assert.equal(res.headers.get('Content-Length'), String(TOTAL));
+  assert.equal(res.headers.get('Content-Range'), null);
+  const bytes = await bodyBytes(res);
+  assert.equal(bytes.length, TOTAL, 'the full object must be served, not just the first requested sub-range');
+}
+
 // asBytes() normalizes every chunk shape a byte stream could hand back to a
 // Uint8Array before slicing. Every fixture above enqueues plain Uint8Array
 // chunks, so a DataView or bare ArrayBuffer chunk had never actually reached
