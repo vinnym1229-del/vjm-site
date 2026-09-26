@@ -2287,3 +2287,34 @@ test('every page with a <nav> has exactly one and it carries an aria-label', () 
   }
   assert.deepEqual(missing, [], `<nav> missing aria-label:\n  ${missing.join('\n  ')}`);
 });
+
+// Incident: an Explore pass flagged options-lab.html's GEX-profile diagram --
+// an inline <svg> whose bars/lines/text are purely illustrative, with the
+// full explanation already in the <p class="diagram-caption"> right after it
+// -- as the one inline SVG site-wide with no aria-hidden anywhere on it or
+// its ancestors. Every other decorative SVG already carries aria-hidden
+// either directly (most icons) or on a wrapping element (index.html's
+// feature-icon spans), so a screen-reader user got a pile of disconnected
+// text nodes read out of this one diagram while every other one stayed
+// silent. Fixed by adding aria-hidden="true" (plus focusable="false", matching
+// the site's other keyboard-focusable-by-default SVGs) directly on the svg
+// tag. This test locks the general rule, not just this one instance, so a
+// future diagram can't ship the same gap: every inline <svg> must be hidden
+// from assistive tech, either on the tag itself or on its nearest enclosing
+// element.
+test('every inline <svg> is aria-hidden, directly or via its nearest wrapping element', () => {
+  const missing = [];
+  for (const p of PAGES) {
+    const html = read(p);
+    for (const m of html.matchAll(/<svg\b[^>]*>/g)) {
+      const tag = m[0];
+      if (/\baria-hidden="true"/.test(tag)) continue;
+      const before = html.slice(0, m.index);
+      const prevTags = [...before.matchAll(/<[a-zA-Z][^>]*>/g)];
+      const nearest = prevTags[prevTags.length - 1];
+      if (nearest && /\baria-hidden="true"/.test(nearest[0])) continue;
+      missing.push(`${p}: ${tag.slice(0, 80)}`);
+    }
+  }
+  assert.deepEqual(missing, [], `inline <svg> not hidden from assistive tech:\n  ${missing.join('\n  ')}`);
+});
