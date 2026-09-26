@@ -120,6 +120,41 @@ test('an unparseable body is refused cleanly, never thrown past the handler', as
   assert.equal(db.calls.length, 0, 'nothing is stored when the body cannot be parsed');
 });
 
+test('a body that parses but is not an object is refused, distinct from unparseable JSON', async () => {
+  // request.json() succeeds for these — they are valid JSON — but a null or a
+  // bare number has no .email/.consent to read. Different guard, different
+  // branch than the try/catch above, and unlike unsubscribe's own version of
+  // this check this file had never exercised it.
+  const db = fakeDb();
+  for (const raw of ['null', '42', '"just a string"']) {
+    const res = await post(subscribe, raw, envWith(db));
+    assert.equal(res.status, 400, `${raw} must be refused`);
+  }
+  assert.equal(db.calls.length, 0);
+});
+
+test('signups are rate limited per IP, tighter than the analytics bucket', async () => {
+  // The file's own header comment says this bucket is deliberately tighter
+  // than analytics (10/min vs. a pageview event) because a signup costs the
+  // owner a row and a person an inbox — but nothing had ever actually tripped
+  // it, so a regression loosening or dropping the limit would go unnoticed.
+  const db = fakeDb();
+  const env = envWith(db);
+  const rlIp = `203.0.113.${++ip}`;
+  const reqFor = () => new Request('https://x/api/newsletter/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': rlIp },
+    body: JSON.stringify({ email: 'a@b.com', consent: true }),
+  });
+  for (let i = 0; i < 10; i++) {
+    const res = await subscribe({ request: reqFor(), env });
+    assert.equal(res.status, 200, `request ${i + 1} of 10 should still be under the limit`);
+  }
+  const limited = await subscribe({ request: reqFor(), env });
+  assert.equal(limited.status, 429);
+  assert.equal(db.calls.length, 10, 'the 11th request never reaches storage');
+});
+
 test('an unconfigured deployment refuses rather than pretending to store', async () => {
   // A form that says "you're subscribed" and drops the address is the worst
   // possible outcome: the person believes they signed up and never hears back.
@@ -210,6 +245,41 @@ test('a JSON body that parses but is not an object falls back cleanly, never thr
   const str = await post(unsubscribe, '"just a string"', envWith(db), UNSUB);
   assert.equal(str.status, 400);
   assert.equal(db.calls.length, 0, 'neither shape reaches the database');
+});
+
+test('a literal JSON null body falls back the same as an empty one, not a crash', async () => {
+  // Distinct from the array/string case above: request.json() resolves to the
+  // JS value null here — valid JSON, but falsy — so it is `(await
+  // request.json()) || {}`'s own fallback, not the try/catch or the
+  // typeof/Array.isArray guard just below it, that keeps body from staying
+  // null into the rest of the handler.
+  const db = fakeDb();
+  const res = await post(unsubscribe, 'null', envWith(db), UNSUB);
+  assert.equal(res.status, 400, 'no token and no email recoverable from a null body');
+  assert.equal(db.calls.length, 0);
+});
+
+test('unsubscribe requests are rate limited too, just looser than signup', async () => {
+  // The file's own header comment explains why: 30/min instead of signup's
+  // 10/min, because rate limiting an opt-out too tightly can trap someone on
+  // a shared IP on the list against their wishes. Nothing had ever actually
+  // tripped this bucket, so a regression dropping the limit entirely would
+  // look identical to this looser-by-design choice.
+  const db = fakeDb();
+  const env = envWith(db);
+  const rlIp = `203.0.113.${++ip}`;
+  const reqFor = () => new Request(UNSUB, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': rlIp },
+    body: JSON.stringify({ email: 'a@b.com' }),
+  });
+  for (let i = 0; i < 30; i++) {
+    const res = await unsubscribe({ request: reqFor(), env });
+    assert.equal(res.status, 200, `request ${i + 1} of 30 should still be under the limit`);
+  }
+  const limited = await unsubscribe({ request: reqFor(), env });
+  assert.equal(limited.status, 429);
+  assert.equal(db.calls.length, 30, 'the 31st request never reaches storage');
 });
 
 test('the one-click GET link works without JavaScript and lands on the page', async () => {
@@ -361,6 +431,15 @@ test('the config endpoint serves the site key and never the secret', async () =>
 
 test('an unconfigured deployment reports the check as off, not broken', async () => {
   const body = await (await onRequestGet({ env: {} })).json();
+  assert.deepEqual(body, { ok: true, required: false, siteKey: null });
+});
+
+test('the config endpoint survives a context with no env binding at all', async () => {
+  // Distinct from env being present but empty (above): turnstileConfigured()
+  // reads env.TURNSTILE_SECRET_KEY unconditionally, so without its own
+  // `env || {}` guard, a context missing the env property entirely would
+  // throw here instead of reporting the check as off.
+  const body = await (await onRequestGet({})).json();
   assert.deepEqual(body, { ok: true, required: false, siteKey: null });
 });
 
