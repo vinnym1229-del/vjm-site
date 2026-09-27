@@ -74,6 +74,27 @@ test('the env kill switch puts the whole site back behind a hold', () => {
   assert.equal(isIndexable(r, { CANONICAL_HOST: 'example.com' }), false);
 });
 
+test('a missing Host header falls back to the request URL\'s own hostname', () => {
+  // Every other test in this file supplies a Host header explicitly, so the
+  // `|| normalizeHost(url.hostname)` fallback in isIndexable() — the one that
+  // keeps a Host-header-less request from silently reading as canonical-host
+  // "no" and unindexable-path "yes" — had never actually run. Real requests
+  // always carry a Host header, but this is still the function's own stated
+  // fallback (the header comment above `host = ...` says so), and a fetch
+  // Request built from a bare URL carries no Host header until one is set.
+  const noHostHeader = (url) => new Request(url);
+  assert.equal(
+    isIndexable(noHostHeader(`https://${CANONICAL_HOST}/index.html`), {}),
+    true,
+    'the URL hostname alone must be enough to recognize the canonical host',
+  );
+  assert.equal(
+    isIndexable(noHostHeader('https://pj.vjm.pages.dev/index.html'), {}),
+    false,
+    'a preview URL with no Host header must still fail closed, not default to indexable',
+  );
+});
+
 test('the middleware only ever REMOVES the header, never adds one', async () => {
   // The whole safety argument rests on this. If the middleware could add a
   // noindex it could also add the wrong one; because it can only delete, the
