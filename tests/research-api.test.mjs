@@ -408,15 +408,17 @@ function dailyBar(dateIso, o, h, l, c, v = 1_000_000) {
 // A daily series with a linear drift plus a slow oscillation, long enough to
 // print real swing highs for stockModule's fib study (needs pivot*2+25 = 35
 // bars at the default pivot) and enough weeks for the weekly leg too.
-function makeDailySeries(n, { start = 90, drift = 0.15 } = {}) {
+function makeDailySeries(n, { start = 90, drift = 0.15, spread = 1.5, lastVolume = null, gapPct = 0 } = {}) {
   const bars = [];
   let date = new Date('2026-01-05T00:00:00Z');
   for (let i = 0; i < n; i++) {
     const close = start + i * drift + Math.sin(i / 4) * 6;
-    const open = i === 0 ? close - 1 : bars[i - 1].c;
-    const high = Math.max(open, close) + 1.5;
-    const low = Math.min(open, close) - 1.5;
-    bars.push(dailyBar(date.toISOString(), open, high, low, close, 1_000_000 + (i % 7) * 25_000));
+    let open = i === 0 ? close - 1 : bars[i - 1].c;
+    if (gapPct && i === n - 1) open = bars[i - 1].c * (1 + gapPct);
+    const high = Math.max(open, close) + spread;
+    const low = Math.min(open, close) - spread;
+    const volume = lastVolume !== null && i === n - 1 ? lastVolume : 1_000_000 + (i % 7) * 25_000;
+    bars.push(dailyBar(date.toISOString(), open, high, low, close, volume));
     date = new Date(date.getTime() + 86400000);
   }
   return bars;
@@ -526,14 +528,27 @@ function makeDailySeries(n, { start = 90, drift = 0.15 } = {}) {
   }
 
   // module=biotech: no relative-strength sort, but the fixed universe and its
-  // "not connected" catalyst fields are the contract the UI reads.
+  // "not connected" catalyst fields are the contract the UI reads. riskFlag
+  // is a real three-tier ternary on atr14Pct/volumeRatio/gap (research-engine.js
+  // line 270) that an all-default fixture can only ever land on a single
+  // branch of, so give six of the ten tickers deliberately distinct bars to
+  // walk every HIGH/REVIEW/LOW leg -- and each of the three signals that can
+  // independently trigger HIGH or REVIEW -- at least once.
   {
     const bioFetch = globalThis.fetch;
+    const overrides = {
+      XBI: { spread: 0.3 }, // calm range, calm volume, no gap -> LOW
+      IBB: { spread: 2.5 }, // atr14Pct >= .06 -> HIGH via atr
+      MRNA: {}, // default 1.5 spread lands atr14Pct in [.04,.06) -> REVIEW via atr
+      BNTX: { spread: 0.3, lastVolume: 2_000_000 }, // calm atr, volumeRatio in [1.8,2.5) -> REVIEW via volumeRatio
+      CRSP: { spread: 0.3, lastVolume: 4_000_000 }, // calm atr, volumeRatio >= 2.5 -> HIGH via volumeRatio
+      EDIT: { spread: 0.3, gapPct: 0.10 }, // calm atr/volume, |gap| >= .06 -> HIGH via gap
+    };
     globalThis.fetch = async (input) => {
       const url = new URL(String(input));
       if (url.pathname === '/v2/stocks/bars') {
         const symbols = url.searchParams.get('symbols').split(',');
-        const bars = Object.fromEntries(symbols.map((s) => [s, makeDailySeries(30)]));
+        const bars = Object.fromEntries(symbols.map((s) => [s, makeDailySeries(30, overrides[s] || {})]));
         return Response.json({ bars });
       }
       return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
@@ -542,6 +557,13 @@ function makeDailySeries(n, { start = 90, drift = 0.15 } = {}) {
       const { status, data } = await callEngine(cronEnv, 'module=biotech', cronHeaders);
       assert.equal(status, 200);
       assert.equal(data.data.rows.length, 10);
+      const byTicker = Object.fromEntries(data.data.rows.map((r) => [r.ticker, r]));
+      assert.equal(byTicker.XBI.riskFlag, 'LOW');
+      assert.equal(byTicker.IBB.riskFlag, 'HIGH');
+      assert.equal(byTicker.MRNA.riskFlag, 'REVIEW');
+      assert.equal(byTicker.BNTX.riskFlag, 'REVIEW');
+      assert.equal(byTicker.CRSP.riskFlag, 'HIGH');
+      assert.equal(byTicker.EDIT.riskFlag, 'HIGH');
       assert.ok(data.data.rows.every((r) => ['HIGH', 'REVIEW', 'LOW'].includes(r.riskFlag)));
       assert.ok(data.data.rows.every((r) => r.catalyst === null && r.catalystStatus === 'Not available from Alpaca'));
       assert.equal(data.data.missingFields.length, 6);
