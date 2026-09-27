@@ -706,6 +706,24 @@ test('docs/API.md documents /api/market-brief', () => {
     'expected market-brief.js to still gate POST on X-Research-Cron');
 });
 
+// Incident: docs/API.md documented premium-stock-research (its sibling on the
+// same members' hub page) but never mentioned /api/premium-market-analyst at
+// all, despite it being a fully shipped Trifecta-gated endpoint fetched by
+// premium-guidance.html -- the same "documented every sibling but this one"
+// gap the market-brief fix above closed for a different endpoint family.
+test('docs/API.md documents /api/premium-market-analyst', () => {
+  const doc = read('docs/API.md');
+  assert.match(doc, /## GET \/api\/premium-market-analyst/,
+    'docs/API.md must have a premium-market-analyst GET heading');
+  const section = doc.slice(doc.indexOf('## GET /api/premium-market-analyst'), doc.indexOf('## GET /api/yahoo-news'));
+  assert.match(section, /upgrade_required/,
+    'docs/API.md: premium-market-analyst section omits its 403 upgrade_required tier gate');
+  assert.match(section, /years/,
+    'docs/API.md: premium-market-analyst section omits its years=1|3|5 parameter');
+  assert.match(read('functions/api/premium-market-analyst.js'), /upgrade_required/,
+    'expected premium-market-analyst.js to still gate on upgrade_required');
+});
+
 // Incident: removing the homepage's "Live From PJ's Desk" section (2026-09-08)
 // deleted the site's only consumer of the announcements/trade_reviews CMS
 // content types (loadLatest(), #latest, .ann-card/.review-card), but

@@ -48,6 +48,19 @@ quote:{price,change,changePercent,volume,vwap,prevClose,marketCap:null} }`
 
 Same payload shape as above but requires a premium session (cookie or legacy Bearer). 401 otherwise.
 
+## GET /api/premium-market-analyst?years=1|3|5
+
+Premium session cookie only (no legacy Bearer path); 401 with none, 403 `code:"upgrade_required"`
+if the session's tier doesn't include The Trifecta. Deterministic trend metrics computed
+server-side from Alpaca IEX daily bars for QQQ (Nasdaq-100 proxy) over the requested lookback,
+then a Workers AI narrative grounded only on those metrics — no advice, no price predictions.
+`years` defaults to 3; any other value 400s. `{ ok, symbol, label, years, coverage,
+metrics:{totalReturnPct,cagrPct,maxDrawdownPct,vol30AnnualizedPct,sma50,sma200,lastClose,
+aboveSma50,aboveSma200,momentum:{m1,m3,m6,m12},from52wHighPct,upDayRatioPct}, narrative,
+narrativeEngine, dataOnly, source, disclaimer }`. `dataOnly` is true when the Workers AI
+narrative failed and only the metrics survived. 502 on upstream history failure, 503 if
+Alpaca unconfigured, 429 rate limited (6/min).
+
 ## GET /api/yahoo-news?symbol=TSLA (or ?topic=forex|futures|market)
 
 Yahoo Finance JSON search-endpoint headlines (≤12), sanitized/deduped, cached ~5 min server-side.
