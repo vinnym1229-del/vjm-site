@@ -126,6 +126,18 @@ try {
 
   globalThis.fetch = async () => new Response('nope', { status: 500 });
   assert.equal(await movers(env), null, 'a non-ok status must also degrade to null');
+
+  // A row with no `price_change_percent` field at all (Alpaca omits it rather
+  // than sending 0 for a flat symbol) must degrade to `changePct: null`, not
+  // `NaN` from `Number(undefined)` or a stringified "undefined" leaking into
+  // a caller's formatted output.
+  globalThis.fetch = async () => Response.json({
+    gainers: [{ symbol: 'FLATG', price: 10 }],
+    losers: [{ symbol: 'FLATL', price: 20 }],
+  });
+  const flat = await movers(env);
+  assert.equal(flat.gainers[0].changePct, null, 'a missing price_change_percent must yield null, not NaN');
+  assert.equal(flat.losers[0].changePct, null, 'the losers mapping hits the same fallback independently');
 } finally {
   globalThis.fetch = originalFetch;
 }

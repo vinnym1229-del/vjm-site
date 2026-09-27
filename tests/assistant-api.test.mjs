@@ -385,6 +385,35 @@ function fullSnapshot(price) {
   assert.ok(full.data.lessons.length > core.data.lessons.length, 'complete must strictly outrank futures_core');
 }
 
+// Rate limit (30/min) on the catalogue itself -- every other test in this
+// suite calls it through the auto-incrementing-IP catalogue() helper, so this
+// gate had never actually tripped. Proven with a session that throws if the
+// handler ever gets past the limit check to read it.
+{
+  const throwingSession = { SESSION_SIGNING_SECRET: SIGNING_SECRET };
+  const ip = `10.8.9.${Math.floor(Math.random() * 1000)}`;
+  const cookie = await sessionCookieHeader({ t: 'complete' });
+  let last;
+  for (let i = 0; i < 30; i++) {
+    last = await onRequestGet({
+      request: new Request('https://example.com/api/assistant', {
+        headers: { 'CF-Connecting-IP': ip, ...cookie },
+      }),
+      env: throwingSession,
+    });
+    assert.equal(last.status, 200);
+  }
+  const limited = await onRequestGet({
+    request: new Request('https://example.com/api/assistant', {
+      headers: { 'CF-Connecting-IP': ip, ...cookie },
+    }),
+    env: throwingSession,
+  });
+  const data = await limited.json();
+  assert.equal(limited.status, 429);
+  assert.equal(data.ok, false);
+}
+
 // Every library entry names a real page and carries citable sections.
 {
   const seen = new Set();
@@ -618,6 +647,39 @@ function fullSnapshot(price) {
   }
 }
 
+// The official movers screener can hand back a row with no
+// `price_change_percent` at all (Alpaca omits the field rather than sending
+// 0 for a flat-on-the-day symbol) -- alpaca.js's movers() turns that into
+// `changePct: null`, per its own untested branch. Every other movers test in
+// this file used the empty-array `{ gainers: [], losers: [] }` shape, so the
+// assistant's own fmt() formatter had never rendered a null-changePct row.
+// It must print the bare symbol, never a literal "null%" or "undefined%"
+// glued onto the dollar sign.
+{
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes('/v2/stocks/snapshots')) {
+        return Response.json({ SPY: fullSnapshot(500), QQQ: fullSnapshot(400) });
+      }
+      if (String(url).includes('/screener/stocks/movers')) {
+        return Response.json({
+          gainers: [{ symbol: 'FLAT', price: 10 }],
+          losers: [],
+        });
+      }
+      return new Response('not found', { status: 404 });
+    };
+    const { status, data } = await ask(alpacaEnv(), { question: 'What is moving today?' });
+    assert.equal(status, 200);
+    assert.match(data.dataBlock, /gainers: FLAT\b/);
+    assert.doesNotMatch(data.dataBlock, /null%/);
+    assert.doesNotMatch(data.dataBlock, /undefined%/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
 // Alpaca configured + AI configured + narrative returned: grounded mode.
 {
   const originalFetch = globalThis.fetch;
@@ -637,6 +699,69 @@ function fullSnapshot(price) {
     assert.equal(data.mode, 'grounded');
     assert.match(data.narrative, /SPY/);
     assert.equal(data.engine, 'cloudflare-workers-ai');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+// AI binding present but the model itself comes back empty (Workers AI can
+// return a whitespace-only or missing response text without throwing): every
+// existing data-only test in this file used an *unconfigured* AI binding, so
+// `complete()`'s null result was always paired with `aiConfigured(env) ===
+// false`, and this file never actually reached the "engine IS configured,
+// it just didn't answer" message a member sees when that happens.
+{
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes('/v2/stocks/snapshots')) {
+        return Response.json({ SPY: fullSnapshot(500), QQQ: fullSnapshot(400) });
+      }
+      if (String(url).includes('/screener/stocks/movers')) {
+        return Response.json({ gainers: [], losers: [] });
+      }
+      return new Response('not found', { status: 404 });
+    };
+    const env = alpacaEnv({ AI: { run: async () => ({ response: '   ' }) } });
+    const { status, data } = await ask(env, { question: 'How is SPY doing?' });
+    assert.equal(status, 200);
+    assert.equal(data.mode, 'data-only');
+    assert.equal(data.narrative, null);
+    assert.match(data.message, /narrative engine did not respond/i);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+// Grounded mode when no snapshot in the DATA block carried a usable asOf
+// timestamp (every prior grounded/data-only test in this file used
+// fullSnapshot(), which always sets latestTrade.t): `asOf` must still be a
+// real, current timestamp via the Date.now() fallback, never `undefined`
+// reaching the client as if the response carried no time context at all.
+{
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async (url) => {
+      if (String(url).includes('/v2/stocks/snapshots')) {
+        return Response.json({
+          SPY: { latestTrade: { p: 500 }, prevDailyBar: { c: 495 } },
+          QQQ: { latestTrade: { p: 400 }, prevDailyBar: { c: 405 } },
+        });
+      }
+      if (String(url).includes('/screener/stocks/movers')) {
+        return Response.json({ gainers: [], losers: [] });
+      }
+      return new Response('not found', { status: 404 });
+    };
+    const env = alpacaEnv({ AI: { run: async () => ({ response: 'SPY is trading near 500.' }) } });
+    const before = Date.now();
+    const { status, data } = await ask(env, { question: 'How is SPY doing?' });
+    assert.equal(status, 200);
+    assert.equal(data.mode, 'grounded');
+    assert.doesNotMatch(data.dataContext, /asOf/, 'no snapshot here carries a latestTrade.t');
+    assert.ok(data.asOf, 'asOf must fall back to a current timestamp, not be missing');
+    const asOfMs = Date.parse(data.asOf);
+    assert.ok(Number.isFinite(asOfMs) && asOfMs >= before, 'fallback asOf must be a real, current ISO timestamp');
   } finally {
     globalThis.fetch = originalFetch;
   }
