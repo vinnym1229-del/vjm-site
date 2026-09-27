@@ -484,6 +484,39 @@ try {
     assert.equal(data.error, MEMBERSHIP_ENDED);
   }
 
+  // A D1 error while running the sibling lookup itself (not the primary
+  // row lookup, which already succeeded) must fail closed to the original
+  // refusal, not crash the request or grant access it could no longer
+  // verify — loadLiveEntitlementForMember's own catch returns null for
+  // exactly this case (session.js), and verify-premium must treat that
+  // null exactly like "no live sibling found".
+  {
+    globalThis.fetch = bridgeFetch('ABCD-1234');
+    const expired = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const env = {
+      ...BRIDGE_ENV,
+      RESEARCH_DB: {
+        prepare() {
+          return {
+            bind() {
+              return {
+                async first() {
+                  return { status: 'active', expires_at: expired, tier: TIERS.COMPLETE, whop_member_id: 'mem_3' };
+                },
+                async all() { throw new Error('D1 unavailable'); },
+              };
+            },
+          };
+        },
+      },
+    };
+    const { status, data, res } = await callVerify(env, { code: 'ABCD-1234', turnstileToken: 'tok' });
+    assert.equal(status, 403);
+    assert.equal(data.error, MEMBERSHIP_ENDED);
+    assert.equal(res.headers.get('Set-Cookie'), null,
+      'a D1 error while checking for a live sibling row must not grant access nor crash');
+  }
+
   // A status nobody recognized — a typo, a half-applied migration, a value
   // some future tool wrote — is not an entitlement. Fail closed, and do not
   // let the Sheet paper over it.
