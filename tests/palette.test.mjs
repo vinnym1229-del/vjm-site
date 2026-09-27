@@ -36,7 +36,7 @@ test('red stays a minority of the palette', () => {
 // the owner asked for it explicitly (2026-09-02) rather than this being an
 // old-palette leftover slipping back in. Scoped to exactly the two literals
 // that make it up (dark-mode and light-mode), in exactly the one file.
-const TICKER_UP_GREEN = new Set(['assets/live-ticker.js: #3ecf72', 'assets/live-ticker.js: #1a8a45']);
+const TICKER_UP_GREEN = new Set(['assets/live-ticker.js: #3ecf72', 'assets/live-ticker.js: #157a3a']);
 
 test('the palette stays white / black / red — no foreign hues', () => {
   // Every chromatic color should be the red accent. Greens, blues, golds and
@@ -134,6 +134,34 @@ test('ticker down/closed states clear WCAG AA against the light-mode ticker back
   assert.ok(sess, 'no light-mode override for .lt-sess.sess-cl in assets/live-ticker.js');
   assert.ok(contrast(hexToRgb(sess[1]), bg2) >= 4.5,
     `light-mode .lt-sess.sess-cl (${sess[1]}) on --bg2 is ${contrast(hexToRgb(sess[1]), bg2).toFixed(2)}:1`);
+});
+
+test('ticker up/down percentages clear WCAG AA against their own theme background, both themes', () => {
+  // The prior test above covers light-mode down and the CLOSED badge, but the
+  // ticker's own base (dark-mode) rules and light-mode "up" were never pinned:
+  // dark #d14343 measured 4.28:1 against #ticker-wrap's own #0c0c0d (below the
+  // 4.5:1 AA floor -- the same "wrong red" #d14343/#a63333 draws elsewhere,
+  // here on a background dark enough that only --vjm-red-bright clears it),
+  // and light-mode #1a8a45 measured 4.08:1 against --bg2 (#f6f6f7) -- both
+  // slipped through because assets/live-ticker.js injects its own hardcoded
+  // <style> block rather than drawing from tokens.css, so neither the site's
+  // contrast audit nor the test above (scoped to the down/closed states) ever
+  // covered them.
+  const ticker = read('assets/live-ticker.js');
+  const site = read('assets/site.css');
+  const lightBlock = site.match(/body\.light-mode\s*\{([^}]*)\}/)[1];
+  const bg2 = hexToRgb(lightBlock.match(/--bg2:\s*(#[0-9a-fA-F]{6})/)[1]);
+  const darkBg = hexToRgb(site.match(/#ticker-wrap\s*\{\s*background:\s*(#[0-9a-fA-F]{6})/)[1]);
+
+  const darkDown = ticker.match(/(?<!body\.light-mode )#ticker-wrap \.lt-pct\.down\{color:(#[0-9a-fA-F]{6})/);
+  assert.ok(darkDown, 'no base (dark-mode) rule for .lt-pct.down in assets/live-ticker.js');
+  assert.ok(contrast(hexToRgb(darkDown[1]), darkBg) >= 4.5,
+    `dark-mode .lt-pct.down (${darkDown[1]}) on #ticker-wrap's background is ${contrast(hexToRgb(darkDown[1]), darkBg).toFixed(2)}:1`);
+
+  const lightUp = ticker.match(/body\.light-mode #ticker-wrap \.lt-pct\.up\{color:(#[0-9a-fA-F]{6})/);
+  assert.ok(lightUp, 'no light-mode override for .lt-pct.up in assets/live-ticker.js');
+  assert.ok(contrast(hexToRgb(lightUp[1]), bg2) >= 4.5,
+    `light-mode .lt-pct.up (${lightUp[1]}) on --bg2 is ${contrast(hexToRgb(lightUp[1]), bg2).toFixed(2)}:1`);
 });
 
 test('the "LIVE" badge fades into the light-mode ticker background, not the dark one', () => {
