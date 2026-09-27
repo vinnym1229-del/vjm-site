@@ -313,6 +313,29 @@ assert.equal(detectContinuationModel([
   bar('2026-08-20T13:34:00Z', 100.1, 100.3, 100.0, 100.2), // stays under the 100.5 extreme
   bar('2026-08-20T13:35:00Z', 100.1, 100.2, 100.0, 100.1),
 ], 0, 'high'), false, 'a retested gap that never breaks its pre-retest extreme must still report no continuation model');
+// Every prior case above only ever calls direction 'high'; the 'low' side
+// (bearish gap -> retest -> breaks below the pre-retest low) is a mirror
+// image of the first modelBars case, not a copy of it, and was never
+// exercised by any test before this one.
+assert.equal(detectContinuationModel([
+  bar('2026-08-20T13:30:00Z', 100.1, 100.2, 100.0, 100.05),
+  bar('2026-08-20T13:31:00Z', 100.0, 100.05, 99.85, 99.9),
+  bar('2026-08-20T13:32:00Z', 99.8, 99.8, 99.5, 99.55),
+  bar('2026-08-20T13:33:00Z', 99.7, 99.9, 99.6, 99.75),
+  bar('2026-08-20T13:34:00Z', 99.5, 99.6, 99.35, 99.4),
+], 0, 'low'), true);
+// Mirror image of the 'high'-direction retested-but-never-breaks case above:
+// a genuine bearish gap gets retested but the price after that never trades
+// below the pre-retest low extreme, across every candidate zone the outer
+// scan finds.
+assert.equal(detectContinuationModel([
+  bar('2026-08-20T13:30:00Z', 100.1, 100.2, 100.0, 100.05),
+  bar('2026-08-20T13:31:00Z', 100.0, 100.05, 99.85, 99.9),
+  bar('2026-08-20T13:32:00Z', 99.8, 99.8, 99.5, 99.55), // gap: h(99.8) < bar0's l(100.0)
+  bar('2026-08-20T13:33:00Z', 99.9, 99.95, 99.85, 99.9), // retests the zone [99.8, 100.0]
+  bar('2026-08-20T13:34:00Z', 99.9, 100.0, 99.7, 99.8), // stays above the 99.5 extreme
+  bar('2026-08-20T13:35:00Z', 99.9, 100.0, 99.8, 99.9),
+], 0, 'low'), false, 'a retested bearish gap that never breaks below its pre-retest extreme must still report no continuation model');
 
 const summarized = summarizeConditions([
   { condition: 'PDH', continuation: true, reversal: false, continuationModel: true, mfe: 0.01, mae: -0.002 },
