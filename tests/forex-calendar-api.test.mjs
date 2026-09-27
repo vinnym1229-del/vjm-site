@@ -363,4 +363,110 @@ try {
   }
 }
 
+// The `impact` query param's own default ('major', matching the page's own
+// default view) had never been exercised -- every prior call in this file
+// passes `impact=` explicitly, so a regression dropping the `|| 'major'`
+// fallback (e.g. a caller hitting the bare endpoint, or a future client
+// change that stops sending the param) would have shipped invisibly.
+{
+  const originalFetch12 = globalThis.fetch;
+  const originalCaches12 = globalThis.caches;
+  globalThis.fetch = async () => Response.json(FIXTURE);
+  globalThis.caches = { default: { put: async () => {}, match: async () => null } };
+  try {
+    const res = await call('https://example.com/api/forex-calendar', '10.5.0.12');
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.ok, true);
+    assert.deepEqual(
+      data.events.map((e) => e.title).sort(),
+      ['CPI m/m', 'Retail Sales m/m'],
+      'an omitted impact param must default to major (high + medium USD events), matching the page\'s own default view',
+    );
+  } finally {
+    globalThis.fetch = originalFetch12;
+    globalThis.caches = originalCaches12;
+  }
+}
+
+// A rejecting cache.match() (not just a rejecting cache.put()) had never been
+// exercised -- every upstream-failure test on record supplies a cache whose
+// match() resolves (to null or a held Response). A KV/cache read error here
+// must be treated the same as "nothing cached" and still fail closed with
+// 502, not let the rejection escape uncaught.
+{
+  const originalFetch13 = globalThis.fetch;
+  const originalCaches13 = globalThis.caches;
+  globalThis.fetch = async () => { throw new Error('feed unreachable'); };
+  globalThis.caches = {
+    default: {
+      put: async () => {},
+      match: async () => { throw new Error('cache read quota exceeded'); },
+    },
+  };
+  try {
+    const res = await call('https://example.com/api/forex-calendar?impact=major', '10.5.0.13');
+    assert.equal(res.status, 502, 'a rejecting cache.match() must be treated like no cached copy, not crash the handler');
+    const data = await res.json();
+    assert.equal(data.ok, false);
+    assert.match(data.detail, /feed unreachable/, 'the reported failure must be the real upstream error, not the cache-read error');
+  } finally {
+    globalThis.fetch = originalFetch13;
+    globalThis.caches = originalCaches13;
+  }
+}
+
+// The 502 error detail's `err.message` read falls back to `err` itself when
+// a rejection carries no `.message` (a raw string throw, or a non-Error
+// value) -- every prior failure test throws a real `new Error(...)`, so that
+// fallback had never fired. Without it, a non-Error rejection would report
+// the literal string "undefined" instead of the actual failure reason.
+{
+  const originalFetch14 = globalThis.fetch;
+  const originalCaches14 = globalThis.caches;
+  globalThis.fetch = async () => { throw 'raw string rejection, not an Error'; };
+  globalThis.caches = { default: { put: async () => {}, match: async () => null } };
+  try {
+    const res = await call('https://example.com/api/forex-calendar?impact=major', '10.5.0.14');
+    assert.equal(res.status, 502);
+    const data = await res.json();
+    assert.equal(data.ok, false);
+    assert.match(data.detail, /raw string rejection/, 'a non-Error rejection must still surface its own text via the `|| err` fallback, not "undefined"');
+  } finally {
+    globalThis.fetch = originalFetch14;
+    globalThis.caches = originalCaches14;
+  }
+}
+
+// normalizeEvent's e.country/e.currency fallback to '' (both absent) and
+// e.impact's fallback to '' (absent entirely, not just an unrecognized
+// label) had never been exercised -- MALFORMED_FIXTURE's rows all carry
+// country:'USD', and every impact-label test on record supplies some string
+// value. A row missing both fields must still normalize without crashing,
+// and land in impactClass('') = '' (no folder), so it never appears under
+// any impact filter rather than being silently miscategorized into one.
+{
+  const originalFetch15 = globalThis.fetch;
+  const originalCaches15 = globalThis.caches;
+  const NO_COUNTRY_NO_IMPACT_FIXTURE = [
+    { title: 'CPI m/m', country: 'USD', date: '2026-09-01T12:30:00Z', impact: 'High' },
+    { title: 'Untagged Event', date: '2026-09-02T12:30:00Z' },
+  ];
+  globalThis.fetch = async () => Response.json(NO_COUNTRY_NO_IMPACT_FIXTURE);
+  globalThis.caches = { default: { put: async () => {}, match: async () => null } };
+  try {
+    const res = await call('https://example.com/api/forex-calendar?currency=ALL&impact=major', '10.5.0.15');
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.deepEqual(
+      data.events.map((e) => e.title),
+      ['CPI m/m'],
+      'a row missing both country/currency and impact must normalize to empty strings and be excluded from every impact filter, not crash or get bucketed into one',
+    );
+  } finally {
+    globalThis.fetch = originalFetch15;
+    globalThis.caches = originalCaches15;
+  }
+}
+
 console.log('VJM forex-calendar API tests passed.');
