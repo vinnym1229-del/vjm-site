@@ -201,7 +201,7 @@ export function entitlementRowState(row, nowMs = Date.now()) {
 }
 
 const ENTITLEMENT_COLUMNS =
-  'code_hash, status, expires_at, session_epoch, tier, discord, whop_product, plan_name';
+  'code_hash, status, expires_at, session_epoch, tier, discord, whop_product, plan_name, whop_member_id';
 
 /** Fetch the entitlement row for a member ref (the session's `mr` claim). */
 export async function loadEntitlementByRef(env, memberRef) {
@@ -232,6 +232,34 @@ export async function loadEntitlementByCodeHash(env, codeHash) {
     return { ok: true, row: row || null, reason: row ? 'found' : 'no_row' };
   } catch {
     return { ok: false, row: null, reason: 'db_error' };
+  }
+}
+
+// A Whop renewal (payment.succeeded) mints a brand-new code/row for the same
+// whop_member_id instead of extending the row already in the member's hands
+// (see whop-webhook.js's grant handler) -- so the row matching the exact code
+// a member typed can read as expired while a newer, paid-for row for that
+// same member is live. auth-google.js already looks across every row for an
+// account by email_hash for this exact reason; this is the code-sign-in
+// equivalent, keyed on whop_member_id since a code has no email on hand.
+// Excludes 'revoked' rows only as an optimization -- a revoke flips every row
+// for a member at once, so a revoked row never leaves a live sibling behind.
+export async function loadLiveEntitlementForMember(env, whopMemberId, nowMs = Date.now()) {
+  const db = env && env.RESEARCH_DB;
+  const id = String(whopMemberId || '');
+  if (!db || !id) return null;
+  try {
+    const rows = await db
+      .prepare(
+        `SELECT ${ENTITLEMENT_COLUMNS} FROM whop_codes
+          WHERE whop_member_id = ?1 AND status != 'revoked'
+          ORDER BY created_at DESC LIMIT 10`
+      )
+      .bind(id).all();
+    const candidates = rows && Array.isArray(rows.results) ? rows.results : [];
+    return candidates.find((r) => entitlementRowState(r, nowMs).live) || null;
+  } catch {
+    return null;
   }
 }
 

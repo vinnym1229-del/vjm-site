@@ -24,12 +24,28 @@ function sessionClaims(res) {
   return JSON.parse(Buffer.from(token.split('.')[0], 'base64url').toString());
 }
 
-// D1 fake for the whop_codes lookup. `row` is what the SELECT returns; null
-// models a legacy Sheet-only member with no D1 row at all. Rows default to a
-// live entitlement so a test only has to state the field it is about.
-function makeDb(row) {
+// D1 fake for the whop_codes lookup. `row` is what the exact-code-hash SELECT
+// (.first()) returns; null models a legacy Sheet-only member with no D1 row
+// at all. `siblings` is what the whop_member_id lookup (.all(), used only
+// when `row` itself isn't live) returns for the multi-row-per-renewal
+// fallback. Rows default to a live entitlement so a test only has to state
+// the field it is about.
+function makeDb(row, siblings = []) {
   const full = row === null ? null : { status: 'active', expires_at: null, session_epoch: 1, ...row };
-  return { prepare() { return { bind() { return { async first() { return full; }, async run() { return { meta: { changes: 1 } }; } }; } }; } };
+  const results = siblings.map((r) => ({ status: 'active', expires_at: null, session_epoch: 1, ...r }));
+  return {
+    prepare() {
+      return {
+        bind() {
+          return {
+            async first() { return full; },
+            async all() { return { results }; },
+            async run() { return { meta: { changes: 1 } }; },
+          };
+        },
+      };
+    },
+  };
 }
 
 // The legacy status bridge, plus Turnstile, for the full success path.
@@ -408,6 +424,64 @@ try {
     assert.equal(data.error, MEMBERSHIP_ENDED);
     assert.equal(res.headers.get('Set-Cookie'), null,
       'an expired record must not mint a session on the code path either');
+  }
+
+  // THE FIX: a Whop renewal (payment.succeeded) mints a brand-new code/row
+  // for the same whop_member_id instead of extending the row a member
+  // already holds (see whop-webhook.js's grant handler) -- so a real, still
+  // paying member's ORIGINAL code can read as expired while a newer, live
+  // row for the same member exists. The code path must find that sibling row
+  // rather than telling a current member their membership ended, exactly as
+  // auth-google.js already does for the same reality via email_hash.
+  {
+    globalThis.fetch = async () => Response.json({ success: true });
+    const expired = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const env = {
+      ...baseEnv(),
+      TURNSTILE_SECRET_KEY: 'secret',
+      RESEARCH_DB: makeDb(
+        { status: 'active', expires_at: expired, tier: TIERS.COMPLETE, whop_member_id: 'mem_1', code_hash: 'aaaa'.repeat(16) },
+        [{ status: 'active', tier: TIERS.FUTURES_CORE, discord: 'renewedbuyer', session_epoch: 2, whop_member_id: 'mem_1', code_hash: 'bbbb'.repeat(16) }]
+      ),
+    };
+    const { status, data, res } = await callVerify(env, { code: 'VJM-ABCD-2345', turnstileToken: 'tok' });
+    assert.equal(status, 200, 'a live sibling row for the same Whop member must grant access, not MEMBERSHIP_ENDED');
+    assert.equal(data.discord, 'renewedbuyer', 'the response must reflect the winning sibling row, not the expired one');
+    const claims = sessionClaims(res);
+    assert.equal(claims.t, TIERS.FUTURES_CORE, 'the session tier must come from the live sibling row');
+    assert.equal(claims.sv, 2, 'the session epoch must come from the live sibling row, not the expired one');
+  }
+
+  // Same renewal reality, but with nothing to find: the sibling lookup
+  // returns no live row (every other row for this member is also dead), so
+  // the original refusal must still stand.
+  {
+    globalThis.fetch = bridgeFetch('ABCD-1234');
+    const expired = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const env = {
+      ...BRIDGE_ENV,
+      RESEARCH_DB: makeDb(
+        { status: 'active', expires_at: expired, tier: TIERS.COMPLETE, whop_member_id: 'mem_2' },
+        [{ status: 'revoked', tier: TIERS.COMPLETE, whop_member_id: 'mem_2' }]
+      ),
+    };
+    const { status, data, res } = await callVerify(env, { code: 'ABCD-1234', turnstileToken: 'tok' });
+    assert.equal(status, 403);
+    assert.equal(data.error, MEMBERSHIP_ENDED);
+    assert.equal(res.headers.get('Set-Cookie'), null,
+      'with no live sibling row, an expired code must still be refused');
+  }
+
+  // A row with no whop_member_id at all (a Sheet-migration-era D1 row with
+  // that column never backfilled) must not throw trying to look up siblings
+  // -- it just has none to find.
+  {
+    globalThis.fetch = bridgeFetch('ABCD-1234');
+    const expired = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const env = { ...BRIDGE_ENV, RESEARCH_DB: makeDb({ status: 'active', expires_at: expired, tier: TIERS.COMPLETE }) };
+    const { status, data } = await callVerify(env, { code: 'ABCD-1234', turnstileToken: 'tok' });
+    assert.equal(status, 403);
+    assert.equal(data.error, MEMBERSHIP_ENDED);
   }
 
   // A status nobody recognized — a typo, a half-applied migration, a value

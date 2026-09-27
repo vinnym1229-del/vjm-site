@@ -33,7 +33,7 @@
 
 import {
   resolveSigningSecret, signSession, getSession, sessionDays,
-  loadEntitlementByCodeHash, entitlementRowState, memberRefFromCodeHash,
+  loadEntitlementByCodeHash, loadLiveEntitlementForMember, entitlementRowState, memberRefFromCodeHash,
   SESSION_SOURCE,
 } from './_lib/session.js';
 import { json, jsonWithSession, checkRateLimit } from './_lib/http.js';
@@ -104,12 +104,24 @@ async function handlePost(context) {
   // ── 1. D1 first, and its refusals are final ─────────────────────────────
   const d1 = await loadEntitlementByCodeHash(env, codeHash);
   if (d1.ok && d1.row) {
-    const state = entitlementRowState(d1.row);
+    let row = d1.row;
+    let state = entitlementRowState(row);
+    if (!state.live && row.whop_member_id) {
+      // A Whop renewal mints a fresh row for the same member instead of
+      // extending this one (see whop-webhook.js's grant handler), so THIS
+      // code's row can be expired while a newer, paid-for row for the same
+      // member is live. Check for that before telling a current member their
+      // membership ended -- same multi-row reality auth-google.js already
+      // handles for the Google sign-in path.
+      const sibling = await loadLiveEntitlementForMember(env, row.whop_member_id);
+      if (sibling) { row = sibling; state = entitlementRowState(row); }
+    }
     if (!state.live) {
-      // Revoked, expired, or never delivered. Do NOT fall through to the
-      // Sheet: the Sheet is a human-maintained mirror that lags behind
-      // cancellations, and consulting it here is precisely how a canceled
-      // customer used to keep their access.
+      // Revoked, expired, or never delivered, with no live sibling row for
+      // this member either. Do NOT fall through to the Sheet: the Sheet is a
+      // human-maintained mirror that lags behind cancellations, and
+      // consulting it here is precisely how a canceled customer used to
+      // keep their access.
       await auditEvent(env, 'verify_code', 'denied_' + state.reason, code);
       const expiredish = state.reason === 'expired' || state.reason === 'revoked';
       return json({ ok: false, error: expiredish ? MEMBERSHIP_ENDED : GENERIC_BAD_CODE }, expiredish ? 403 : 401);
@@ -120,9 +132,9 @@ async function handlePost(context) {
     const token = await signSession(
       {
         v: SESSION_VERSION,
-        mr: memberRef,
-        dn: d1.row.discord || '',
-        t: isTier(d1.row.tier) ? d1.row.tier : unconfiguredDefaultTier(env),
+        mr: memberRefFromCodeHash(row.code_hash),
+        dn: row.discord || '',
+        t: isTier(row.tier) ? row.tier : unconfiguredDefaultTier(env),
         sv: state.epoch,
         src: SESSION_SOURCE.D1,
         exp: expiresAt,
@@ -131,7 +143,7 @@ async function handlePost(context) {
     );
     await auditEvent(env, 'verify_code', 'granted_d1', code);
     return jsonWithSession(
-      { ok: true, expiresAt: new Date(expiresAt).toISOString(), discord: d1.row.discord || null },
+      { ok: true, expiresAt: new Date(expiresAt).toISOString(), discord: row.discord || null },
       token,
       Math.max(60, Math.floor((expiresAt - Date.now()) / 1000))
     );
