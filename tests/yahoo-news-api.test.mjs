@@ -247,6 +247,20 @@ try {
     assert.equal(data.symbol, null);
     assert.equal(data.topic, 'forex');
   }
+
+  // The 502 detail's `err.message` read falls back to `err` itself when a
+  // rejection carries no `.message` (a raw string throw, or any other
+  // non-Error value) -- every failure test above throws via `new Error(...)`
+  // (or the equivalent `!res.ok` path, which does too), so that fallback had
+  // never fired. Without it, a non-Error rejection would report the literal
+  // string "undefined" instead of the actual failure reason.
+  {
+    globalThis.fetch = async () => { throw 'raw string rejection, not an Error'; };
+    const { status, data } = await fetchNews('?symbol=AAPL');
+    assert.equal(status, 502);
+    assert.equal(data.ok, false);
+    assert.match(data.detail, /raw string rejection/, 'a non-Error rejection must still surface its own text via the `|| err` fallback, not "undefined"');
+  }
 } finally {
   globalThis.fetch = originalFetch;
 }
