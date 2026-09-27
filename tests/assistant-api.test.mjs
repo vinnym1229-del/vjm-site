@@ -496,6 +496,32 @@ function fullSnapshot(price) {
   }
 }
 
+// Genuinely unparseable JSON text (not the parses-fine `null` case above --
+// e.g. a request body truncated in transit) IS what the inner try/catch
+// around request.json() exists for. Every other test builds its body with
+// `ask()`, which always runs it through JSON.stringify() first, so this
+// specific catch had never actually fired: proving it needs a raw, non-JSON
+// string on the wire.
+{
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('must not call Alpaca when the body is unparseable'); };
+  try {
+    ipCounter += 1;
+    const res = await onRequestPost({
+      request: new Request('https://example.com/api/assistant', {
+        method: 'POST',
+        headers: { 'CF-Connecting-IP': `10.9.0.${ipCounter}` },
+        body: '{not valid json',
+      }),
+      env: alpacaEnv(),
+    });
+    assert.equal(res.status, 400);
+    assert.equal((await res.json()).ok, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
 // Default (non-lesson) mode: Alpaca unconfigured degrades to data-unavailable
 // rather than fabricating numbers, even with an AI binding present.
 {
