@@ -7,6 +7,7 @@ import {
   buildSessionCookie, buildClearCookie, readSessionCookie, getSession, sessionDays,
   verifySessionCookie, entitlementRowState, sessionEntitlementCheck,
   memberRefFromCodeHash, LIVE_ENTITLEMENT_STATUSES, base64UrlEncodeBytes,
+  loadEntitlementByRef, loadEntitlementByCodeHash,
 } from '../functions/api/_lib/session.js';
 
 const SECRET = 'x'.repeat(48);
@@ -68,6 +69,19 @@ test('a validly-signed token whose payload is not JSON fails closed, not throws'
   assert.equal(await verifySessionToken(token, SECRET), null);
 });
 
+// JSON.parse happily accepts a body that is valid JSON but not an object —
+// a bare number, string, or boolean. Every other test signs a real object
+// payload, so `typeof payload !== 'object'` had never actually decided the
+// outcome; without it, `payload.exp` on a primitive would silently read
+// `undefined` instead of failing the type check up front.
+test('a validly-signed token whose payload parses to a non-object value fails closed', async () => {
+  for (const raw of ['42', '"just a string"', 'true']) {
+    const body = base64UrlEncodeBytes(new TextEncoder().encode(raw));
+    const token = await signRawBody(body, SECRET);
+    assert.equal(await verifySessionToken(token, SECRET), null, raw);
+  }
+});
+
 test('timingSafeEqual accepts equal / rejects unequal incl. length mismatch', () => {
   assert.ok(timingSafeEqual('abc', 'abc'));
   assert.equal(timingSafeEqual('abc', 'abd'), false);
@@ -117,6 +131,11 @@ test('cookie reader extracts session value only', () => {
   // case nothing pinned before this.
   const noSession = { headers: { get: (h) => h === 'Cookie' ? '__cf_bm=abc; cf_clearance=xyz' : null } };
   assert.equal(readSessionCookie(noSession), null);
+  // A stray cookie piece with no '=' at all (a malformed header, or a bare
+  // flag some client/proxy inserted) must be skipped, not crash or get
+  // misread as a cookie named itself with an empty value.
+  const malformed = { headers: { get: (h) => h === 'Cookie' ? 'flagOnly; __Host-vjm_session=tok.value' : null } };
+  assert.equal(readSessionCookie(malformed), 'tok.value');
 });
 
 test('sessionDays defaults to 7 and hard-caps at 30 regardless of misconfiguration', () => {
@@ -191,6 +210,16 @@ test('entitlementRowState refuses a record whose expiry has passed', () => {
   assert.equal(entitlementRowState(liveRow({ expires_at: 'not-a-date' })).expiresAt, null);
 });
 
+test('entitlementRowState defaults a missing or non-numeric session_epoch to 1', () => {
+  // Every other test's liveRow() fixture sets session_epoch explicitly; a row
+  // written before the epoch column existed (or a malformed one) must still
+  // resolve to a real number, since sessionEntitlementCheck compares it
+  // against the cookie's `sv` with `>`, not against something that could be
+  // NaN and never compare true.
+  assert.equal(entitlementRowState({ status: 'active', expires_at: null }).epoch, 1);
+  assert.equal(entitlementRowState({ status: 'active', expires_at: null, session_epoch: 'not-a-number' }).epoch, 1);
+});
+
 test('memberRefFromCodeHash is the 16-char prefix both sign-in paths share', () => {
   assert.equal(memberRefFromCodeHash('f'.repeat(64)), 'f'.repeat(16));
   assert.equal(memberRefFromCodeHash(null), '');
@@ -260,6 +289,38 @@ test('a D1 outage soft-fails by default and hard-fails under STRICT', async () =
   assert.equal(soft.ok, true, 'an outage must not sign out every paying member at once');
   assert.equal(soft.reason, 'db_error');
   assert.equal((await sessionEntitlementCheck(session, { ...broken, STRICT_D1_ENTITLEMENTS: 'true' })).ok, false);
+});
+
+test('loadEntitlementByRef and loadEntitlementByCodeHash reject malformed input before querying D1', async () => {
+  // The regex allowlist gates BEFORE the query, same "fail closed before a
+  // single upstream call" contract this file's other lookups already pin —
+  // a member ref or code hash that doesn't look like one must never reach a
+  // prepared statement, malformed input or not.
+  const untouchable = {
+    RESEARCH_DB: { prepare() { throw new Error('must not be queried for malformed input'); } },
+  };
+  for (const bad of [undefined, null, '', 'not-hex!', 'a'.repeat(7), 'g'.repeat(16)]) {
+    const ref = await loadEntitlementByRef(untouchable, bad);
+    assert.equal(ref.ok, false, String(bad));
+    assert.equal(ref.reason, 'unusable_ref', String(bad));
+    assert.equal(ref.row, null);
+
+    const hash = await loadEntitlementByCodeHash(untouchable, bad);
+    assert.equal(hash.ok, false, String(bad));
+    assert.equal(hash.reason, 'unusable_hash', String(bad));
+    assert.equal(hash.row, null);
+  }
+});
+
+test('sessionEntitlementCheck fails closed on a missing or non-object session', async () => {
+  const untouchable = {
+    RESEARCH_DB: { prepare() { throw new Error('must not be queried when there is no session'); } },
+  };
+  for (const bad of [null, undefined, 'a-string', 42]) {
+    const r = await sessionEntitlementCheck(bad, untouchable);
+    assert.equal(r.ok, false, String(bad));
+    assert.equal(r.reason, 'no_session', String(bad));
+  }
 });
 
 test('verifySessionCookie does not consult D1 — logout must work for a revoked member', async () => {
