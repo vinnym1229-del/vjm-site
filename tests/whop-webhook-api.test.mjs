@@ -501,6 +501,56 @@ try {
     assert.equal(data.tier, 'complete', 'unconfigured deployments keep the pre-tier behaviour');
     assert.equal([...db.codes.values()][0].tier, 'complete');
   }
+
+  // Whop's payload can omit user_id entirely (normalizeWhopEvent then reads
+  // it as null) while still carrying enough product info to grant — the
+  // Discord embed and audit note interpolate evt.memberId directly, so
+  // without a fallback the owner would read a literal "null"/"undefined"
+  // instead of a clear placeholder in the message that hands out the code.
+  {
+    const db = makeDb();
+    const env = { ...baseEnv(db), DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    let embedDescription = null;
+    globalThis.fetch = async (url, opts) => {
+      embedDescription = JSON.parse(opts.body).embeds[0].description;
+      return new Response(null, { status: 204 });
+    };
+    const { status, data } = await postWebhook(env, grantBody('grant-no-member', null, 'prod_1'));
+    assert.equal(status, 200);
+    assert.equal(data.delivered, true);
+    assert.match(embedDescription, /Member: `unknown`/);
+    assert.match(db.notes.get('grant-no-member'), /grant:complete:\?:delivered/,
+      'the audit note must fall back to "?" for a missing member id, not interpolate null');
+  }
+
+  // Same fallback, for a grant that carries no product id at all — still
+  // grants (resolveTier falls back to unconfigured_default with no
+  // allowlists set), but the embed must not read "Product: `null`".
+  {
+    const db = makeDb();
+    const env = { ...baseEnv(db), DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    let embedDescription = null;
+    globalThis.fetch = async (url, opts) => {
+      embedDescription = JSON.parse(opts.body).embeds[0].description;
+      return new Response(null, { status: 204 });
+    };
+    const { status } = await postWebhook(env, grantBody('grant-no-product', 'member-NP', null));
+    assert.equal(status, 200);
+    assert.match(embedDescription, /Product: `unknown`/);
+  }
+
+  // Revoking a member id that holds no code at all — a stale/duplicate
+  // webhook, or a member who churned before ever claiming their code — must
+  // report zero changes rather than throw on `res.meta.changes` being falsy;
+  // the owner needs to be able to tell this apart from an actual revocation.
+  {
+    const db = makeDb();
+    const env = baseEnv(db);
+    const { status, data } = await postWebhook(env, revokeBody('revoke-unknown-member', 'member-never-granted'));
+    assert.equal(status, 200);
+    assert.equal(data.action, 'revoke');
+    assert.equal(data.revoked, 0, 'revoking an unknown member must report zero changes, not throw');
+  }
 } finally {
   globalThis.fetch = originalFetch;
 }
