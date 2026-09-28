@@ -312,6 +312,27 @@ function fullSnapshot(price) {
   assert.equal(data.narrative, null);
 }
 
+// A reply that is nothing but a real, matching SOURCE line has no prose above
+// it to show — parseCitation() returns a valid section but empty text. This
+// is the other half of the `!section || !text` fail-closed check, untested
+// until now: `!section` alone would have let an empty "grounded" narrative
+// through with a real citation attached.
+{
+  const env = {
+    SESSION_SIGNING_SECRET: SIGNING_SECRET,
+    AI: replyingAI('SOURCE: Why it matters'),
+  };
+  const { status, data } = await ask(
+    env,
+    { question: 'Why does this matter?', lessonId: FUTURES_LESSON.id, lessonVersion: FUTURES_LESSON.version },
+    await sessionCookieHeader(),
+  );
+  assert.equal(status, 200);
+  assert.equal(data.mode, 'lesson-unsupported');
+  assert.equal(data.reason, 'uncited');
+  assert.equal(data.narrative, null);
+}
+
 // ── Prompt-fence defence ───────────────────────────────────────────────────
 
 // Lesson text is server-fetched now, but it is still human-written prose in a
