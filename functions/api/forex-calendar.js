@@ -114,9 +114,9 @@ function normalizeEvent(e) {
     currency: String(e.country || e.currency || '').toUpperCase().slice(0, 4),
     date: when.toISOString(),
     impact: String(e.impact || '').slice(0, 24),
-    forecast: e.forecast ? String(e.forecast).slice(0, 32) : '',
-    previous: e.previous ? String(e.previous).slice(0, 32) : '',
-    actual: e.actual ? String(e.actual).slice(0, 32) : '',
+    forecast: e.forecast != null ? String(e.forecast).slice(0, 32) : '',
+    previous: e.previous != null ? String(e.previous).slice(0, 32) : '',
+    actual: e.actual != null ? String(e.actual).slice(0, 32) : '',
   };
 }
 

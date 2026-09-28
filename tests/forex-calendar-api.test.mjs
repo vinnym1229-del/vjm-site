@@ -469,4 +469,41 @@ try {
   }
 }
 
+// normalizeEvent's forecast/previous/actual fields used a truthy check
+// (`e.forecast ? ... : ''`), which silently drops a real numeric 0 -- a
+// legitimate released reading (e.g. a 0.0% rate change or an unchanged
+// jobless-claims print) -- into an empty string indistinguishable from "not
+// released yet". A row this happens to is the entire point of an economic
+// calendar: it would show a blank where a real, meaningful zero belongs.
+{
+  const originalFetch16 = globalThis.fetch;
+  const originalCaches16 = globalThis.caches;
+  const ZERO_VALUE_FIXTURE = [
+    {
+      title: 'Federal Funds Rate',
+      country: 'USD',
+      date: '2026-09-05T18:00:00Z',
+      impact: 'High',
+      forecast: 0,
+      previous: 0,
+      actual: 0,
+    },
+  ];
+  globalThis.fetch = async () => Response.json(ZERO_VALUE_FIXTURE);
+  globalThis.caches = { default: { put: async () => {}, match: async () => null } };
+  try {
+    const res = await call('https://example.com/api/forex-calendar?impact=major', '10.5.0.16');
+    assert.equal(res.status, 200);
+    const data = await res.json();
+    assert.equal(data.events.length, 1);
+    const [event] = data.events;
+    assert.equal(event.forecast, '0', 'a real numeric 0 forecast must survive normalization, not collapse to \'\'');
+    assert.equal(event.previous, '0', 'a real numeric 0 previous reading must survive normalization, not collapse to \'\'');
+    assert.equal(event.actual, '0', 'a real numeric 0 actual reading must survive normalization, not collapse to \'\'');
+  } finally {
+    globalThis.fetch = originalFetch16;
+    globalThis.caches = originalCaches16;
+  }
+}
+
 console.log('VJM forex-calendar API tests passed.');
