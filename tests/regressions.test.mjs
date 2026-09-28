@@ -1227,6 +1227,36 @@ test("index.html's review-bar star counts sum to its own headline rating count",
   assert.equal(sum, total, 'index.html: review-bar star counts do not sum to the "ratings" headline');
 });
 
+// Incident: index.html's mobile sticky CTA (#mobile-cta) hand-typed its own
+// third copy of the Whop rating/review count ("5.0★ (2,256)") in a plain
+// .mc-label span, with no id and no SocialStats target -- unlike the hero
+// badge's #hb-rating/#hb-reviews, which /api/live-stats and the Sheet CMS
+// keep in sync through SocialStats' single-writer table. The sticky bar
+// appears specifically once a mobile visitor scrolls past the hero, i.e. at
+// exactly the moment they're closest to clicking "Join on Whop" -- and it had
+// no update path, so it would have kept showing a frozen number forever the
+// next time the real count changed. Fixed by giving it #mc-rating/#mc-reviews
+// spans and wiring them into the same STATS entries as hb-rating/hb-reviews.
+test("index.html's mobile sticky CTA rating/review count is wired to the same live source as the hero badge, not a fourth hand-typed copy", () => {
+  const index = read('index.html');
+
+  const hbRating = /id="hb-rating">([^<]+)</.exec(index);
+  const hbReviews = /id="hb-reviews">([^<]+)</.exec(index);
+  assert.ok(hbRating && hbReviews, 'index.html: expected #hb-rating/#hb-reviews in the hero badge');
+
+  const mcRating = /id="mc-rating">([^<]+)</.exec(index);
+  const mcReviews = /id="mc-reviews">([^<]+)</.exec(index);
+  assert.ok(mcRating && mcReviews, 'index.html: expected #mc-rating/#mc-reviews in the mobile sticky CTA');
+  assert.equal(mcRating[1], hbRating[1], 'index.html: mobile CTA rating is out of sync with the hero badge');
+  assert.equal(mcReviews[1], hbReviews[1], 'index.html: mobile CTA review count is out of sync with the hero badge');
+
+  // The SocialStats STATS table is the only thing that keeps them in sync
+  // going forward -- assert both ids are actually registered as targets, not
+  // just coincidentally matching today.
+  assert.match(index, /reviews:\s*\[\['hb-reviews',[^\]]*\],\s*\['mc-reviews',/, 'SocialStats: mc-reviews must share the "reviews" STATS entry with hb-reviews');
+  assert.match(index, /rating:\s*\[\['hb-rating',[^\]]*\],\s*\['mc-rating',/, 'SocialStats: mc-rating must share the "rating" STATS entry with hb-rating');
+});
+
 // Incident: docs/ENTITLEMENTS.md quotes the same four-course lesson total
 // ("can read all 206 lessons straight from source", describing the
 // public-repo lesson-body exposure) as the HTML pages fixed above, but this

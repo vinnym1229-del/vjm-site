@@ -1601,8 +1601,12 @@ const SocialStats = (function () {
     // surviving target for each of these.
     joined:  [['hb-joined', (v) => v]],
     members: [['hb-joined-chip', (v) => v + ' members']],
-    reviews: [['hb-reviews', (v) => v]],
-    rating:  [['hb-rating', (v) => v]],
+    // mc-rating/mc-reviews are the mobile sticky CTA's own copy of the same
+    // two numbers (index.html's #mobile-cta) -- it used to hand-type them
+    // separately from the hero badge, so it could silently drift out of sync
+    // whenever either feed updated hb-rating/hb-reviews. Same writer now.
+    reviews: [['hb-reviews', (v) => v], ['mc-reviews', (v) => v]],
+    rating:  [['hb-rating', (v) => v], ['mc-rating', (v) => v]],
   };
   const writtenRank = {};
   return function applyStats(source, values) {
@@ -3402,7 +3406,7 @@ setInterval(tickSessionClock, 30000);
 <div id="mobile-cta" aria-hidden="true">
   <div class="mc-info">
     <span class="mc-price">$100/mo</span>
-    <span class="mc-label">Futures Premium · 5.0★ (2,256)</span>
+    <span class="mc-label">Futures Premium · <span id="mc-rating">5.0</span>★ (<span id="mc-reviews">2,256</span>)</span>
   </div>
   <a class="mc-btn" href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=site" target="_blank" rel="noopener">Join on Whop</a>
 </div>
