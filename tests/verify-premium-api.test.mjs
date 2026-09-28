@@ -629,6 +629,21 @@ try {
   assert.equal(data.active, false);
 }
 
+// onRequestGet's OWN try/catch (distinct from getSession()'s null checks,
+// which every case above already exercises via missing/tampered/valid
+// cookies) guards anything that throws before getSession returns -- here, a
+// malformed request blowing up readSessionCookie's request.headers.get()
+// call. Same fail-closed-to-500 contract as onRequestPost's outer catch
+// above and check-member-status.js's own analogous outer GET catch; nothing
+// had driven this one yet.
+{
+  const res = await onRequestGet({ request: null, env: baseEnv() });
+  assert.equal(res.status, 500);
+  const data = await res.json();
+  assert.equal(data.ok, false);
+  assert.equal(data.error, 'Service temporarily unavailable.');
+}
+
 console.log('VJM verify-premium API tests passed.');
 
 // ---------------------------------------------------------------------------
