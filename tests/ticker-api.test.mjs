@@ -194,6 +194,23 @@ try {
     assert.equal(data.ok, false);
     assert.equal(data.error, 'Ticker data unavailable.');
   }
+
+  // The catch block's `err && err.message` guards a `null`/`undefined`
+  // rejection before ever reading `.message` off it -- every failure test
+  // above throws a real `Error`, so that guard had never fired, and nothing
+  // proved it's load-bearing. Reading `.message` unguarded (e.g. a future
+  // "simplification" to `err.message || err`) would throw *inside* the
+  // catch block on a bare `throw null`, turning a graceful 200 degradation
+  // into an unhandled rejection. Confirmed this reproduces: temporarily
+  // dropping the `err &&` guard made this same call reject instead of
+  // resolving, before restoring the guarded source.
+  {
+    globalThis.fetch = async () => { throw null; };
+    const { status, data } = await call(configuredEnv(), nextIp());
+    assert.equal(status, 200);
+    assert.equal(data.ok, false);
+    assert.equal(data.error, 'Ticker data unavailable.', 'a null rejection must still degrade gracefully, not crash the catch block\'s own formatter');
+  }
 } finally {
   globalThis.fetch = originalFetch;
 }
