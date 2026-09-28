@@ -90,7 +90,7 @@ function lookupOne_(value, byCode) {
   var colDiscord = header.indexOf('discord');
   var colCode = header.indexOf('code');
   var colStatus = header.indexOf('status');
-  if (colCode === -1 || colStatus === -1) return null;
+  if (colDiscord === -1 || colCode === -1 || colStatus === -1) return null;
 
   var needle = value.toLowerCase();
   for (var i = 1; i < values.length; i++) {

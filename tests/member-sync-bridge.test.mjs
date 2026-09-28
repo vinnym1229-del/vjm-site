@@ -157,6 +157,23 @@ test('a missing Status header fails closed instead of matching with a blank stat
   assert.deepEqual(JSON.parse(res._t), { ok: true, found: false });
 });
 
+test('a missing Discord header fails closed instead of leaking the first row\'s status', () => {
+  // Code/Status are present and guarded; only Discord is missing. Without a
+  // matching guard on colDiscord, lookupOne_ still runs the byCode===false
+  // loop: values[i][-1] is undefined, String(undefined) is the literal text
+  // "undefined", so a discord-type lookup for the value "undefined" matches
+  // the FIRST data row and leaks its real status — a spreadsheet header
+  // rename alone would let /api/check-member-status?discord=undefined return
+  // someone else's real membership state.
+  const brokenSheet = fakeSheet([
+    ['Handle', 'Code', 'Status'], // "discord" header renamed/missing
+    ['pj#0001', 'ACTIVE-CODE', 'Active'],
+  ]);
+  const ctx = load(fakeSpreadsheet(brokenSheet));
+  const res = ctx.doPost(signedRequest({ type: 'discord', value: 'undefined' }));
+  assert.deepEqual(JSON.parse(res._t), { ok: true, found: false });
+});
+
 test('an unconfigured secret fails closed rather than accepting every request', () => {
   const ctx = load(fakeSpreadsheet(MEMBERS), { BRIDGE_SECRET: null });
   const res = ctx.doPost(signedRequest({ type: 'code', value: 'ACTIVE-CODE' }));
