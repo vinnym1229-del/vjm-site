@@ -2340,6 +2340,18 @@ test('ARCHITECTURE.md describes the real session cookie name and payload shape',
   assert.doesNotMatch(doc, /MASTER-AUDIT §14/, 'must not cite a MASTER-AUDIT section that no longer exists');
 });
 
+// Same incident, second doc the original fix missed: docs/API.md's own
+// POST /api/verify-premium reference still named the pre-prefix `vjm_session`
+// cookie with no Path attribute, even after ARCHITECTURE.md was corrected
+// above. API.md is the doc most likely to be read by anyone integrating with
+// or debugging this endpoint, so a bare, wrong cookie name here is the exact
+// failure mode the ARCHITECTURE.md incident comment warns about.
+test('API.md describes the real session cookie name for POST /api/verify-premium', () => {
+  const doc = read('docs/API.md');
+  assert.match(doc, /__Host-vjm_session/, 'must name the actual __Host- prefixed cookie');
+  assert.doesNotMatch(doc, /`vjm_session`\s+cookie/, 'must not describe the un-prefixed cookie name');
+});
+
 // ---------------------------------------------------------------------------
 // Incident: psychology-enhancer.html's free psychology essay (one of only
 // two genuinely free-tier pieces of content on the site) advertises "8 cited

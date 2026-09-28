@@ -9,7 +9,7 @@ All responses are JSON with `Cache-Control: no-store`. Errors use stable shapes:
 
 ## POST /api/verify-premium
 
-Signs in a member. Sets `vjm_session` cookie: `HttpOnly; Secure; SameSite=Lax`.
+Signs in a member. Sets `__Host-vjm_session` cookie: `Path=/; HttpOnly; Secure; SameSite=Lax`.
 
 Request: `{ "code": "ABCD-1234" }`
 - 200 → `{ ok:true, expiresAt:"ISO", discord:"name|null" }` + Set-Cookie
