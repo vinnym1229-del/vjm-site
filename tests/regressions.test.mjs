@@ -1914,6 +1914,49 @@ test('stock-lab.html sectorTabs buttons carry ARIA tab semantics', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the test above pinned #sectorTabs' role="tab"/aria-selected pair
+// but never checked the other half of the WAI-ARIA Tabs pattern -- a tab must
+// name the content region it controls (aria-controls) and that region must
+// be reachable as a tabpanel. #sectorTabs doesn't switch between separate
+// panels per group like every other tab bar this sweep fixed (curriculum.js,
+// index.html, options-lab.html, research-engine.js): all ten groups drive the
+// same #quickSymbols chip row and watchlist table in place, so there is one
+// shared panel, not one per tab -- every rendered button's aria-controls
+// names that single #sectorPanel wrapper, which carries role="tabpanel" and
+// its own accessible name (an aria-labelledby back to whichever tab is
+// currently active would go stale the moment renderTabs() replaces that
+// button, since the whole bar is torn down and rebuilt on every click).
+test('stock-lab.html sectorTabs buttons wire aria-controls to the shared #sectorPanel tabpanel', () => {
+  const html = read('stock-lab.html');
+  assert.match(html, /<div id="sectorPanel" role="tabpanel"[^>]*>/,
+    '#sectorPanel missing or not a role="tabpanel"');
+  assert.match(html, /<div id="sectorPanel"[^>]*aria-label="[^"]+"/,
+    '#sectorPanel must have an accessible name via aria-label');
+
+  const tabIconSrc = extractInlineFunction(html, 'tabIcon');
+  const renderTabsSrc = extractInlineFunction(html, 'renderTabs');
+
+  const out = { innerHTML: '' };
+  const sandbox = {
+    GROUPS: ['Best Rated', 'AI / Semis', 'Speculative'],
+    activeGroup: 'AI / Semis',
+    document: { getElementById: () => out },
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(
+    `const el = (id) => document.getElementById(id);\n${tabIconSrc}\n${renderTabsSrc}\nrenderTabs();`,
+    sandbox
+  );
+
+  const buttons = [...out.innerHTML.matchAll(/<button class="tab( active)?\s*"[^>]*>/g)];
+  assert.equal(buttons.length, 3, 'expected one rendered button per group');
+  for (const btn of buttons) {
+    assert.ok(btn[0].includes('aria-controls="sectorPanel"'),
+      `sectorTabs button missing aria-controls="sectorPanel": ${btn[0]}`);
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Incident: only index.html loaded Google Fonts via preconnect+preload (the
 // non-render-blocking pattern the test above pins). Every other page that
 // used 'Barlow Condensed'/'IBM Plex Sans' -- forex-calendar, options-lab,
