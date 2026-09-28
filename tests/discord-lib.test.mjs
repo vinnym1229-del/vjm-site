@@ -70,7 +70,7 @@ const HOOK = 'https://discord.com/api/webhooks/123/abc';
       { parse: [] },
       'mentions are disabled by default even though the text is already de-fanged',
     );
-    assert.equal(sentBody.username, 'VJM Brief');
+    assert.equal(sentBody.username, 'PJ Trades Brief');
     assert.ok(sentBody.embeds[0].footer.text.includes('Educational only'));
 
     await postEmbed(HOOK, { title: 't', description: 'd' }, true);

@@ -16,7 +16,7 @@ export async function postEmbed(webhookUrl, embed, allowMentions = false) {
     return false;
   }
   const payload = {
-    username: 'VJM Brief',
+    username: 'PJ Trades Brief',
     embeds: [{
       color: 0xdc2626,
       timestamp: new Date().toISOString(),

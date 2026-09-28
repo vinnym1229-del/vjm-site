@@ -274,7 +274,7 @@ async function maybePostToDiscord(env, brief) {
   lines.push('\n*Educational only — not financial advice.*');
 
   const okPost = await postEmbed(hook, {
-    title: `VJM Pre-Market Brief — ${brief.date}`,
+    title: `PJ Trades Pre-Market Brief — ${brief.date}`,
     description: lines.join('\n').slice(0, 3900),
     fields: [
       { name: 'Futures lean (proxy)', value: `${brief.lean ? brief.lean.lean : 'n/a'} · confidence: low`, inline: true },

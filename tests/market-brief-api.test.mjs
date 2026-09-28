@@ -200,9 +200,13 @@ try {
   // AI binding present (narrative generated) and a real-shaped Discord
   // webhook configured: the narrative gets posted and delivery is reported.
   {
-    globalThis.fetch = async (url) => {
+    let sentBody;
+    globalThis.fetch = async (url, opts) => {
       const href = String(url);
-      if (href.startsWith('https://discord.com/api/webhooks/')) return new Response(null, { status: 204 });
+      if (href.startsWith('https://discord.com/api/webhooks/')) {
+        sentBody = JSON.parse(opts.body);
+        return new Response(null, { status: 204 });
+      }
       throw new Error('unexpected fetch target: ' + href);
     };
     const env = {
@@ -217,6 +221,13 @@ try {
     assert.equal(data.brief.narrativeEngine, 'cloudflare-workers-ai');
     assert.equal(data.discordPosted, true);
     assert.equal(data.discordDetail, 'delivered');
+    // This webhook posts to a member-facing announcements channel under the
+    // "PJ Trades" brand this repo runs today -- it once said "VJM" (a
+    // leftover from before the rebrand) in both the bot's display name and
+    // the embed title, so real members saw an unrelated brand name in their
+    // own community's channel every weekday morning.
+    assert.equal(sentBody.username, 'PJ Trades Brief');
+    assert.match(sentBody.embeds[0].title, /^PJ Trades Pre-Market Brief/);
   }
 
   // Every third-party call SUCCEEDING was never exercised above (the earlier
