@@ -45,7 +45,16 @@ function makeDb({ claimedEvents = new Set(), codes = new Map(), notes = new Map(
       return {
         bind(...args) {
           return {
-            async first() { return null; },
+            async first() {
+              if (sql.includes('SELECT 1 FROM whop_codes WHERE whop_member_id')) {
+                const [memberId] = args;
+                for (const row of codes.values()) {
+                  if (row.whop_member_id === memberId) return { 1: 1 };
+                }
+                return null;
+              }
+              return null;
+            },
             async run() {
               // Simulates a transient D1 outage on whichever query a test
               // opts into failing, so the five best-effort `.catch(() => {})`
@@ -537,6 +546,51 @@ try {
     const { status } = await postWebhook(env, grantBody('grant-no-product', 'member-NP', null));
     assert.equal(status, 200);
     assert.match(embedDescription, /Product: `unknown`/);
+  }
+
+  // Whop fires the same grant event on every RENEWAL charge, not just a
+  // member's first purchase. A member with no prior row is a genuine new
+  // customer: the Discord embed and audit note must say so plainly.
+  {
+    const db = makeDb();
+    const env = { ...baseEnv(db), DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    let embed = null;
+    globalThis.fetch = async (url, opts) => {
+      embed = JSON.parse(opts.body).embeds[0];
+      return new Response(null, { status: 204 });
+    };
+    const { status } = await postWebhook(env, grantBody('grant-first-time', 'member-first', 'prod_1'));
+    assert.equal(status, 200);
+    assert.match(embed.title, /New Whop purchase/);
+    assert.doesNotMatch(embed.description, /renewal|spare/i);
+    assert.match(db.notes.get('grant-first-time'), /:new$/,
+      'a first-time member must be audited as :new, not :renewal');
+  }
+
+  // A member who already holds a row (from an earlier grant event) getting a
+  // second grant event is a RENEWAL, not a new sale — the owner's Discord feed
+  // is their only real-time signal of actual new-customer volume, and a
+  // renewal that reads identically to a new purchase makes that signal wrong
+  // on the majority of billing events for an active membership base. The
+  // member's original code still works (verify-premium.js's sibling-row
+  // lookup), so this second code is a spare, not their only way in.
+  {
+    const db = makeDb();
+    const env = { ...baseEnv(db), DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    globalThis.fetch = async () => new Response(null, { status: 204 });
+    await postWebhook(env, grantBody('grant-renewal-1', 'member-renew', 'prod_1'));
+
+    let embed = null;
+    globalThis.fetch = async (url, opts) => {
+      embed = JSON.parse(opts.body).embeds[0];
+      return new Response(null, { status: 204 });
+    };
+    const { status } = await postWebhook(env, grantBody('grant-renewal-2', 'member-renew', 'prod_1'));
+    assert.equal(status, 200);
+    assert.equal(db.codes.size, 2, 'a renewal still mints its own spare code row');
+    assert.match(embed.title, /renewal/i);
+    assert.match(embed.description, /already has a working code/);
+    assert.match(db.notes.get('grant-renewal-2'), /:renewal$/);
   }
 
   // Revoking a member id that holds no code at all — a stale/duplicate

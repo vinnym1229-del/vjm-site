@@ -102,6 +102,22 @@ export async function onRequestPost(context) {
       return json({ ok: true, action: 'ignored', granted: false, reason });
     }
 
+    // Whop fires this same grant event on every RENEWAL charge, not just a
+    // member's first purchase (see WHOP_GRANT_EVENTS in integrations-core.js)
+    // -- for an active membership base, renewals outnumber first purchases.
+    // The renewal sibling-row lookup (session.js's loadLiveEntitlementForMember,
+    // added for verify-premium.js) already means the member's ORIGINAL code
+    // keeps working, so this fresh row/code is a spare, not the member's only
+    // way in. Checked here, before minting anything, purely to tell the owner
+    // which situation the Discord notification below describes -- it does not
+    // change what gets granted.
+    const existingForMember = evt.memberId
+      ? await env.RESEARCH_DB.prepare(
+          'SELECT 1 FROM whop_codes WHERE whop_member_id=?1 LIMIT 1'
+        ).bind(evt.memberId).first()
+      : null;
+    const isRenewal = !!existingForMember;
+
     const bytes = new Uint8Array(8);
     const code = pickValidAccessCode({ getBytes: () => { crypto.getRandomValues(bytes); return bytes; } });
     if (!code) {
@@ -152,14 +168,22 @@ export async function onRequestPost(context) {
     let delivered = false;
     if (hook) {
       delivered = await postEmbed(hook, {
-        title: 'New Whop purchase → access provisioned',
-        description:
-          `Member: \`${evt.memberId || 'unknown'}\`\n` +
-          `Product: \`${evt.productId || 'unknown'}\`\n` +
-          `Code: \`${code}\`\n\n` +
-          `Access is ALREADY live in the database — send this code to the ` +
-          `customer so they can sign in at /premium-guidance. No Google Sheet ` +
-          `edit is required; the sheet is a legacy fallback only.`,
+        title: isRenewal
+          ? 'Whop renewal → spare access code provisioned'
+          : 'New Whop purchase → access provisioned',
+        description: isRenewal
+          ? `Member: \`${evt.memberId || 'unknown'}\`\n` +
+            `Product: \`${evt.productId || 'unknown'}\`\n` +
+            `Code: \`${code}\`\n\n` +
+            `This is a RENEWAL, not a new customer — the member already has a ` +
+            `working code and can keep using it. This new code is a spare; no ` +
+            `need to send it unless they ask for one.`
+          : `Member: \`${evt.memberId || 'unknown'}\`\n` +
+            `Product: \`${evt.productId || 'unknown'}\`\n` +
+            `Code: \`${code}\`\n\n` +
+            `Access is ALREADY live in the database — send this code to the ` +
+            `customer so they can sign in at /premium-guidance. No Google Sheet ` +
+            `edit is required; the sheet is a legacy fallback only.`,
         fields: [{ name: 'Type', value: evt.type }, { name: 'Tier', value: tier }],
       });
     } else {
@@ -180,7 +204,9 @@ export async function onRequestPost(context) {
       "UPDATE webhook_events SET note=?2 WHERE provider='whop' AND event_id=?1"
     ).bind(
       evt.eventId,
-      'grant:' + tier + ':' + (evt.memberId || '?') + (delivered ? ':delivered' : ':undelivered_email_fallback')
+      'grant:' + tier + ':' + (evt.memberId || '?') +
+        (delivered ? ':delivered' : ':undelivered_email_fallback') +
+        (isRenewal ? ':renewal' : ':new')
     ).run().catch(() => {});
     if (!delivered) {
       console.error('whop-webhook: code for ' + evt.eventId + ' undelivered; member must use Google sign-in');
