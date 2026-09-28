@@ -7,6 +7,36 @@ async function body(response) {
   return response.json();
 }
 
+// Rate limit trips before any module logic runs, since the guard exists to
+// cap upstream Alpaca fan-out (module=options/intraday/stock can each issue
+// up to 20 calls per request) and to stop the legacy Bearer-token check from
+// being brute-forced -- not to gate on configuration. module=health proves
+// this cleanly: it's the cheapest branch and never touches fetch, so a call
+// that leaked past the limiter would throw and fail the test loudly.
+{
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('must not call Alpaca while rate-limit gating the request'); };
+  const rateLimitIp = '10.9.9.9';
+  const rateLimitCall = () => onRequestGet({
+    request: new Request('https://example.com/api/research-engine?module=health', {
+      headers: { 'CF-Connecting-IP': rateLimitIp },
+    }),
+    env: {},
+  });
+  try {
+    let last;
+    for (let i = 0; i < 30; i++) last = await rateLimitCall();
+    assert.equal(last.status, 200);
+
+    const limited = await rateLimitCall();
+    assert.equal(limited.status, 429);
+    const limitedData = await body(limited);
+    assert.equal(limitedData.ok, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
 const health = await onRequestGet({
   request: new Request('https://example.com/api/research-engine?module=health'),
   env: {},
