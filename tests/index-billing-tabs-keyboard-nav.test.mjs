@@ -127,9 +127,32 @@ function run(fixture) {
   // chatbot's "Check if my membership is active" link into the status tab)
   // that runs unconditionally at parse time -- location must exist or the
   // script throws before the period-tabs wiring below it ever runs.
-  const sandbox = { document: fixture.document, location: { hash: '' }, console, Array, JSON };
+  //
+  // It now also registers a window.addEventListener('hashchange', ...) right
+  // next to that check (same-document navigations, e.g. a visitor already on
+  // index.html clicking the status link, don't re-run the one-shot check) --
+  // window must exist for the same reason location does, and this stub
+  // records the listener so run()'s caller can fire it like a real event.
+  //
+  // premTab() itself is defined earlier in index.html (the "BUNDLE TABS"
+  // block, above this extraction's start marker) and both the hash checks
+  // and the .prem-tabs keyboard wiring only ever call it, never redefine it
+  // -- a thin recording stub is enough to prove the wiring reaches it with
+  // the right tab name, without dragging in that whole other block (and its
+  // document.addEventListener/fetch calls, which this fixture doesn't stub).
+  const windowListeners = {};
+  const premTabCalls = [];
+  const sandbox = {
+    document: fixture.document,
+    location: { hash: '' },
+    window: { addEventListener: (type, fn) => { (windowListeners[type] ||= []).push(fn); } },
+    premTab: (tab) => { premTabCalls.push(tab); },
+    console, Array, JSON,
+  };
   vm.createContext(sandbox);
   vm.runInContext(extractInlineScript(), sandbox);
+  sandbox.__fireHashChange = () => windowListeners.hashchange?.forEach((fn) => fn());
+  sandbox.__premTabCalls = premTabCalls;
   return sandbox;
 }
 
@@ -163,4 +186,31 @@ test('index.html .period-tabs wires real arrow-key/Home/End keyboard navigation 
   fx.tabsBar.listeners.keydown[0]({ key: 'a', preventDefault() { prevented = true; } });
   assert.equal(fx.document.activeElement, fx.tabs[0], 'an unrelated key must not move focus');
   assert.equal(prevented, false, 'an unrelated key must not be preventDefault-ed');
+});
+
+// Incident: the chatbot's "Check if my membership is active" link
+// (index.html#ptab-status) only actually selected the status tab through a
+// one-shot `if (location.hash === '#ptab-status') premTab('status')` that
+// runs once at parse time. That covers a visitor arriving fresh, but a
+// visitor already sitting on index.html -- e.g. having just clicked the
+// chatbot's "Buy / see pricing" link, which also targets index.html -- gets
+// a same-document fragment navigation when they click the status link next:
+// no reload, so the one-shot check never re-runs, and they land on whatever
+// tab (usually Dashboard's sign-in prompt) was already showing. Fixed by
+// also listening for hashchange.
+test('index.html re-checks #ptab-status on hashchange, for a visitor already on the page', () => {
+  const fx = makeFixture();
+  const sandbox = run(fx);
+
+  sandbox.location.hash = '#ptab-status';
+  sandbox.__fireHashChange();
+  assert.deepEqual(sandbox.__premTabCalls, ['status'],
+    'a hashchange to #ptab-status must call premTab(\'status\')');
+
+  // A hashchange to anything else must not also select the status tab.
+  const fx2 = makeFixture();
+  const sandbox2 = run(fx2);
+  sandbox2.location.hash = '#premium';
+  sandbox2.__fireHashChange();
+  assert.deepEqual(sandbox2.__premTabCalls, [], 'an unrelated hashchange must not call premTab() at all');
 });

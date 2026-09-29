@@ -1939,6 +1939,15 @@ test('chatbot "Check if my membership is active" link deep-links into the status
   const html = read('index.html');
   assert.match(html, /if\s*\(location\.hash\s*===\s*'#ptab-status'\)\s*premTab\('status'\)/,
     'index.html must select the status tab on load when linked via #ptab-status');
+
+  // A visitor already on index.html (e.g. having clicked the "Buy / see
+  // pricing" chatbot link first, which also targets index.html) gets a
+  // same-document fragment navigation when they click the status link next --
+  // no reload, so the one-shot check above never re-runs. Only a hashchange
+  // listener covers that case; see index-billing-tabs-keyboard-nav.test.mjs
+  // for the behavioral proof that it actually flips the tab.
+  assert.match(html, /addEventListener\('hashchange',\s*function\s*\(\)\s*\{\s*if\s*\(location\.hash\s*===\s*'#ptab-status'\)\s*premTab\('status'\)/,
+    'index.html must also re-check #ptab-status on hashchange, for same-document navigations that skip a reload');
 });
 
 // ---------------------------------------------------------------------------

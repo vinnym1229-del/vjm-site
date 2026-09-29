@@ -2475,6 +2475,14 @@ wireTabKeyboardNav(document.querySelector('.gain-mode-tabs'), '.gain-mode-tab', 
 // instead of the bare #premium anchor -- that used to land on the Dashboard
 // tab's sign-in prompt, not the actual status checker.
 if (location.hash === '#ptab-status') premTab('status');
+// A visitor already sitting on this page (e.g. having just clicked the
+// chatbot's "Buy / see pricing" link, which also targets index.html) gets a
+// same-document fragment navigation when they then click the status link --
+// no reload, so the one-shot check above never runs again. hashchange covers
+// that case too.
+window.addEventListener('hashchange', function () {
+  if (location.hash === '#ptab-status') premTab('status');
+});
 
 // ─── INTRO VIDEO FACADE ───
 // Nothing loads until click (protects LCP). Priority: YouTube URL in
