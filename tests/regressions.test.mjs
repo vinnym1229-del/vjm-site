@@ -1410,6 +1410,24 @@ test('every paid curriculum page\'s footer links to Privacy and Terms', () => {
   }
 });
 
+// Incident: the same gap as the curriculum pages above, on a second group of
+// public tool/content pages -- forex-calendar.html and premarket.html had no
+// on-page link to privacy.html, terms.html or risk-disclosure.html anywhere
+// (nav, mobile menu, or footer), and stock-lab.html/research-engine.html/
+// prop-firms.html each linked some of the three but not all. All three run
+// newsletter or lead-capture forms or affiliate links, so a visitor had no
+// way to reach the legal pages short of navigating back to the homepage.
+test('forex-calendar, premarket, stock-lab, research-engine and prop-firms link all three legal pages', () => {
+  for (const page of ['forex-calendar.html', 'premarket.html', 'stock-lab.html', 'research-engine.html', 'prop-firms.html']) {
+    const html = read(page);
+    const footer = /<footer[^>]*>[\s\S]*?<\/footer>/.exec(html);
+    assert.ok(footer, `${page}: no <footer> found`);
+    assert.match(footer[0], /href="privacy\.html"/, `${page}: footer missing the Privacy link`);
+    assert.match(footer[0], /href="terms\.html"/, `${page}: footer missing the Terms link`);
+    assert.match(footer[0], /href="risk-disclosure\.html"/, `${page}: footer missing the Risk Disclosure link`);
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Incident: the same silent-status-change pattern once more, on the
 // homepage's "Am I Active" Discord status checker. checkStatus() rewrites
