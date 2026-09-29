@@ -2765,6 +2765,18 @@ setInterval(tickSessionClock, 30000);
           ' data-vjm-event="plan_cta" data-vjm-plan="' + esc(plan) + '" data-vjm-location="bundles" data-vjm-props=\'' + props + '\'>Join on Whop ⭐</a>' +
           '</div>';
       }).join('');
+      // The cards above carry one flat price each, not the price-futures/
+      // -allmarkets/-ifvg ids setBundlePeriod() looks up — so once this CMS
+      // grid is in, the Monthly/6-Month/Yearly/Lifetime tabs above have
+      // nothing left to write into: clicking one still toggles its own
+      // active/aria-selected state, but every getElementById lookup inside
+      // setBundlePeriod silently misses and the on-screen price never moves.
+      // A control that visibly does nothing is worse than no control, so
+      // hide it. (Plain style.display, not the hidden attribute: .period-tabs
+      // already sets display:flex in site.css, which as an author rule beats
+      // the UA's [hidden] default regardless of selector specificity.)
+      const periodTabs = document.querySelector('.period-tabs');
+      if (periodTabs) periodTabs.style.display = 'none';
     })
     .catch(() => {});
 
