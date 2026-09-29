@@ -2,8 +2,11 @@
 // curriculum section, Futures Dissection, Psychology Enhancer):
 //   - group tabs (Psychology Enhancer only, switches A/B/C/D subsections)
 //   - level tabs (1-4) within each group
-//   - premium gating: Level 1 is always open; Levels 2-4 use the SAME
-//     session-cookie system as stock-lab.html (/api/verify-premium), so
+//   - premium gating: Futures Dissection's Level 1 is the site's one
+//     free-by-design starter unit (see docs/PAYWALL.md) and is always open;
+//     every level on Stock Breakdown, Options Lab, and Psychology Enhancer --
+//     including their own Level 1s -- is gated. All gated levels use the
+//     SAME session-cookie system as stock-lab.html (/api/verify-premium), so
 //     unlocking once on any page carries over here too.
 (() => {
   'use strict';
