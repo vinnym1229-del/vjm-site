@@ -26,6 +26,7 @@ via PR).
 | `CONTENT_DISCORD_DRYRUN` | optional, default `true` — set `false` only when announcements should auto-post |
 | `DISCORD_ANNOUNCEMENTS_WEBHOOK` | optional, pre-market brief auto-post |
 | `DISCORD_WHOP_CODES_WEBHOOK` | optional, delivers fresh Whop purchase codes to the owner channel |
+| `WHOP_API_KEY` / `WHOP_PRODUCT_ID` | optional, enables real Whop rating/review/member counts on the homepage hero badge via `/api/live-stats` (Account API key, `access_pass:basic:read` scope) — omit either and it silently falls back to the site's static numbers, never breaks the page |
 | D1 bindings: `RESEARCH_DB`, `RATELIMIT_DB` | snapshots, rate limits, audit, content, analytics, newsletter (all migrations share these bindings) |
 
 Apply migrations (all of them — later migrations add the content CMS,

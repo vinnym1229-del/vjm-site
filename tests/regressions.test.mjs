@@ -724,6 +724,22 @@ test('docs/API.md documents /api/premium-market-analyst', () => {
     'expected premium-market-analyst.js to still gate on upgrade_required');
 });
 
+// Incident: functions/api/live-stats.js's own header comment documents that
+// WHOP_API_KEY + WHOP_PRODUCT_ID turn on real Whop rating/review/member
+// counts for the homepage hero badge, and that omitting either silently
+// falls back to static numbers -- "never breaks the page" but also never
+// tells anyone it's off. docs/DEPLOYMENT.md is the site's one checklist for
+// every other Cloudflare secret (including every other Whop var), so an
+// owner following it had no way to discover this pair exists at all.
+test('docs/DEPLOYMENT.md documents WHOP_API_KEY/WHOP_PRODUCT_ID for live-stats', () => {
+  const doc = read('docs/DEPLOYMENT.md');
+  assert.match(doc, /WHOP_API_KEY/, 'docs/DEPLOYMENT.md must mention WHOP_API_KEY');
+  assert.match(doc, /WHOP_PRODUCT_ID/, 'docs/DEPLOYMENT.md must mention WHOP_PRODUCT_ID');
+  assert.match(doc, /live-stats/, 'docs/DEPLOYMENT.md must say what WHOP_API_KEY/WHOP_PRODUCT_ID are for');
+  assert.match(read('functions/api/live-stats.js'), /env\.WHOP_API_KEY.*env\.WHOP_PRODUCT_ID/,
+    'expected live-stats.js to still gate on both WHOP_API_KEY and WHOP_PRODUCT_ID');
+});
+
 // Incident: removing the homepage's "Live From PJ's Desk" section (2026-09-08)
 // deleted the site's only consumer of the announcements/trade_reviews CMS
 // content types (loadLatest(), #latest, .ann-card/.review-card), but
