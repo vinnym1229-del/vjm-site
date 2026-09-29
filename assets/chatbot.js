@@ -159,7 +159,7 @@
     const links = [
       ['Sign in to your account', 'premium-guidance.html#signin'],
       ['Buy / see pricing', 'index.html#premium'],
-      ['Check if my membership is active', 'index.html#premium'],
+      ['Check if my membership is active', 'index.html#ptab-status'],
       ['Join the free Discord', 'https://discord.gg/pjtrades'],
       ['Contact support in Discord', 'https://discord.gg/pjtrades'],
     ];

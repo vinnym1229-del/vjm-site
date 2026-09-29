@@ -321,7 +321,7 @@ test('sitemap lists only canonical, indexable URLs and matches every page canoni
 // again without sitemap.xml being updated alongside it, the hash mismatch
 // fails loudly instead of silently drifting for weeks like the original bug.
 const SITEMAP_LASTMOD_PINS = {
-  'index.html': { lastmod: '2026-09-28', sha256: '745495280559f9b323143ebf2dd49c832e9a406276a06f6b71257146857554db' },
+  'index.html': { lastmod: '2026-09-29', sha256: 'd8617e3a033100741bcfe47a149bfa277f3b91f7ff207e27ac934392d1a0459a' },
   'stock-breakdown.html': { lastmod: '2026-09-24', sha256: 'bdfa15d39925acce08a8691b86d1cd252a81aa2d9b8961c6c354a437e9237201' },
   'futures-dissection.html': { lastmod: '2026-09-24', sha256: 'da20a2dab9b4f5905bd8780e14e79326e56f40e400fd961e7cc5e18149e169bd' },
   'psychology-enhancer.html': { lastmod: '2026-09-24', sha256: 'd022a64a9d27209932d1704a9efac5f2d30feabb4046594c2cff750ce5cb258a' },

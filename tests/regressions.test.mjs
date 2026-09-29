@@ -1913,6 +1913,35 @@ test('index.html .prem-tabs, .sim-mode-tabs and .gain-mode-tabs wire aria-contro
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the chatbot's Support/Account lane (assets/chatbot.js's
+// addSupportLinks()) offered two differently-labeled links -- "Buy / see
+// pricing" and "Check if my membership is active" -- that pointed at the
+// byte-identical href index.html#premium, which lands at the top of the
+// pricing section on the Dashboard tab (a sign-in/purchase prompt), not the
+// no-sign-in-required status checker under the "Am I Active?" tab. A visitor
+// who clicked the status link got the wrong tool and had to find it manually.
+// Fixed by pointing that link at index.html#ptab-status (the tab button's own
+// id, so the browser also scrolls to it) and having index.html select that
+// tab on load when the hash matches, mirroring premium-guidance.html#signin's
+// real-anchor pattern instead of the shared #premium section anchor.
+test('chatbot "Check if my membership is active" link deep-links into the status tab, not the bare pricing anchor', () => {
+  const js = read('assets/chatbot.js');
+  const fnStart = js.indexOf('function addSupportLinks');
+  const linksBlock = js.slice(fnStart, fnStart + 600);
+  const pricingHref = /\['Buy \/ see pricing',\s*'([^']+)'\]/.exec(linksBlock);
+  const statusHref = /\['Check if my membership is active',\s*'([^']+)'\]/.exec(linksBlock);
+  assert.ok(pricingHref && statusHref, 'could not find both support links in addSupportLinks()');
+  assert.notEqual(statusHref[1], pricingHref[1],
+    'the status-check link must not reuse the bare pricing link\'s href');
+  assert.equal(statusHref[1], 'index.html#ptab-status',
+    'status-check link must target the "Am I Active?" tab button\'s own id');
+
+  const html = read('index.html');
+  assert.match(html, /if\s*\(location\.hash\s*===\s*'#ptab-status'\)\s*premTab\('status'\)/,
+    'index.html must select the status tab on load when linked via #ptab-status');
+});
+
+// ---------------------------------------------------------------------------
 // Incident: stock-lab.html's premium sector-group switcher (#sectorTabs) is
 // the same tab-widget defect class as index.html's period-tabs and the
 // curriculum level/group tabs above -- a `role="tablist"` container whose

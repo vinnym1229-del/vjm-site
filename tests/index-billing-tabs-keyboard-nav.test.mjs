@@ -123,7 +123,11 @@ function makeFixture() {
 }
 
 function run(fixture) {
-  const sandbox = { document: fixture.document, console, Array, JSON };
+  // The extracted block also carries a location.hash check (deep-linking the
+  // chatbot's "Check if my membership is active" link into the status tab)
+  // that runs unconditionally at parse time -- location must exist or the
+  // script throws before the period-tabs wiring below it ever runs.
+  const sandbox = { document: fixture.document, location: { hash: '' }, console, Array, JSON };
   vm.createContext(sandbox);
   vm.runInContext(extractInlineScript(), sandbox);
   return sandbox;

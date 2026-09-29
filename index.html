@@ -2470,6 +2470,11 @@ wireTabKeyboardNav(document.querySelector('.period-tabs'), '.period-tab', (btn) 
 wireTabKeyboardNav(document.querySelector('.prem-tabs'), '.prem-tab', (btn) => premTab(btn.dataset.tab));
 wireTabKeyboardNav(document.querySelector('.sim-mode-tabs'), '.sim-mode-tab', (btn) => setSimMode(btn.dataset.mode));
 wireTabKeyboardNav(document.querySelector('.gain-mode-tabs'), '.gain-mode-tab', (btn) => setGainMode(btn.dataset.mode));
+// The chatbot's "Check if my membership is active" support link points here
+// (#ptab-status, the tab button's own id, so the browser also scrolls to it)
+// instead of the bare #premium anchor -- that used to land on the Dashboard
+// tab's sign-in prompt, not the actual status checker.
+if (location.hash === '#ptab-status') premTab('status');
 
 // ─── INTRO VIDEO FACADE ───
 // Nothing loads until click (protects LCP). Priority: YouTube URL in
