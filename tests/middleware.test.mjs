@@ -194,10 +194,17 @@ async function unlocked(path, opts) {
 // A response with no content-type header at all (`response.headers.get(...)`
 // returns null, not '') is the one branch c8 showed uncovered on this file:
 // the `|| ''` fallback on the line above. Without it, `null.includes(...)`
-// throws and onRequest() rejects instead of failing closed to passthrough —
-// this fixture is the only one that actually exercises that fallback.
+// throws and onRequest() rejects instead of failing closed to passthrough.
+// `new Response(PAGE_HTML, {status:200})` alone does NOT produce this case —
+// the Fetch spec auto-sets `content-type: text/plain;charset=UTF-8` on any
+// Response constructed from a raw string body, so that fixture silently took
+// the *wrong* branch (the same "not text/html" passthrough the JSON-body
+// case above already covers) and the `|| ''` fallback stayed uncovered
+// despite this test's own comment claiming otherwise. Deleting the header
+// after construction is what actually produces a null `.get('content-type')`.
 {
   const nextResponse = new Response(PAGE_HTML, { status: 200 });
+  nextResponse.headers.delete('content-type');
   const { promise } = run('/futures-dissection', { nextResponse });
   const res = await promise;
   assert.equal(res, nextResponse, 'a response with no content-type header must be passthrough, not treated as strippable HTML');
