@@ -21,6 +21,7 @@ via PR).
 | `WHOP_PRODUCTS_FUTURES` / `WHOP_PRODUCTS_COMPLETE` | entitlement tier mapping — until BOTH are set, every member is granted `complete` (see docs/ENTITLEMENTS.md) |
 | `WHOP_DEFAULT_TIER` | optional, tier granted while the two lists above are empty (default `complete`) |
 | `STRICT_LEGACY_SESSIONS` | optional, force pre-tier sessions to re-authenticate instead of grandfathering as `complete` |
+| `STRICT_D1_ENTITLEMENTS` | optional, default `false`; flip to `true` only after the Sheet bridge is fully backfilled into `whop_codes` — closes the two paths that currently fail OPEN (a Sheet-era session with no D1 row, and a D1 outage) so they DENY instead (see docs/ENTITLEMENTS.md) |
 | `WHOP_WEBHOOK_SECRET` | HMAC verification for the Whop purchase webhook |
 | `CONTENT_BRIDGE_URL` + `CONTENT_BRIDGE_SECRET` | owner content CMS Apps Script bridge (see docs/APPS-SCRIPT-INTEGRATION.md) |
 | `CONTENT_DISCORD_DRYRUN` | optional, default `true` — set `false` only when announcements should auto-post |

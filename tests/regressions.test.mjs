@@ -740,6 +740,27 @@ test('docs/DEPLOYMENT.md documents WHOP_API_KEY/WHOP_PRODUCT_ID for live-stats',
     'expected live-stats.js to still gate on both WHOP_API_KEY and WHOP_PRODUCT_ID');
 });
 
+// Incident: STRICT_D1_ENTITLEMENTS is a real, functioning env var -- it's
+// what sessionEntitlementCheck() (functions/api/_lib/session.js) reads to
+// decide whether a Sheet-era session with no D1 row, or a D1 outage, DENIES
+// instead of the default ALLOW -- but it appeared nowhere an owner would
+// find it: absent from .env.example, docs/DEPLOYMENT.md's secrets table, and
+// docs/ENTITLEMENTS.md's configuration section, even though its sibling
+// STRICT_LEGACY_SESSIONS is documented in all three. verify-premium.js's own
+// "RETIRING THE SHEET" comment names flipping this flag as the step that
+// finally closes both fail-open paths, so an owner who completed the Sheet
+// backfill had no way to discover the flag exists to finish the job.
+test('STRICT_D1_ENTITLEMENTS is documented everywhere its sibling STRICT_LEGACY_SESSIONS is', () => {
+  const envExample = read('.env.example');
+  const deployment = read('docs/DEPLOYMENT.md');
+  const entitlements = read('docs/ENTITLEMENTS.md');
+  for (const [label, doc] of [['.env.example', envExample], ['docs/DEPLOYMENT.md', deployment], ['docs/ENTITLEMENTS.md', entitlements]]) {
+    assert.match(doc, /STRICT_D1_ENTITLEMENTS/, `${label} must mention STRICT_D1_ENTITLEMENTS`);
+  }
+  assert.match(read('functions/api/_lib/session.js'), /env\s*&&\s*env\.STRICT_D1_ENTITLEMENTS/,
+    'expected session.js sessionEntitlementCheck() to still read env.STRICT_D1_ENTITLEMENTS');
+});
+
 // Incident: removing the homepage's "Live From PJ's Desk" section (2026-09-08)
 // deleted the site's only consumer of the announcements/trade_reviews CMS
 // content types (loadLatest(), #latest, .ann-card/.review-card), but

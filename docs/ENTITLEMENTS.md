@@ -49,7 +49,7 @@ a newly gated page cannot silently default to "any session will do".
 
 ## Configuration
 
-See `.env.example` for the copy-paste block. The four variables:
+See `.env.example` for the copy-paste block. The five variables:
 
 | var | effect |
 |---|---|
@@ -57,6 +57,7 @@ See `.env.example` for the copy-paste block. The four variables:
 | `WHOP_PRODUCTS_COMPLETE` | product/plan IDs granting `complete` |
 | `WHOP_DEFAULT_TIER` | tier used only while both lists are empty |
 | `STRICT_LEGACY_SESSIONS` | `true` rejects pre-tier tokens instead of grandfathering |
+| `STRICT_D1_ENTITLEMENTS` | `true` makes a Sheet-era session with no D1 row, or a D1 outage, DENY instead of the default ALLOW (see "Retiring the Sheet bridge" below) |
 
 ### Two deliberate safety valves — read this part
 
@@ -75,6 +76,29 @@ no `t` claim and are treated as `complete` until they expire on their own
 after this ships, so the window closes by itself and nobody is signed out by
 the upgrade. If you would rather close it immediately and have everyone
 re-authenticate once, set `STRICT_LEGACY_SESSIONS=true`.
+
+### Retiring the Sheet bridge
+
+Membership still has a second, older legacy path: codes issued by hand through
+the Google Sheet CMS before the Whop webhook existed. `sessionEntitlementCheck()`
+(`functions/api/_lib/session.js`) fails OPEN on two cases so this bridge can be
+turned on without signing out every paying member the day it shipped: a session
+minted from the Sheet bridge with no matching `whop_codes` row, and a D1 outage
+during the check itself. Both stay open only until you set
+`STRICT_D1_ENTITLEMENTS=true`, at which point both DENY instead — a D1 outage
+will then sign everyone out rather than admit them, so don't flip it until the
+backfill below is done. The steps (also in `verify-premium.js`'s "RETIRING THE
+SHEET" comment):
+
+1. Backfill every Sheet-only member into `whop_codes` (member_ref, status,
+   tier, expires_at) — codes issued before the webhook existed have no
+   recoverable plaintext, so this needs either a re-issued Whop code or an
+   import of `sha256(code)` rows. Nobody but the owner can do this step.
+2. Verify: a sample of Sheet-active members must still sign in successfully
+   with `MEMBERS_STATUS_URL` unset.
+3. Set `STRICT_D1_ENTITLEMENTS=true` in both Production and Preview.
+4. Only then delete the bridge branches in `verify-premium.js`,
+   `check-member-status.js`, and the Apps Script endpoint.
 
 ## Rollout order
 
@@ -98,7 +122,8 @@ re-authenticate once, set `STRICT_LEGACY_SESSIONS=true`.
 - **Cancellation and expiry still have more than one source of truth** (Whop
   writes to D1, code sign-in trusts the Sheet bridge, revokes update D1). The
   expiry check is now enforced on the Google path, but making Whop/D1 the
-  single authority and retiring the Sheet bridge is still outstanding.
+  single authority and retiring the Sheet bridge is still outstanding — see
+  "Retiring the Sheet bridge" above; the last step is `STRICT_D1_ENTITLEMENTS`.
 - **Separate plan-specific checkout URLs.** Both CTAs still point at one
   generic Whop URL, so a buyer cannot actually choose the tier this model now
   distinguishes.

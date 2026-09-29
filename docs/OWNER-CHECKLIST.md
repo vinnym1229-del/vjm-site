@@ -88,6 +88,18 @@ Also decide `STRICT_LEGACY_SESSIONS`: leaving it unset grandfathers sessions
 issued before tiers existed (they expire on their own within 7 days); setting
 it to `true` forces everyone to sign in again once. See `docs/ENTITLEMENTS.md`.
 
+### Related: the old Sheet-code bridge is still a live fail-open path
+
+Separately from the two Whop tier variables above, `STRICT_D1_ENTITLEMENTS`
+(also unset today) controls whether a member who only ever exists in the old
+Google Sheet CMS — never in D1's `whop_codes` table — keeps signing in
+forever, and whether a D1 outage quietly keeps granting paid access instead of
+denying it. Both currently fail OPEN on purpose, so this migration didn't sign
+anyone out the day it shipped. Turning it off requires backfilling every
+Sheet-only member into `whop_codes` first (there is no way to automate this
+from the repo — pre-webhook codes have no recoverable plaintext). Full steps
+in `docs/ENTITLEMENTS.md`'s "Retiring the Sheet bridge" section.
+
 ### Related: the Whop webhook has never fired
 
 The live database has **zero** rows in `webhook_events` and **zero** in
