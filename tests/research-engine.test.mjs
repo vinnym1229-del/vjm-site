@@ -1026,6 +1026,21 @@ assert.equal(
 assert.equal(entryBarSweep.reversal, true, 'the only post-entry move was down');
 assert.ok(entryBarSweep.mfe <= 0.0006, 'MFE must be measured from the entry bar forward only');
 
+// ---------------------------------------------------------------------------
+// A gapped feed can print a sweep bar with real o/h/l but no usable close
+// (the exact bar findSweepIndex matched never checks c). classifySweep's
+// entry must fall back to the swept level itself, not silently score every
+// downstream stat (mfe/mae/continuation/reversal) off an undefined price.
+// ---------------------------------------------------------------------------
+const gappedCloseSweep = classifySweep([
+  bar('2026-08-20T13:30:00Z', 99.9, 100.3, 99.8, null),  // sweep bar, close missing -- entry falls back to level (100)
+  bar('2026-08-20T13:31:00Z', 100.05, 101, 99.9, 100.9),
+], 100, 'high', 'PDH', '2026-08-20');
+assert.equal(gappedCloseSweep.continuation, true, 'the post-entry tape still ran through the continuation threshold');
+assert.equal(gappedCloseSweep.reversal, false);
+assert.equal(gappedCloseSweep.mfe, 101 / 100 - 1, 'mfe must be measured against the level fallback, not an undefined close');
+assert.equal(gappedCloseSweep.mae, 99.9 / 100 - 1, 'mae must be measured against the level fallback, not an undefined close');
+
 const directional = classifyDirectionalOutcome([
   bar('2026-08-20T13:30:00Z', 100, 101, 99.9, 100),      // entry bar, already spiked
   bar('2026-08-20T13:31:00Z', 100, 100.02, 99.6, 99.7),
