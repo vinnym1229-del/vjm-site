@@ -761,6 +761,25 @@ test('STRICT_D1_ENTITLEMENTS is documented everywhere its sibling STRICT_LEGACY_
     'expected session.js sessionEntitlementCheck() to still read env.STRICT_D1_ENTITLEMENTS');
 });
 
+// Incident: forex-calendar.html's own "API note" tells the owner directly --
+// "If you ever get a paid or private calendar feed, add it as
+// FOREX_CALENDAR_SOURCE_URL in Cloudflare and the Worker will use it without
+// rebuilding" -- and functions/api/forex-calendar.js really does read that
+// var (fixed 2026-09-06 to make the promise true). But the var itself
+// appeared nowhere an owner configuring Cloudflare would look: absent from
+// docs/DEPLOYMENT.md's secrets checklist and docs/API.md's endpoint
+// reference, even though every other feature-toggling env var (WHOP_API_KEY,
+// STRICT_D1_ENTITLEMENTS, etc.) is listed in both. The only place the exact
+// variable name was spelled out was the live production page itself.
+test('docs/DEPLOYMENT.md and docs/API.md document FOREX_CALENDAR_SOURCE_URL', () => {
+  assert.match(read('docs/DEPLOYMENT.md'), /FOREX_CALENDAR_SOURCE_URL/,
+    'docs/DEPLOYMENT.md must mention FOREX_CALENDAR_SOURCE_URL');
+  assert.match(read('docs/API.md'), /FOREX_CALENDAR_SOURCE_URL/,
+    'docs/API.md must mention FOREX_CALENDAR_SOURCE_URL in the forex-calendar section');
+  assert.match(read('functions/api/forex-calendar.js'), /env\.FOREX_CALENDAR_SOURCE_URL/,
+    'expected forex-calendar.js to still read env.FOREX_CALENDAR_SOURCE_URL');
+});
+
 // Incident: removing the homepage's "Live From PJ's Desk" section (2026-09-08)
 // deleted the site's only consumer of the announcements/trade_reviews CMS
 // content types (loadLatest(), #latest, .ann-card/.review-card), but

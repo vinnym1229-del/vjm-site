@@ -76,6 +76,8 @@ ForexFactory weekly calendar (public feed), USD high/medium events, ≤120 rows.
 `medium` is orange-folder-only. Any other value 400s.
 `{ ok, events:[{title,currency,date(ISO),impact,forecast,previous,actual}], source, notice }`
 Actual values appear only after release. 502 explicit-unavailable on failure.
+Feed URL overridable via `FOREX_CALENDAR_SOURCE_URL` (see docs/DEPLOYMENT.md) — omit it
+and the default public feed above is used.
 
 ## GET /api/market-brief
 
