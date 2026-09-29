@@ -105,6 +105,18 @@ function load(spreadsheet, props = {}) {
   return { ctx, store, logs, spreadsheet };
 }
 
+/** Signs a request the same way member-sync's sibling test does (identical scheme). */
+function sign(secret, timestamp, nonce, payload) {
+  const raw = createHmac('sha256', secret).update(`${timestamp}\n${nonce}\n${payload}`).digest();
+  return [...raw].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function signedRequest(query, { secret, timestamp = Date.now(), nonce = randomUUID() } = {}) {
+  const payload = JSON.stringify(query);
+  const mac = sign(secret, timestamp, nonce, payload);
+  return { postData: { contents: JSON.stringify({ timestamp, nonce, payload, mac }) } };
+}
+
 test('setUp creates every tab the bridge reads, with the right headers', () => {
   const ss = fakeSpreadsheet();
   const { ctx } = load(ss);
@@ -231,6 +243,36 @@ test('an unsigned POST is still rejected, setUp or no setUp', () => {
     timestamp: Date.now(), nonce: 'n', payload: '{"action":"all"}', mac: 'deadbeef',
   }) } });
   assert.equal(JSON.parse(res._t).error, 'unauthorized');
+});
+
+test('a correctly-signed POST returns real content for every tab and drops id-less rows', () => {
+  // The success path doPost's authenticated branch takes every hour: verifyMac_
+  // passing, then readRows_ over all nine tabs. Every other test here either
+  // rejects an unsigned/malformed request or calls readRows_/healthCheck
+  // directly — none of them prove the authenticated response is actually
+  // shaped correctly, so a regression in either verifyMac_'s success branch or
+  // readRows_'s header-matching/hasId filter would ship with this whole file
+  // green.
+  const announcements = fakeSheet('Announcements', [
+    ['id', 'title', 'body', 'link', 'pinned', 'created_at'],
+    ['a1', 'Welcome', 'Site launched', '', 'true', '2026-01-01'],
+    ['', 'No id, must be dropped', 'body', '', '', ''],
+  ]);
+  const ss = fakeSpreadsheet({ Announcements: announcements });
+  const { ctx, store } = load(ss);
+  ctx.setUp(); // creates the other eight tabs, seeds Schedule, generates the secret
+
+  const res = ctx.doPost(signedRequest({ action: 'all' }, { secret: store.CONTENT_BRIDGE_SECRET }));
+  const body = JSON.parse(res._t);
+
+  assert.equal(body.ok, true);
+  assert.deepEqual(body.content.announcements, [
+    { id: 'a1', title: 'Welcome', body: 'Site launched', link: '', pinned: 'true', created_at: '2026-01-01' },
+  ], 'the id-less row must be dropped, and the real row must come back with every field');
+  assert.equal(body.content.schedule.length, 16, 'the setUp-seeded schedule must come back through doPost too');
+  for (const key of ['trade_reviews', 'prop_firms', 'team', 'faqs', 'bundles', 'stats', 'results']) {
+    assert.deepEqual(body.content[key], [], `${key} should be an empty array, not missing`);
+  }
 });
 
 test('a CSV import named after the file is adopted, not duplicated', () => {
