@@ -379,6 +379,24 @@ function fullSnapshot(price) {
   assert.equal(parseCitation('Body.\nSOURCE: Why it matters', lesson).text, 'Body.');
 }
 
+// Real lessons share short headings ("Why it matters", "Watch for") across
+// every course. A truncated/hallucinated SOURCE claim must not match one of
+// these as a substring of the real heading -- that would let the model
+// fabricate a short citation and still pass the fail-closed gate. Padding
+// the OTHER way (the model citing the real heading plus extra words) is
+// still accepted.
+{
+  const lesson = {
+    sections: [
+      { id: 's1', heading: 'Why it matters', text: 't1' },
+      { id: 's2', heading: 'Watch for', text: 't2' },
+    ],
+  };
+  assert.equal(parseCitation('Body.\nSOURCE: matters', lesson).section, null);
+  assert.equal(parseCitation('Body.\nSOURCE: for', lesson).section, null);
+  assert.equal(parseCitation('Body.\nSOURCE: Why it matters most here', lesson).section.id, 's1');
+}
+
 // ── GET catalogue ──────────────────────────────────────────────────────────
 
 // The catalogue is members-only too.

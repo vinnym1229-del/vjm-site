@@ -622,9 +622,15 @@ export function parseCitation(answer, lesson) {
     if (!m) continue;
     const claimed = m[1].replace(/^[["']|["'\].]+$/g, '').trim().toLowerCase();
     // Only a heading that really exists in THIS lesson counts as a citation.
+    // `claimed.includes(h)` tolerates the model padding a real heading with
+    // extra words; the reverse (`h.includes(claimed)`) does not run, because
+    // several lessons share short headings ("Why it matters", "Watch for")
+    // and a truncated/hallucinated claim like "SOURCE: matters" would then
+    // match the real heading as a substring -- exactly the false "grounded"
+    // citation this fail-closed gate exists to prevent.
     section = lesson.sections.find((s) => {
       const h = s.heading.toLowerCase();
-      return h === claimed || claimed.includes(h) || h.includes(claimed);
+      return h === claimed || claimed.includes(h);
     }) || null;
     cutAt = i;
     break;
