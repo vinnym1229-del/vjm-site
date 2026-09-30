@@ -31,6 +31,26 @@ Session check from cookie only.
 
 Clears the session cookie. Always 200 `{ok:true}`.
 
+## POST /api/auth-google
+
+"Sign in with Google" — a convenience layer on top of the access-code system
+above, not a replacement (`premium-guidance.html`'s Google button; the code
+box still works if it's never configured). Matches the Google account's
+verified email against `whop_codes` and, on a live match, sets the same
+`__Host-vjm_session` cookie `/api/verify-premium` does.
+
+Request: `{ "credential": "<Google ID token>" }`
+- 200 → `{ ok:true, expiresAt:"ISO", discord:"name|null", plan:"name|null" }` + Set-Cookie
+- 400 → missing or oversized (>4096 char) credential
+- 401 → the Google token failed verification (bad signature/audience/issuer/
+  expiry against `GOOGLE_CLIENT_ID`) or the account's email isn't verified
+- 404 → no `whop_codes` row's email matches this account at all
+- 403 → a matching row exists but every one is expired or revoked — kept
+  distinct from 404 for the same reason verify-premium's 403 is
+- 429 → rate limited (10/min/IP)
+- 503 → `GOOGLE_CLIENT_ID`, `SESSION_SIGNING_SECRET`, or `RESEARCH_DB` not configured
+- 502 → unexpected failure
+
 ## GET /api/check-member-status?discord=<handle>
 
 Public membership probe.

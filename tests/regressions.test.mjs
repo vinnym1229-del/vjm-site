@@ -724,6 +724,24 @@ test('docs/API.md documents /api/premium-market-analyst', () => {
     'expected premium-market-analyst.js to still gate on upgrade_required');
 });
 
+// Incident: docs/API.md documents /api/verify-premium and /api/logout-premium
+// (the code-based sign-in/out pair) but never mentioned /api/auth-google at
+// all -- a fully shipped, tested "Sign in with Google" endpoint
+// premium-guidance.html's handleGoogleCredential() calls, which mints the
+// same __Host-vjm_session cookie via the same signSession/tier machinery --
+// the same "documented every sibling but this one" gap the market-brief,
+// premium-market-analyst, and assistant fixes above each closed once already.
+test('docs/API.md documents /api/auth-google', () => {
+  const doc = read('docs/API.md');
+  assert.match(doc, /## POST \/api\/auth-google/, 'docs/API.md must have an auth-google POST heading');
+  const section = doc.slice(doc.indexOf('## POST /api/auth-google'), doc.indexOf('## GET /api/check-member-status'));
+  assert.match(section, /credential/, 'docs/API.md: auth-google section omits its {credential} request shape');
+  assert.match(section, /404/, 'docs/API.md: auth-google section omits its 404 no-match response');
+  assert.match(section, /403/, 'docs/API.md: auth-google section omits its distinct 403 expired/revoked response');
+  assert.match(read('functions/api/auth-google.js'), /GOOGLE_CLIENT_ID/,
+    'expected auth-google.js to still verify against GOOGLE_CLIENT_ID');
+});
+
 // Incident: docs/API.md documents every market-data endpoint but never
 // mentioned /api/assistant at all -- 686 lines, fully shipped, tested, and
 // member-facing (the course-companion chatbot's entire backend, with its own
