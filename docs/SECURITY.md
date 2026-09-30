@@ -24,7 +24,7 @@ Threat model in one line: anonymous visitors, premium members with codes, and th
 
 - **CSP `'unsafe-inline'` for scripts/styles**: current pages ship large inline `<script>`/`<style>`. Removing these across a 2.7 MB monolith is a structural project (Phase 2 modularization). No wildcard sources are used; TradingView origins are pinned.
 - **Legacy full-map bridge**: until the owner deploys the new Apps Script and switches env vars, `MEMBERS_STATUS_URL` remains supported server-side only. Browsers can never reach it directly, but the upstream URL itself still dumps the map to anyone who knows it → **deploy the new bridge promptly**.
-- **Session revocation list**: cookies are stateless signed tokens (7d). Revocation-on-demand requires a D1 denylist checked in `getSession()` — designed, not yet wired (see ARCHITECTURE).
+- **Session revocation**: **Done** — cookies are stateless signed tokens (7d default, 30d max), but every gated request re-checks the member's D1 row via `sessionEntitlementCheck()` in `getSession()`; a Whop cancellation bumps `whop_codes.session_epoch`, which invalidates outstanding cookies immediately instead of waiting out natural expiry (see ARCHITECTURE). Two fail-open exceptions remain by design — a Sheet-era session with no D1 row, and a D1 outage — closed by setting `STRICT_D1_ENTITLEMENTS=true` once the Sheet bridge is retired (see ENTITLEMENTS.md).
 - **Rotation checklist (owner)**:
   1. Set a fresh `SESSION_SIGNING_SECRET` (never reused elsewhere).
   2. Rotate any credential ever equal to `VINNY_ADMIN_01`.

@@ -1690,6 +1690,30 @@ test('docs/SECURITY.md does not claim Turnstile is unbuilt or gated on a site ke
 });
 
 // ---------------------------------------------------------------------------
+// Incident: docs/SECURITY.md's "Known debt / staged work" section carried a
+// bullet claiming session revocation "requires a D1 denylist checked in
+// getSession() -- designed, not yet wired". That shipped: sessionEntitlement
+// Check() in functions/api/_lib/session.js is called from getSession() on
+// every gated request and denies the moment whop_codes.session_epoch is
+// bumped past the cookie's own sv claim -- the doc's own header comment
+// calls this "the fix for the core leak". docs/ARCHITECTURE.md, which this
+// bullet points readers to for detail, was already corrected for the same
+// fact and now says "epoch-based session revocation (live -- see ...)", so
+// SECURITY.md's own cross-reference led to a doc contradicting it. A reader
+// trusting SECURITY.md would wrongly conclude a canceled member's cookie
+// stays valid until natural expiry (up to 30 days) instead of being revoked
+// in real time.
+test('docs/SECURITY.md does not claim session revocation is undesigned/unwired', () => {
+  const doc = read('docs/SECURITY.md');
+  assert.doesNotMatch(doc, /designed, not yet wired/i,
+    'docs/SECURITY.md: session revocation has shipped (sessionEntitlementCheck in getSession()); must not describe it as undesigned/unwired');
+  assert.match(doc, /session_epoch/,
+    'docs/SECURITY.md: revocation bullet should name the real mechanism (whop_codes.session_epoch)');
+  assert.match(doc, /STRICT_D1_ENTITLEMENTS/,
+    'docs/SECURITY.md: revocation bullet should name the flag that closes its two fail-open exceptions');
+});
+
+// ---------------------------------------------------------------------------
 // Incident: manifest.json's description was never touched when index.html's
 // session-cadence copy was standardized to "every weekday -- 15 team sessions
 // a week" (meta description, JSON-LD, hero trust badge, Futures Only tier
