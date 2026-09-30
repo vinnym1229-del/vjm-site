@@ -114,3 +114,75 @@ test('marketSession: every non-crypto session carries a distinct CSS class and a
   }
   assert.equal(codes.size, 5, 'the five sampled instants must land in five distinct session codes');
 });
+
+// Incident: tick() polled /api/ticker every 15s via setInterval with no
+// document.hidden check anywhere in the file (unlike assets/funnel.js, the
+// one other file on the site that reacts to tab visibility) -- so a visitor
+// who opened the homepage and switched away kept the fetch firing into a
+// backgrounded tab forever, burning Cloudflare Function invocations and the
+// shared Alpaca IEX call budget for a tape nobody could see. This drives the
+// real IIFE (the whole file, unmodified) in a vm sandbox with a controllable
+// document.hidden and a counting fetch stub, proving the guard actually
+// gates the network call rather than just asserting the source text.
+function runTicker() {
+  const fetchCalls = [];
+  let hidden = false;
+  let intervalFn = null;
+  const listeners = {};
+  const sandbox = {
+    console,
+    fetch: async (url, opts) => {
+      fetchCalls.push({ url, opts });
+      // ok:false short-circuits before build()/update() touch the DOM, so
+      // the wrap/window stubs below never need more than this.
+      return { json: async () => ({ ok: false }) };
+    },
+    setInterval: (fn) => { intervalFn = fn; return 1; },
+    document: {
+      getElementById: () => ({}),
+      addEventListener: (type, fn) => { (listeners[type] = listeners[type] || []).push(fn); },
+      get hidden() { return hidden; },
+    },
+    window: { matchMedia: () => ({ matches: false }) },
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(src, sandbox);
+  return {
+    fetchCalls,
+    setHidden: (v) => { hidden = v; },
+    nextInterval: () => intervalFn(),
+    fireVisibilityChange: async () => { for (const fn of listeners.visibilitychange || []) await fn(); },
+  };
+}
+
+test('live ticker: the initial load fetches even though the tab starts visible', async () => {
+  const t = runTicker();
+  await Promise.resolve();
+  assert.equal(t.fetchCalls.length, 1, 'tick() should fetch once on load');
+});
+
+test('live ticker: a scheduled tick is skipped while the tab is hidden', async () => {
+  const t = runTicker();
+  await Promise.resolve();
+  t.setHidden(true);
+  await t.nextInterval();
+  assert.equal(t.fetchCalls.length, 1, 'no new fetch should fire while document.hidden is true');
+});
+
+test('live ticker: a scheduled tick still fires normally while the tab is visible', async () => {
+  const t = runTicker();
+  await Promise.resolve();
+  await t.nextInterval();
+  assert.equal(t.fetchCalls.length, 2, 'the timer should keep polling as before while the tab is visible');
+});
+
+test('live ticker: returning to a hidden tab triggers an immediate catch-up fetch', async () => {
+  const t = runTicker();
+  await Promise.resolve();
+  t.setHidden(true);
+  await t.nextInterval();
+  assert.equal(t.fetchCalls.length, 1, 'sanity check: still paused while hidden');
+  t.setHidden(false);
+  await t.fireVisibilityChange();
+  assert.equal(t.fetchCalls.length, 2, 'becoming visible again should fetch fresh data right away, not wait up to 15s');
+});

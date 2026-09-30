@@ -271,7 +271,13 @@ body.light-mode #ticker-wrap .lt-sess.sess-247{color:#6b6b70;background:rgba(0,0
     }
   }
 
+  // A background tab gets nothing from a live tape nobody is looking at, so
+  // skip the round trip while hidden and catch up the moment the tab is
+  // shown again -- same "don't poll into the void" reasoning assets/funnel.js
+  // already applies to its own visibilitychange handling, just for a poll
+  // instead of a flush.
   async function tick() {
+    if (document.hidden) return;
     let data;
     try {
       const res = await fetch('/api/ticker', { cache: 'no-store' });
@@ -283,4 +289,5 @@ body.light-mode #ticker-wrap .lt-sess.sess-247{color:#6b6b70;background:rgba(0,0
 
   tick();
   setInterval(tick, 15000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
 })();
