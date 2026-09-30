@@ -21,8 +21,10 @@ In the Pages project, add these encrypted production and preview secrets:
 | --- | --- | --- |
 | `ALPACA_API_KEY` | Yes | Alpaca API key ID; server-side only |
 | `ALPACA_SECRET_KEY` | Yes | Alpaca secret; server-side only |
-| `PREMIUM_ACCESS_CODES` | Yes | HMAC signing secret already used by the premium session; use a long random value |
-| `MEMBERS_STATUS_URL` | Yes | Existing member-status bridge used by the premium gate |
+| `SESSION_SIGNING_SECRET` | Yes | session HMAC key (≥32 chars) — REQUIRED or sign-in fails closed |
+| `PREMIUM_ACCESS_CODES` | Yes | legacy member codes (bridge still validates against sheet); never used as signing key material |
+| `MEMBERS_BRIDGE_URL` + `MEMBERS_BRIDGE_SECRET` | Yes | new Apps Script bridge used by the premium gate (preferred) |
+| `MEMBERS_STATUS_URL` | Legacy | old bridge — DELETE after the new bridge above is verified |
 | `RESEARCH_CRON_SECRET` | Recommended | Long random value required by the scheduled refresh workflow |
 | `RESEARCH_DB` | Recommended | D1 binding that preserves current and historical research snapshots |
 

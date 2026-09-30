@@ -2575,3 +2575,29 @@ test('every inline <svg> is aria-hidden, directly or via its nearest wrapping el
   }
   assert.deepEqual(missing, [], `inline <svg> not hidden from assistive tech:\n  ${missing.join('\n  ')}`);
 });
+
+// Incident: docs/research-engine-setup.md's Cloudflare env-var table still
+// described the pre-fix signing model -- it called PREMIUM_ACCESS_CODES "the
+// HMAC signing secret already used by the premium session" and never
+// mentioned SESSION_SIGNING_SECRET at all. functions/api/_lib/session.js's
+// own header comment and resolveSigningSecret() say the opposite: signing
+// uses SESSION_SIGNING_SECRET exclusively, and PREMIUM_ACCESS_CODES is only
+// ever honored as key material via the explicit LEGACY_ALLOW_CODES_AS_KEY
+// migration flag -- the exact "codes reused as HMAC key" hole
+// docs/MASTER-AUDIT.md logs as P0-2. docs/DEPLOYMENT.md already reflects the
+// fixed model; this was the one setup doc that didn't. An owner following it
+// as written would either never set SESSION_SIGNING_SECRET (sign-in fails
+// closed) or set LEGACY_ALLOW_CODES_AS_KEY=true to work around that,
+// reopening the fixed vulnerability. It also called MEMBERS_STATUS_URL the
+// current bridge with no hint it's the legacy one DEPLOYMENT.md says to
+// delete, and never mentioned its replacement, MEMBERS_BRIDGE_URL /
+// MEMBERS_BRIDGE_SECRET.
+test('research-engine-setup.md documents the real signing secret, not the retired codes-as-key model', () => {
+  const doc = read('docs/research-engine-setup.md');
+  assert.match(doc, /SESSION_SIGNING_SECRET/,
+    'must document the actual signing secret env var');
+  assert.doesNotMatch(doc, /PREMIUM_ACCESS_CODES.{0,60}HMAC signing secret/s,
+    'must not describe PREMIUM_ACCESS_CODES as the HMAC signing secret -- that was the fixed P0-2 hole');
+  assert.match(doc, /MEMBERS_BRIDGE_URL/,
+    'must document the new members bridge, not just the legacy MEMBERS_STATUS_URL');
+});
