@@ -545,6 +545,55 @@ console.log('# VJM backtest-core (Edge Lab) library tests passed.');
   assert.equal(result.stats.medianRMultiple, 0);
 }
 
+// ─── runEventStudy: `nonOverlapping` must actually deduplicate overlapping
+// event windows, not just accept the flag and ignore it. This is the one
+// config-driven branch in the whole file that had never been exercised
+// (`config.nonOverlapping` is read at lines 418/422/438, but no test -- and
+// no caller anywhere in the repo yet, since Edge Lab isn't wired to a route
+// -- ever set it). It matters because every statistic this engine reports
+// (win rate, its Wilson interval, R-multiples) assumes each event is an
+// independent trade; if the same underlying price swing gets counted as 5
+// overlapping "trades" because a trigger re-fires every bar while the first
+// trade is still open, the sample size and every rate built on it are
+// inflated, which is exactly the kind of overstated backtest this module's
+// TIMING_CONVENTION/hypothetical-results framing exists to prevent.
+{
+  // A tape that gaps up (relative to the prior close) on every bar past
+  // warmup, so gap_up with pct:0 fires on every single eligible index --
+  // the worst case for overlap.
+  const bars = [];
+  let px = 100;
+  for (let i = 0; i < 40; i++) {
+    const o = px, c = o + 0.5;
+    bars.push(bar('d' + i, o, Math.max(o, c) + 0.5, Math.min(o, c) - 0.5, c));
+    px = c;
+  }
+  const holdDays = 3;
+  const opts = { triggerType: 'gap_up', triggerParams: { pct: 0 }, holdDays, direction: 'long' };
+
+  const overlapping = runEventStudy(bars, { ...opts, nonOverlapping: false });
+  const deduped = runEventStudy(bars, { ...opts, nonOverlapping: true });
+
+  assert.ok(
+    overlapping.events.length > deduped.events.length,
+    'every bar re-triggering must produce far more raw events than the deduped run'
+  );
+
+  // No two accepted events may have overlapping [entry, exit] windows: the
+  // next signal index must be at or after the previous one's exit (signal
+  // index + 1 + holdDays), i.e. consecutive signal indices differ by at
+  // least holdDays + 1.
+  const idxOf = (d) => bars.findIndex((b) => b.t === d.signalDate);
+  for (let k = 1; k < deduped.events.length; k++) {
+    const gap = idxOf(deduped.events[k]) - idxOf(deduped.events[k - 1]);
+    assert.ok(
+      gap >= holdDays + 1,
+      `deduped events at indices ${idxOf(deduped.events[k - 1])} and ${idxOf(deduped.events[k])} overlap (gap ${gap}, need >= ${holdDays + 1})`
+    );
+  }
+  assert.ok(deduped.events.length >= 5, 'the dense trigger tape must still yield several non-overlapping events, not just one');
+}
+
 // ─── monteCarloPaths: the ruin counter (equity <= 25, i.e. down 75% from
 // the starting 100) must actually increment, not just always read 0. A
 // certain-loss configuration (winProb: 0) makes every path ruin within a
