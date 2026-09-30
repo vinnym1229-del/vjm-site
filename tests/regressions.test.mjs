@@ -724,6 +724,24 @@ test('docs/API.md documents /api/premium-market-analyst', () => {
     'expected premium-market-analyst.js to still gate on upgrade_required');
 });
 
+// Incident: docs/API.md documents every market-data endpoint but never
+// mentioned /api/assistant at all -- 686 lines, fully shipped, tested, and
+// member-facing (the course-companion chatbot's entire backend, with its own
+// lesson catalogue, tier-based entitlement checks, and rate limits) -- the
+// same "documented every sibling but this one" gap the market-brief and
+// premium-market-analyst fixes above closed for two other endpoint families.
+test('docs/API.md documents /api/assistant', () => {
+  const doc = read('docs/API.md');
+  assert.match(doc, /## GET \/api\/assistant/, 'docs/API.md must have an assistant GET heading');
+  assert.match(doc, /## POST \/api\/assistant/, 'docs/API.md must have an assistant POST heading');
+  const section = doc.slice(doc.indexOf('## GET /api/assistant'), doc.indexOf('## Data classification vocabulary'));
+  assert.match(section, /lessonId/, 'docs/API.md: assistant section omits the lesson-companion mode');
+  assert.match(section, /403/, 'docs/API.md: assistant section omits its 403 wrong-tier response');
+  assert.match(section, /409/, 'docs/API.md: assistant section omits its 409 stale-lessonVersion response');
+  assert.match(read('functions/api/assistant.js'), /lessonVersion/,
+    'expected assistant.js to still gate the lesson companion on lessonVersion');
+});
+
 // Incident: functions/api/live-stats.js's own header comment documents that
 // WHOP_API_KEY + WHOP_PRODUCT_ID turn on real Whop rating/review/member
 // counts for the homepage hero badge, and that omitting either silently

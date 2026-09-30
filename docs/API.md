@@ -103,6 +103,32 @@ compare against `RESEARCH_CRON_SECRET`, same pattern as research-engine's cron a
 Premium-gated research (cookie session or `X-Research-Cron`). See
 docs/research-engine-setup.md for module parameters. Health exposes booleans only.
 
+## GET /api/assistant
+
+Members-only lesson catalogue for the course-companion chatbot
+(`functions/api/assistant.js`). 401 if signed out. 200
+`{ ok:true, lessons:[{id,version,title,course,level,resource,sections:[{id,heading}]}],
+coverage:{wired,note} }` — `lessons` is filtered to what the caller's tier is entitled
+to via `authorizeResource`, and `coverage.note` says out loud that the catalogue is a
+subset of the full curriculum, not the whole thing. 429 rate limited (30/min).
+
+## POST /api/assistant
+
+Two modes on one endpoint, chosen by whether `lessonId` is present:
+- `{ question }` — ungated market Q&A grounded on live Alpaca snapshots/movers via
+  Workers AI. 200 `{ ok:true, mode:"grounded"|"data-only"|"data-unavailable", narrative,
+  disclaimer }`; never narrates a number it doesn't actually have — falls back to
+  `data-only` (raw data, no AI text) or `data-unavailable` instead of guessing.
+- `{ question, lessonId, lessonVersion }` — session-gated course companion. Answers only
+  from the server-owned lesson text for `lessonId`, never from text the browser sends.
+  401 no session; 403 wrong tier (`{required}`, same tier table that gates the course
+  pages); 404 unknown lesson; 409 stale `lessonVersion` (page must reload and re-fetch
+  the catalogue); 200 `{ ok:true, mode:"lesson"|"lesson-unsupported", narrative,
+  citation:{sectionId,heading} }` — refuses with `lesson-unsupported` rather than answer
+  if the model's reply can't be tied back to a real cited section of that lesson.
+
+429 rate limited (8/min). 502 on generation failure.
+
 ## Data classification vocabulary
 
 Every data-bearing response carries `mode`/`precision`/`asOf` from:
