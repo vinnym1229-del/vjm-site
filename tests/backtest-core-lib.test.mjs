@@ -234,6 +234,32 @@ console.log('# VJM backtest-core (Edge Lab) library tests passed.');
   assert.notEqual(withTarget.result, 'target', 'a target reachable only on the signal bar must never be filled');
 }
 
+// ─── simulateEvent drops a corrupt entry bar instead of dividing by it ─────
+// A real bar feed can return a zero/negative open for an illiquid symbol, a
+// corporate-action gap, or a zero-filled placeholder during a provider
+// outage. Without this guard, entry=0 would flow straight into retPct's
+// division and silently corrupt every downstream aggregate (mean, median,
+// win rate) for the whole study instead of cleanly dropping the one event.
+{
+  const zeroOpen = [
+    bar('d0', 100, 101, 99, 100),
+    bar('d1', 0, 1, 0, 0.5),   // corrupt entry bar: zero open
+    bar('d2', 1, 2, 0.5, 1.5),
+    bar('d3', 1.5, 2, 1, 1.8),
+  ];
+  const zeroRes = simulateEvent(zeroOpen, 0, { holdDays: 3, direction: 'long', stopR: 0, targetR: 0, atrValue: 0 });
+  assert.equal(zeroRes.status, 'dropped_bad_entry', 'a zero entry open must be dropped, never divided by');
+
+  const negOpen = [
+    bar('d0', 100, 101, 99, 100),
+    bar('d1', -5, 1, -5, 0.5),  // corrupt entry bar: negative open
+    bar('d2', 1, 2, 0.5, 1.5),
+    bar('d3', 1.5, 2, 1, 1.8),
+  ];
+  const negRes = simulateEvent(negOpen, 0, { holdDays: 3, direction: 'long', stopR: 0, targetR: 0, atrValue: 0 });
+  assert.equal(negRes.status, 'dropped_bad_entry', 'a negative entry open must be dropped too');
+}
+
 // A trigger may only read bars up to and including the signal bar. gap_up at
 // index i compares i's open with i-1's close and touches nothing later.
 {
