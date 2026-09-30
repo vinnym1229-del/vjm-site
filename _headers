@@ -92,6 +92,14 @@
 /assets/testimonials.webp
   Cache-Control: public, max-age=604800, immutable
 
+# assets/icon.svg (283 bytes, manifest.json's sole PWA icon) is the same
+# "committed once, no ?v= bump mechanism" case as the five assets above --
+# a replacement is a new commit, not a silent overwrite. Without its own
+# rule it fell through to the blanket 5-minute /assets/* default and every
+# PWA-icon fetch was needlessly revalidated.
+/assets/icon.svg
+  Cache-Control: public, max-age=604800, immutable
+
 # ── PERMANENT noindex — survives lifting the switch above ──
 # Member/app tools, the research engine, premium guidance, API and video
 # routes, and the /pj/* static preview copies must never be indexed at any

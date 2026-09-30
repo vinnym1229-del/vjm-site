@@ -1201,12 +1201,13 @@ test('the committed-once brand/hero images get the same long-cache treatment as 
   // assets/pj-banner.jpg (index.html's hero/LCP image and every page's
   // og:image/twitter:image), assets/ferrari-reference-light.webp/-dark.webp
   // (index.html's own comment calls these a "committed-once... owner-approved
-  // reference" image), and assets/testimonials.webp are referenced with no
-  // ?v= cache-busting anywhere in the repo and are swapped only by a
-  // deliberate replacement commit, the same rationale the vendor/models/
-  // intro-video rules above already rely on. Without their own rule they
-  // fall through to the blanket 5-minute /assets/* default -- pj-logo.jpg
-  // gets needlessly revalidated on essentially every page view site-wide.
+  // reference" image), assets/testimonials.webp, and assets/icon.svg
+  // (manifest.json's sole PWA icon) are referenced with no ?v= cache-busting
+  // anywhere in the repo and are swapped only by a deliberate replacement
+  // commit, the same rationale the vendor/models/intro-video rules above
+  // already rely on. Without their own rule they fall through to the
+  // blanket 5-minute /assets/* default -- pj-logo.jpg gets needlessly
+  // revalidated on essentially every page view site-wide.
   const headers = read('_headers');
   const blanket = /\/assets\/\*\n\s*Cache-Control: public, max-age=(\d+)/.exec(headers);
   assert.ok(blanket, '_headers must still set a blanket /assets/* Cache-Control');
@@ -1218,6 +1219,7 @@ test('the committed-once brand/hero images get the same long-cache treatment as 
     '/assets/ferrari-reference-light.webp',
     '/assets/ferrari-reference-dark.webp',
     '/assets/testimonials.webp',
+    '/assets/icon.svg',
   ]) {
     const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const rule = new RegExp(`${escaped}\\n\\s*Cache-Control: public, max-age=(\\d+), immutable`).exec(headers);
