@@ -184,6 +184,19 @@ for (const page of ['index.html', 'stock-lab.html', 'options-lab.html', 'premark
   }
 }
 
+// privacy.html, terms.html, and risk-disclosure.html share an inline style
+// block that predates the site's WCAG 2.4.7/1.4.11 :focus-visible convention
+// (assets/site.css and every other page-local <style> block restate a gold
+// outline for keyboard focus). These three never got it, so a keyboard user
+// tabbing through their nav links, theme toggle, and body/footer links saw
+// only the browser default outline. Pinned per page so a future edit can't
+// silently drop the rule from one file while keeping it in the others.
+for (const page of ['privacy.html', 'terms.html', 'risk-disclosure.html']) {
+  const source = readFileSync(resolve(root, page), 'utf8');
+  assert.match(source, /a:focus-visible,button:focus-visible\{outline:2px solid var\(--gold\);outline-offset:3px;border-radius:4px\}/,
+    `${page}: missing the sitewide :focus-visible ring on its nav/button/body links`);
+}
+
 // CNAME is a GitHub Pages convention. This site deploys via Cloudflare
 // Pages, which takes its custom domains from the dashboard and ignores
 // this file entirely -- so the stale `not-financial-advice.com` in it was
