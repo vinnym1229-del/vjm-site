@@ -257,6 +257,20 @@ const profile = marketProfileLevels([
 assert.ok(profile.val <= profile.poc && profile.poc <= profile.vah, 'POC must remain inside the calculated value area');
 assert.ok(profile.coverage >= .70, 'value area must include at least 70% of observed volume');
 
+// A real Alpaca bar set can carry valid OHLC with v:0 on every row (a thin or
+// gapped session with price prints but no recorded trade volume). Every bar
+// is then skipped by the `v<=0` guard, leaving every volume bin at 0, so
+// `total` is 0 too. Without the `total<=0` guard this still produces a POC
+// at the session low (Math.max of an all-zero array is 0, so indexOf picks
+// bin 0) with coverage NaN -- a fabricated "Prior POC/VAH/VAL" level shown to
+// paying members for a session that had no real volume data behind it.
+const noVolumeProfile = marketProfileLevels([
+  bar('2026-08-25T13:30:00Z', 100, 101, 99, 100, 0),
+  bar('2026-08-25T13:31:00Z', 100, 102, 100, 101, 0),
+  bar('2026-08-25T13:32:00Z', 101, 103, 101, 102, 0),
+]);
+assert.equal(noVolumeProfile, null, 'a session with price bars but zero volume on every bar must not synthesize a POC/VAH/VAL from empty bins');
+
 // swingLiquidityLevels feeds the "Overnight BSL/SSL" sweep conditions and the
 // Latest Levels panel; a pivot needs `pivot` bars strictly lower/higher on
 // BOTH sides, so a would-be extreme within `pivot` bars of either array edge
