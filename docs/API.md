@@ -99,6 +99,18 @@ Actual values appear only after release. 502 explicit-unavailable on failure.
 Feed URL overridable via `FOREX_CALENDAR_SOURCE_URL` (see docs/DEPLOYMENT.md) — omit it
 and the default public feed above is used.
 
+## GET /api/ticker
+
+Live tape data behind the homepage ticker (`assets/live-ticker.js`, polled every 10s).
+No params. Equities/ETFs (QQQ, SPY, DIA, IWM, GLD, USO, AAPL, TSLA, NVDA, MSFT) and BTC
+come from Alpaca's IEX/crypto feeds — real-time, unlike the anonymous TradingView embed's
+delayed "D"-badge data. 200 `{ ok:true, items:[{symbol,label,price,changePct,asOf,tv,asset}],
+asOf, feed:"iex" }` on success; 200 `{ ok:false, pending:true, error }` when Alpaca isn't
+configured (a normal "not wired up" state, not an error — the front-end falls back to the
+TradingView tape); 200 `{ ok:false, error }` on upstream failure. 429 rate limited (60/min).
+`Cache-Control: public, max-age=10, s-maxage=10` (shared edge cache absorbs polling across
+visitors).
+
 ## GET /api/market-brief
 
 Today's Pre-Market Brief (cached), the feed behind premarket.html. 200

@@ -742,6 +742,23 @@ test('docs/API.md documents /api/auth-google', () => {
     'expected auth-google.js to still verify against GOOGLE_CLIENT_ID');
 });
 
+// Incident: docs/API.md documents every market-data endpoint (stock-research,
+// yahoo-news, forex-calendar, market-brief) but never mentioned /api/ticker
+// at all, despite it being the live feed behind the homepage ticker --
+// polled every 10s by assets/live-ticker.js, with its own deliberate
+// pending:true unconfigured-Alpaca state and a 10s shared edge cache -- the
+// same "documented every sibling but this one" gap the market-brief,
+// premium-market-analyst, and auth-google fixes above each closed once already.
+test('docs/API.md documents /api/ticker', () => {
+  const doc = read('docs/API.md');
+  assert.match(doc, /## GET \/api\/ticker/, 'docs/API.md must have a ticker GET heading');
+  const section = doc.slice(doc.indexOf('## GET /api/ticker'), doc.indexOf('## GET /api/market-brief'));
+  assert.match(section, /pending:true/, 'docs/API.md: ticker section omits its deliberate pending state');
+  assert.match(section, /60\/min/, 'docs/API.md: ticker section omits its 60/min rate limit');
+  assert.match(read('functions/api/ticker.js'), /pending: true/,
+    'expected ticker.js to still respond with a pending state when Alpaca is unconfigured');
+});
+
 // Incident: docs/API.md documents every market-data endpoint but never
 // mentioned /api/assistant at all -- 686 lines, fully shipped, tested, and
 // member-facing (the course-companion chatbot's entire backend, with its own
