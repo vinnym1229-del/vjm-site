@@ -403,6 +403,23 @@ test("psychology essay's 2017 Barber et al. citations don't cite pages its own b
   assert.doesNotMatch(worksCited, /pp?\.\s*\d/, 'this Works Cited entry has no pagination -- if that ever changes, the in-text citations above should cite the real pages instead of none');
 });
 
+// Incident: psychology-enhancer.html's Expert-level tax lesson #7
+// ("Asset-class mapping") bills itself as "the index so nothing gets
+// skipped" and points readers to each product's own Expert-level tax
+// lesson by course-page name. Its stock row named "Stock Lab" --
+// stock-lab.html, the free stock-research/charting tool page, which has
+// no lesson-card markup and no Expert tier at all -- instead of
+// "Stock Breakdown", the actual curriculum page whose Expert lesson #10
+// ("Tax and Legal Structure for Active Stock Traders...") is exactly the
+// wash-sale/475(f) content this row describes. A member following the
+// index for required stock tax material was sent to a tool page with
+// nothing on it.
+test('psychology essay\'s tax-lesson index points "Stock" to the real curriculum page', () => {
+  const psych = read('psychology-enhancer.html');
+  assert.doesNotMatch(psych, /Stock Lab — Expert/, 'tax-lesson index mis-names the stock curriculum page as the stock tool page');
+  assert.match(psych, /Stock Breakdown — Expert/, 'tax-lesson index must point to stock-breakdown.html\'s Expert lesson, not stock-lab.html');
+});
+
 // Incident: the Works Cited list carried two entries (Fenton-O'Creevy et al.
 // and a Securities and Exchange Commission staff report) that were never
 // actually cited anywhere in the essay body -- MLA's "Works Cited" only
