@@ -62,6 +62,18 @@ test('the real host indexes public pages and still excludes the private ones', (
   assert.equal(isAlwaysNoindex('/STOCK-LAB.HTML'), true, 'the path check is case-insensitive');
 });
 
+test('isAlwaysNoindex fails closed instead of throwing on a missing or non-string path', () => {
+  // isIndexable() only ever passes a real URL's pathname, so this branch is
+  // otherwise never exercised -- but isAlwaysNoindex is exported, and the
+  // file's whole design thesis is failing closed, not failing loud. Garbage
+  // in must come back `false` (never indexed), never a thrown error that
+  // could take the request handler down with it.
+  for (const bad of [undefined, null, '', 0, false]) {
+    assert.doesNotThrow(() => isAlwaysNoindex(bad));
+    assert.equal(isAlwaysNoindex(bad), false, `${String(bad)} must not match an always-noindex prefix`);
+  }
+});
+
 test('the env kill switch puts the whole site back behind a hold', () => {
   const r = req(`https://${CANONICAL_HOST}/`, CANONICAL_HOST);
   assert.equal(isIndexable(r, {}), true, 'unset means the host decides');
