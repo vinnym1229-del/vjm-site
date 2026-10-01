@@ -255,6 +255,17 @@ import {
   assert.equal(sanitizeContentRow('bundles', { id: 'b1', name: '' }), null, 'bundles requires a name');
   const bundle = sanitizeContentRow('bundles', { id: 'b2', name: 'Futures Core', features: 'Live sessions | Discord | Replays' });
   assert.deepEqual(bundle.features, ['Live sessions', 'Discord', 'Replays']);
+  assert.equal(bundle.highlight, false, 'highlight defaults to false when the sheet leaves it blank');
+
+  // bundles' `highlight` truthy branch: index.html's CMS-driven pricing grid
+  // (`b.highlight ? ' hot' : ''`) is the only thing that marks a tier card as
+  // the featured plan, and nothing anywhere in the suite had ever set this
+  // field to a truthy sheet value -- `sanitizeContentRow`'s own
+  // true/yes/1-only regex was fully unexercised on its match side.
+  const featuredBundle = sanitizeContentRow('bundles', { id: 'b3', name: 'Complete', highlight: 'yes' });
+  assert.equal(featuredBundle.highlight, true, 'a "yes" sheet value must coerce to highlight:true');
+  const explicitlyOffBundle = sanitizeContentRow('bundles', { id: 'b4', name: 'Complete', highlight: 'no' });
+  assert.equal(explicitlyOffBundle.highlight, false, 'an explicit "no" must not coerce to true');
   assert.equal(sanitizeContentRow('stats', { id: 'st1', key: '' }), null, 'stats requires a key');
   assert.equal(sanitizeContentRow('results', { id: 'r2', image_url: '' }), null, 'results requires an image_url');
 
