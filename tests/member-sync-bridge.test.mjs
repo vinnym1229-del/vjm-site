@@ -102,6 +102,21 @@ test('a correctly-signed lookup by discord handle returns the matching row', () 
   assert.deepEqual(JSON.parse(res._t), { ok: true, found: true, discord: 'renewedmember', status: 'Renewed' });
 });
 
+test('a renamed or missing "Members" tab still resolves via the first-sheet fallback', () => {
+  // lookupOne_'s `ss.getSheetByName('Members') || ss.getSheets()[0]` exists so
+  // an owner renaming/reorganizing the tab (a spreadsheet edit, not a code
+  // change) doesn't silently break every lookup. Every other test's
+  // fakeSpreadsheet resolves 'Members' directly, so the fallback itself has
+  // never been exercised — if a future cleanup ever "simplified" it down to
+  // just getSheetByName('Members'), sheet would be undefined here and
+  // sheet.getDataRange() would throw, locking every member out behind a
+  // generic 500 with nothing in CI to catch it.
+  const renamedTabSpreadsheet = { getSheetByName: () => null, getSheets: () => [MEMBERS] };
+  const ctx = load(renamedTabSpreadsheet);
+  const res = ctx.doPost(signedRequest({ type: 'code', value: 'ACTIVE-CODE' }));
+  assert.deepEqual(JSON.parse(res._t), { ok: true, found: true, discord: 'pj#0001', status: 'Active' });
+});
+
 test('an unknown code returns found:false, not a throw', () => {
   const ctx = load(fakeSpreadsheet(MEMBERS));
   const res = ctx.doPost(signedRequest({ type: 'code', value: 'NOPE' }));
