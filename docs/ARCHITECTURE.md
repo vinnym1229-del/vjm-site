@@ -8,8 +8,9 @@ refreshes research snapshots. Apps Script bridges owner's Google Sheet to a
 server-to-server lookup API.
 
 Decision: **no framework migration in this pass.** Evidence: the monolith
-problem is concentrated in one file (index.html ~2.4 MB); auth/data integrity
-were the burning risks, not tooling. A Vite/Astro split is designed (below)
+problem is concentrated in one file (index.html, by far the largest of the 16
+static pages at ~220 KB); auth/data integrity were the burning risks, not
+tooling. A Vite/Astro split is designed (below)
 but gated on the homepage rebuild phase so it lands with new structure instead
 of churning working pages twice.
 

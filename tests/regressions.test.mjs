@@ -2550,6 +2550,26 @@ test('ARCHITECTURE.md describes the real session cookie name and payload shape',
   assert.doesNotMatch(doc, /MASTER-AUDIT §14/, 'must not cite a MASTER-AUDIT section that no longer exists');
 });
 
+// Incident: ARCHITECTURE.md's "no framework migration" decision cited
+// index.html's size as its evidence -- "index.html ~2.4 MB" -- but the real
+// file has only ever been in the low hundreds of KB (220 KB as of this fix,
+// confirmed against both the working tree and the commit that introduced
+// this doc). The 2.4 MB figure was wrong from that very first commit, not a
+// later drift: an 11x overstatement of the one number the doc uses to
+// justify a real architectural decision, which could mislead a future
+// maintainer or the owner into thinking the monolith problem is far worse
+// than it is. Reworded to drop the precise-but-wrong number for a
+// qualitative claim ("largest of the 16 static pages") that can't go stale
+// the same way.
+test('ARCHITECTURE.md does not overstate index.html size as the monolith-migration evidence', () => {
+  const doc = read('docs/ARCHITECTURE.md');
+  assert.doesNotMatch(doc, /index\.html\s*~?\s*2\.4\s*MB/i,
+    'must not repeat the wrong ~2.4 MB index.html size claim');
+  const actualBytes = readFileSync(join(ROOT, 'index.html')).length;
+  assert.ok(actualBytes < 500 * 1024,
+    `index.html is ${actualBytes} bytes -- if it ever actually approaches the old 2.4 MB claim, revisit this doc for real`);
+});
+
 // Same incident, second doc the original fix missed: docs/API.md's own
 // POST /api/verify-premium reference still named the pre-prefix `vjm_session`
 // cookie with no Path attribute, even after ARCHITECTURE.md was corrected
