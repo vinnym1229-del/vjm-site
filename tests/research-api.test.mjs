@@ -779,4 +779,30 @@ function makeResearchDb() {
   }
 }
 
+// cleanSymbol()'s guard -- `if (!symbol || symbol.length > 12) throw
+// statusError('Invalid symbol.', 400)` -- had zero coverage despite gating
+// every data module (options/intraday/stock) before a single Alpaca call.
+// The regex strips anything outside [A-Z0-9.-] first, so a `symbol` made
+// entirely of punctuation or whitespace (a real shape for a fat-fingered or
+// scripted query string) survives stripping as an empty string. Without this
+// guard that empty string flows straight into fetchSpot()'s
+// `/v2/stocks/${encodeURIComponent(symbol)}/snapshot` as a blank path
+// segment, burning an upstream Alpaca call for a confusing non-2xx response
+// instead of failing fast with a clear 400 -- the same fail-loud-before-
+// spending-upstream-calls shape as the fetchSpot spot-price guard above.
+{
+  const cronEnv = { ALPACA_API_KEY: 'test-key', ALPACA_SECRET_KEY: 'test-secret', RESEARCH_CRON_SECRET: 'cron-test-secret' };
+  const cronHeaders = { 'X-Research-Cron': 'cron-test-secret' };
+  const noCallFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('must not call Alpaca once symbol validation fails'); };
+  try {
+    const { status, data } = await callEngine(cronEnv, 'module=options&symbol=%21%21%21', cronHeaders);
+    assert.equal(status, 400, 'a symbol that strips to empty must fail fast, not reach Alpaca with a blank path segment');
+    assert.equal(data.ok, false);
+    assert.equal(data.error, 'Invalid symbol.');
+  } finally {
+    globalThis.fetch = noCallFetch;
+  }
+}
+
 console.log('VJM research API route tests passed.');
