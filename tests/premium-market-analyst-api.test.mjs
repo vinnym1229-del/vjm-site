@@ -54,6 +54,22 @@ function makeDeclineBars(riseN, fallN, start = 100) {
   });
 }
 
+// Builds `totalRaw` raw bars (enough to pass the raw bars.length<60 history
+// guard) but only `validN` of them carry a finite positive close -- the rest
+// get c:0, which computeMetrics()'s `Number.isFinite(c) && c>0` filter drops
+// before counting `n`. Lets a fixture pass the raw-count guard while still
+// landing short of the 50-bar sma50 window on the *filtered* count.
+function makeBarsWithInvalidCloses(totalRaw, validN, start = 100) {
+  const bars = [];
+  const base = new Date('2024-01-02T00:00:00Z');
+  for (let i = 0; i < totalRaw; i++) {
+    const d = new Date(base);
+    d.setUTCDate(d.getUTCDate() + i);
+    bars.push({ t: d.toISOString(), c: i < validN ? start + i : 0 });
+  }
+  return bars;
+}
+
 let ipCounter = 0;
 async function analyze(env, years, headers = {}) {
   ipCounter += 1;
@@ -199,6 +215,22 @@ try {
     assert.equal(data.metrics.aboveSma200, null);
     assert.equal(typeof data.metrics.sma50, 'number');
     assert.equal(data.metrics.aboveSma50, data.metrics.lastClose > data.metrics.sma50);
+  }
+
+  // 60 raw bars clears the raw bars.length<60 history guard, but only 40 of
+  // them carry a real close (the rest are 0, e.g. a halted or illiquid day) --
+  // the *filtered* count computeMetrics() actually uses is 40, under the
+  // 50-bar sma50 window. sma50 and aboveSma50 must both come back null, not
+  // `lastClose > null` coercing to `lastClose > 0` and reporting true. This
+  // is the same guard the 90-bars case above pins for sma200/aboveSma200,
+  // but that fixture's closes are all valid so it never drove sma50 itself
+  // null -- aboveSma50's own `: null` arm had zero coverage.
+  {
+    globalThis.fetch = async () => Response.json({ bars: { QQQ: makeBarsWithInvalidCloses(60, 40) } });
+    const { status, data } = await analyze(baseEnv(), 1, await sessionCookieHeader());
+    assert.equal(status, 200);
+    assert.equal(data.metrics.sma50, null);
+    assert.equal(data.metrics.aboveSma50, null);
   }
 
   // No Workers AI binding: still 200 with the deterministic metrics, but the
