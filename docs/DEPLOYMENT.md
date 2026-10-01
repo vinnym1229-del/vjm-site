@@ -12,6 +12,7 @@ via PR).
 | Variable | Purpose |
 |---|---|
 | `SESSION_SIGNING_SECRET` | session HMAC key (≥32 chars) — REQUIRED or sign-in fails closed |
+| `GOOGLE_CLIENT_ID` | OAuth Web Client ID for the "Sign in with Google" convenience path — public value, not a secret (same one `premium-guidance.html` already hardcodes client-side). Required or `/api/auth-google` 503s for every request while the button still renders unconditionally (see docs/OWNER-CHECKLIST.md) |
 | `PREMIUM_ACCESS_CODES` | legacy member codes (bridge still validates against sheet) |
 | `ALPACA_API_KEY` / `ALPACA_SECRET_KEY` | quotes + research |
 | `MEMBERS_BRIDGE_URL` + `MEMBERS_BRIDGE_SECRET` | new Apps Script bridge (preferred) |

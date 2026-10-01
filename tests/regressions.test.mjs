@@ -816,6 +816,25 @@ test('docs/DEPLOYMENT.md and docs/API.md document FOREX_CALENDAR_SOURCE_URL', ()
     'expected forex-calendar.js to still read env.FOREX_CALENDAR_SOURCE_URL');
 });
 
+// Incident: GOOGLE_CLIENT_ID is marked required by auth-google.js's own
+// header comment ("required -- OAuth Web Client ID ... public value, not a
+// secret") and docs/OWNER-CHECKLIST.md flags it as the site's #1 outstanding
+// action item -- omit it and POST /api/auth-google 503s for every request
+// while premium-guidance.html's "Sign in with Google" button still renders
+// unconditionally. Despite that, it appeared in neither .env.example nor
+// docs/DEPLOYMENT.md's secrets table, the same doc-discoverability gap
+// already closed for WHOP_API_KEY/WHOP_PRODUCT_ID, STRICT_D1_ENTITLEMENTS,
+// and FOREX_CALENDAR_SOURCE_URL -- this was the one instance those sweeps
+// missed, and the only required (not optional-fallback) var among them.
+test('.env.example and docs/DEPLOYMENT.md document GOOGLE_CLIENT_ID', () => {
+  assert.match(read('.env.example'), /GOOGLE_CLIENT_ID/,
+    '.env.example must mention GOOGLE_CLIENT_ID');
+  assert.match(read('docs/DEPLOYMENT.md'), /GOOGLE_CLIENT_ID/,
+    'docs/DEPLOYMENT.md must mention GOOGLE_CLIENT_ID');
+  assert.match(read('functions/api/auth-google.js'), /env\.GOOGLE_CLIENT_ID/,
+    'expected auth-google.js to still read env.GOOGLE_CLIENT_ID');
+});
+
 // Incident: removing the homepage's "Live From PJ's Desk" section (2026-09-08)
 // deleted the site's only consumer of the announcements/trade_reviews CMS
 // content types (loadLatest(), #latest, .ann-card/.review-card), but
