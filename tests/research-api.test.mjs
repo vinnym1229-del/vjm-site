@@ -743,4 +743,40 @@ function makeResearchDb() {
   }
 }
 
+// fetchSpot()'s `spot === undefined` guard: every one of its seven candidate
+// fields (latestTrade.p, latest_trade.price, minuteBar.c, minute_bar.close,
+// dailyBar.c, daily_bar.close, prevDailyBar.c) coming back missing or
+// non-finite is a real Alpaca response shape for a halted or delisted
+// symbol's snapshot -- the endpoint still answers 200 with an (empty or
+// partial) snapshot object, it just has no trade to report. Nothing had ever
+// driven this branch, and unlike the adjacent sibling guards this one is not
+// cosmetic: optionsModule uses spot unguarded immediately afterward in
+// `strikeLow = Math.max(1, spot * .90)` and the GEX dollar-value formula
+// (`gamma*oi*100*spot*spot...`). Had the check instead been the more common
+// `if (!spot)` shape, it would still work here since undefined is falsy, but
+// would also wrongly reject a legitimate (if degenerate) $0 strike floor --
+// the precise `=== undefined` form is deliberate and this is the only test
+// that would notice it regressing to `!spot`. Confirms the module fails loud
+// with a 422 naming the symbol before spending the two further Alpaca calls
+// (contracts, option chain) that a NaN strike range would otherwise burn.
+{
+  const cronEnv = { ALPACA_API_KEY: 'test-key', ALPACA_SECRET_KEY: 'test-secret', RESEARCH_CRON_SECRET: 'cron-test-secret' };
+  const cronHeaders = { 'X-Research-Cron': 'cron-test-secret' };
+  const noSpotFetch = globalThis.fetch;
+  const calledPaths = [];
+  globalThis.fetch = async (input) => {
+    calledPaths.push(new URL(String(input)).pathname);
+    return Response.json({});
+  };
+  try {
+    const { status, data } = await callEngine(cronEnv, 'module=options&symbol=QQQ', cronHeaders);
+    assert.equal(status, 422, 'a snapshot with no usable price field must fail loud, not flow a NaN spot into the GEX math');
+    assert.equal(data.ok, false);
+    assert.equal(data.error, 'No current QQQ spot price was returned.');
+    assert.deepEqual(calledPaths, ['/v2/stocks/QQQ/snapshot'], 'the contracts and option-chain calls must never fire once spot resolution fails');
+  } finally {
+    globalThis.fetch = noSpotFetch;
+  }
+}
+
 console.log('VJM research API route tests passed.');
