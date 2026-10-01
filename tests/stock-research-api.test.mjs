@@ -182,6 +182,24 @@ try {
     assert.equal(data.ok, false);
   }
 
+  // latestTrade present but no dailyBar AND no prevDailyBar: a real Alpaca
+  // shape for a thinly-traded/newly-listed symbol that has a trade tick but
+  // no daily bar yet. `bar` is null here, so volume (which only ever reads
+  // `bar.v`) must stay null instead of throwing on a null dereference and
+  // dragging a priced quote down into the generic 502 this file's own catch
+  // would otherwise turn it into.
+  {
+    globalThis.fetch = async () => Response.json({
+      AAPL: { latestTrade: { p: 150.5 } },
+    });
+    const { status, data } = await lookup(baseEnv(), 'AAPL');
+    assert.equal(status, 200, 'a priced quote must not fail just because there is no bar at all');
+    assert.equal(data.quote.price, 150.5, 'price still comes from latestTrade.p');
+    assert.equal(data.quote.volume, null, 'no bar means no volume figure to report');
+    assert.equal(data.quote.vwap, null);
+    assert.equal(data.quote.prevClose, null);
+  }
+
   // No prevDailyBar: change/changePercent must stay null (nothing to diff
   // against) instead of computing against a missing baseline.
   {
