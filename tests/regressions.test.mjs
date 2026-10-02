@@ -2694,3 +2694,39 @@ test('research-engine-setup.md documents the real signing secret, not the retire
   assert.match(doc, /MEMBERS_BRIDGE_URL/,
     'must document the new members bridge, not just the legacy MEMBERS_STATUS_URL');
 });
+
+// Incident: docs/API.md documents every other page-critical public route
+// (verify-premium, auth-google, stock-research, market-brief, assistant...)
+// but never mentioned /api/content, /api/analytics, or /api/live-stats at
+// all -- despite /api/content feeding every CMS-driven page section
+// (announcements, trade reviews, prop firms, team, faqs, bundles),
+// /api/analytics being, per its own header comment, "the site's only public
+// write endpoint", and /api/live-stats feeding the homepage hero badge and
+// mobile sticky CTA's member counts. The same "documented every sibling but
+// this one" gap the market-brief, premium-market-analyst, and auth-google
+// fixes above each closed once already, just for three different endpoints.
+test('docs/API.md documents /api/content, /api/analytics, and /api/live-stats', () => {
+  const doc = read('docs/API.md');
+
+  assert.match(doc, /## GET \/api\/content/, 'docs/API.md must have a content GET heading');
+  const contentSection = doc.slice(doc.indexOf('## GET /api/content'), doc.indexOf('## POST /api/analytics'));
+  assert.match(contentSection, /ticker/, 'docs/API.md: content section omits the trade_reviews ticker filter');
+  assert.match(contentSection, /503/, 'docs/API.md: content section omits its unconfigured-D1 503');
+  assert.match(read('functions/api/content.js'), /cleanSymbol\([^)]*ticker/,
+    'expected content.js to still support a ticker filter on trade_reviews');
+
+  assert.match(doc, /## POST \/api\/analytics/, 'docs/API.md must have an analytics POST heading');
+  const analyticsSection = doc.slice(doc.indexOf('## POST /api/analytics'), doc.indexOf('## GET /api/live-stats'));
+  assert.match(analyticsSection, /only public write endpoint/,
+    'docs/API.md: analytics section omits that this is the site\'s only public write endpoint');
+  assert.match(analyticsSection, /allowlist/, 'docs/API.md: analytics section omits the event-name allowlist');
+  assert.match(read('functions/api/analytics.js'), /ALLOWED_EVENTS/,
+    'expected analytics.js to still gate event names on an allowlist');
+
+  assert.match(doc, /## GET \/api\/live-stats/, 'docs/API.md must have a live-stats GET heading');
+  const statsSection = doc.slice(doc.indexOf('## GET /api/live-stats'), doc.indexOf('## Data classification vocabulary'));
+  assert.match(statsSection, /WHOP_API_KEY/, 'docs/API.md: live-stats section omits its optional Whop config');
+  assert.match(statsSection, /falls back/, 'docs/API.md: live-stats section omits the static-numbers fallback');
+  assert.match(read('functions/api/live-stats.js'), /WHOP_API_KEY/,
+    'expected live-stats.js to still read WHOP_API_KEY for the Whop half');
+});

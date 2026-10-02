@@ -161,6 +161,45 @@ Two modes on one endpoint, chosen by whether `lessonId` is present:
 
 429 rate limited (8/min). 502 on generation failure.
 
+## GET /api/content?type=announcements|trade_reviews|prop_firms|schedule|team|faqs|bundles|stats|results
+
+Public read over owner-managed site content synced from the owner's Google Sheet
+(see `functions/api/content-sync.js`, the cron-only bridge that populates this table —
+not itself a public route). `trade_reviews` additionally accepts `&ticker=TSLA` to
+filter. `{ ok:true, type, count, items, note, fetchedAt }`. `announcements` sorts
+pinned items first; `team`/`faqs`/`results` sort by each item's own `order` field.
+400 on an unknown `type` (lists `supported`). 503 if D1 binding `RESEARCH_DB` isn't
+configured. 429 rate limited (120/min). `Cache-Control: public, max-age=60`.
+
+## POST /api/analytics
+
+First-party funnel telemetry (`assets/funnel.js`) — the site's only public write endpoint,
+built in-house instead of a third-party vendor tag so visitor data never
+leaves this account. Records no IP, user agent, or member-identifying data; `visit`
+is a random per-tab id, not stable across tabs/sessions/devices.
+
+Request: `{ visit:"<per-tab id>", events:[{name, path, props}] }`, up to 25 events
+per batch. `name` must be one of a fixed allowlist of funnel stages (e.g.
+`free_course_start`, `plan_cta`, `quiz_complete`) — anything else is silently
+dropped, not stored. `props` keeps only small primitive values, ≤12 keys, ≤512 JSON
+chars total once encoded.
+- 200 → `{ ok:true, stored:<n> }` — `stored:0` is normal when every event in the
+  batch was dropped as unrecognized, not an error
+- 400 → invalid JSON, no events, or batch over 25
+- 429 → rate limited (120/min)
+- 503 → D1 binding `RESEARCH_DB` not configured
+- 502 → storage write failed
+
+## GET /api/live-stats
+
+Auto-updating headline numbers (Discord member/online count, Whop member/review
+count) behind the homepage hero badge and mobile sticky CTA, replacing hand-typed
+figures. Discord side needs no config (public invite endpoint for `pjtrades`); Whop
+side needs `WHOP_API_KEY` + `WHOP_PRODUCT_ID` and falls back to the page's static
+numbers (never breaks the page) if either is missing.
+`{ ok:true, discord:{memberCount,onlineCount}|null, whop:{memberCount,reviewCount}|null,
+asOf }`. 429 rate limited (60/min). `Cache-Control: public, max-age=300`.
+
 ## Data classification vocabulary
 
 Every data-bearing response carries `mode`/`precision`/`asOf` from:
