@@ -869,6 +869,31 @@ test('.env.example and docs/DEPLOYMENT.md document GOOGLE_CLIENT_ID', () => {
     'expected auth-google.js to still read env.GOOGLE_CLIENT_ID');
 });
 
+// Incident: TURNSTILE_SITE_KEY/TURNSTILE_SECRET_KEY are real, shipped env
+// vars -- _lib/turnstile.js's turnstileConfigured() reads the secret to
+// decide whether verify-premium and the newsletter/lead-capture forms
+// enforce a human check at all, and docs/OWNER-CHECKLIST.md + docs/
+// SECURITY.md's S13 row both describe the feature as built-but-off
+// ("owner env var pending") -- but neither variable appeared in
+// .env.example or docs/DEPLOYMENT.md's secrets table, the one doc whose
+// entire job is "here is every secret to set in Cloudflare." Every other
+// feature-toggling var (WHOP_API_KEY, STRICT_D1_ENTITLEMENTS,
+// FOREX_CALENDAR_SOURCE_URL, GOOGLE_CLIENT_ID) already got this same
+// doc-discoverability fix above; Turnstile's pair was the one instance
+// those sweeps missed.
+test('.env.example and docs/DEPLOYMENT.md document TURNSTILE_SITE_KEY/TURNSTILE_SECRET_KEY', () => {
+  assert.match(read('.env.example'), /TURNSTILE_SITE_KEY/,
+    '.env.example must mention TURNSTILE_SITE_KEY');
+  assert.match(read('.env.example'), /TURNSTILE_SECRET_KEY/,
+    '.env.example must mention TURNSTILE_SECRET_KEY');
+  assert.match(read('docs/DEPLOYMENT.md'), /TURNSTILE_SITE_KEY/,
+    'docs/DEPLOYMENT.md must mention TURNSTILE_SITE_KEY');
+  assert.match(read('docs/DEPLOYMENT.md'), /TURNSTILE_SECRET_KEY/,
+    'docs/DEPLOYMENT.md must mention TURNSTILE_SECRET_KEY');
+  assert.match(read('functions/api/_lib/turnstile.js'), /Boolean\(env\.TURNSTILE_SECRET_KEY\)/,
+    'expected turnstile.js turnstileConfigured() to still gate on env.TURNSTILE_SECRET_KEY');
+});
+
 // Incident: removing the homepage's "Live From PJ's Desk" section (2026-09-08)
 // deleted the site's only consumer of the announcements/trade_reviews CMS
 // content types (loadLatest(), #latest, .ann-card/.review-card), but
