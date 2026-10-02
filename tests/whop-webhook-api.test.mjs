@@ -593,6 +593,31 @@ try {
     assert.match(db.notes.get('grant-renewal-2'), /:renewal$/);
   }
 
+  // A renewal grant can still carry no product id of its own — Whop's event
+  // shape lets product/plan be independently absent, and resolveTier grants
+  // anyway here (no allowlist configured, so it falls back to the pre-tier
+  // default regardless of ids). The renewal embed's `Product:` line
+  // interpolates evt.productId on its own branch of the isRenewal ternary,
+  // separate from the non-renewal "grant-no-product" case covered above —
+  // nothing had exercised a RENEWAL missing its product id before.
+  {
+    const db = makeDb();
+    const env = { ...baseEnv(db), DISCORD_WHOP_CODES_WEBHOOK: HOOK };
+    globalThis.fetch = async () => new Response(null, { status: 204 });
+    await postWebhook(env, grantBody('grant-renewal-noproduct-1', 'member-renew-np', 'prod_1'));
+
+    let embed = null;
+    globalThis.fetch = async (url, opts) => {
+      embed = JSON.parse(opts.body).embeds[0];
+      return new Response(null, { status: 204 });
+    };
+    const { status } = await postWebhook(env, grantBody('grant-renewal-noproduct-2', 'member-renew-np', null));
+    assert.equal(status, 200);
+    assert.match(embed.title, /renewal/i);
+    assert.match(embed.description, /Product: `unknown`/,
+      'a renewal missing its own product id must not interpolate null into the embed');
+  }
+
   // Revoking a member id that holds no code at all — a stale/duplicate
   // webhook, or a member who churned before ever claiming their code — must
   // report zero changes rather than throw on `res.meta.changes` being falsy;
