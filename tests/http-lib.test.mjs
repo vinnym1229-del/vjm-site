@@ -188,6 +188,66 @@ function req(ip, headers = {}) {
   assert.equal(deletes.length, 1, 'sweep must run exactly once, on the bucket\'s first hit');
 }
 
+// checkRateLimit, D1 stale-row sweep fails: the sweep is best-effort
+// housekeeping (run once per bucket's first hit, per the module's own
+// comment, so the table doesn't grow forever) and its run() carries its own
+// .catch(() => {}) specifically so a transient D1 error on that DELETE can't
+// escape the surrounding try and get treated like an INSERT/SELECT failure.
+// No prior test ever made the sweep's own run() reject, so that catch had
+// zero coverage. It matters because the surrounding try already has a
+// catch of its own that falls back to the in-isolate memory limiter — if
+// the sweep's rejection weren't caught locally, it would hit that outer
+// catch instead and silently discard the count D1 had just correctly
+// computed in favor of a stale local guess. Reproduced here as: D1 is fully
+// down for the bucket's first request (falls to memory, seeding a count of
+// 1 there), then D1 recovers right as this exact bucket gets its real
+// first row (count===1, so the sweep fires) but the sweep itself fails —
+// without the local catch, that would fall through to the now-stale memory
+// bucket and double-count a single D1 hit as a second request.
+{
+  const scope = 'lib-test-d1-sweep-fails-' + Math.random();
+  const r = req('198.51.100.5');
+  let d1Up = false;
+  const rows = new Map();
+  const env = {
+    RATELIMIT_DB: {
+      prepare(sql) {
+        if (!d1Up) throw new Error('D1 unavailable');
+        return {
+          bind(...args) {
+            return {
+              run: async () => {
+                if (/INSERT INTO rate_limits/.test(sql)) {
+                  const [bucket] = args;
+                  rows.set(bucket, (rows.get(bucket) || 0) + 1);
+                  return { success: true };
+                }
+                if (/DELETE FROM rate_limits/.test(sql)) {
+                  throw new Error('D1 unavailable mid-sweep');
+                }
+                return { success: true };
+              },
+              first: async () => {
+                const [bucket] = args;
+                return rows.has(bucket) ? { count: rows.get(bucket) } : null;
+              },
+            };
+          },
+        };
+      },
+    },
+  };
+
+  const outage = await checkRateLimit(env, r, scope, 1);
+  assert.equal(outage.allowed, true);
+  assert.equal(outage.count, 1, 'D1-down fallback seeds the memory bucket at count 1');
+
+  d1Up = true;
+  const recovered = await checkRateLimit(env, r, scope, 1);
+  assert.equal(recovered.count, 1, 'the sweep failing must not discard the correct D1 count for a stale local one');
+  assert.equal(recovered.allowed, true, 'a failed housekeeping sweep must not cause a false rate-limit rejection');
+}
+
 // checkRateLimit, D1 throws (misconfigured table, outage): must fall back to
 // the in-isolate memory limiter rather than failing open (unlimited) or
 // throwing out of the endpoint.
