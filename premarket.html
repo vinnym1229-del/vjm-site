@@ -220,7 +220,15 @@ body.light-mode .nav-top{ background:rgba(0,0,0,.05); }
   // green, the gain color -- right next to fmtPct's own "—" for the same
   // value. Matches assets/live-ticker.js's identical guard for the same feed.
   const pctCls = (v) => Number.isFinite(v) ? (v >= 0 ? 'pos' : 'neg') : '';
-  const fmtPct = (v) => v == null ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(2) + '%';
+  // Number.isFinite guard (not `v == null`): the 2026-09-18 fix above only
+  // hardened pctCls, leaving fmtPct with the weaker null-only check. alpaca.js's
+  // movers() does `+(Number(m.price_change_percent)).toFixed(2)` whenever
+  // price_change_percent is merely non-undefined, so a non-numeric upstream
+  // value (empty string, "N/A") produces changePct:NaN rather than null --
+  // which `v == null` does not catch, so it fell through to Number(NaN)
+  // .toFixed(2) and rendered the literal string "NaN%" next to pctCls's
+  // correctly-neutral (no color) class. Matches live-ticker.js's own fmtPct.
+  const fmtPct = (v) => !Number.isFinite(v) ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(2) + '%';
 
   function statusChip(text, cls){ $('statusRow').innerHTML = '<span class="vjm-chip ' + cls + '">' + esc(text) + '</span>'; }
 
