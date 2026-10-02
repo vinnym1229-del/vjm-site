@@ -167,7 +167,7 @@ body.light-mode #ticker-wrap .lt-sess.sess-op{color:#3a3a3e;background:rgba(0,0,
 body.light-mode #ticker-wrap .lt-sess.sess-cl{color:#b3251d;background:rgba(179,37,29,.07);}
 body.light-mode #ticker-wrap .lt-sess.sess-ah,
 body.light-mode #ticker-wrap .lt-sess.sess-on,
-body.light-mode #ticker-wrap .lt-sess.sess-247{color:#6b6b70;background:rgba(0,0,0,.05);}
+body.light-mode #ticker-wrap .lt-sess.sess-247{color:#5c5c61;background:rgba(0,0,0,.05);}
 `;
     document.head.appendChild(style);
   }

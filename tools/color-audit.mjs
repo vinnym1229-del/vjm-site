@@ -99,6 +99,15 @@ export function contrast(fg, bg) {
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
 
+/** Flatten a translucent color onto whatever sits behind it (alpha compositing). */
+export function composite(fg, alpha, bg) {
+  return {
+    r: fg.r * alpha + bg.r * (1 - alpha),
+    g: fg.g * alpha + bg.g * (1 - alpha),
+    b: fg.b * alpha + bg.b * (1 - alpha),
+  };
+}
+
 export function auditFile(path, src) {
   const colors = extractColors(src);
   const chromatic = colors.filter(isChromatic);
