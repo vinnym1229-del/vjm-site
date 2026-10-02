@@ -10,9 +10,11 @@
 // execute marketSession() itself. A single flipped comparison or mistyped
 // MINS constant would silently mislabel the badge for every visitor, all
 // day, with the full suite staying green. Extract the live function (plus
-// its MINS/DAYNUM constants) into a vm sandbox with a fixed Date, mirroring
-// tests/pj-futures.test.mjs's pjNextSession fixed-time pattern, and pin the
-// current (already-correct) behavior at each boundary.
+// its MINS/DAYNUM/HOLIDAYS constants) into a vm sandbox with a fixed Date,
+// mirroring tests/pj-futures.test.mjs's pjNextSession fixed-time pattern,
+// and pin the current (already-correct) behavior at each boundary, including
+// the NYSE full-day-holiday override added after Thanksgiving/Christmas were
+// found scoring as regular OPEN hours (see tests/regressions.test.mjs).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -25,6 +27,7 @@ const src = readFileSync(join(ROOT, 'assets', 'live-ticker.js'), 'utf8');
 
 const minsSrc = src.match(/const MINS = \{[\s\S]*?\};/)[0];
 const daynumSrc = src.match(/const DAYNUM = \{[\s\S]*?\};/)[0];
+const holidaysSrc = src.match(/const HOLIDAYS = new Set\(\[[\s\S]*?\]\);/)[0];
 const fnSrc = src.match(/function marketSession\(asset\) \{[\s\S]*?\n {2}\}/)[0];
 
 // marketSession() calls `new Date()` with no arguments and reads it back out
@@ -40,7 +43,8 @@ function sessionAt(isoUtc, asset = 'equity') {
   const sandbox = { Date: FixedDate, Intl };
   vm.createContext(sandbox);
   vm.runInContext(
-    minsSrc + '\n' + daynumSrc + '\n' + fnSrc + '\nthis.__result = marketSession(' + JSON.stringify(asset) + ');',
+    minsSrc + '\n' + daynumSrc + '\n' + holidaysSrc + '\n' + fnSrc +
+      '\nthis.__result = marketSession(' + JSON.stringify(asset) + ');',
     sandbox,
   );
   return sandbox.__result;
@@ -96,6 +100,24 @@ test('marketSession: overnight stays OVERNIGHT right up to 3:59am ET', () => {
 
 test('marketSession: flips from OVERNIGHT to PRE-MARKET exactly at 4:00am ET', () => {
   assert.equal(sessionAt('2026-09-21T08:00:00.000Z').code, '🌅 PRE-MARKET'); // Mon 04:00 ET
+});
+
+// Regression: Thanksgiving 2026-11-26 and Christmas 2026-12-25 are both
+// ordinary weekdays by day-of-week/time-of-day math alone, but NYSE is fully
+// closed both days — before HOLIDAYS existed, 11am ET on either date scored
+// as regular OPEN hours (see tests/regressions.test.mjs for the incident).
+test('marketSession: a full-day NYSE holiday on a weekday is CLOSED, not OPEN', () => {
+  assert.equal(sessionAt('2026-11-26T16:00:00.000Z').code, 'CLOSED'); // Thu 11:00 ET, Thanksgiving
+  assert.equal(sessionAt('2026-12-25T16:00:00.000Z').code, 'CLOSED'); // Fri 11:00 ET, Christmas
+});
+
+test('marketSession: a holiday overrides PRE-MARKET and AFTER HOURS too, not just OPEN', () => {
+  assert.equal(sessionAt('2026-11-26T11:00:00.000Z').code, 'CLOSED'); // Thu 06:00 ET — would be PRE-MARKET
+  assert.equal(sessionAt('2026-11-26T22:00:00.000Z').code, 'CLOSED'); // Thu 17:00 ET — would be AFTER HOURS
+});
+
+test('marketSession: the day after a holiday is unaffected (not stuck CLOSED)', () => {
+  assert.equal(sessionAt('2026-11-27T16:00:00.000Z').code, 'OPEN'); // Fri 11:00 ET, day after Thanksgiving
 });
 
 test('marketSession: every non-crypto session carries a distinct CSS class and a title', () => {

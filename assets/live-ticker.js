@@ -60,18 +60,33 @@
   // "overnight". Overnight means a session is actually running.
   const MINS = { PRE: 4 * 60, OPEN: 9 * 60 + 30, CLOSE: 16 * 60, AFTER_END: 20 * 60 };
   const DAYNUM = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  // Full-day NYSE closures that fall on what would otherwise be a normal
+  // trading weekday — without this list, a holiday is indistinguishable from
+  // any other Mon-Fri to the time/day math below, so e.g. Thanksgiving at
+  // 11am ET would score as regular OPEN hours. NYSE publishes this calendar
+  // years in advance; extend it a year or two ahead at a time as it ages out.
+  const HOLIDAYS = new Set([
+    '2026-01-01', '2026-01-19', '2026-02-16', '2026-04-03', '2026-05-25',
+    '2026-06-19', '2026-07-03', '2026-09-07', '2026-11-26', '2026-12-25',
+    '2027-01-01', '2027-01-18', '2027-02-15', '2027-03-26', '2027-05-31',
+    '2027-06-18', '2027-07-05', '2027-09-06', '2027-11-25', '2027-12-24',
+  ]);
 
   function marketSession(asset) {
     if (asset === 'crypto') return { code: '24/7', cls: 'sess-247', title: 'Crypto trades 24 hours a day, 7 days a week' };
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York', hour12: false, weekday: 'short', hour: '2-digit', minute: '2-digit',
+      year: 'numeric', month: '2-digit', day: '2-digit',
     }).formatToParts(new Date());
     const get = (t) => { const p = parts.find((x) => x.type === t); return p ? p.value : ''; };
     const day = DAYNUM[get('weekday')];
     // Intl can return hour "24" for midnight in some engines; normalize.
     const mins = (Number(get('hour')) % 24) * 60 + Number(get('minute'));
+    const isoDate = get('year') + '-' + get('month') + '-' + get('day');
 
     const CLOSED = { code: 'CLOSED', cls: 'sess-cl', title: 'Market closed — US equities reopen Sunday 8:00pm ET' };
+    const HOLIDAY_CLOSED = { code: 'CLOSED', cls: 'sess-cl', title: 'Market closed for a NYSE holiday' };
+    if (day !== 6 && day !== 0 && HOLIDAYS.has(isoDate)) return HOLIDAY_CLOSED; // full-day holiday, Mon-Fri
     if (day === 6) return CLOSED;                                  // all Saturday
     if (day === 0 && mins < MINS.AFTER_END) return CLOSED;         // Sunday until 8pm
     if (day === 5 && mins >= MINS.AFTER_END) return CLOSED;        // Friday after 8pm
