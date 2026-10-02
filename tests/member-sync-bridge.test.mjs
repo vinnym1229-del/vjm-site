@@ -117,6 +117,25 @@ test('a renamed or missing "Members" tab still resolves via the first-sheet fall
   assert.deepEqual(JSON.parse(res._t), { ok: true, found: true, discord: 'pj#0001', status: 'Active' });
 });
 
+test('a sheet cell with incidental leading/trailing whitespace still matches a trimmed query', () => {
+  // The callers (verify-premium.js, check-member-status.js) both .trim() the
+  // incoming value before it ever reaches this bridge, but a Google Sheet
+  // cell copy-pasted from Discord/email routinely carries a stray space that
+  // Sheets never auto-trims. lookupOne_ only lower-cased `cell`, never
+  // trimmed it, so a code or handle that's identical to a human reading the
+  // sheet would fail the exact-match and report found:false -- a real member
+  // locked out by whitespace invisible in the cell.
+  const sheetWithWhitespace = fakeSheet([
+    ['Discord', 'Code', 'Status'],
+    [' pj#0001 ', 'ACTIVE-CODE ', 'Active'],
+  ]);
+  const ctx = load(fakeSpreadsheet(sheetWithWhitespace));
+  const byCode = ctx.doPost(signedRequest({ type: 'code', value: 'ACTIVE-CODE' }));
+  assert.deepEqual(JSON.parse(byCode._t), { ok: true, found: true, discord: ' pj#0001 ', status: 'Active' });
+  const byDiscord = ctx.doPost(signedRequest({ type: 'discord', value: 'pj#0001' }));
+  assert.deepEqual(JSON.parse(byDiscord._t), { ok: true, found: true, discord: ' pj#0001 ', status: 'Active' });
+});
+
 test('an unknown code returns found:false, not a throw', () => {
   const ctx = load(fakeSpreadsheet(MEMBERS));
   const res = ctx.doPost(signedRequest({ type: 'code', value: 'NOPE' }));
