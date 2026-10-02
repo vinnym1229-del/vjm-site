@@ -23,6 +23,7 @@
   let half = 0; // width of one copy of the (doubled) row, for seamless wraparound
   let hovering = false;
   let dragging = false;
+  let manuallyPaused = false; // toggled by the keyboard-operable pause button below
   let dragMoved = false;
   let dragStartX = 0;
   let dragStartPos = 0;
@@ -120,6 +121,16 @@
 #ticker-wrap .lt-live .dot{width:6px;height:6px;border-radius:50%;background:#d14343;box-shadow:0 0 8px rgba(209,67,67,.45);
   animation:${REDUCED ? 'none' : 'ltPulse 1.6s ease-in-out infinite'};}
 @keyframes ltPulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+/* WCAG 2.2.2 (Pause, Stop, Hide): the tape auto-scrolls indefinitely for
+   anyone without the OS-level prefers-reduced-motion flag set, and the only
+   prior pause triggers (mouseenter, pointer-drag) are both mouse/touch-only
+   -- a keyboard user tabbing into a tape cell had no way to stop it sliding
+   out from under their focus ring. This button is the keyboard/assistive-
+   tech equivalent of hovering. Right-aligned, same treatment as .lt-live. */
+#ticker-wrap .lt-pause{position:absolute;right:0;top:0;bottom:0;z-index:2;display:flex;align-items:center;
+  padding:0 12px;background:linear-gradient(270deg,#0c0c0d 72%,rgba(12,12,13,0));border:0;cursor:pointer;
+  font-size:.8rem;line-height:1;color:#d9d9dd;}
+body.light-mode #ticker-wrap .lt-pause{background:linear-gradient(270deg,#f6f6f7 72%,rgba(246,246,247,0));color:#6b6b70;}
 #ticker-wrap .lt-viewport{position:absolute;inset:0;overflow:hidden;display:flex;align-items:center;
   cursor:${REDUCED ? 'default' : 'grab'};touch-action:pan-y;}
 #ticker-wrap .lt-viewport.dragging{cursor:grabbing;}
@@ -170,7 +181,7 @@ body.light-mode #ticker-wrap .lt-sess.sess-247{color:#6b6b70;background:rgba(0,0
     if (lastTs == null) lastTs = ts;
     const dt = Math.min(0.1, (ts - lastTs) / 1000);
     lastTs = ts;
-    const paused = hovering || dragging || performance.now() < resumeAt;
+    const paused = hovering || dragging || manuallyPaused || performance.now() < resumeAt;
     if (!paused) pos += SPEED * dt;
     render();
     requestAnimationFrame(raf);
@@ -233,7 +244,10 @@ body.light-mode #ticker-wrap .lt-sess.sess-247{color:#6b6b70;background:rgba(0,0
     wrap.innerHTML =
       '<div class="lt-live" title="Real-time prices — IEX exchange feed" aria-hidden="true"><span class="dot"></span>Live</div>' +
       // Track holds the row twice; wraparound at the half-width loops seamlessly.
-      '<div class="lt-viewport"><div class="lt-track">' + rowHtml + rowHtml + '</div></div>';
+      '<div class="lt-viewport"><div class="lt-track">' + rowHtml + rowHtml + '</div></div>' +
+      // REDUCED already means the track never auto-scrolls (raf never runs,
+      // below), so a pause control would have nothing to pause.
+      (REDUCED ? '' : '<button type="button" class="lt-pause" aria-pressed="false" aria-label="Pause ticker">⏸</button>');
     track = wrap.querySelector('.lt-track');
     viewport = wrap.querySelector('.lt-viewport');
     // scrollWidth = padding-left + 2 x rowWidth; the repeat period is
@@ -249,6 +263,13 @@ body.light-mode #ticker-wrap .lt-sess.sess-247{color:#6b6b70;background:rgba(0,0
     built = true;
     if (!REDUCED) {
       wireInteraction();
+      const pauseBtn = wrap.querySelector('.lt-pause');
+      pauseBtn.addEventListener('click', () => {
+        manuallyPaused = !manuallyPaused;
+        pauseBtn.setAttribute('aria-pressed', String(manuallyPaused));
+        pauseBtn.setAttribute('aria-label', manuallyPaused ? 'Resume ticker' : 'Pause ticker');
+        pauseBtn.textContent = manuallyPaused ? '▶' : '⏸';
+      });
       requestAnimationFrame(raf);
     }
   }

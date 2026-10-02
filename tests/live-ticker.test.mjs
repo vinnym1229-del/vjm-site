@@ -186,3 +186,111 @@ test('live ticker: returning to a hidden tab triggers an immediate catch-up fetc
   await t.fireVisibilityChange();
   assert.equal(t.fetchCalls.length, 2, 'becoming visible again should fetch fresh data right away, not wait up to 15s');
 });
+
+// Incident: the tape auto-scrolls indefinitely (raf() has no stop condition)
+// for anyone without the OS-level prefers-reduced-motion flag, and the only
+// pause triggers were mouseenter/mouseleave and pointer-drag -- both
+// mouse/touch-only. A keyboard-only or screen-reader visitor had no way to
+// stop a continuously-running animation shown alongside the rest of the
+// page, a WCAG 2.2.2 (Pause, Stop, Hide) violation, and tabbing into a tape
+// cell's own link meant watching it slide out from under the focus ring.
+// This drives the real build()/raf() through a controllable
+// requestAnimationFrame to prove the new button actually gates the scroll,
+// not just that the markup carries the right attributes.
+function makeTickerEl() {
+  const attrs = {};
+  const listeners = {};
+  return {
+    style: {},
+    scrollWidth: 1200,
+    textContent: '',
+    classList: { add() {}, remove() {}, contains() { return false; }, toggle() {} },
+    setAttribute(k, v) { attrs[k] = String(v); },
+    getAttribute(k) { return k in attrs ? attrs[k] : null; },
+    addEventListener(type, fn) { (listeners[type] = listeners[type] || []).push(fn); },
+    setPointerCapture() {},
+    listeners,
+  };
+}
+
+// Cross-realm awaits (the vm sandbox has its own Promise/async-function
+// intrinsics) don't settle within a fixed number of same-realm
+// Promise.resolve() turns -- a macrotask boundary is the reliable way to
+// let tick()'s two chained awaits (fetch, then res.json()) fully drain.
+function flushMicrotasks() {
+  return new Promise((resolve) => { setTimeout(resolve, 0); });
+}
+
+function runTickerBuilt({ reducedMotion = false } = {}) {
+  let rafCb = null;
+  const elCache = new Map();
+  const wrapEl = {
+    set innerHTML(v) { this._html = v; elCache.clear(); },
+    get innerHTML() { return this._html; },
+    querySelector(sel) {
+      if (!elCache.has(sel)) elCache.set(sel, makeTickerEl());
+      return elCache.get(sel);
+    },
+  };
+  const items = ['AAA', 'BBB', 'CCC', 'DDD'].map((symbol) => (
+    { symbol, label: symbol, price: 100, changePct: 1.2, asset: 'equity', tv: null }
+  ));
+  const sandbox = {
+    console,
+    fetch: async () => ({ json: async () => ({ ok: true, items }) }),
+    setInterval: () => 1,
+    requestAnimationFrame: (cb) => { rafCb = cb; return 1; },
+    getComputedStyle: () => ({ paddingLeft: '0px' }),
+    performance: { now: () => 0 },
+    document: {
+      getElementById: (id) => (id === 'ticker-wrap' ? wrapEl : null),
+      addEventListener: () => {},
+      createElement: () => ({}),
+      head: { appendChild: () => {} },
+      hidden: false,
+    },
+    window: { matchMedia: () => ({ matches: reducedMotion }) },
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(src, sandbox);
+  return {
+    wrapEl,
+    tick: (ts) => rafCb(ts),
+    getRafCb: () => rafCb,
+    ready: () => flushMicrotasks(),
+  };
+}
+
+test('live ticker: a keyboard-operable pause button actually stops the auto-scroll (WCAG 2.2.2)', async () => {
+  const t = runTickerBuilt();
+  await t.ready();
+
+  const pauseBtn = t.wrapEl.querySelector('.lt-pause');
+  const track = t.wrapEl.querySelector('.lt-track');
+  assert.match(t.wrapEl.innerHTML, /class="lt-pause" aria-pressed="false"/, 'button starts unpaused per its initial markup');
+
+  t.tick(0); // first frame just establishes lastTs, no movement yet
+  const t0 = track.style.transform;
+  t.tick(1000); // +1s unpaused
+  const t1 = track.style.transform;
+  assert.notEqual(t1, t0, 'sanity check: the tape must actually advance when nothing is pausing it');
+
+  pauseBtn.listeners.click[0]();
+  assert.equal(pauseBtn.getAttribute('aria-pressed'), 'true', 'clicking must flip aria-pressed so AT announces the new state');
+  assert.equal(pauseBtn.getAttribute('aria-label'), 'Resume ticker');
+  t.tick(2000); // +1s, but manually paused -- no hover or drag involved
+  assert.equal(track.style.transform, t1, 'a keyboard click on the pause button must stop the scroll with no mouse involvement');
+
+  pauseBtn.listeners.click[0]();
+  assert.equal(pauseBtn.getAttribute('aria-pressed'), 'false');
+  t.tick(3000); // +1s, unpaused again
+  assert.notEqual(track.style.transform, t1, 'clicking the same button again must resume the scroll');
+});
+
+test('live ticker: the pause button is omitted when prefers-reduced-motion is already set', async () => {
+  const t = runTickerBuilt({ reducedMotion: true });
+  await t.ready();
+
+  assert.equal(t.wrapEl.innerHTML.includes('lt-pause'), false, 'nothing auto-scrolls under reduced-motion, so there is nothing for the button to pause');
+  assert.equal(t.getRafCb(), null, 'the raf loop itself must not start either');
+});
