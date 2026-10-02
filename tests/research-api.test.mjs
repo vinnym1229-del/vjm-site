@@ -528,6 +528,35 @@ function makeDailySeries(n, { start = 90, drift = 0.15, spread = 1.5, lastVolume
     }
   }
 
+  // module=stock: a missing close on the latest daily bar (a halt, a partial
+  // bar, any other real Alpaca data gap) must not fabricate a return20. The
+  // unguarded `close / finite(...)-1` coerced a null close to 0, so return20
+  // silently came back exactly -1 -- a confident "-100% 20-day return"
+  // headline stat sitting right next to the correctly-null lastPrice that
+  // already signals the data is missing. metrics()'s own ret() closure
+  // guards this same computation with `close!==null`; stockModule's inline
+  // copy never did.
+  {
+    const stockFetch = globalThis.fetch;
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/v2/stocks/bars') {
+        const bars = makeDailySeries(150);
+        bars[bars.length - 1] = { ...bars[bars.length - 1], c: null };
+        return Response.json({ bars: { NVDA: bars } });
+      }
+      return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
+    };
+    try {
+      const { status, data } = await callEngine(cronEnv, 'module=stock&symbol=NVDA', cronHeaders);
+      assert.equal(status, 200);
+      assert.equal(data.data.summary.lastPrice, null);
+      assert.equal(data.data.summary.return20, null, 'a missing close must not fabricate a -100% return');
+    } finally {
+      globalThis.fetch = stockFetch;
+    }
+  }
+
   // module=sectors: relative strength must actually rank the outperformer
   // first and the underperformer last, not just return unsorted rows.
   {
