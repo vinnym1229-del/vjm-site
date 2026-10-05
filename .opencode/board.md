@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | index.html; tests/regressions.test.mjs | Wire the About section's hand-typed "49K+ Traders joined on Whop" stat into the existing SocialStats single-writer table (the `joined` key), found by a fresh-eyes Explore agent as a third untracked copy of the same metric already fixed twice elsewhere (hero badge, mobile sticky CTA) | 2026-10-05 |
 
 ## Queued (unclaimed, safe to take)
 
