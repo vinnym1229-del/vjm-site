@@ -767,6 +767,60 @@ function makeResearchDb() {
   }
 }
 
+// saveSnapshot()/loadLatest() each wrap their D1 calls in a bare catch --
+// "Persistence is optional; a write failure must not corrupt the live
+// response" for the save side, and a silent null for the read side -- but
+// the D1 fake above never actually throws, so neither catch body had ever
+// run: a regression that narrowed either catch (e.g. to a specific error
+// type) or let a throw past it would go undetected. Minimal throwing fakes
+// drive each path directly.
+{
+  const throwingBatchDb = {
+    prepare() { return { bind() { return { async run() { return {}; }, async first() { return null; } }; } }; },
+    async batch() { throw new Error('simulated D1 write failure'); },
+  };
+  const dbEnv = { ALPACA_API_KEY: 'test-key', ALPACA_SECRET_KEY: 'test-secret', RESEARCH_CRON_SECRET: 'cron-test-secret', RESEARCH_DB: throwingBatchDb };
+  const cronHeaders = { 'X-Research-Cron': 'cron-test-secret' };
+
+  const liveFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname === '/v2/stocks/QQQ/snapshot') return Response.json({ latestTrade: { p: 600 } });
+    if (url.pathname === '/v2/options/contracts') return Response.json({ option_contracts: [] });
+    if (url.pathname === '/v1beta1/options/snapshots/QQQ') return Response.json({ snapshots: {} });
+    return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
+  };
+  try {
+    const { status, data } = await callEngine(dbEnv, 'module=options&symbol=QQQ&expiryDays=7', cronHeaders);
+    assert.equal(status, 200, 'a D1 write failure must not surface as an error on an otherwise-successful live refresh');
+    assert.equal(data.ok, true);
+    assert.equal(data.cached, undefined, 'the response actually served was the fresh live one, not a stale cache fallback');
+    assert.equal(data.data.spot, 600);
+  } finally {
+    globalThis.fetch = liveFetch;
+  }
+}
+
+{
+  const throwingReadDb = {
+    prepare() { return { bind() { return { async first() { throw new Error('simulated D1 read failure'); } }; } }; },
+    async batch(statements) { return statements.map(() => ({ meta: { changes: 1 } })); },
+  };
+  const dbEnv = { ALPACA_API_KEY: 'test-key', ALPACA_SECRET_KEY: 'test-secret', RESEARCH_CRON_SECRET: 'cron-test-secret', RESEARCH_DB: throwingReadDb };
+  const cronHeaders = { 'X-Research-Cron': 'cron-test-secret' };
+
+  const outageFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('simulated Alpaca outage'); };
+  try {
+    const { status, data } = await callEngine(dbEnv, 'module=options&symbol=QQQ&expiryDays=7', cronHeaders);
+    assert.equal(status, 502, 'with no live data and a fallback read that itself throws, the original outage must surface cleanly, not an unhandled rejection');
+    assert.equal(data.ok, false);
+    assert.match(data.error, /Could not reach Alpaca/);
+  } finally {
+    globalThis.fetch = outageFetch;
+  }
+}
+
 // alpaca(), the single shared HTTP helper behind every module (options/
 // intraday/stock/sectors/biotech), had two of its own error branches never
 // driven by any fixture: every prior test either succeeded or threw a plain
