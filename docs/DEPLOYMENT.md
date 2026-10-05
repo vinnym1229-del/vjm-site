@@ -28,7 +28,7 @@ via PR).
 | `CONTENT_DISCORD_DRYRUN` | optional, default `true` — set `false` only when announcements should auto-post |
 | `DISCORD_ANNOUNCEMENTS_WEBHOOK` | optional, pre-market brief auto-post |
 | `DISCORD_WHOP_CODES_WEBHOOK` | optional, delivers fresh Whop purchase codes to the owner channel |
-| `WHOP_API_KEY` / `WHOP_PRODUCT_ID` | optional, enables real Whop rating/review/member counts on the homepage hero badge via `/api/live-stats` (Account API key, `access_pass:basic:read` scope) — omit either and it silently falls back to the site's static numbers, never breaks the page |
+| `WHOP_API_KEY` / `WHOP_PRODUCT_ID` | optional, enables real Whop review/member counts on the homepage hero badge via `/api/live-stats` (Account API key, `access_pass:basic:read` scope) — omit either and it silently falls back to the site's static numbers, never breaks the page. Whop's product API has no aggregate star-rating field, so the "5.0★" figure stays Sheet-CMS (or static-default) only, regardless of this var |
 | `FOREX_CALENDAR_SOURCE_URL` | optional, swaps in a paid/private economic-calendar feed for `/api/forex-calendar` — omit it and the default public ForexFactory feed is used, matching forex-calendar.html's own "API note" to the owner |
 | `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | optional bot-check on verify-premium and the newsletter/lead-capture forms — soft-required by design (checks are skipped until `TURNSTILE_SECRET_KEY` is set, per `_lib/turnstile.js`); set BOTH or the widget renders unchecked (site key only) or every submit is rejected (secret only) — see docs/OWNER-CHECKLIST.md |
 | D1 bindings: `RESEARCH_DB`, `RATELIMIT_DB` | snapshots, rate limits, audit, content, analytics, newsletter (all migrations share these bindings) |

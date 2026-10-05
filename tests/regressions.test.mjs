@@ -795,12 +795,12 @@ test('docs/API.md documents /api/assistant', () => {
 });
 
 // Incident: functions/api/live-stats.js's own header comment documents that
-// WHOP_API_KEY + WHOP_PRODUCT_ID turn on real Whop rating/review/member
-// counts for the homepage hero badge, and that omitting either silently
-// falls back to static numbers -- "never breaks the page" but also never
-// tells anyone it's off. docs/DEPLOYMENT.md is the site's one checklist for
-// every other Cloudflare secret (including every other Whop var), so an
-// owner following it had no way to discover this pair exists at all.
+// WHOP_API_KEY + WHOP_PRODUCT_ID turn on real Whop review/member counts for
+// the homepage hero badge, and that omitting either silently falls back to
+// static numbers -- "never breaks the page" but also never tells anyone
+// it's off. docs/DEPLOYMENT.md is the site's one checklist for every other
+// Cloudflare secret (including every other Whop var), so an owner following
+// it had no way to discover this pair exists at all.
 test('docs/DEPLOYMENT.md documents WHOP_API_KEY/WHOP_PRODUCT_ID for live-stats', () => {
   const doc = read('docs/DEPLOYMENT.md');
   assert.match(doc, /WHOP_API_KEY/, 'docs/DEPLOYMENT.md must mention WHOP_API_KEY');
@@ -808,6 +808,22 @@ test('docs/DEPLOYMENT.md documents WHOP_API_KEY/WHOP_PRODUCT_ID for live-stats',
   assert.match(doc, /live-stats/, 'docs/DEPLOYMENT.md must say what WHOP_API_KEY/WHOP_PRODUCT_ID are for');
   assert.match(read('functions/api/live-stats.js'), /env\.WHOP_API_KEY.*env\.WHOP_PRODUCT_ID/,
     'expected live-stats.js to still gate on both WHOP_API_KEY and WHOP_PRODUCT_ID');
+});
+
+// Incident: live-stats.js's header comment and docs/DEPLOYMENT.md's
+// WHOP_API_KEY/WHOP_PRODUCT_ID row both claimed the homepage's "5.0★"
+// rating figure was live-sourced from Whop, but whopStats() has only ever
+// returned { memberCount, reviewCount } -- Whop's product API has no
+// aggregate star-rating field. index.html's loadLiveStats() correctly never
+// passes a `rating` key to SocialStats('live', ...), so the figure was (and
+// remains) Sheet-CMS/static-only; only the prose overclaimed it. An owner
+// who set both env vars expecting the star rating to start auto-updating
+// would never see it happen, with nothing anywhere saying why.
+test('live-stats.js and its deployment doc do not claim Whop supplies a rating', () => {
+  assert.doesNotMatch(read('functions/api/live-stats.js'), /Whop rating/i,
+    'live-stats.js header comment must not claim Whop supplies a rating');
+  assert.doesNotMatch(read('docs/DEPLOYMENT.md'), /Whop rating|real Whop rating/i,
+    'docs/DEPLOYMENT.md must not claim WHOP_API_KEY/WHOP_PRODUCT_ID enables a Whop-sourced rating');
 });
 
 // Incident: STRICT_D1_ENTITLEMENTS is a real, functioning env var -- it's
