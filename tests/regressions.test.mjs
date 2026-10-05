@@ -2795,3 +2795,33 @@ test('docs/API.md documents /api/content, /api/analytics, and /api/live-stats', 
   assert.match(read('functions/api/live-stats.js'), /WHOP_API_KEY/,
     'expected live-stats.js to still read WHOP_API_KEY for the Whop half');
 });
+
+// Incident: integrations-core.js's sanitizeContentRow('bundles', ...) splits
+// the Bundles sheet's `features` cell on '|' -- the only place this
+// convention exists. apps-script/content-sync/Code.gs's own "Sheet tabs
+// required" header comment (the one an owner reads before typing into the
+// sheet) and docs/APPS-SCRIPT-INTEGRATION.md's Sheet contract (the doc an
+// owner is told to follow) both just listed `features` as a bare column
+// name, same as every other column, with no delimiter note -- and unlike
+// Schedule's `host`-blank convention, Bundles gets no seed row either, so
+// there was nothing in the actual spreadsheet to reveal it. The natural way
+// to hand-type a feature list is comma- or newline-separated; either one
+// collapses `.split('|')` to a single-element array, and the live pricing
+// card renders the owner's entire feature blob as one run-on bullet with
+// nothing in content-sync, the D1 write, or /api/content ever failing or
+// warning about it.
+test('Code.gs and APPS-SCRIPT-INTEGRATION.md document the Bundles features pipe-delimiter', () => {
+  const codeGs = read('apps-script/content-sync/Code.gs');
+  assert.match(codeGs, /Live sessions \| Discord \| Replays/,
+    'Code.gs\'s Sheet-tabs-required comment must show a worked "|"-delimited features example');
+  assert.match(codeGs, /comma[\s*]+or newline will NOT split/i,
+    'Code.gs must warn that a comma/newline will not split features');
+
+  const doc = read('docs/APPS-SCRIPT-INTEGRATION.md');
+  assert.match(doc, /Bundles specifics/, 'docs/APPS-SCRIPT-INTEGRATION.md must document Bundles-specific behavior');
+  assert.match(doc, /Live sessions \| Discord \| Replays/,
+    'docs/APPS-SCRIPT-INTEGRATION.md must show a worked "|"-delimited features example');
+
+  assert.match(read('functions/api/_lib/integrations-core.js'), /row\.features,\s*1200\)\s*\.split\('\|'\)/,
+    'expected sanitizeContentRow to still split bundles.features on "|"');
+});

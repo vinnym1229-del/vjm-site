@@ -108,6 +108,13 @@ off**: it renders struck through (the way Monday 2:30 does now) rather than
 vanishing and leaving a gap, and it is excluded from the live countdown and
 from the "15 sessions a week" count. `active` = `false` removes a row outright.
 
+**Bundles specifics.** `features` holds every bullet for that pricing card in
+one cell — separate them with `|`, e.g. `Live sessions | Discord | Replays`.
+A comma or newline will not split them: the whole cell ships as a single
+run-on bullet on the live pricing card instead of a clean checklist, with
+nothing in content-sync, the D1 write, or `/api/content` ever failing or
+warning about it.
+
 ## Rotation
 
 Clear the `CONTENT_BRIDGE_SECRET` script property, run `setUp` again to mint a

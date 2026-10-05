@@ -19,6 +19,10 @@
  *   Faqs:          id | question | answer | order
  *   Bundles:       id | name | price | period | save_badge | features |
  *                  whop_url | highlight
+ *                  (features: multiple bullets go in ONE cell, separated by
+ *                  "|" -- e.g. "Live sessions | Discord | Replays". A comma
+ *                  or newline will NOT split them; the whole cell renders as
+ *                  one run-on bullet on the live pricing card.)
  *   Stats:         id | key | value | label
  *   Results:       id | image_url | caption | order
  *
