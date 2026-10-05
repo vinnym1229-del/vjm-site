@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | tests/research-api.test.mjs | Cover research-engine.js's saveSnapshot()/loadLatest() D1-failure catch branches (lines 579-580) — the degrade-on-outage cache guarantee has a happy-path test but no test drives a D1 write/read failure itself | 2026-10-05 |
 
 ## Queued (unclaimed, safe to take)
 
