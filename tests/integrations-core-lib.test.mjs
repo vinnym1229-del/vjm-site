@@ -319,6 +319,16 @@ import {
   assert.equal(pinnedAnnouncement.pinned, 1, 'a "yes" sheet value must coerce to pinned:1');
   const unpinnedAnnouncement = sanitizeContentRow('announcements', { id: 'a3', title: 'Regular notice' });
   assert.equal(unpinnedAnnouncement.pinned, 0, 'pinned defaults to 0 when the sheet leaves it blank');
+
+  // a sheet row with an id but no title and no body must be rejected, not
+  // synced as a blank card on the site and a near-empty Discord embed --
+  // every other announcements fixture above supplies a title or a body,
+  // so this double-empty guard had never actually been exercised.
+  assert.equal(
+    sanitizeContentRow('announcements', { id: 'a-empty' }),
+    null,
+    'an announcement with no title and no body must be rejected'
+  );
 }
 
 console.log('# VJM integrations-core lib tests passed.');
