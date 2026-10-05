@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| claude (autonomous maintenance run) | pj | scouting, TBD on claim | 623/623 tests green going in; CI green on current head `8f3adb8` (pages.dev probe blocked by sandbox proxy policy, same standing block every prior run has hit); scouting for one genuine improvement this cycle | 2026-10-05 |
+| — | | | | |
 
 ## Queued (unclaimed, safe to take)
 
