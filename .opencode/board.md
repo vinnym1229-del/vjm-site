@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | scouting — no file claimed yet | 622/622 tests green going in; CI run 37265952639 passed at head `d40ab41` (live-deployment curl still hit the standing whole-`*.pages.dev` policy block, confirmed via agent-proxy `status`). Scouting copy/accessibility/test-coverage/perf for one genuine improvement this cycle. | 2026-10-05 |
 
 ## Queued (unclaimed, safe to take)
 
