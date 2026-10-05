@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | scouting | Per the Coordination Protocol, registering intent before touching anything: scouting for one genuine improvement this cycle. | 2026-10-05 |
 
 ## Queued (unclaimed, safe to take)
 
