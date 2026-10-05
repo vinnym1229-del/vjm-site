@@ -55,6 +55,26 @@ assert.equal(unauthorized.status, 401);
 
 const originalFetch = globalThis.fetch;
 const requested = [];
+
+// One bar per session window research-engine.js cares about (asia/london via
+// BOATS, premarket/rth via SIP), on each of two trade dates, so coverageSummary
+// -- previously only ever exercised with bars:{QQQ:[],SPY:[]} below -- counts
+// something real instead of running its loop body zero times. groupProxyTradeDays
+// assigns source (not the API) from the ET minute of each bar, so the same list
+// can answer both the feed=sip and feed=boats requests and still split cleanly:
+// 02:00 UTC / 07:30 UTC land BOATS-only (asia/london), 10:00 UTC / 15:00 UTC land
+// SIP-only (premarket/rth). See functions/api/research-engine.js's groupProxyTradeDays
+// and coverageSummary.
+const QQQ_SESSION_BARS = [
+  { t: '2024-01-02T02:00:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-01 21:00 -> BOATS, asia
+  { t: '2024-01-02T07:30:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-02 02:30 -> BOATS, london
+  { t: '2024-01-02T10:00:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-02 05:00 -> SIP, premarket
+  { t: '2024-01-02T15:00:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-02 10:00 -> SIP, rth
+  { t: '2024-01-03T02:00:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-02 21:00 -> BOATS, asia
+  { t: '2024-01-03T07:30:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-03 02:30 -> BOATS, london
+  { t: '2024-01-03T10:00:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-03 05:00 -> SIP, premarket
+  { t: '2024-01-03T15:00:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-03 10:00 -> SIP, rth
+];
 globalThis.fetch = async (input) => {
   const url = new URL(String(input));
   requested.push(url);
@@ -74,7 +94,7 @@ globalThis.fetch = async (input) => {
     } });
   }
   if (url.pathname === '/v2/stocks/bars') {
-    return Response.json({ bars: { QQQ: [], SPY: [] } });
+    return Response.json({ bars: { QQQ: QQQ_SESSION_BARS, SPY: [] } });
   }
   return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
 };
@@ -139,6 +159,21 @@ try {
   assert.match(intradayData.provenance.disclaimer, /not achieved or live-tradable/i);
   assert.match(intradayData.provenance.timingConvention.costs, /slippage/i, 'the absence of a cost model must be stated, not implied');
   assert.ok(intradayData.provenance.asOf, 'provenance carries its own as-of stamp');
+
+  // coverageSummary's BOATS/SIP bar-count and per-session presence flags feed
+  // the data-reliability block members see on the Research Engine UI -- with
+  // the bars:{QQQ:[],SPY:[]} fixture above its loop body never ran once, so a
+  // broken counter here would ship silently. QQQ_SESSION_BARS puts one bar in
+  // each session window on each of two trade dates: 4 BOATS (asia + london x2
+  // days), 4 SIP (premarket + rth x2 days).
+  assert.equal(intradayData.data.coverage.tradeDays, 2);
+  assert.equal(intradayData.data.coverage.boatsBars, 4);
+  assert.equal(intradayData.data.coverage.sipBars, 4);
+  assert.equal(intradayData.data.coverage.sessions.overnight, 2);
+  assert.equal(intradayData.data.coverage.sessions.asiaProxy, 2);
+  assert.equal(intradayData.data.coverage.sessions.londonProxy, 2);
+  assert.equal(intradayData.data.coverage.sessions.premarket, 2);
+  assert.equal(intradayData.data.coverage.sessions.rth, 2);
 } finally {
   globalThis.fetch = originalFetch;
 }
