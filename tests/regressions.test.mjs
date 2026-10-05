@@ -1429,6 +1429,30 @@ test("index.html's mobile sticky CTA rating/review count is wired to the same li
   assert.match(index, /rating:\s*\[\['hb-rating',[^\]]*\],\s*\['mc-rating',/, 'SocialStats: mc-rating must share the "rating" STATS entry with hb-rating');
 });
 
+// Incident: the About section's "49K+ / Traders joined on Whop" stat card
+// (index.html, below the Buffett quote) was a third hand-typed copy of the
+// hero badge's #hb-joined lifetime-join count, predating the SocialStats
+// module itself. Unlike #hb-joined, it had no id and no STATS target, so
+// neither /api/live-stats nor the Sheet CMS could ever update it -- it would
+// have kept showing "49K+" forever regardless of how large the real count
+// grew. Fixed by giving it #about-joined and wiring it into the existing
+// "joined" STATS entry, the same share-the-writer pattern already used for
+// mc-rating/mc-reviews above.
+test("index.html's About-section join count is wired to the same live source as the hero badge, not a third hand-typed copy", () => {
+  const index = read('index.html');
+
+  const hbJoined = /id="hb-joined">([^<]+)</.exec(index);
+  assert.ok(hbJoined, 'index.html: expected #hb-joined in the hero badge');
+
+  const aboutJoined = /id="about-joined">([^<]+)</.exec(index);
+  assert.ok(aboutJoined, 'index.html: expected #about-joined in the About section stat card');
+
+  // The SocialStats STATS table is the only thing that keeps them in sync
+  // going forward -- assert the id is actually registered as a target, not
+  // just a static number that happens to look plausible today.
+  assert.match(index, /joined:\s*\[\['hb-joined',[^\]]*\],\s*\['about-joined',/, 'SocialStats: about-joined must share the "joined" STATS entry with hb-joined');
+});
+
 // Incident: docs/ENTITLEMENTS.md quotes the same four-course lesson total
 // ("can read all 206 lessons straight from source", describing the
 // public-repo lesson-body exposure) as the HTML pages fixed above, but this
