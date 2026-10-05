@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj: functions/api/live-stats.js; docs/DEPLOYMENT.md; tests/regressions.test.mjs | Correcting live-stats.js's header comment and DEPLOYMENT.md's WHOP_API_KEY/WHOP_PRODUCT_ID row, both of which overclaim that the homepage's star-rating figure is live-sourced from Whop — found by a fresh-eyes Explore agent; `whopStats()` has only ever returned memberCount/reviewCount, and index.html's loadLiveStats() correctly never passes a rating key, so only the prose was wrong. | 2026-10-05 |
 
 ## Queued (unclaimed, safe to take)
 
