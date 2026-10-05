@@ -28,6 +28,7 @@ const src = readFileSync(join(ROOT, 'assets', 'live-ticker.js'), 'utf8');
 const minsSrc = src.match(/const MINS = \{[\s\S]*?\};/)[0];
 const daynumSrc = src.match(/const DAYNUM = \{[\s\S]*?\};/)[0];
 const holidaysSrc = src.match(/const HOLIDAYS = new Set\(\[[\s\S]*?\]\);/)[0];
+const earlyCloseSrc = src.match(/const EARLY_CLOSE_DAYS = new Set\(\[[\s\S]*?\]\);/)[0];
 const fnSrc = src.match(/function marketSession\(asset\) \{[\s\S]*?\n {2}\}/)[0];
 
 // marketSession() calls `new Date()` with no arguments and reads it back out
@@ -43,7 +44,7 @@ function sessionAt(isoUtc, asset = 'equity') {
   const sandbox = { Date: FixedDate, Intl };
   vm.createContext(sandbox);
   vm.runInContext(
-    minsSrc + '\n' + daynumSrc + '\n' + holidaysSrc + '\n' + fnSrc +
+    minsSrc + '\n' + daynumSrc + '\n' + holidaysSrc + '\n' + earlyCloseSrc + '\n' + fnSrc +
       '\nthis.__result = marketSession(' + JSON.stringify(asset) + ');',
     sandbox,
   );
@@ -118,6 +119,33 @@ test('marketSession: a holiday overrides PRE-MARKET and AFTER HOURS too, not jus
 
 test('marketSession: the day after a holiday is unaffected (not stuck CLOSED)', () => {
   assert.equal(sessionAt('2026-11-27T16:00:00.000Z').code, 'OPEN'); // Fri 11:00 ET, day after Thanksgiving
+});
+
+// Regression: NYSE half-day early closes (1:00pm ET) are distinct from the
+// full-day HOLIDAYS above and were previously invisible to this function —
+// MINS.CLOSE stayed hardcoded at 4:00pm, so e.g. 2:00pm ET on the Friday
+// after Thanksgiving scored as regular OPEN hours for a market that had
+// actually been shut for an hour. 2027-12-24 is deliberately NOT in
+// EARLY_CLOSE_DAYS: that year Christmas Day falls on a Saturday, so the
+// 24th is already the observed full Christmas holiday in HOLIDAYS instead.
+test('marketSession: an early-close day is still OPEN during the shortened 9:30am-1:00pm session', () => {
+  assert.equal(sessionAt('2026-11-27T16:00:00.000Z').code, 'OPEN'); // Fri 11:00 ET, day after Thanksgiving
+  assert.equal(sessionAt('2026-12-24T16:00:00.000Z').code, 'OPEN'); // Thu 11:00 ET, Christmas Eve
+  assert.equal(sessionAt('2027-11-26T16:00:00.000Z').code, 'OPEN'); // Fri 11:00 ET, day after Thanksgiving
+});
+
+test('marketSession: an early-close day flips to AFTER HOURS at 1:00pm ET, not 4:00pm', () => {
+  assert.equal(sessionAt('2026-11-27T19:00:00.000Z').code, '🌅 AFTER HOURS'); // Fri 14:00 ET
+  assert.equal(sessionAt('2026-12-24T19:00:00.000Z').code, '🌅 AFTER HOURS'); // Thu 14:00 ET
+  assert.equal(sessionAt('2027-11-26T19:00:00.000Z').code, '🌅 AFTER HOURS'); // Fri 14:00 ET
+});
+
+test('marketSession: an ordinary weekday afternoon is unaffected by the early-close list', () => {
+  assert.equal(sessionAt('2026-09-16T19:00:00.000Z').code, 'OPEN'); // Wed 14:00 ET, not an early-close date
+});
+
+test('marketSession: 2027 Christmas Eve is the observed full holiday, not an early close', () => {
+  assert.equal(sessionAt('2027-12-24T16:00:00.000Z').code, 'CLOSED'); // Fri 11:00 ET — observed Christmas
 });
 
 test('marketSession: every non-crypto session carries a distinct CSS class and a title', () => {

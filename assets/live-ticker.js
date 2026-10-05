@@ -58,7 +58,7 @@
   // week ends Friday 8:00pm ET and does not resume until Sunday 8:00pm ET,
   // so Friday night, all of Saturday, and Sunday daytime are CLOSED — not
   // "overnight". Overnight means a session is actually running.
-  const MINS = { PRE: 4 * 60, OPEN: 9 * 60 + 30, CLOSE: 16 * 60, AFTER_END: 20 * 60 };
+  const MINS = { PRE: 4 * 60, OPEN: 9 * 60 + 30, EARLY_CLOSE: 13 * 60, CLOSE: 16 * 60, AFTER_END: 20 * 60 };
   const DAYNUM = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
   // Full-day NYSE closures that fall on what would otherwise be a normal
   // trading weekday — without this list, a holiday is indistinguishable from
@@ -71,6 +71,13 @@
     '2027-01-01', '2027-01-18', '2027-02-15', '2027-03-26', '2027-05-31',
     '2027-06-18', '2027-07-05', '2027-09-06', '2027-11-25', '2027-12-24',
   ]);
+  // NYSE 1:00pm ET early closes (the Friday after Thanksgiving, and Christmas
+  // Eve when the 24th isn't itself the observed Christmas holiday above — see
+  // 2027, where Christmas Day falls on a Saturday and is observed on the
+  // 24th instead). Without this, the OPEN/AFTER-HOURS math below uses the
+  // normal 4:00pm close on these dates too, so a 2pm ET badge reads OPEN for
+  // a market that has actually been shut for an hour.
+  const EARLY_CLOSE_DAYS = new Set(['2026-11-27', '2026-12-24', '2027-11-26']);
 
   function marketSession(asset) {
     if (asset === 'crypto') return { code: '24/7', cls: 'sess-247', title: 'Crypto trades 24 hours a day, 7 days a week' };
@@ -91,16 +98,28 @@
     if (day === 0 && mins < MINS.AFTER_END) return CLOSED;         // Sunday until 8pm
     if (day === 5 && mins >= MINS.AFTER_END) return CLOSED;        // Friday after 8pm
 
+    const earlyClose = EARLY_CLOSE_DAYS.has(isoDate);
+    const closeMins = earlyClose ? MINS.EARLY_CLOSE : MINS.CLOSE;
     const OVERNIGHT = { code: '🌙 OVERNIGHT', cls: 'sess-on', title: 'Overnight session (8:00pm–4:00am ET)' };
     if (day === 0) return OVERNIGHT;                               // Sunday 8pm onward
-    if (mins >= MINS.OPEN && mins < MINS.CLOSE) {
-      return { code: 'OPEN', cls: 'sess-op', title: 'Regular market hours (9:30am–4:00pm ET)' };
+    if (mins >= MINS.OPEN && mins < closeMins) {
+      return {
+        code: 'OPEN', cls: 'sess-op',
+        title: earlyClose
+          ? 'Regular market hours — NYSE early close today, 9:30am–1:00pm ET'
+          : 'Regular market hours (9:30am–4:00pm ET)',
+      };
     }
     if (mins >= MINS.PRE && mins < MINS.OPEN) {
       return { code: '🌅 PRE-MARKET', cls: 'sess-ah', title: 'Pre-market extended hours (4:00am–9:30am ET)' };
     }
-    if (mins >= MINS.CLOSE && mins < MINS.AFTER_END) {
-      return { code: '🌅 AFTER HOURS', cls: 'sess-ah', title: 'After-hours extended trading (4:00pm–8:00pm ET)' };
+    if (mins >= closeMins && mins < MINS.AFTER_END) {
+      return {
+        code: '🌅 AFTER HOURS', cls: 'sess-ah',
+        title: earlyClose
+          ? 'After-hours extended trading (1:00pm early close–8:00pm ET)'
+          : 'After-hours extended trading (4:00pm–8:00pm ET)',
+      };
     }
     return OVERNIGHT;
   }
