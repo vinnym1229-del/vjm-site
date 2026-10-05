@@ -95,7 +95,7 @@ function lookupOne_(value, byCode) {
   var needle = value.toLowerCase();
   for (var i = 1; i < values.length; i++) {
     var cell = byCode ? String(values[i][colCode]) : String(values[i][colDiscord]);
-    if (cell.toLowerCase() !== needle) continue;
+    if (cell.trim().toLowerCase() !== needle) continue;
     return {
       discord: colDiscord >= 0 ? String(values[i][colDiscord] || '') : '',
       status: String(values[i][colStatus] || ''),

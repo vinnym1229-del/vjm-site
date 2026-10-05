@@ -55,6 +55,26 @@ assert.equal(unauthorized.status, 401);
 
 const originalFetch = globalThis.fetch;
 const requested = [];
+
+// One bar per session window research-engine.js cares about (asia/london via
+// BOATS, premarket/rth via SIP), on each of two trade dates, so coverageSummary
+// -- previously only ever exercised with bars:{QQQ:[],SPY:[]} below -- counts
+// something real instead of running its loop body zero times. groupProxyTradeDays
+// assigns source (not the API) from the ET minute of each bar, so the same list
+// can answer both the feed=sip and feed=boats requests and still split cleanly:
+// 02:00 UTC / 07:30 UTC land BOATS-only (asia/london), 10:00 UTC / 15:00 UTC land
+// SIP-only (premarket/rth). See functions/api/research-engine.js's groupProxyTradeDays
+// and coverageSummary.
+const QQQ_SESSION_BARS = [
+  { t: '2024-01-02T02:00:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-01 21:00 -> BOATS, asia
+  { t: '2024-01-02T07:30:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-02 02:30 -> BOATS, london
+  { t: '2024-01-02T10:00:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-02 05:00 -> SIP, premarket
+  { t: '2024-01-02T15:00:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-02 10:00 -> SIP, rth
+  { t: '2024-01-03T02:00:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-02 21:00 -> BOATS, asia
+  { t: '2024-01-03T07:30:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-03 02:30 -> BOATS, london
+  { t: '2024-01-03T10:00:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-03 05:00 -> SIP, premarket
+  { t: '2024-01-03T15:00:00Z', o: 100, h: 101, l: 99, c: 100.5, v: 1000 }, // ET 01-03 10:00 -> SIP, rth
+];
 globalThis.fetch = async (input) => {
   const url = new URL(String(input));
   requested.push(url);
@@ -74,7 +94,7 @@ globalThis.fetch = async (input) => {
     } });
   }
   if (url.pathname === '/v2/stocks/bars') {
-    return Response.json({ bars: { QQQ: [], SPY: [] } });
+    return Response.json({ bars: { QQQ: QQQ_SESSION_BARS, SPY: [] } });
   }
   return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
 };
@@ -139,6 +159,21 @@ try {
   assert.match(intradayData.provenance.disclaimer, /not achieved or live-tradable/i);
   assert.match(intradayData.provenance.timingConvention.costs, /slippage/i, 'the absence of a cost model must be stated, not implied');
   assert.ok(intradayData.provenance.asOf, 'provenance carries its own as-of stamp');
+
+  // coverageSummary's BOATS/SIP bar-count and per-session presence flags feed
+  // the data-reliability block members see on the Research Engine UI -- with
+  // the bars:{QQQ:[],SPY:[]} fixture above its loop body never ran once, so a
+  // broken counter here would ship silently. QQQ_SESSION_BARS puts one bar in
+  // each session window on each of two trade dates: 4 BOATS (asia + london x2
+  // days), 4 SIP (premarket + rth x2 days).
+  assert.equal(intradayData.data.coverage.tradeDays, 2);
+  assert.equal(intradayData.data.coverage.boatsBars, 4);
+  assert.equal(intradayData.data.coverage.sipBars, 4);
+  assert.equal(intradayData.data.coverage.sessions.overnight, 2);
+  assert.equal(intradayData.data.coverage.sessions.asiaProxy, 2);
+  assert.equal(intradayData.data.coverage.sessions.londonProxy, 2);
+  assert.equal(intradayData.data.coverage.sessions.premarket, 2);
+  assert.equal(intradayData.data.coverage.sessions.rth, 2);
 } finally {
   globalThis.fetch = originalFetch;
 }
@@ -528,6 +563,35 @@ function makeDailySeries(n, { start = 90, drift = 0.15, spread = 1.5, lastVolume
     }
   }
 
+  // module=stock: a missing close on the latest daily bar (a halt, a partial
+  // bar, any other real Alpaca data gap) must not fabricate a return20. The
+  // unguarded `close / finite(...)-1` coerced a null close to 0, so return20
+  // silently came back exactly -1 -- a confident "-100% 20-day return"
+  // headline stat sitting right next to the correctly-null lastPrice that
+  // already signals the data is missing. metrics()'s own ret() closure
+  // guards this same computation with `close!==null`; stockModule's inline
+  // copy never did.
+  {
+    const stockFetch = globalThis.fetch;
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/v2/stocks/bars') {
+        const bars = makeDailySeries(150);
+        bars[bars.length - 1] = { ...bars[bars.length - 1], c: null };
+        return Response.json({ bars: { NVDA: bars } });
+      }
+      return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
+    };
+    try {
+      const { status, data } = await callEngine(cronEnv, 'module=stock&symbol=NVDA', cronHeaders);
+      assert.equal(status, 200);
+      assert.equal(data.data.summary.lastPrice, null);
+      assert.equal(data.data.summary.return20, null, 'a missing close must not fabricate a -100% return');
+    } finally {
+      globalThis.fetch = stockFetch;
+    }
+  }
+
   // module=sectors: relative strength must actually rank the outperformer
   // first and the underperformer last, not just return unsorted rows.
   {
@@ -703,6 +767,60 @@ function makeResearchDb() {
   }
 }
 
+// saveSnapshot()/loadLatest() each wrap their D1 calls in a bare catch --
+// "Persistence is optional; a write failure must not corrupt the live
+// response" for the save side, and a silent null for the read side -- but
+// the D1 fake above never actually throws, so neither catch body had ever
+// run: a regression that narrowed either catch (e.g. to a specific error
+// type) or let a throw past it would go undetected. Minimal throwing fakes
+// drive each path directly.
+{
+  const throwingBatchDb = {
+    prepare() { return { bind() { return { async run() { return {}; }, async first() { return null; } }; } }; },
+    async batch() { throw new Error('simulated D1 write failure'); },
+  };
+  const dbEnv = { ALPACA_API_KEY: 'test-key', ALPACA_SECRET_KEY: 'test-secret', RESEARCH_CRON_SECRET: 'cron-test-secret', RESEARCH_DB: throwingBatchDb };
+  const cronHeaders = { 'X-Research-Cron': 'cron-test-secret' };
+
+  const liveFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname === '/v2/stocks/QQQ/snapshot') return Response.json({ latestTrade: { p: 600 } });
+    if (url.pathname === '/v2/options/contracts') return Response.json({ option_contracts: [] });
+    if (url.pathname === '/v1beta1/options/snapshots/QQQ') return Response.json({ snapshots: {} });
+    return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
+  };
+  try {
+    const { status, data } = await callEngine(dbEnv, 'module=options&symbol=QQQ&expiryDays=7', cronHeaders);
+    assert.equal(status, 200, 'a D1 write failure must not surface as an error on an otherwise-successful live refresh');
+    assert.equal(data.ok, true);
+    assert.equal(data.cached, undefined, 'the response actually served was the fresh live one, not a stale cache fallback');
+    assert.equal(data.data.spot, 600);
+  } finally {
+    globalThis.fetch = liveFetch;
+  }
+}
+
+{
+  const throwingReadDb = {
+    prepare() { return { bind() { return { async first() { throw new Error('simulated D1 read failure'); } }; } }; },
+    async batch(statements) { return statements.map(() => ({ meta: { changes: 1 } })); },
+  };
+  const dbEnv = { ALPACA_API_KEY: 'test-key', ALPACA_SECRET_KEY: 'test-secret', RESEARCH_CRON_SECRET: 'cron-test-secret', RESEARCH_DB: throwingReadDb };
+  const cronHeaders = { 'X-Research-Cron': 'cron-test-secret' };
+
+  const outageFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('simulated Alpaca outage'); };
+  try {
+    const { status, data } = await callEngine(dbEnv, 'module=options&symbol=QQQ&expiryDays=7', cronHeaders);
+    assert.equal(status, 502, 'with no live data and a fallback read that itself throws, the original outage must surface cleanly, not an unhandled rejection');
+    assert.equal(data.ok, false);
+    assert.match(data.error, /Could not reach Alpaca/);
+  } finally {
+    globalThis.fetch = outageFetch;
+  }
+}
+
 // alpaca(), the single shared HTTP helper behind every module (options/
 // intraday/stock/sectors/biotech), had two of its own error branches never
 // driven by any fixture: every prior test either succeeded or threw a plain
@@ -740,6 +858,68 @@ function makeResearchDb() {
     } finally {
       globalThis.fetch = rateLimitFetch;
     }
+  }
+}
+
+// fetchSpot()'s `spot === undefined` guard: every one of its seven candidate
+// fields (latestTrade.p, latest_trade.price, minuteBar.c, minute_bar.close,
+// dailyBar.c, daily_bar.close, prevDailyBar.c) coming back missing or
+// non-finite is a real Alpaca response shape for a halted or delisted
+// symbol's snapshot -- the endpoint still answers 200 with an (empty or
+// partial) snapshot object, it just has no trade to report. Nothing had ever
+// driven this branch, and unlike the adjacent sibling guards this one is not
+// cosmetic: optionsModule uses spot unguarded immediately afterward in
+// `strikeLow = Math.max(1, spot * .90)` and the GEX dollar-value formula
+// (`gamma*oi*100*spot*spot...`). Had the check instead been the more common
+// `if (!spot)` shape, it would still work here since undefined is falsy, but
+// would also wrongly reject a legitimate (if degenerate) $0 strike floor --
+// the precise `=== undefined` form is deliberate and this is the only test
+// that would notice it regressing to `!spot`. Confirms the module fails loud
+// with a 422 naming the symbol before spending the two further Alpaca calls
+// (contracts, option chain) that a NaN strike range would otherwise burn.
+{
+  const cronEnv = { ALPACA_API_KEY: 'test-key', ALPACA_SECRET_KEY: 'test-secret', RESEARCH_CRON_SECRET: 'cron-test-secret' };
+  const cronHeaders = { 'X-Research-Cron': 'cron-test-secret' };
+  const noSpotFetch = globalThis.fetch;
+  const calledPaths = [];
+  globalThis.fetch = async (input) => {
+    calledPaths.push(new URL(String(input)).pathname);
+    return Response.json({});
+  };
+  try {
+    const { status, data } = await callEngine(cronEnv, 'module=options&symbol=QQQ', cronHeaders);
+    assert.equal(status, 422, 'a snapshot with no usable price field must fail loud, not flow a NaN spot into the GEX math');
+    assert.equal(data.ok, false);
+    assert.equal(data.error, 'No current QQQ spot price was returned.');
+    assert.deepEqual(calledPaths, ['/v2/stocks/QQQ/snapshot'], 'the contracts and option-chain calls must never fire once spot resolution fails');
+  } finally {
+    globalThis.fetch = noSpotFetch;
+  }
+}
+
+// cleanSymbol()'s guard -- `if (!symbol || symbol.length > 12) throw
+// statusError('Invalid symbol.', 400)` -- had zero coverage despite gating
+// every data module (options/intraday/stock) before a single Alpaca call.
+// The regex strips anything outside [A-Z0-9.-] first, so a `symbol` made
+// entirely of punctuation or whitespace (a real shape for a fat-fingered or
+// scripted query string) survives stripping as an empty string. Without this
+// guard that empty string flows straight into fetchSpot()'s
+// `/v2/stocks/${encodeURIComponent(symbol)}/snapshot` as a blank path
+// segment, burning an upstream Alpaca call for a confusing non-2xx response
+// instead of failing fast with a clear 400 -- the same fail-loud-before-
+// spending-upstream-calls shape as the fetchSpot spot-price guard above.
+{
+  const cronEnv = { ALPACA_API_KEY: 'test-key', ALPACA_SECRET_KEY: 'test-secret', RESEARCH_CRON_SECRET: 'cron-test-secret' };
+  const cronHeaders = { 'X-Research-Cron': 'cron-test-secret' };
+  const noCallFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('must not call Alpaca once symbol validation fails'); };
+  try {
+    const { status, data } = await callEngine(cronEnv, 'module=options&symbol=%21%21%21', cronHeaders);
+    assert.equal(status, 400, 'a symbol that strips to empty must fail fast, not reach Alpaca with a blank path segment');
+    assert.equal(data.ok, false);
+    assert.equal(data.error, 'Invalid symbol.');
+  } finally {
+    globalThis.fetch = noCallFetch;
   }
 }
 

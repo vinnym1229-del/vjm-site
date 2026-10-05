@@ -39,7 +39,7 @@ Read that as:
 - **202 paid lessons** are gated at the edge and readable in public source.
 - **All twelve worked cases** — the long-form, fully-computed examples that are
   the most expensive thing on this site to produce — are in public source.
-- **49,968 words** of paid prose (roughly a 200-page book) and **468,232 bytes**
+- **49,968 words** of paid prose (roughly a 200-page book) and **468,238 bytes**
   of paid markup are in the public repository right now.
 - **Seven lessons are free by design** (futures Level 1) and one essay
   (psychology). That is the entire intended free tier, and the audit knows it

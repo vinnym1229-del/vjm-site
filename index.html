@@ -1105,7 +1105,7 @@
 <!-- MEET THE TEAM — per owner direction (2026-08-24): PJ is the only filled
      card; the rest are BLANK slots the owner will personalize. To fill one,
      replace the name/role/bio text and the avatar initials, and optionally
-     swap the avatar div for: <img class="team-avatar" src="assets/team/NAME.jpg" alt=""> -->
+     swap the avatar div for: <img class="team-avatar" src="assets/team/NAME.jpg" alt="" loading="lazy"> -->
 <section id="team" style="background:var(--bg);">
   <div class="section-inner">
     <div style="text-align:center;margin-bottom:40px;" data-reveal>
@@ -1282,7 +1282,7 @@
             <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Years in the markets</div>
           </div>
           <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center;">
-            <div style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--gold-ink);">49K+</div>
+            <div style="font-family:'Big Shoulders Display','Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--gold-ink);" id="about-joined">49K+</div>
             <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Traders joined on Whop</div>
           </div>
         </div>
@@ -1599,7 +1599,7 @@ const SocialStats = (function () {
     // pb-* (the proof bar) removed 2026-09-10 -- see index.html and the
     // .proof-bar comment in site.css. hb-* (the hero badge) is the only
     // surviving target for each of these.
-    joined:  [['hb-joined', (v) => v]],
+    joined:  [['hb-joined', (v) => v], ['about-joined', (v) => v]],
     members: [['hb-joined-chip', (v) => v + ' members']],
     // mc-rating/mc-reviews are the mobile sticky CTA's own copy of the same
     // two numbers (index.html's #mobile-cta) -- it used to hand-type them
@@ -2719,7 +2719,7 @@ setInterval(tickSessionClock, 30000);
         card.className = 'team-card';
         card.innerHTML =
           (m.photoUrl
-            ? '<img class="team-avatar" src="' + esc(m.photoUrl) + '" alt="">'
+            ? '<img class="team-avatar" src="' + esc(m.photoUrl) + '" alt="" loading="lazy">'
             : '<div class="team-avatar">' + esc(name.slice(0, 2).toUpperCase()) + '</div>') +
           '<h3>' + esc(name) + '</h3>' +
           (m.role ? '<div class="role">' + esc(m.role) + '</div>' : '') +

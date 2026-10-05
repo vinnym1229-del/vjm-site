@@ -145,6 +145,20 @@ test('team: PJ real card only, no placeholder identities, no invented bios', () 
   assert.match(index, /id="team-grid"/, 'team grid container missing');
 });
 
+// The team section sits below the fold (after the FAQ, before the Results
+// Wall), same as the results-wall cards and the testimonials collage — every
+// other below-the-fold image on this page already ships loading="lazy" so it
+// doesn't compete with above-the-fold resources. The CMS-rendered avatar img
+// was missing it (and so was the owner-facing fallback-markup comment above
+// #team, which would have taught the owner to ship an eager image too).
+test('team avatar image is lazy-loaded, like every other below-the-fold image on the page', () => {
+  const avatarMarkup = index.match(/\(m\.photoUrl[\s\S]*?<\/div>'\)/)[0];
+  assert.match(avatarMarkup, /<img class="team-avatar" src="[^"]*" alt="" loading="lazy">/,
+    'team avatar img must be lazy-loaded, matching the results-wall card pattern');
+  assert.match(index, /swap the avatar div for: <img class="team-avatar" src="assets\/team\/NAME\.jpg" alt="" loading="lazy">/,
+    'the owner-facing fallback-markup comment must also teach loading="lazy"');
+});
+
 // Updated 2026-08-31 with the same reasoning: the wall used to advertise
 // itself with a "Wall coming soon" empty state. The section now ships hidden
 // and is revealed only by real CMS cards, so there is no empty promise on the

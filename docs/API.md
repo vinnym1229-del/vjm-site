@@ -31,6 +31,26 @@ Session check from cookie only.
 
 Clears the session cookie. Always 200 `{ok:true}`.
 
+## POST /api/auth-google
+
+"Sign in with Google" — a convenience layer on top of the access-code system
+above, not a replacement (`premium-guidance.html`'s Google button; the code
+box still works if it's never configured). Matches the Google account's
+verified email against `whop_codes` and, on a live match, sets the same
+`__Host-vjm_session` cookie `/api/verify-premium` does.
+
+Request: `{ "credential": "<Google ID token>" }`
+- 200 → `{ ok:true, expiresAt:"ISO", discord:"name|null", plan:"name|null" }` + Set-Cookie
+- 400 → missing or oversized (>4096 char) credential
+- 401 → the Google token failed verification (bad signature/audience/issuer/
+  expiry against `GOOGLE_CLIENT_ID`) or the account's email isn't verified
+- 404 → no `whop_codes` row's email matches this account at all
+- 403 → a matching row exists but every one is expired or revoked — kept
+  distinct from 404 for the same reason verify-premium's 403 is
+- 429 → rate limited (10/min/IP)
+- 503 → `GOOGLE_CLIENT_ID`, `SESSION_SIGNING_SECRET`, or `RESEARCH_DB` not configured
+- 502 → unexpected failure
+
 ## GET /api/check-member-status?discord=<handle>
 
 Public membership probe.
@@ -78,6 +98,18 @@ ForexFactory weekly calendar (public feed), USD high/medium events, ≤120 rows.
 Actual values appear only after release. 502 explicit-unavailable on failure.
 Feed URL overridable via `FOREX_CALENDAR_SOURCE_URL` (see docs/DEPLOYMENT.md) — omit it
 and the default public feed above is used.
+
+## GET /api/ticker
+
+Live tape data behind the homepage ticker (`assets/live-ticker.js`, polled every 10s).
+No params. Equities/ETFs (QQQ, SPY, DIA, IWM, GLD, USO, AAPL, TSLA, NVDA, MSFT) and BTC
+come from Alpaca's IEX/crypto feeds — real-time, unlike the anonymous TradingView embed's
+delayed "D"-badge data. 200 `{ ok:true, items:[{symbol,label,price,changePct,asOf,tv,asset}],
+asOf, feed:"iex" }` on success; 200 `{ ok:false, pending:true, error }` when Alpaca isn't
+configured (a normal "not wired up" state, not an error — the front-end falls back to the
+TradingView tape); 200 `{ ok:false, error }` on upstream failure. 429 rate limited (60/min).
+`Cache-Control: public, max-age=10, s-maxage=10` (shared edge cache absorbs polling across
+visitors).
 
 ## GET /api/market-brief
 
@@ -128,6 +160,45 @@ Two modes on one endpoint, chosen by whether `lessonId` is present:
   if the model's reply can't be tied back to a real cited section of that lesson.
 
 429 rate limited (8/min). 502 on generation failure.
+
+## GET /api/content?type=announcements|trade_reviews|prop_firms|schedule|team|faqs|bundles|stats|results
+
+Public read over owner-managed site content synced from the owner's Google Sheet
+(see `functions/api/content-sync.js`, the cron-only bridge that populates this table —
+not itself a public route). `trade_reviews` additionally accepts `&ticker=TSLA` to
+filter. `{ ok:true, type, count, items, note, fetchedAt }`. `announcements` sorts
+pinned items first; `team`/`faqs`/`results` sort by each item's own `order` field.
+400 on an unknown `type` (lists `supported`). 503 if D1 binding `RESEARCH_DB` isn't
+configured. 429 rate limited (120/min). `Cache-Control: public, max-age=60`.
+
+## POST /api/analytics
+
+First-party funnel telemetry (`assets/funnel.js`) — the site's only public write endpoint,
+built in-house instead of a third-party vendor tag so visitor data never
+leaves this account. Records no IP, user agent, or member-identifying data; `visit`
+is a random per-tab id, not stable across tabs/sessions/devices.
+
+Request: `{ visit:"<per-tab id>", events:[{name, path, props}] }`, up to 25 events
+per batch. `name` must be one of a fixed allowlist of funnel stages (e.g.
+`free_course_start`, `plan_cta`, `quiz_complete`) — anything else is silently
+dropped, not stored. `props` keeps only small primitive values, ≤12 keys, ≤512 JSON
+chars total once encoded.
+- 200 → `{ ok:true, stored:<n> }` — `stored:0` is normal when every event in the
+  batch was dropped as unrecognized, not an error
+- 400 → invalid JSON, no events, or batch over 25
+- 429 → rate limited (120/min)
+- 503 → D1 binding `RESEARCH_DB` not configured
+- 502 → storage write failed
+
+## GET /api/live-stats
+
+Auto-updating headline numbers (Discord member/online count, Whop member/review
+count) behind the homepage hero badge and mobile sticky CTA, replacing hand-typed
+figures. Discord side needs no config (public invite endpoint for `pjtrades`); Whop
+side needs `WHOP_API_KEY` + `WHOP_PRODUCT_ID` and falls back to the page's static
+numbers (never breaks the page) if either is missing.
+`{ ok:true, discord:{memberCount,onlineCount}|null, whop:{memberCount,reviewCount}|null,
+asOf }`. 429 rate limited (60/min). `Cache-Control: public, max-age=300`.
 
 ## Data classification vocabulary
 

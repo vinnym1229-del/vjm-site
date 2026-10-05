@@ -88,4 +88,26 @@ test('a mover with an unavailable change percent is not colored as a gain', asyn
   assert.doesNotMatch(losers, /class="num neg"/, 'an unavailable mover has no known direction either');
 });
 
+// alpaca.js's movers() only guards `price_change_percent !== undefined` before
+// calling Number() on it, so a non-numeric-but-present upstream value (empty
+// string, "N/A") ships as changePct:NaN rather than null. fmtPct's old
+// `v == null` check does not catch NaN (null == NaN is false), so this case
+// is a distinct failure mode from the null case above and needs its own test.
+test('a mover with a NaN change percent renders the placeholder, not "NaN%"', async () => {
+  const elements = await runLoad({
+    ok: true,
+    generatedAt: '2026-09-18T09:00:00.000Z',
+    movers: {
+      gainers: [],
+      losers: [{ symbol: 'XYZ', changePct: NaN }],
+      source: 'test',
+    },
+  });
+  const losers = elements.get('losers').innerHTML;
+  assert.match(losers, />—</, 'a NaN change percent must render the "—" placeholder, not "NaN%"');
+  assert.doesNotMatch(losers, /NaN/, 'the literal string "NaN%" must never reach the page');
+  assert.doesNotMatch(losers, /class="num pos"/, 'a NaN change percent must never render the gain (green) class');
+  assert.doesNotMatch(losers, /class="num neg"/, 'a NaN change percent has no known direction either');
+});
+
 console.log('VJM premarket-brief UI tests passed.');

@@ -102,6 +102,40 @@ test('a correctly-signed lookup by discord handle returns the matching row', () 
   assert.deepEqual(JSON.parse(res._t), { ok: true, found: true, discord: 'renewedmember', status: 'Renewed' });
 });
 
+test('a renamed or missing "Members" tab still resolves via the first-sheet fallback', () => {
+  // lookupOne_'s `ss.getSheetByName('Members') || ss.getSheets()[0]` exists so
+  // an owner renaming/reorganizing the tab (a spreadsheet edit, not a code
+  // change) doesn't silently break every lookup. Every other test's
+  // fakeSpreadsheet resolves 'Members' directly, so the fallback itself has
+  // never been exercised — if a future cleanup ever "simplified" it down to
+  // just getSheetByName('Members'), sheet would be undefined here and
+  // sheet.getDataRange() would throw, locking every member out behind a
+  // generic 500 with nothing in CI to catch it.
+  const renamedTabSpreadsheet = { getSheetByName: () => null, getSheets: () => [MEMBERS] };
+  const ctx = load(renamedTabSpreadsheet);
+  const res = ctx.doPost(signedRequest({ type: 'code', value: 'ACTIVE-CODE' }));
+  assert.deepEqual(JSON.parse(res._t), { ok: true, found: true, discord: 'pj#0001', status: 'Active' });
+});
+
+test('a sheet cell with incidental leading/trailing whitespace still matches a trimmed query', () => {
+  // The callers (verify-premium.js, check-member-status.js) both .trim() the
+  // incoming value before it ever reaches this bridge, but a Google Sheet
+  // cell copy-pasted from Discord/email routinely carries a stray space that
+  // Sheets never auto-trims. lookupOne_ only lower-cased `cell`, never
+  // trimmed it, so a code or handle that's identical to a human reading the
+  // sheet would fail the exact-match and report found:false -- a real member
+  // locked out by whitespace invisible in the cell.
+  const sheetWithWhitespace = fakeSheet([
+    ['Discord', 'Code', 'Status'],
+    [' pj#0001 ', 'ACTIVE-CODE ', 'Active'],
+  ]);
+  const ctx = load(fakeSpreadsheet(sheetWithWhitespace));
+  const byCode = ctx.doPost(signedRequest({ type: 'code', value: 'ACTIVE-CODE' }));
+  assert.deepEqual(JSON.parse(byCode._t), { ok: true, found: true, discord: ' pj#0001 ', status: 'Active' });
+  const byDiscord = ctx.doPost(signedRequest({ type: 'discord', value: 'pj#0001' }));
+  assert.deepEqual(JSON.parse(byDiscord._t), { ok: true, found: true, discord: ' pj#0001 ', status: 'Active' });
+});
+
 test('an unknown code returns found:false, not a throw', () => {
   const ctx = load(fakeSpreadsheet(MEMBERS));
   const res = ctx.doPost(signedRequest({ type: 'code', value: 'NOPE' }));

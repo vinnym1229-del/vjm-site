@@ -3,11 +3,14 @@
 // Real, auto-updating headline numbers instead of hand-typed ones.
 //   - Discord member count: Discord's public invite endpoint. No API key,
 //     no config — works out of the box for any public server invite.
-//   - Whop rating/review count/member count: Whop's REST API. Needs
-//     WHOP_API_KEY (Account API key, "access_pass:basic:read" scope,
-//     free — created once in the Whop dashboard) + WHOP_PRODUCT_ID.
-//     Omit either and this half just falls back to the site's static
-//     numbers — never breaks the page.
+//   - Whop review count/member count: Whop's REST API. Needs WHOP_API_KEY
+//     (Account API key, "access_pass:basic:read" scope, free — created
+//     once in the Whop dashboard) + WHOP_PRODUCT_ID. Omit either and this
+//     half just falls back to the site's static numbers — never breaks
+//     the page. Whop's product API has no aggregate star-rating field, so
+//     the homepage's "5.0★" figure is never touched by this endpoint — it
+//     stays Sheet-CMS (or static-default) only; see SocialStats in
+//     index.html.
 //
 // Cached at the edge for 5 minutes; this endpoint is meant to be polled
 // by every page load, so keep it cheap.

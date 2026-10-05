@@ -235,7 +235,7 @@ async function stockModule(params, env) {
   const sets = timeframe === 'daily' ? [{name:'Daily',bars:daily,pivot,horizon}] : timeframe === 'weekly' ? [{name:'Weekly',bars:weekly,pivot:2,horizon:Math.max(4,Math.round(horizon/5))}] : [{name:'Daily',bars:daily,pivot,horizon},{name:'Weekly',bars:weekly,pivot:2,horizon:Math.max(4,Math.round(horizon/5))}];
   const analyses = sets.map((x)=>({...x,result:analyseFib(x.bars,x.pivot,x.horizon,x.name)}));
   const fibStats = combineFibStats(analyses.map((x)=>x.result));
-  const last = daily[daily.length-1], close = finite(last.c), return20 = daily.length>20 ? close / finite(daily[daily.length-21].c) - 1 : null;
+  const last = daily[daily.length-1], close = finite(last.c), return20 = daily.length>20 && close!==null && finite(daily[daily.length-21].c)!==null ? close / finite(daily[daily.length-21].c) - 1 : null;
   const allEvents = analyses.flatMap((x)=>x.result.events);
   const best = fibStats.filter((x)=>x.touches>=5).sort((a,b)=>(b.fillRate||0)-(a.fillRate||0))[0];
   return {

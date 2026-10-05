@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { auditTree, shippedFiles, extractColors, isRed, contrast, hexToRgb } from '../tools/color-audit.mjs';
+import { auditTree, shippedFiles, extractColors, isRed, contrast, composite, hexToRgb } from '../tools/color-audit.mjs';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const read = (p) => readFileSync(join(ROOT, p), 'utf8');
@@ -134,6 +134,34 @@ test('ticker down/closed states clear WCAG AA against the light-mode ticker back
   assert.ok(sess, 'no light-mode override for .lt-sess.sess-cl in assets/live-ticker.js');
   assert.ok(contrast(hexToRgb(sess[1]), bg2) >= 4.5,
     `light-mode .lt-sess.sess-cl (${sess[1]}) on --bg2 is ${contrast(hexToRgb(sess[1]), bg2).toFixed(2)}:1`);
+});
+
+test('ticker pre-market/overnight/crypto badges clear WCAG AA against their own composited background', () => {
+  // sess-ah/sess-on/sess-247 (PRE-MARKET, AFTER HOURS, OVERNIGHT, 24/7 crypto)
+  // paint their own translucent rgba(0,0,0,.05) chip background on top of
+  // --bg2, so the text's real background isn't --bg2 itself but that overlay
+  // flattened onto it -- which is darker than --bg2 alone. The prior tests
+  // above check sess-cl/lt-pct.down against bare --bg2 and that happens to be
+  // fine for those (their own overlays are red-tinted, not neutral-darkening
+  // enough to matter), but the old #6b6b70 here cleared 4.91:1 against bare
+  // --bg2 while only clearing 4.40:1 against its actual composited
+  // background -- under the 4.5:1 AA floor for this .54rem/900-weight text,
+  // on the only visual indicator of market session state on the homepage
+  // ticker. Composite properly so this can't pass on the wrong background.
+  const ticker = read('assets/live-ticker.js');
+  const site = read('assets/site.css');
+  const lightBlock = site.match(/body\.light-mode\s*\{([^}]*)\}/)[1];
+  const bg2 = hexToRgb(lightBlock.match(/--bg2:\s*(#[0-9a-fA-F]{6})/)[1]);
+
+  const rule = ticker.match(
+    /body\.light-mode #ticker-wrap \.lt-sess\.sess-ah,\s*\n\s*body\.light-mode #ticker-wrap \.lt-sess\.sess-on,\s*\n\s*body\.light-mode #ticker-wrap \.lt-sess\.sess-247\{color:(#[0-9a-fA-F]{6});background:rgba\((\d+),(\d+),(\d+),([\d.]+)\);\}/
+  );
+  assert.ok(rule, 'no light-mode override for .lt-sess.sess-ah/sess-on/sess-247 in assets/live-ticker.js');
+  const [, colorHex, r, g, b, alpha] = rule;
+  const ownBg = composite({ r: +r, g: +g, b: +b }, +alpha, bg2);
+  const ratio = contrast(hexToRgb(colorHex), ownBg);
+  assert.ok(ratio >= 4.5,
+    `light-mode .lt-sess.sess-ah/on/247 (${colorHex}) on its own composited background is ${ratio.toFixed(2)}:1`);
 });
 
 test('ticker up/down percentages clear WCAG AA against their own theme background, both themes', () => {

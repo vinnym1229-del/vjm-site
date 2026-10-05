@@ -255,6 +255,17 @@ import {
   assert.equal(sanitizeContentRow('bundles', { id: 'b1', name: '' }), null, 'bundles requires a name');
   const bundle = sanitizeContentRow('bundles', { id: 'b2', name: 'Futures Core', features: 'Live sessions | Discord | Replays' });
   assert.deepEqual(bundle.features, ['Live sessions', 'Discord', 'Replays']);
+  assert.equal(bundle.highlight, false, 'highlight defaults to false when the sheet leaves it blank');
+
+  // bundles' `highlight` truthy branch: index.html's CMS-driven pricing grid
+  // (`b.highlight ? ' hot' : ''`) is the only thing that marks a tier card as
+  // the featured plan, and nothing anywhere in the suite had ever set this
+  // field to a truthy sheet value -- `sanitizeContentRow`'s own
+  // true/yes/1-only regex was fully unexercised on its match side.
+  const featuredBundle = sanitizeContentRow('bundles', { id: 'b3', name: 'Complete', highlight: 'yes' });
+  assert.equal(featuredBundle.highlight, true, 'a "yes" sheet value must coerce to highlight:true');
+  const explicitlyOffBundle = sanitizeContentRow('bundles', { id: 'b4', name: 'Complete', highlight: 'no' });
+  assert.equal(explicitlyOffBundle.highlight, false, 'an explicit "no" must not coerce to true');
   assert.equal(sanitizeContentRow('stats', { id: 'st1', key: '' }), null, 'stats requires a key');
   assert.equal(sanitizeContentRow('results', { id: 'r2', image_url: '' }), null, 'results requires an image_url');
 
@@ -308,6 +319,16 @@ import {
   assert.equal(pinnedAnnouncement.pinned, 1, 'a "yes" sheet value must coerce to pinned:1');
   const unpinnedAnnouncement = sanitizeContentRow('announcements', { id: 'a3', title: 'Regular notice' });
   assert.equal(unpinnedAnnouncement.pinned, 0, 'pinned defaults to 0 when the sheet leaves it blank');
+
+  // a sheet row with an id but no title and no body must be rejected, not
+  // synced as a blank card on the site and a near-empty Discord embed --
+  // every other announcements fixture above supplies a title or a body,
+  // so this double-empty guard had never actually been exercised.
+  assert.equal(
+    sanitizeContentRow('announcements', { id: 'a-empty' }),
+    null,
+    'an announcement with no title and no body must be rejected'
+  );
 }
 
 console.log('# VJM integrations-core lib tests passed.');

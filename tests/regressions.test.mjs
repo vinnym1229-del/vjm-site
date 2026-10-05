@@ -403,6 +403,23 @@ test("psychology essay's 2017 Barber et al. citations don't cite pages its own b
   assert.doesNotMatch(worksCited, /pp?\.\s*\d/, 'this Works Cited entry has no pagination -- if that ever changes, the in-text citations above should cite the real pages instead of none');
 });
 
+// Incident: psychology-enhancer.html's Expert-level tax lesson #7
+// ("Asset-class mapping") bills itself as "the index so nothing gets
+// skipped" and points readers to each product's own Expert-level tax
+// lesson by course-page name. Its stock row named "Stock Lab" --
+// stock-lab.html, the free stock-research/charting tool page, which has
+// no lesson-card markup and no Expert tier at all -- instead of
+// "Stock Breakdown", the actual curriculum page whose Expert lesson #10
+// ("Tax and Legal Structure for Active Stock Traders...") is exactly the
+// wash-sale/475(f) content this row describes. A member following the
+// index for required stock tax material was sent to a tool page with
+// nothing on it.
+test('psychology essay\'s tax-lesson index points "Stock" to the real curriculum page', () => {
+  const psych = read('psychology-enhancer.html');
+  assert.doesNotMatch(psych, /Stock Lab — Expert/, 'tax-lesson index mis-names the stock curriculum page as the stock tool page');
+  assert.match(psych, /Stock Breakdown — Expert/, 'tax-lesson index must point to stock-breakdown.html\'s Expert lesson, not stock-lab.html');
+});
+
 // Incident: the Works Cited list carried two entries (Fenton-O'Creevy et al.
 // and a Securities and Exchange Commission staff report) that were never
 // actually cited anywhere in the essay body -- MLA's "Works Cited" only
@@ -724,6 +741,41 @@ test('docs/API.md documents /api/premium-market-analyst', () => {
     'expected premium-market-analyst.js to still gate on upgrade_required');
 });
 
+// Incident: docs/API.md documents /api/verify-premium and /api/logout-premium
+// (the code-based sign-in/out pair) but never mentioned /api/auth-google at
+// all -- a fully shipped, tested "Sign in with Google" endpoint
+// premium-guidance.html's handleGoogleCredential() calls, which mints the
+// same __Host-vjm_session cookie via the same signSession/tier machinery --
+// the same "documented every sibling but this one" gap the market-brief,
+// premium-market-analyst, and assistant fixes above each closed once already.
+test('docs/API.md documents /api/auth-google', () => {
+  const doc = read('docs/API.md');
+  assert.match(doc, /## POST \/api\/auth-google/, 'docs/API.md must have an auth-google POST heading');
+  const section = doc.slice(doc.indexOf('## POST /api/auth-google'), doc.indexOf('## GET /api/check-member-status'));
+  assert.match(section, /credential/, 'docs/API.md: auth-google section omits its {credential} request shape');
+  assert.match(section, /404/, 'docs/API.md: auth-google section omits its 404 no-match response');
+  assert.match(section, /403/, 'docs/API.md: auth-google section omits its distinct 403 expired/revoked response');
+  assert.match(read('functions/api/auth-google.js'), /GOOGLE_CLIENT_ID/,
+    'expected auth-google.js to still verify against GOOGLE_CLIENT_ID');
+});
+
+// Incident: docs/API.md documents every market-data endpoint (stock-research,
+// yahoo-news, forex-calendar, market-brief) but never mentioned /api/ticker
+// at all, despite it being the live feed behind the homepage ticker --
+// polled every 10s by assets/live-ticker.js, with its own deliberate
+// pending:true unconfigured-Alpaca state and a 10s shared edge cache -- the
+// same "documented every sibling but this one" gap the market-brief,
+// premium-market-analyst, and auth-google fixes above each closed once already.
+test('docs/API.md documents /api/ticker', () => {
+  const doc = read('docs/API.md');
+  assert.match(doc, /## GET \/api\/ticker/, 'docs/API.md must have a ticker GET heading');
+  const section = doc.slice(doc.indexOf('## GET /api/ticker'), doc.indexOf('## GET /api/market-brief'));
+  assert.match(section, /pending:true/, 'docs/API.md: ticker section omits its deliberate pending state');
+  assert.match(section, /60\/min/, 'docs/API.md: ticker section omits its 60/min rate limit');
+  assert.match(read('functions/api/ticker.js'), /pending: true/,
+    'expected ticker.js to still respond with a pending state when Alpaca is unconfigured');
+});
+
 // Incident: docs/API.md documents every market-data endpoint but never
 // mentioned /api/assistant at all -- 686 lines, fully shipped, tested, and
 // member-facing (the course-companion chatbot's entire backend, with its own
@@ -743,12 +795,12 @@ test('docs/API.md documents /api/assistant', () => {
 });
 
 // Incident: functions/api/live-stats.js's own header comment documents that
-// WHOP_API_KEY + WHOP_PRODUCT_ID turn on real Whop rating/review/member
-// counts for the homepage hero badge, and that omitting either silently
-// falls back to static numbers -- "never breaks the page" but also never
-// tells anyone it's off. docs/DEPLOYMENT.md is the site's one checklist for
-// every other Cloudflare secret (including every other Whop var), so an
-// owner following it had no way to discover this pair exists at all.
+// WHOP_API_KEY + WHOP_PRODUCT_ID turn on real Whop review/member counts for
+// the homepage hero badge, and that omitting either silently falls back to
+// static numbers -- "never breaks the page" but also never tells anyone
+// it's off. docs/DEPLOYMENT.md is the site's one checklist for every other
+// Cloudflare secret (including every other Whop var), so an owner following
+// it had no way to discover this pair exists at all.
 test('docs/DEPLOYMENT.md documents WHOP_API_KEY/WHOP_PRODUCT_ID for live-stats', () => {
   const doc = read('docs/DEPLOYMENT.md');
   assert.match(doc, /WHOP_API_KEY/, 'docs/DEPLOYMENT.md must mention WHOP_API_KEY');
@@ -756,6 +808,22 @@ test('docs/DEPLOYMENT.md documents WHOP_API_KEY/WHOP_PRODUCT_ID for live-stats',
   assert.match(doc, /live-stats/, 'docs/DEPLOYMENT.md must say what WHOP_API_KEY/WHOP_PRODUCT_ID are for');
   assert.match(read('functions/api/live-stats.js'), /env\.WHOP_API_KEY.*env\.WHOP_PRODUCT_ID/,
     'expected live-stats.js to still gate on both WHOP_API_KEY and WHOP_PRODUCT_ID');
+});
+
+// Incident: live-stats.js's header comment and docs/DEPLOYMENT.md's
+// WHOP_API_KEY/WHOP_PRODUCT_ID row both claimed the homepage's "5.0★"
+// rating figure was live-sourced from Whop, but whopStats() has only ever
+// returned { memberCount, reviewCount } -- Whop's product API has no
+// aggregate star-rating field. index.html's loadLiveStats() correctly never
+// passes a `rating` key to SocialStats('live', ...), so the figure was (and
+// remains) Sheet-CMS/static-only; only the prose overclaimed it. An owner
+// who set both env vars expecting the star rating to start auto-updating
+// would never see it happen, with nothing anywhere saying why.
+test('live-stats.js and its deployment doc do not claim Whop supplies a rating', () => {
+  assert.doesNotMatch(read('functions/api/live-stats.js'), /Whop rating/i,
+    'live-stats.js header comment must not claim Whop supplies a rating');
+  assert.doesNotMatch(read('docs/DEPLOYMENT.md'), /Whop rating|real Whop rating/i,
+    'docs/DEPLOYMENT.md must not claim WHOP_API_KEY/WHOP_PRODUCT_ID enables a Whop-sourced rating');
 });
 
 // Incident: STRICT_D1_ENTITLEMENTS is a real, functioning env var -- it's
@@ -796,6 +864,50 @@ test('docs/DEPLOYMENT.md and docs/API.md document FOREX_CALENDAR_SOURCE_URL', ()
     'docs/API.md must mention FOREX_CALENDAR_SOURCE_URL in the forex-calendar section');
   assert.match(read('functions/api/forex-calendar.js'), /env\.FOREX_CALENDAR_SOURCE_URL/,
     'expected forex-calendar.js to still read env.FOREX_CALENDAR_SOURCE_URL');
+});
+
+// Incident: GOOGLE_CLIENT_ID is marked required by auth-google.js's own
+// header comment ("required -- OAuth Web Client ID ... public value, not a
+// secret") and docs/OWNER-CHECKLIST.md flags it as the site's #1 outstanding
+// action item -- omit it and POST /api/auth-google 503s for every request
+// while premium-guidance.html's "Sign in with Google" button still renders
+// unconditionally. Despite that, it appeared in neither .env.example nor
+// docs/DEPLOYMENT.md's secrets table, the same doc-discoverability gap
+// already closed for WHOP_API_KEY/WHOP_PRODUCT_ID, STRICT_D1_ENTITLEMENTS,
+// and FOREX_CALENDAR_SOURCE_URL -- this was the one instance those sweeps
+// missed, and the only required (not optional-fallback) var among them.
+test('.env.example and docs/DEPLOYMENT.md document GOOGLE_CLIENT_ID', () => {
+  assert.match(read('.env.example'), /GOOGLE_CLIENT_ID/,
+    '.env.example must mention GOOGLE_CLIENT_ID');
+  assert.match(read('docs/DEPLOYMENT.md'), /GOOGLE_CLIENT_ID/,
+    'docs/DEPLOYMENT.md must mention GOOGLE_CLIENT_ID');
+  assert.match(read('functions/api/auth-google.js'), /env\.GOOGLE_CLIENT_ID/,
+    'expected auth-google.js to still read env.GOOGLE_CLIENT_ID');
+});
+
+// Incident: TURNSTILE_SITE_KEY/TURNSTILE_SECRET_KEY are real, shipped env
+// vars -- _lib/turnstile.js's turnstileConfigured() reads the secret to
+// decide whether verify-premium and the newsletter/lead-capture forms
+// enforce a human check at all, and docs/OWNER-CHECKLIST.md + docs/
+// SECURITY.md's S13 row both describe the feature as built-but-off
+// ("owner env var pending") -- but neither variable appeared in
+// .env.example or docs/DEPLOYMENT.md's secrets table, the one doc whose
+// entire job is "here is every secret to set in Cloudflare." Every other
+// feature-toggling var (WHOP_API_KEY, STRICT_D1_ENTITLEMENTS,
+// FOREX_CALENDAR_SOURCE_URL, GOOGLE_CLIENT_ID) already got this same
+// doc-discoverability fix above; Turnstile's pair was the one instance
+// those sweeps missed.
+test('.env.example and docs/DEPLOYMENT.md document TURNSTILE_SITE_KEY/TURNSTILE_SECRET_KEY', () => {
+  assert.match(read('.env.example'), /TURNSTILE_SITE_KEY/,
+    '.env.example must mention TURNSTILE_SITE_KEY');
+  assert.match(read('.env.example'), /TURNSTILE_SECRET_KEY/,
+    '.env.example must mention TURNSTILE_SECRET_KEY');
+  assert.match(read('docs/DEPLOYMENT.md'), /TURNSTILE_SITE_KEY/,
+    'docs/DEPLOYMENT.md must mention TURNSTILE_SITE_KEY');
+  assert.match(read('docs/DEPLOYMENT.md'), /TURNSTILE_SECRET_KEY/,
+    'docs/DEPLOYMENT.md must mention TURNSTILE_SECRET_KEY');
+  assert.match(read('functions/api/_lib/turnstile.js'), /Boolean\(env\.TURNSTILE_SECRET_KEY\)/,
+    'expected turnstile.js turnstileConfigured() to still gate on env.TURNSTILE_SECRET_KEY');
 });
 
 // Incident: removing the homepage's "Live From PJ's Desk" section (2026-09-08)
@@ -1331,6 +1443,30 @@ test("index.html's mobile sticky CTA rating/review count is wired to the same li
   // just coincidentally matching today.
   assert.match(index, /reviews:\s*\[\['hb-reviews',[^\]]*\],\s*\['mc-reviews',/, 'SocialStats: mc-reviews must share the "reviews" STATS entry with hb-reviews');
   assert.match(index, /rating:\s*\[\['hb-rating',[^\]]*\],\s*\['mc-rating',/, 'SocialStats: mc-rating must share the "rating" STATS entry with hb-rating');
+});
+
+// Incident: the About section's "49K+ / Traders joined on Whop" stat card
+// (index.html, below the Buffett quote) was a third hand-typed copy of the
+// hero badge's #hb-joined lifetime-join count, predating the SocialStats
+// module itself. Unlike #hb-joined, it had no id and no STATS target, so
+// neither /api/live-stats nor the Sheet CMS could ever update it -- it would
+// have kept showing "49K+" forever regardless of how large the real count
+// grew. Fixed by giving it #about-joined and wiring it into the existing
+// "joined" STATS entry, the same share-the-writer pattern already used for
+// mc-rating/mc-reviews above.
+test("index.html's About-section join count is wired to the same live source as the hero badge, not a third hand-typed copy", () => {
+  const index = read('index.html');
+
+  const hbJoined = /id="hb-joined">([^<]+)</.exec(index);
+  assert.ok(hbJoined, 'index.html: expected #hb-joined in the hero badge');
+
+  const aboutJoined = /id="about-joined">([^<]+)</.exec(index);
+  assert.ok(aboutJoined, 'index.html: expected #about-joined in the About section stat card');
+
+  // The SocialStats STATS table is the only thing that keeps them in sync
+  // going forward -- assert the id is actually registered as a target, not
+  // just a static number that happens to look plausible today.
+  assert.match(index, /joined:\s*\[\['hb-joined',[^\]]*\],\s*\['about-joined',/, 'SocialStats: about-joined must share the "joined" STATS entry with hb-joined');
 });
 
 // Incident: docs/ENTITLEMENTS.md quotes the same four-course lesson total
@@ -2496,6 +2632,26 @@ test('ARCHITECTURE.md describes the real session cookie name and payload shape',
   assert.doesNotMatch(doc, /MASTER-AUDIT §14/, 'must not cite a MASTER-AUDIT section that no longer exists');
 });
 
+// Incident: ARCHITECTURE.md's "no framework migration" decision cited
+// index.html's size as its evidence -- "index.html ~2.4 MB" -- but the real
+// file has only ever been in the low hundreds of KB (220 KB as of this fix,
+// confirmed against both the working tree and the commit that introduced
+// this doc). The 2.4 MB figure was wrong from that very first commit, not a
+// later drift: an 11x overstatement of the one number the doc uses to
+// justify a real architectural decision, which could mislead a future
+// maintainer or the owner into thinking the monolith problem is far worse
+// than it is. Reworded to drop the precise-but-wrong number for a
+// qualitative claim ("largest of the 16 static pages") that can't go stale
+// the same way.
+test('ARCHITECTURE.md does not overstate index.html size as the monolith-migration evidence', () => {
+  const doc = read('docs/ARCHITECTURE.md');
+  assert.doesNotMatch(doc, /index\.html\s*~?\s*2\.4\s*MB/i,
+    'must not repeat the wrong ~2.4 MB index.html size claim');
+  const actualBytes = readFileSync(join(ROOT, 'index.html')).length;
+  assert.ok(actualBytes < 500 * 1024,
+    `index.html is ${actualBytes} bytes -- if it ever actually approaches the old 2.4 MB claim, revisit this doc for real`);
+});
+
 // Same incident, second doc the original fix missed: docs/API.md's own
 // POST /api/verify-premium reference still named the pre-prefix `vjm_session`
 // cookie with no Path attribute, even after ARCHITECTURE.md was corrected
@@ -2602,4 +2758,40 @@ test('research-engine-setup.md documents the real signing secret, not the retire
     'must not describe PREMIUM_ACCESS_CODES as the HMAC signing secret -- that was the fixed P0-2 hole');
   assert.match(doc, /MEMBERS_BRIDGE_URL/,
     'must document the new members bridge, not just the legacy MEMBERS_STATUS_URL');
+});
+
+// Incident: docs/API.md documents every other page-critical public route
+// (verify-premium, auth-google, stock-research, market-brief, assistant...)
+// but never mentioned /api/content, /api/analytics, or /api/live-stats at
+// all -- despite /api/content feeding every CMS-driven page section
+// (announcements, trade reviews, prop firms, team, faqs, bundles),
+// /api/analytics being, per its own header comment, "the site's only public
+// write endpoint", and /api/live-stats feeding the homepage hero badge and
+// mobile sticky CTA's member counts. The same "documented every sibling but
+// this one" gap the market-brief, premium-market-analyst, and auth-google
+// fixes above each closed once already, just for three different endpoints.
+test('docs/API.md documents /api/content, /api/analytics, and /api/live-stats', () => {
+  const doc = read('docs/API.md');
+
+  assert.match(doc, /## GET \/api\/content/, 'docs/API.md must have a content GET heading');
+  const contentSection = doc.slice(doc.indexOf('## GET /api/content'), doc.indexOf('## POST /api/analytics'));
+  assert.match(contentSection, /ticker/, 'docs/API.md: content section omits the trade_reviews ticker filter');
+  assert.match(contentSection, /503/, 'docs/API.md: content section omits its unconfigured-D1 503');
+  assert.match(read('functions/api/content.js'), /cleanSymbol\([^)]*ticker/,
+    'expected content.js to still support a ticker filter on trade_reviews');
+
+  assert.match(doc, /## POST \/api\/analytics/, 'docs/API.md must have an analytics POST heading');
+  const analyticsSection = doc.slice(doc.indexOf('## POST /api/analytics'), doc.indexOf('## GET /api/live-stats'));
+  assert.match(analyticsSection, /only public write endpoint/,
+    'docs/API.md: analytics section omits that this is the site\'s only public write endpoint');
+  assert.match(analyticsSection, /allowlist/, 'docs/API.md: analytics section omits the event-name allowlist');
+  assert.match(read('functions/api/analytics.js'), /ALLOWED_EVENTS/,
+    'expected analytics.js to still gate event names on an allowlist');
+
+  assert.match(doc, /## GET \/api\/live-stats/, 'docs/API.md must have a live-stats GET heading');
+  const statsSection = doc.slice(doc.indexOf('## GET /api/live-stats'), doc.indexOf('## Data classification vocabulary'));
+  assert.match(statsSection, /WHOP_API_KEY/, 'docs/API.md: live-stats section omits its optional Whop config');
+  assert.match(statsSection, /falls back/, 'docs/API.md: live-stats section omits the static-numbers fallback');
+  assert.match(read('functions/api/live-stats.js'), /WHOP_API_KEY/,
+    'expected live-stats.js to still read WHOP_API_KEY for the Whop half');
 });

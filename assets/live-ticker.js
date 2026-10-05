@@ -23,6 +23,7 @@
   let half = 0; // width of one copy of the (doubled) row, for seamless wraparound
   let hovering = false;
   let dragging = false;
+  let manuallyPaused = false; // toggled by the keyboard-operable pause button below
   let dragMoved = false;
   let dragStartX = 0;
   let dragStartPos = 0;
@@ -57,34 +58,68 @@
   // week ends Friday 8:00pm ET and does not resume until Sunday 8:00pm ET,
   // so Friday night, all of Saturday, and Sunday daytime are CLOSED — not
   // "overnight". Overnight means a session is actually running.
-  const MINS = { PRE: 4 * 60, OPEN: 9 * 60 + 30, CLOSE: 16 * 60, AFTER_END: 20 * 60 };
+  const MINS = { PRE: 4 * 60, OPEN: 9 * 60 + 30, EARLY_CLOSE: 13 * 60, CLOSE: 16 * 60, AFTER_END: 20 * 60 };
   const DAYNUM = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  // Full-day NYSE closures that fall on what would otherwise be a normal
+  // trading weekday — without this list, a holiday is indistinguishable from
+  // any other Mon-Fri to the time/day math below, so e.g. Thanksgiving at
+  // 11am ET would score as regular OPEN hours. NYSE publishes this calendar
+  // years in advance; extend it a year or two ahead at a time as it ages out.
+  const HOLIDAYS = new Set([
+    '2026-01-01', '2026-01-19', '2026-02-16', '2026-04-03', '2026-05-25',
+    '2026-06-19', '2026-07-03', '2026-09-07', '2026-11-26', '2026-12-25',
+    '2027-01-01', '2027-01-18', '2027-02-15', '2027-03-26', '2027-05-31',
+    '2027-06-18', '2027-07-05', '2027-09-06', '2027-11-25', '2027-12-24',
+  ]);
+  // NYSE 1:00pm ET early closes (the Friday after Thanksgiving, and Christmas
+  // Eve when the 24th isn't itself the observed Christmas holiday above — see
+  // 2027, where Christmas Day falls on a Saturday and is observed on the
+  // 24th instead). Without this, the OPEN/AFTER-HOURS math below uses the
+  // normal 4:00pm close on these dates too, so a 2pm ET badge reads OPEN for
+  // a market that has actually been shut for an hour.
+  const EARLY_CLOSE_DAYS = new Set(['2026-11-27', '2026-12-24', '2027-11-26']);
 
   function marketSession(asset) {
     if (asset === 'crypto') return { code: '24/7', cls: 'sess-247', title: 'Crypto trades 24 hours a day, 7 days a week' };
     const parts = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/New_York', hour12: false, weekday: 'short', hour: '2-digit', minute: '2-digit',
+      year: 'numeric', month: '2-digit', day: '2-digit',
     }).formatToParts(new Date());
     const get = (t) => { const p = parts.find((x) => x.type === t); return p ? p.value : ''; };
     const day = DAYNUM[get('weekday')];
     // Intl can return hour "24" for midnight in some engines; normalize.
     const mins = (Number(get('hour')) % 24) * 60 + Number(get('minute'));
+    const isoDate = get('year') + '-' + get('month') + '-' + get('day');
 
     const CLOSED = { code: 'CLOSED', cls: 'sess-cl', title: 'Market closed — US equities reopen Sunday 8:00pm ET' };
+    const HOLIDAY_CLOSED = { code: 'CLOSED', cls: 'sess-cl', title: 'Market closed for a NYSE holiday' };
+    if (day !== 6 && day !== 0 && HOLIDAYS.has(isoDate)) return HOLIDAY_CLOSED; // full-day holiday, Mon-Fri
     if (day === 6) return CLOSED;                                  // all Saturday
     if (day === 0 && mins < MINS.AFTER_END) return CLOSED;         // Sunday until 8pm
     if (day === 5 && mins >= MINS.AFTER_END) return CLOSED;        // Friday after 8pm
 
+    const earlyClose = EARLY_CLOSE_DAYS.has(isoDate);
+    const closeMins = earlyClose ? MINS.EARLY_CLOSE : MINS.CLOSE;
     const OVERNIGHT = { code: '🌙 OVERNIGHT', cls: 'sess-on', title: 'Overnight session (8:00pm–4:00am ET)' };
     if (day === 0) return OVERNIGHT;                               // Sunday 8pm onward
-    if (mins >= MINS.OPEN && mins < MINS.CLOSE) {
-      return { code: 'OPEN', cls: 'sess-op', title: 'Regular market hours (9:30am–4:00pm ET)' };
+    if (mins >= MINS.OPEN && mins < closeMins) {
+      return {
+        code: 'OPEN', cls: 'sess-op',
+        title: earlyClose
+          ? 'Regular market hours — NYSE early close today, 9:30am–1:00pm ET'
+          : 'Regular market hours (9:30am–4:00pm ET)',
+      };
     }
     if (mins >= MINS.PRE && mins < MINS.OPEN) {
       return { code: '🌅 PRE-MARKET', cls: 'sess-ah', title: 'Pre-market extended hours (4:00am–9:30am ET)' };
     }
-    if (mins >= MINS.CLOSE && mins < MINS.AFTER_END) {
-      return { code: '🌅 AFTER HOURS', cls: 'sess-ah', title: 'After-hours extended trading (4:00pm–8:00pm ET)' };
+    if (mins >= closeMins && mins < MINS.AFTER_END) {
+      return {
+        code: '🌅 AFTER HOURS', cls: 'sess-ah',
+        title: earlyClose
+          ? 'After-hours extended trading (1:00pm early close–8:00pm ET)'
+          : 'After-hours extended trading (4:00pm–8:00pm ET)',
+      };
     }
     return OVERNIGHT;
   }
@@ -120,6 +155,16 @@
 #ticker-wrap .lt-live .dot{width:6px;height:6px;border-radius:50%;background:#d14343;box-shadow:0 0 8px rgba(209,67,67,.45);
   animation:${REDUCED ? 'none' : 'ltPulse 1.6s ease-in-out infinite'};}
 @keyframes ltPulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+/* WCAG 2.2.2 (Pause, Stop, Hide): the tape auto-scrolls indefinitely for
+   anyone without the OS-level prefers-reduced-motion flag set, and the only
+   prior pause triggers (mouseenter, pointer-drag) are both mouse/touch-only
+   -- a keyboard user tabbing into a tape cell had no way to stop it sliding
+   out from under their focus ring. This button is the keyboard/assistive-
+   tech equivalent of hovering. Right-aligned, same treatment as .lt-live. */
+#ticker-wrap .lt-pause{position:absolute;right:0;top:0;bottom:0;z-index:2;display:flex;align-items:center;
+  padding:0 12px;background:linear-gradient(270deg,#0c0c0d 72%,rgba(12,12,13,0));border:0;cursor:pointer;
+  font-size:.8rem;line-height:1;color:#d9d9dd;}
+body.light-mode #ticker-wrap .lt-pause{background:linear-gradient(270deg,#f6f6f7 72%,rgba(246,246,247,0));color:#6b6b70;}
 #ticker-wrap .lt-viewport{position:absolute;inset:0;overflow:hidden;display:flex;align-items:center;
   cursor:${REDUCED ? 'default' : 'grab'};touch-action:pan-y;}
 #ticker-wrap .lt-viewport.dragging{cursor:grabbing;}
@@ -156,7 +201,7 @@ body.light-mode #ticker-wrap .lt-sess.sess-op{color:#3a3a3e;background:rgba(0,0,
 body.light-mode #ticker-wrap .lt-sess.sess-cl{color:#b3251d;background:rgba(179,37,29,.07);}
 body.light-mode #ticker-wrap .lt-sess.sess-ah,
 body.light-mode #ticker-wrap .lt-sess.sess-on,
-body.light-mode #ticker-wrap .lt-sess.sess-247{color:#6b6b70;background:rgba(0,0,0,.05);}
+body.light-mode #ticker-wrap .lt-sess.sess-247{color:#5c5c61;background:rgba(0,0,0,.05);}
 `;
     document.head.appendChild(style);
   }
@@ -170,7 +215,7 @@ body.light-mode #ticker-wrap .lt-sess.sess-247{color:#6b6b70;background:rgba(0,0
     if (lastTs == null) lastTs = ts;
     const dt = Math.min(0.1, (ts - lastTs) / 1000);
     lastTs = ts;
-    const paused = hovering || dragging || performance.now() < resumeAt;
+    const paused = hovering || dragging || manuallyPaused || performance.now() < resumeAt;
     if (!paused) pos += SPEED * dt;
     render();
     requestAnimationFrame(raf);
@@ -233,7 +278,10 @@ body.light-mode #ticker-wrap .lt-sess.sess-247{color:#6b6b70;background:rgba(0,0
     wrap.innerHTML =
       '<div class="lt-live" title="Real-time prices — IEX exchange feed" aria-hidden="true"><span class="dot"></span>Live</div>' +
       // Track holds the row twice; wraparound at the half-width loops seamlessly.
-      '<div class="lt-viewport"><div class="lt-track">' + rowHtml + rowHtml + '</div></div>';
+      '<div class="lt-viewport"><div class="lt-track">' + rowHtml + rowHtml + '</div></div>' +
+      // REDUCED already means the track never auto-scrolls (raf never runs,
+      // below), so a pause control would have nothing to pause.
+      (REDUCED ? '' : '<button type="button" class="lt-pause" aria-pressed="false" aria-label="Pause ticker">⏸</button>');
     track = wrap.querySelector('.lt-track');
     viewport = wrap.querySelector('.lt-viewport');
     // scrollWidth = padding-left + 2 x rowWidth; the repeat period is
@@ -249,6 +297,13 @@ body.light-mode #ticker-wrap .lt-sess.sess-247{color:#6b6b70;background:rgba(0,0
     built = true;
     if (!REDUCED) {
       wireInteraction();
+      const pauseBtn = wrap.querySelector('.lt-pause');
+      pauseBtn.addEventListener('click', () => {
+        manuallyPaused = !manuallyPaused;
+        pauseBtn.setAttribute('aria-pressed', String(manuallyPaused));
+        pauseBtn.setAttribute('aria-label', manuallyPaused ? 'Resume ticker' : 'Pause ticker');
+        pauseBtn.textContent = manuallyPaused ? '▶' : '⏸';
+      });
       requestAnimationFrame(raf);
     }
   }
