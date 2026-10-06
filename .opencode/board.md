@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj: premium-guidance.html; tests/pj-futures.test.mjs | Give the Alpaca AI Trend Analyst's 1Y/3Y/5Y toggle buttons `aria-pressed` state — currently only a CSS class (`btn-gold` vs `btn-ghost`) distinguishes the selected range, so a screen-reader user hears three identical "button" controls with no indication which one is active. | 2026-10-06 |
 
 ## Queued (unclaimed, safe to take)
 
