@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | .github/workflows/research-refresh.yml | Investigating a job-timeout cancellation on today's options-refresh run (37372676106) that left zero error detail in the log | 2026-10-06 |
 
 ## Queued (unclaimed, safe to take)
 
