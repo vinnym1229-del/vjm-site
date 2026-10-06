@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | unsubscribe.html; assets/newsletter.js; tests/newsletter-api.test.mjs; tests/newsletter-unsubscribe-banner-a11y.test.mjs | 634/634 tests green going in. Live-deployment probe hit the standing whole-`*.pages.dev`-domain policy block (confirmed via curl, host `pj.vjm.pages.dev:443`); substituted GitHub Actions `test.yml` run `37439767275` (passed against this exact base commit `ec63551`, 0 commits behind) as the last-known-good live signal. Fresh-eyes Explore agent found `unsubscribe.html`'s `#nl-state` one-click-email-link banner relies on `aria-live` alone with no focus move, the same race the newsletter-signup-success fix (commit 8cd2250) just worked around for the sibling form. Fixing it. | 2026-10-06 |
 
 ## Queued (unclaimed, safe to take)
 
