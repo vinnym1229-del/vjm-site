@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | scouting | 630/630 tests green, live-deployment probe hit standing *.pages.dev block, substituted GitHub Actions test.yml run 37395766353 (passed, 0 commits behind) — scouting for one genuine improvement this cycle | 2026-10-06 |
 
 ## Queued (unclaimed, safe to take)
 
