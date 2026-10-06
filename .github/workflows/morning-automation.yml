@@ -60,7 +60,19 @@ jobs:
           # which hits the same pattern against /api/content-sync). -o/-w
           # capture status and body separately so both get printed regardless
           # of outcome, and the JSON is what decides success here.
-          http_code="$(curl --silent --show-error --retry 2 --max-time 120 \
+          #
+          # --retry-max-time 60 caps the same hang research-refresh.yml hit
+          # on 2026-10-05 (run 37372676106, cancelled after ~15 minutes with
+          # nothing in the log): --max-time resets on every retry instead of
+          # bounding the total, so `--retry 2 --max-time 120` can take up to
+          # 3x120s=360s on an endpoint that hangs instead of failing fast —
+          # exactly this job's 6-minute timeout-minutes, with zero margin for
+          # the config-validation step or this step's own node diagnostic.
+          # Once an attempt has already burned past 60s it was a real hang,
+          # not a quick transient error, so retrying would only repeat the
+          # same multi-minute stall; a merely-slow-but-quick failure still
+          # gets retried inside that budget.
+          http_code="$(curl --silent --show-error --retry 2 --retry-max-time 60 --max-time 120 \
             -o /tmp/brief-response.json -w '%{http_code}' \
             -X POST \
             -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
@@ -98,7 +110,19 @@ jobs:
           # hits this same endpoint and documents why (`set -e` trips on the
           # `response=$(...)` line before the diagnostic ever runs, throwing
           # away the real error). -o/-w capture status and body separately.
-          http_code="$(curl --silent --show-error --retry 2 --max-time 60 \
+          #
+          # --retry-max-time 30 matches the fix applied to this same curl
+          # pattern's siblings (content-sync.yml, this file's brief job,
+          # research-refresh.yml) after a real hang went silent past its job
+          # timeout on 2026-10-05 (run 37372676106) — --max-time resets on
+          # every retry instead of bounding the total, so a hang instead of
+          # a fast failure can cost up to (retries+1)x--max-time. This job's
+          # current 60s --max-time and 2 retries fit today's 6-minute
+          # timeout-minutes even unbounded (3x60s=180s), but a future bump
+          # to --max-time without this flag would silently reopen the same
+          # gap, so it's added here for the same reason, not an active
+          # incident.
+          http_code="$(curl --silent --show-error --retry 2 --retry-max-time 30 --max-time 60 \
             -o /tmp/content-response.json -w '%{http_code}' \
             -X POST \
             -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \

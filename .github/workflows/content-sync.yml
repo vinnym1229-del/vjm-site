@@ -51,7 +51,19 @@ jobs:
           # detail from the Function (or proof there wasn't one) thrown away.
           # -o/-w capture status and body separately so both get printed
           # regardless of outcome, and the JSON is what decides success here.
-          http_code="$(curl --silent --show-error --retry 3 --max-time 90 \
+          #
+          # --retry-max-time 45 caps the same hang research-refresh.yml hit
+          # on 2026-10-05 (run 37372676106, cancelled after ~15 minutes with
+          # nothing in the log): --max-time resets on every retry instead of
+          # bounding the total, so `--retry 3 --max-time 90` can take up to
+          # 4x90s=360s on an endpoint that hangs instead of failing fast —
+          # already past this job's own 5-minute timeout-minutes, which is
+          # exactly how a run goes silent with no "Sync failed" line ever
+          # printed. Once an attempt has already burned past 45s it was a
+          # real hang, not a quick transient error, so retrying would only
+          # repeat the same multi-minute stall; a merely-slow-but-quick
+          # failure still gets retried inside that budget.
+          http_code="$(curl --silent --show-error --retry 3 --retry-max-time 45 --max-time 90 \
             -o /tmp/content-sync-response.json -w '%{http_code}' \
             -X POST \
             -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
