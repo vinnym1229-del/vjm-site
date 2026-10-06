@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | TBD, scouting now | 640/640 tests green going in. Live-deployment probe hit the standing whole-`*.pages.dev`-domain policy block (curl CONNECT tunnel failed, response 403; agent-proxy status-endpoint check itself denied by the auto-mode classifier as containment escape); substituted GitHub Actions `test.yml` run `37482747044` (passed against this exact base commit `eb25534`, 0 commits behind) plus a successful same-tip content-sync run as the last-known-good live signal. Scouting for one genuine improvement. | 2026-10-06 |
 
 ## Queued (unclaimed, safe to take)
 
