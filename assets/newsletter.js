@@ -160,11 +160,16 @@
         if (out.res.ok && out.data && out.data.ok) {
           // Replace the form rather than leaving a filled-in one on screen: a
           // form that still looks submittable after a success is the reason
-          // people submit twice.
-          form.innerHTML = '<p class="nl-kicker">You’re on the list</p>'
+          // people submit twice. But the swap deletes .nl-msg (the form's own
+          // role="status" live region) along with everything else, so without
+          // its own live region and its own focus the replacement announces
+          // nothing to a screen reader and strands keyboard focus on <body>
+          // once the submit button it was on is gone.
+          form.innerHTML = '<p class="nl-kicker" role="status" aria-live="polite" tabindex="-1">You’re on the list</p>'
             + '<p class="nl-sub" style="margin:0">Check your inbox for the guides. Every email has an '
             + 'unsubscribe link at the bottom, and you can also '
             + '<a href="/unsubscribe.html">unsubscribe here</a> any time.</p>';
+          form.querySelector('.nl-kicker').focus();
           track('lead_submit', { form: 'newsletter', source: form.getAttribute('data-source') || 'site' });
           return;
         }
