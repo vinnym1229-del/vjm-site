@@ -2825,3 +2825,37 @@ test('Code.gs and APPS-SCRIPT-INTEGRATION.md document the Bundles features pipe-
   assert.match(read('functions/api/_lib/integrations-core.js'), /row\.features,\s*1200\)\s*\.split\('\|'\)/,
     'expected sanitizeContentRow to still split bundles.features on "|"');
 });
+
+// Incident: prop-firms.html's footer CSS set color:var(--vjm-muted) on the
+// <footer> element itself (which is what tools/contrast-audit.mjs's walk of
+// ambient text picks up) but never styled the <a> tags inside it. An <a>'s
+// UA-stylesheet default color beats an inherited `color`, so the footer's
+// four links (Home/Privacy/Terms/Risk Disclosure) rendered as the browser's
+// default link blue, rgb(0,0,238), on the page's near-black background --
+// 2.08:1 contrast against the WCAG AA 4.5:1 minimum for body text. A real
+// contrast-audit run (not part of `npm test`; this repo has no DOM parser
+// available to its node:test suite, so that tool can't run here) caught it.
+// unsubscribe.html uses the identical tokens.css footer pattern and already
+// carries the fix (`footer a{color:var(--vjm-muted)}`); premarket.html's
+// footer links are unaffected because each <a> there already carries its
+// own inline `style="color:var(--vjm-gold)"`. Pin all three so a future
+// tokens.css-footer page can't ship the same gap silently.
+test('pages using the tokens.css footer pattern style their footer links, not just footer text', () => {
+  const pagesWithThisFooterPattern = PAGES.filter((p) =>
+    /footer\{border-top:1px solid var\(--vjm-border\)/.test(read(p)));
+  assert.deepEqual(pagesWithThisFooterPattern.sort(),
+    ['premarket.html', 'prop-firms.html', 'unsubscribe.html'],
+    'the set of pages using this footer pattern changed -- re-check the new one\'s footer link color too');
+
+  for (const p of pagesWithThisFooterPattern) {
+    const html = read(p);
+    const footer = /<footer[^>]*>[\s\S]*?<\/footer>/.exec(html);
+    assert.ok(footer, `${p}: no <footer> found`);
+    const hasCssRule = /footer a\{[^}]*color:/.test(html);
+    const links = [...footer[0].matchAll(/<a\b[^>]*>/g)].map((m) => m[0]);
+    assert.ok(links.length > 0, `${p}: footer has no links to check`);
+    const everyLinkInlineStyled = links.every((a) => /style="[^"]*color:/.test(a));
+    assert.ok(hasCssRule || everyLinkInlineStyled,
+      `${p}: footer links have no explicit color (CSS rule or inline style) -- they will render the browser's default link blue`);
+  }
+});
