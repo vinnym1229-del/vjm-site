@@ -1022,6 +1022,41 @@ assert.equal(
 assert.equal(displacement.reversal, true, 'the tape reversed immediately after the candle completed');
 
 // ---------------------------------------------------------------------------
+// scanDisplacement's bullish and bearish conditions
+// (`close>=low+range*.75` vs `close<=low+range*.25`) are a symmetric pair,
+// but every prior test here only ever built a rising candle -- the bearish
+// branch, its 'down' direction and its 'Bearish Displacement' label had zero
+// coverage. Mirror the bullish fixture above: a candle falling 110 -> 100
+// closing on its low, then a bounce back up once it completes.
+// ---------------------------------------------------------------------------
+const bearishDisplacementBars = [];
+for (let i = 0; i < 100; i++) bearishDisplacementBars.push(bar(minuteAt(i), 110, 110.3, 109.9, 110.2));
+const fall = [108, 106, 104, 102, 100];
+for (let i = 0; i < 5; i++) {
+  bearishDisplacementBars.push(bar(minuteAt(100 + i), fall[i] + 2, fall[i] + 2, fall[i], fall[i]));
+}
+for (let i = 0; i < 60; i++) {
+  const price = 100 + i * 0.05;
+  bearishDisplacementBars.push(bar(minuteAt(105 + i), price, price + 0.06, price - 0.02, price + 0.05));
+}
+const bearishDisplacementEvents = scanDisplacement(bearishDisplacementBars, '2026-08-20');
+assert.equal(bearishDisplacementEvents.length, 1, 'exactly one displacement candle exists on this falling tape');
+const bearishDisplacement = bearishDisplacementEvents[0];
+assert.equal(bearishDisplacement.condition, 'Bearish Displacement', 'a candle closing on its low is labelled bearish, not bullish');
+assert.equal(bearishDisplacement.direction, 'down', 'a bearish displacement expects continued downside');
+assert.equal(
+  bearishDisplacement.time,
+  '11:15',
+  'a 5m bearish displacement candle spanning 11:10-11:15 is actionable at 11:15, not at 11:10',
+);
+assert.equal(
+  bearishDisplacement.continuation,
+  false,
+  'the move inside the displacement candle is not a post-signal continuation',
+);
+assert.equal(bearishDisplacement.reversal, true, 'the tape bounced immediately after the candle completed');
+
+// ---------------------------------------------------------------------------
 // The entry bar's own excursion is already history when the entry price
 // exists. A sweep bar that spikes 0.3% past the level and then closes back at
 // the level, followed by a tape that only falls, is a reversal -- not a
