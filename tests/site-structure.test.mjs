@@ -197,6 +197,17 @@ for (const page of ['privacy.html', 'terms.html', 'risk-disclosure.html']) {
     `${page}: missing the sitewide :focus-visible ring on its nav/button/body links`);
 }
 
+// 404.html has its own standalone inline style block (not shared with the
+// above three) and was missed by that same WCAG 2.4.7/1.4.11 convention: its
+// four nav/CTA links had no :focus-visible rule at all in either theme.
+{
+  const source = readFileSync(resolve(root, '404.html'), 'utf8');
+  assert.match(source, /a:focus-visible\s*\{\s*outline:2px solid #e26060;/,
+    '404.html: missing the dark-mode :focus-visible ring on its nav links');
+  assert.match(source, /body\.light-mode a:focus-visible\s*\{\s*outline-color:#b3251d;/,
+    '404.html: missing the light-mode :focus-visible outline-color override on its nav links');
+}
+
 // CNAME is a GitHub Pages convention. This site deploys via Cloudflare
 // Pages, which takes its custom domains from the dashboard and ignores
 // this file entirely -- so the stale `not-financial-advice.com` in it was

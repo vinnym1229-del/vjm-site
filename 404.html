@@ -19,6 +19,12 @@ p { color:#9a9aa0; margin:0; max-width:420px; line-height:1.6; }
 .links { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
 a { color:#e26060; font-weight:700; text-decoration:none; border:1px solid rgba(209,67,67,0.28); padding:10px 24px; border-radius:8px; display:inline-block; transition:all .2s; }
 a:hover { background:#d14343; color:#fff; }
+/* This page's inline style block predates the sitewide WCAG 2.4.7/1.4.11
+   :focus-visible convention (assets/site.css and privacy.html/terms.html/
+   risk-disclosure.html's own self-contained blocks all restate it), so a
+   keyboard user tabbing through these four links got only the browser's
+   unstyled default outline instead of the site's gold/red ring. */
+a:focus-visible { outline:2px solid #e26060; outline-offset:3px; border-radius:4px; }
 
 /* Page-wide ambient red pulse (mirrors index.html), so the lightning/black-
    red theme is consistent site-wide rather than home-page-only. */
@@ -43,6 +49,7 @@ body.light-mode h1, body.light-mode h1 span { color:#141416; }
 body.light-mode p { color:#5f5f66; }
 body.light-mode a { color:#b3251d; border-color:rgba(179,37,29,0.22); }
 body.light-mode a:hover { background:#b3251d; color:#fff; }
+body.light-mode a:focus-visible { outline-color:#b3251d; }
 body.light-mode::before {
   background: radial-gradient(ellipse 80% 50% at 85% 0%, rgba(179,37,29,.04) 0%, transparent 55%),
               radial-gradient(ellipse 60% 40% at 10% 100%, rgba(20,20,22,.04) 0%, transparent 55%);
