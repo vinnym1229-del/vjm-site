@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | scouting | 641/641 tests green, live probe hit the standing *.pages.dev policy block (substituted CI run 37514573403, passed at this exact base commit), scouting for one genuine improvement | 2026-10-06 |
 
 ## Queued (unclaimed, safe to take)
 
