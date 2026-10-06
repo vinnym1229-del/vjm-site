@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | scouting | 630/630 tests green, live-deployment curl blocked by the same standing *.pages.dev proxy policy every prior run hit; scanning HTML pages for copy/accessibility/coverage gaps this cycle | 2026-10-06 |
 
 ## Queued (unclaimed, safe to take)
 
