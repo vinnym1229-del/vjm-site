@@ -50,7 +50,19 @@ jobs:
             # thrown away, same class of bug already fixed in
             # content-sync.yml/morning-automation.yml. -o/-w capture status
             # and body separately so the real detail always reaches the log.
-            http_code="$(curl --silent --show-error --retry 3 --max-time 90 \
+            #
+            # --retry-max-time 45 caps that logging guarantee itself: run
+            # 37372676106 (2026-10-05) hung past this job's own
+            # timeout-minutes and got cancelled with nothing in the log at
+            # all, because --max-time resets on every retry attempt instead
+            # of bounding the total — `curl --retry 3 --max-time 90` can take
+            # up to 4x90s=360s on a single endpoint that times out instead of
+            # erroring fast, and this job calls it twice in a row. Once an
+            # attempt has already burned past 45s, a retry would only risk
+            # repeating that same multi-minute hang, so --retry-max-time
+            # stops it from starting another one; a merely-slow-but-quick
+            # transient failure still gets its retries within that budget.
+            http_code="$(curl --silent --show-error --retry 3 --retry-max-time 45 --max-time 90 \
               -o /tmp/research-refresh-response.json -w '%{http_code}' \
               -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
               "${RESEARCH_REFRESH_URL%/}${endpoint}")" || true
@@ -78,7 +90,10 @@ jobs:
   daily:
     if: github.event.schedule == '30 22 * * 1-5' || inputs.scope == 'daily' || inputs.scope == 'all'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 11 sequential refresh calls x up to 120s each (see that step's
+    # --retry-max-time comment) = up to 1320s worst case; 20 min (1200s)
+    # left no margin and could cancel the job mid-run with no error logged.
+    timeout-minutes: 25
     env:
       RESEARCH_REFRESH_URL: ${{ secrets.RESEARCH_REFRESH_URL }}
       RESEARCH_CRON_SECRET: ${{ secrets.RESEARCH_CRON_SECRET }}
@@ -97,7 +112,17 @@ jobs:
             # --fail-with-body: that pattern silently threw away the real
             # error body on failure. -o/-w capture status and body
             # separately so the actual detail always reaches the log.
-            http_code="$(curl --silent --show-error --retry 3 --max-time 120 \
+            #
+            # --retry-max-time 60 caps that logging guarantee itself (see the
+            # options job's comment for the 2026-10-05 incident that exposed
+            # this): this job chains 11 sequential refresh calls, so even
+            # without it ever firing a retry, 11x120s=1320s alone already
+            # exceeds this job's 20-minute timeout-minutes -- a hang on
+            # almost any one of them cancels the whole job with no log line.
+            # Capping retries so a near-full-length attempt never repeats,
+            # paired with the timeout-minutes bump below, keeps the worst
+            # case (11 single attempts, no retries) inside the job timeout.
+            http_code="$(curl --silent --show-error --retry 3 --retry-max-time 60 --max-time 120 \
               -o /tmp/research-refresh-response.json -w '%{http_code}' \
               -H "X-Research-Cron: $RESEARCH_CRON_SECRET" \
               "${RESEARCH_REFRESH_URL%/}${endpoint}")" || true
