@@ -242,7 +242,10 @@
         invalid: ['err', 'That unsubscribe link is not valid. Enter your address below and we will remove it.'],
         error: ['err', 'Something went wrong on our side. Enter your address below and we will remove it.'],
       }[state];
-      if (copy) { banner.className = 'nl-msg ' + copy[0]; banner.textContent = copy[1]; }
+      // aria-live alone is not dependable this early: the announcement races
+      // some screen readers' region registration on page load (the same race
+      // the signup-success fix above worked around). Explicit focus is not.
+      if (copy) { banner.className = 'nl-msg ' + copy[0]; banner.textContent = copy[1]; banner.focus(); }
     }
   }
 

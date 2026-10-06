@@ -409,6 +409,7 @@ test('the unsubscribe page works, and is kept out of the index', () => {
   const page = read('unsubscribe.html');
   assert.match(page, /class="nl-unsub"/);
   assert.match(page, /id="nl-state"/, 'the one-click redirect needs somewhere to report');
+  assert.match(page, /id="nl-state"[^>]*tabindex="-1"/, 'aria-live alone races some screen readers on page load; the banner must also be focusable so init() can move focus to it');
   assert.match(page, /meta name="robots" content="noindex,nofollow"/);
   assert.match(read('_headers'), /\/unsubscribe\.html\n\s+X-Robots-Tag: noindex, nofollow/);
   // The policy has to describe the list, not just the site's other data.

@@ -251,6 +251,49 @@ test('premium Alpaca AI trend analyst: gated endpoint + member UI', () => {
   assert.match(guidance, /\/api\/premium-market-analyst/, 'member UI must call the analyst endpoint');
   assert.match(guidance, /id="market-analyst"/);
   assert.match(guidance, /hidden>/, 'analyst panel must be hidden until premium is verified');
+  // The 1Y/3Y/5Y history-range buttons are a plain toggle-button group, not a
+  // tablist (no tabpanel switches) -- only btn-gold vs btn-ghost distinguished
+  // the selected one, so a screen reader announced three identical "button"
+  // controls with no indication which range was active.
+  assert.match(guidance, /data-years="1" aria-pressed="false"/, '1Y button must expose its pressed state');
+  assert.match(guidance, /data-years="3" aria-pressed="true"/, '3Y is the default selection and must start pressed');
+  assert.match(guidance, /data-years="5" aria-pressed="false"/, '5Y button must expose its pressed state');
+});
+
+test('trend analyst year toggle: clicking a range updates aria-pressed on all three buttons', () => {
+  const start = guidance.indexOf('// ─── Alpaca AI Trend Analyst (verified members only) ───');
+  assert.ok(start > -1, 'could not find the Trend Analyst year-toggle <script> block');
+  const end = guidance.indexOf('function analystChip', start);
+  assert.ok(end > start, 'could not find the end marker (function analystChip) after the year-toggle script');
+  const script = guidance.slice(start, end);
+
+  function makeYearButton(years, selected) {
+    return {
+      dataset: { years: String(years) },
+      className: 'btn ' + (selected ? 'btn-gold' : 'btn-ghost') + ' analyst-year',
+      attrs: { 'aria-pressed': String(selected) },
+      listeners: {},
+      setAttribute(k, v) { this.attrs[k] = String(v); },
+      getAttribute(k) { return k in this.attrs ? this.attrs[k] : null; },
+      addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); },
+    };
+  }
+  const buttons = [makeYearButton(1, false), makeYearButton(3, true), makeYearButton(5, false)];
+  const sandbox = {
+    document: { querySelectorAll: (sel) => (sel === '.analyst-year' ? buttons : []) },
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(script, sandbox);
+
+  // Simulate clicking "5Y" the way a real pointer click would — through the
+  // listener the script itself attached, not by calling setAnalystYears().
+  buttons[2].listeners.click[0]();
+
+  assert.equal(buttons[0].attrs['aria-pressed'], 'false', '1Y must be unpressed after 5Y is picked');
+  assert.equal(buttons[1].attrs['aria-pressed'], 'false', '3Y must be unpressed after 5Y is picked');
+  assert.equal(buttons[2].attrs['aria-pressed'], 'true', '5Y must be pressed after it is clicked');
+  assert.equal(buttons[2].className, 'btn btn-gold analyst-year', 'the clicked button must still get the gold styling');
+  assert.equal(buttons[0].className, 'btn btn-ghost analyst-year', 'the deselected button must still get the ghost styling');
 });
 
 test('schedule mirrors the weekly session structure', () => {
