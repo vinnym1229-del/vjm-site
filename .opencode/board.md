@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | scouting, not yet claimed | 630/630 tests green going in; live-deployment probe hit the same standing whole-`*.pages.dev`-domain policy block every prior run has hit (confirmed via curl + agent-proxy status, host `pj.vjm.pages.dev:443`), substituted GitHub Actions `test.yml` run `37425971268` (passed against this exact base commit `ca6aa5f`, 0 commits behind) as the last-known-good live signal. Scouting for one genuine improvement this cycle. | 2026-10-06 |
 
 ## Queued (unclaimed, safe to take)
 
