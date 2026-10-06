@@ -245,9 +245,9 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
     <div style="background:rgba(22,22,24,.72);border:1px solid var(--bdr);border-radius:14px;padding:16px;">
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
         <span style="font-size:.78rem;color:var(--m2);font-weight:800;">History:</span>
-        <button class="btn btn-ghost analyst-year" type="button" data-years="1">1Y</button>
-        <button class="btn btn-gold analyst-year" type="button" data-years="3">3Y</button>
-        <button class="btn btn-ghost analyst-year" type="button" data-years="5">5Y</button>
+        <button class="btn btn-ghost analyst-year" type="button" data-years="1" aria-pressed="false">1Y</button>
+        <button class="btn btn-gold analyst-year" type="button" data-years="3" aria-pressed="true">3Y</button>
+        <button class="btn btn-ghost analyst-year" type="button" data-years="5" aria-pressed="false">5Y</button>
         <button class="btn btn-gold" type="button" id="analyst-run" style="margin-left:auto;">Analyze Trend</button>
       </div>
       <div id="analyst-status" role="status" aria-live="polite" style="color:var(--muted);font-size:.8rem;min-height:1.2em;margin-bottom:10px;"></div>
@@ -395,6 +395,7 @@ function setAnalystYears(y){
   document.querySelectorAll('.analyst-year').forEach(b=>{
     const on=Number(b.dataset.years)===y;
     b.className='btn '+(on?'btn-gold':'btn-ghost')+' analyst-year';
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
   });
 }
 document.querySelectorAll('.analyst-year').forEach(b=>b.addEventListener('click',()=>setAnalystYears(Number(b.dataset.years))));
