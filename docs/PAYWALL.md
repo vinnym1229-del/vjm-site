@@ -31,15 +31,15 @@ Audit run against the working tree (`node tools/paywall-audit.mjs`):
 | `futures-dissection.html` | 3 | 43 | 7 | 3 | 9,750 | 87 KB | 119 KB |
 | `options-lab.html` | 4 | 51 | 0 | 3 | 11,381 | 100 KB | 159 KB |
 | `psychology-enhancer.html` | 13 | 62 | 0 | 3 | 16,048 | 158 KB | 209 KB |
-| `stock-breakdown.html` | 4 | 46 | 0 | 3 | 12,789 | 113 KB | 131 KB |
-| **total** | **24** | **202** | **7** | **12** | **49,968** | **457 KB** | **619 KB** |
+| `stock-breakdown.html` | 4 | 46 | 0 | 3 | 12,789 | 113 KB | 132 KB |
+| **total** | **24** | **202** | **7** | **12** | **49,968** | **458 KB** | **619 KB** |
 
 Read that as:
 
 - **202 paid lessons** are gated at the edge and readable in public source.
 - **All twelve worked cases** — the long-form, fully-computed examples that are
   the most expensive thing on this site to produce — are in public source.
-- **49,968 words** of paid prose (roughly a 200-page book) and **468,238 bytes**
+- **49,968 words** of paid prose (roughly a 200-page book) and **468,875 bytes**
   of paid markup are in the public repository right now.
 - **Seven lessons are free by design** (futures Level 1) and one essay
   (psychology). That is the entire intended free tier, and the audit knows it
@@ -48,7 +48,7 @@ Read that as:
   server-side gate covers everything it is supposed to cover. This is the part
   that is working, and the part not to break.
 
-The value at risk is not 457 KB of bytes. It is the only thing on the site that
+The value at risk is not 458 KB of bytes. It is the only thing on the site that
 a competitor cannot generate in an afternoon.
 
 ## 3. Why the existing defenses do not address this

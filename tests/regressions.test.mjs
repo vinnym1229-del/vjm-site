@@ -2527,6 +2527,34 @@ test('every table header cell declares scope="col"', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: every wide data table that relies on `overflow-x:auto`/`overflow:auto`
+// on its wrapping <div> to become horizontally scrollable on narrow viewports
+// (contract-spec tables, Greeks reference, research-engine result matrices,
+// the premium stock-lab watchlist) sat in a plain, non-focusable <div> -- a
+// <div> is not natively in the tab order, so a keyboard-only visitor (no
+// mouse/touch drag-scroll available) could never bring the content past the
+// fold into view at all. This is WCAG 2.1.1 Keyboard / axe-core's
+// `scrollable-region-focusable`: adding tabindex="0" to the scrollable
+// container is the standard minimal fix, and it's free here since every
+// affected page already carries a sitewide `[tabindex]:focus-visible` rule,
+// so the newly-focusable region gets a visible ring with no CSS changes.
+// Distinct from the scope="col" fix above (header association, not
+// focusability) and from every previously-fixed ARIA-tablist/focus-trap item.
+test('every scrollable table wrapper (.table-wrap/.table-scroll or an inline overflow-auto div) is keyboard-focusable', () => {
+  const missing = [];
+  for (const p of PAGES) {
+    const html = read(p);
+    for (const m of html.matchAll(/<div class="table-wrap"[^>]*>|<div class="table-scroll"[^>]*>/g)) {
+      if (!/\btabindex=/.test(m[0])) missing.push(`${p}: ${m[0]}`);
+    }
+    for (const m of html.matchAll(/<div[^>]*style="[^"]*overflow(-x)?:\s*auto[^"]*"[^>]*><table/g)) {
+      if (!/\btabindex=/.test(m[0])) missing.push(`${p}: ${m[0]}`);
+    }
+  }
+  assert.deepEqual(missing, [], `scrollable table wrappers missing tabindex="0":\n  ${missing.join('\n  ')}`);
+});
+
+// ---------------------------------------------------------------------------
 // Incident: the desktop mega-nav's 6 `.nav-top` dropdown-disclosure buttons
 // (Membership/Curriculum/Tools/Markets/Live/Community, on every nav-bearing
 // page) shipped aria-expanded/aria-haspopup but never aria-controls -- and
