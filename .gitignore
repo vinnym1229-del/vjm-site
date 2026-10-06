@@ -5,7 +5,10 @@
 !.env.example
 
 # Dependencies and build output
-node_modules/
+# No trailing slash: some sandboxes symlink node_modules to a shared cache
+# instead of a real directory, and a slash-anchored pattern only matches a
+# real directory, not a symlink -- leaving the symlink to show as untracked.
+node_modules
 .wrangler/
 dist/
 .DS_Store
