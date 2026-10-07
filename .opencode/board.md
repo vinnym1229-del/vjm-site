@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | privacy.html Analytics/Hosting section, tests/site-contract.test.mjs SITEMAP_LASTMOD_PINS, sitemap.xml `/privacy` lastmod | Fix privacy.html's "no third-party analytics tag on this site" claim, which the CSP (`_headers`) and its own incident test (regressions.test.mjs, "CSP ... later blocked ... Cloudflare's analytics beacon") contradict — Cloudflare's analytics beacon hosts are allowlisted and the beacon has demonstrably loaded in production | 2026-10-07 |
 
 ## Queued (unclaimed, safe to take)
 
