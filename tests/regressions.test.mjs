@@ -897,6 +897,25 @@ test('docs/DEPLOYMENT.md and docs/API.md document FOREX_CALENDAR_SOURCE_URL', ()
     'expected forex-calendar.js to still read env.FOREX_CALENDAR_SOURCE_URL');
 });
 
+// Incident: functions/api/market-brief.js's own header comment names
+// BRIEF_UNIVERSE as a real, optional env var (an owner-facing lever that
+// overrides which tickers the Pre-Market Brief's "top movers" module scans
+// when Alpaca's screener entitlement isn't used) and parseUniverse() really
+// reads it -- but, unlike every other optional feature-toggling var of this
+// exact shape (FOREX_CALENDAR_SOURCE_URL, WHOP_API_KEY, etc.), it appeared
+// nowhere an owner configuring Cloudflare would look: absent from both
+// docs/DEPLOYMENT.md's secrets table and docs/API.md's market-brief
+// reference. The only place the exact variable name was spelled out was a
+// one-line code comment on the function itself.
+test('docs/DEPLOYMENT.md and docs/API.md document BRIEF_UNIVERSE', () => {
+  assert.match(read('docs/DEPLOYMENT.md'), /BRIEF_UNIVERSE/,
+    'docs/DEPLOYMENT.md must mention BRIEF_UNIVERSE');
+  assert.match(read('docs/API.md'), /BRIEF_UNIVERSE/,
+    'docs/API.md must mention BRIEF_UNIVERSE in the market-brief section');
+  assert.match(read('functions/api/market-brief.js'), /env\.BRIEF_UNIVERSE/,
+    'expected market-brief.js to still read env.BRIEF_UNIVERSE');
+});
+
 // Incident: GOOGLE_CLIENT_ID is marked required by auth-google.js's own
 // header comment ("required -- OAuth Web Client ID ... public value, not a
 // secret") and docs/OWNER-CHECKLIST.md flags it as the site's #1 outstanding

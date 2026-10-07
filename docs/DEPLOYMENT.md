@@ -27,6 +27,7 @@ via PR).
 | `CONTENT_BRIDGE_URL` + `CONTENT_BRIDGE_SECRET` | owner content CMS Apps Script bridge (see docs/APPS-SCRIPT-INTEGRATION.md) |
 | `CONTENT_DISCORD_DRYRUN` | optional, default `true` — set `false` only when announcements should auto-post |
 | `DISCORD_ANNOUNCEMENTS_WEBHOOK` | optional, pre-market brief auto-post |
+| `BRIEF_UNIVERSE` | optional, comma-separated ticker list overriding the Pre-Market Brief's "top movers" universe when Alpaca's screener entitlement isn't used (default: SPY, QQQ, NVDA, AAPL, MSFT, TSLA, AMD, META, AMZN, GOOGL) — needs at least 2 valid ticker-shaped entries or the default silently applies instead; see `functions/api/market-brief.js` |
 | `DISCORD_WHOP_CODES_WEBHOOK` | optional, delivers fresh Whop purchase codes to the owner channel |
 | `WHOP_API_KEY` / `WHOP_PRODUCT_ID` | optional, enables real Whop review/member counts on the homepage hero badge via `/api/live-stats` (Account API key, `access_pass:basic:read` scope) — omit either and it silently falls back to the site's static numbers, never breaks the page. Whop's product API has no aggregate star-rating field, so the "5.0★" figure stays Sheet-CMS (or static-default) only, regardless of this var |
 | `FOREX_CALENDAR_SOURCE_URL` | optional, swaps in a paid/private economic-calendar feed for `/api/forex-calendar` — omit it and the default public ForexFactory feed is used, matching forex-calendar.html's own "API note" to the owner |

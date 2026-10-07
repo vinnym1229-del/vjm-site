@@ -127,8 +127,10 @@ and only the raw data survived. 429 rate limited (30/min).
 Regenerates and stores the brief. Authorized by `X-Research-Cron` only (constant-time
 compare against `RESEARCH_CRON_SECRET`, same pattern as research-engine's cron auth) —
 401 otherwise. Optionally posts to `DISCORD_ANNOUNCEMENTS_WEBHOOK` if configured (dry-run,
-`discordPosted:false`, if not). `{ ok, stored, discordPosted, discordDetail, brief }`;
-502 on generation failure.
+`discordPosted:false`, if not). `movers`' default universe (SPY, QQQ, NVDA, AAPL, MSFT, TSLA,
+AMD, META, AMZN, GOOGL) can be overridden with `BRIEF_UNIVERSE`, a comma-separated ticker
+list (needs ≥2 valid entries or the default silently applies). `{ ok, stored, discordPosted,
+discordDetail, brief }`; 502 on generation failure.
 
 ## GET /api/research-engine?module=health|options|intraday|stock|sectors|biotech
 
