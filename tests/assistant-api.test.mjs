@@ -518,6 +518,25 @@ function fullSnapshot(price) {
   }
 }
 
+// A body that never sent a `question` key at all (not just whitespace) must
+// hit the same gate. `String(body.question || '')` is what turns the missing
+// key into '' before the `!question` check -- a plausible-looking simplification
+// to `String(body.question)` would instead produce the literal string
+// "undefined" (truthy, 9 chars), sailing past the gate and forwarding that
+// as the user's real question to the rate-limited AI call.
+{
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => { throw new Error('must not call Alpaca when the question key is absent'); };
+  try {
+    const { status, data } = await ask(alpacaEnv(), { lessonId: FUTURES_LESSON.id });
+    assert.equal(status, 400);
+    assert.equal(data.ok, false);
+    assert.match(data.error, /ask a question/i);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
 // A body of literal JSON `null` parses without a syntax error, so the
 // try/catch around request.json() doesn't fire -- but `body.question` on
 // `null` used to throw, and onRequestPost's outer catch-all turned that into
