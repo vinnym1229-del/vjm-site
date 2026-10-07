@@ -296,6 +296,41 @@ test('trend analyst year toggle: clicking a range updates aria-pressed on all th
   assert.equal(buttons[0].className, 'btn btn-ghost analyst-year', 'the deselected button must still get the ghost styling');
 });
 
+test('trend analyst: a successful run announces completion instead of going silent', async () => {
+  // runAnalyst() used to clear #analyst-status to '' right before writing
+  // results into #analyst-metrics/#analyst-narrative, neither of which has
+  // aria-live. A screen-reader user heard "Pulling N-year Nasdaq history…"
+  // and then nothing when the results actually landed.
+  const start = guidance.indexOf('// ─── Alpaca AI Trend Analyst (verified members only) ───');
+  assert.ok(start > -1, 'could not find the Trend Analyst script block');
+  const end = guidance.indexOf('async function signOutGuidance', start);
+  assert.ok(end > start, 'could not find the end marker (signOutGuidance) after the Trend Analyst script');
+  const script = guidance.slice(start, end);
+
+  const status = { textContent: '' };
+  const metricsBox = { style: {}, innerHTML: '', appendChild() {} };
+  const narrBox = { style: {}, textContent: '' };
+  const runBtn = { disabled: false, listeners: {}, addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); } };
+  const created = () => ({ style: {}, textContent: '', append() {} });
+
+  const sandbox = {
+    document: {
+      getElementById: (id) => ({ 'analyst-status': status, 'analyst-metrics': metricsBox, 'analyst-narrative': narrBox, 'analyst-run': runBtn }[id] || null),
+      querySelectorAll: () => [],
+      createElement: created,
+    },
+    fetch: async () => ({ ok: true, json: async () => ({ ok: true, metrics: { lastClose: 123.45 }, narrative: 'Up and to the right.', coverage: {} }) }),
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(script, sandbox);
+
+  // Simulate clicking "Analyze Trend" through the listener the script
+  // itself attached, not by calling runAnalyst() directly.
+  await runBtn.listeners.click[0]();
+
+  assert.equal(status.textContent, 'Analysis complete.', 'a successful run must announce itself, not clear the live region to silence');
+});
+
 test('schedule mirrors the weekly session structure', () => {
   for (const s of ['NYAM', 'NYPM', 'ASIA', '9:30 AM ET', '2:30 PM ET', '8:00 PM ET', '5:30 PM ET']) {
     assert.match(index, new RegExp(s), 'schedule missing: ' + s);

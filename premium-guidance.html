@@ -424,7 +424,7 @@ async function runAnalyst(){
       status.textContent=data.error||'Analyst unavailable right now — try again shortly.';
       return;
     }
-    status.textContent='';
+    status.textContent='Analysis complete.';
     const m=data.metrics||{};
     // pctOr: concatenating before the null check rendered literal
     // 'undefined%' chips whenever the API omitted a metric.
