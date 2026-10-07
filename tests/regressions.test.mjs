@@ -481,6 +481,23 @@ test('CSP allowlists every third-party host the site actually uses', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: privacy.html flatly claimed "no third-party analytics tag on
+// this site" while _headers' own CSP allowlists static.cloudflareinsights.com
+// and cloudflareinsights.com specifically because Cloudflare's analytics
+// beacon loads here (see this file's own CSP-incident comment above) --
+// a factual contradiction in a published legal document. Pins the inverse of
+// the CSP test above: whatever third-party analytics host the CSP allowlists,
+// the privacy policy may not deny having any.
+test('privacy.html never denies a third-party analytics tool the CSP actually allows', () => {
+  const csp = /Content-Security-Policy: ([^\n]+)/.exec(read('_headers'))[1];
+  const privacy = read('privacy.html');
+  assert.doesNotMatch(privacy, /no third-party analytics tag/i);
+  if (/cloudflareinsights\.com/.test(csp)) {
+    assert.match(privacy, /Cloudflare/, 'CSP allows Cloudflare\'s analytics beacon but privacy.html does not disclose it');
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Incident: .gitignore had no env pattern while .env.example invites copying
 // it to .env — one `git add -A` away from committing real secrets.
 test('.gitignore blocks real env files but keeps the example', () => {
