@@ -33,19 +33,23 @@
     active.style.setProperty('--mx', (x * 100).toFixed(1) + '%');
     active.style.setProperty('--my', (y * 100).toFixed(1) + '%');
   }
+  function flatten(card) {
+    card.style.setProperty('--rx', '0deg');
+    card.style.setProperty('--ry', '0deg');
+  }
   function release() {
     if (raf) { cancelAnimationFrame(raf); raf = 0; }
-    if (active) {
-      active.style.setProperty('--rx', '0deg');
-      active.style.setProperty('--ry', '0deg');
-      active = null;
-    }
+    if (active) { flatten(active); active = null; }
   }
 
   document.addEventListener('pointermove', function (e) {
     var card = e.target.closest && e.target.closest(SEL);
     if (!card) { release(); return; }
-    if (card !== active) active = card;
+    // A fast mouse sweep across a grid of cards routinely jumps straight from
+    // one card's DOM node to the next adjacent one with no intervening event
+    // over the gap between them, so the old-card reset below can't rely on
+    // ever seeing a "left this card" event -- it has to happen right here.
+    if (card !== active) { if (active) flatten(active); active = card; }
     px = e.clientX; py = e.clientY;
     if (!raf) raf = requestAnimationFrame(apply);
   });

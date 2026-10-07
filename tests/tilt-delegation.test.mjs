@@ -137,6 +137,22 @@ test('tilt.js resets the tilt when the pointer leaves the window from over a car
   assert.equal(card.style.props['--ry'], '0deg');
 });
 
+test('tilt.js resets the outgoing card when the pointer jumps straight onto an adjacent one', () => {
+  // Simulates a normal-speed mouse sweep across a grid: the pointer lands on
+  // cardB with no intervening event over the gap between the two cards, so
+  // cardA never gets a dedicated "you left" event of its own.
+  const cardA = node('div', ['feature-card']);
+  const cardB = node('div', ['feature-card']);
+  const stub = runTiltScript([cardA, cardB]);
+  pointermoveOn(stub, cardA, 90, 10);
+  assert.notEqual(cardA.style.props['--ry'], '0.00deg', 'cardA should be tilted while the pointer is over it');
+  pointermoveOn(stub, cardB, 20, 80);
+  assert.equal(cardA.style.props['--rx'], '0deg', 'cardA must flatten once the pointer hands off to cardB');
+  assert.equal(cardA.style.props['--ry'], '0deg', 'cardA must flatten once the pointer hands off to cardB');
+  assert.notEqual(cardB.style.props['--ry'], undefined, 'cardB should receive its own tilt angle');
+  assert.notEqual(cardB.style.props['--ry'], '0.00deg');
+});
+
 // The module's own header comment says the effect is "Off entirely for
 // reduced-motion users and for touch-only devices" -- but every test above
 // runs through the default matchMedia stub, which always resolves both
