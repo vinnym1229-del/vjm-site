@@ -119,12 +119,25 @@ for (const width of WIDTHS) {
     await page.waitForTimeout(1500);
     const box = await page.$eval('#fsStage', (el) => {
       const r = el.getBoundingClientRect();
-      return { x: r.x, y: r.y + window.scrollY, width: r.width, height: r.height };
+      return { x: r.x, y: r.y + window.scrollY, width: r.width, height: r.height, scrollY: window.scrollY };
     });
-    await page.screenshot({ path: `${OUT}/w${width}-t0.png`, clip: box, fullPage: true });
-    await page.waitForTimeout(3000);
-    await page.screenshot({ path: `${OUT}/w${width}-t1.png`, clip: box, fullPage: true });
-    console.log(`(saved ${OUT}/w${width}-t0.png and -t1.png, 3s apart, for rotation + centering analysis)`);
+    const clip = { x: box.x, y: box.y, width: box.width, height: box.height };
+    await page.screenshot({ path: `${OUT}/w${width}-t0.png`, clip, fullPage: true });
+
+    // Move the pointer across the hero between captures. The WebGL turntable's
+    // ambient auto-rotation was superseded by the photo-mode tilt on 2026-09-09
+    // (see the fs-ready branch above) — today's hero only animates in response
+    // to real cursor position over #fsStage. Two frames captured with zero
+    // interaction are therefore pixel-identical by design, which made this
+    // check report "frozen" on every run regardless of whether the feature
+    // actually worked.
+    await page.waitForTimeout(1250);
+    await page.mouse.move(box.x + box.width * 0.2, box.y - box.scrollY + box.height / 2);
+    await page.waitForTimeout(250);
+    await page.mouse.move(box.x + box.width * 0.8, box.y - box.scrollY + box.height / 2);
+    await page.waitForTimeout(1250);
+    await page.screenshot({ path: `${OUT}/w${width}-t1.png`, clip, fullPage: true });
+    console.log(`(saved ${OUT}/w${width}-t0.png and -t1.png, pointer moved across the hero in between, for rotation + centering analysis)`);
   }
 
   console.log('page errors:', errors.length ? errors : 'none');
