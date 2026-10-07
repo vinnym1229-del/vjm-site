@@ -296,12 +296,34 @@ test('sitemap lists only canonical, indexable URLs and matches every page canoni
   }
 
   // Pages that must never be advertised, whatever their canonical says.
-  for (const page of ['stock-lab', 'research-engine', 'premium-guidance', '404']) {
+  for (const page of ['stock-lab', 'research-engine', 'premium-guidance', 'unsubscribe', '404']) {
     assert.ok(!locs.includes(origin + '/' + page), `${page} must not appear in the sitemap`);
   }
 
   // robots.txt must point at the sitemap on the same origin.
   assert.match(read('robots.txt'), new RegExp('^Sitemap: ' + origin + '/sitemap\\.xml$', 'm'));
+});
+
+// Incident: sitemap.xml's own header comment explains which pages are
+// "deliberately absent" from the <urlset> and names them one by one (stock-
+// lab, research-engine, premium-guidance, 404, /api/*) -- but unsubscribe.html
+// is exactly as permanently noindexed as those (see _headers' own "the
+// unsubscribe page must never be indexed" comment and the "indexing stays off,
+// coherently" test below), and the list above it in this same file omitted it
+// too until this test, even though the code-level check always caught it. A
+// human reading sitemap.xml to understand why a URL is missing would see four
+// named reasons and have to guess the fifth. Pinning the comment's own prose
+// against the permanently-noindexed page list (the same list the "indexing
+// stays off" test already enforces behaviorally) so the two cannot drift
+// apart silently again.
+test('sitemap.xml\'s own comment names every permanently-noindexed page it excludes', () => {
+  const sitemap = read('sitemap.xml');
+  const commentMatch = sitemap.match(/<!--([\s\S]*?)-->/);
+  assert.ok(commentMatch, 'sitemap.xml must carry its explanatory header comment');
+  const comment = commentMatch[1];
+  for (const page of ['stock-lab', 'research-engine', 'premium-guidance', 'unsubscribe', '404']) {
+    assert.match(comment, new RegExp(page), `sitemap.xml's header comment must name "${page}" among the pages it deliberately excludes`);
+  }
 });
 
 // Incident: every <lastmod> in sitemap.xml was frozen at 2026-08-31 while the

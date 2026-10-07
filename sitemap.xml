@@ -8,7 +8,7 @@
   points at (asserted by tests/site-contract.test.mjs). Deliberately absent:
   .html aliases (they redirect to the extensionless form), /pj/* preview
   copies, and the pages that must never be indexed — stock-lab,
-  research-engine, premium-guidance, 404 and /api/*.
+  research-engine, premium-guidance, unsubscribe, 404 and /api/*.
 
   Indexing is currently held off site-wide by `_headers`; this file describes
   the URLs that become indexable when the owner lifts that hold.
