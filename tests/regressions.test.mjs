@@ -498,6 +498,20 @@ test('privacy.html never denies a third-party analytics tool the CSP actually al
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the CSP allowlists challenges.cloudflare.com (Turnstile, embedded
+// on every sign-up and access-code form across 9 pages) specifically because
+// it's HMAC-verified bot protection gating real conversion paths, but
+// privacy.html never named it -- only a generic "third-party widgets such as
+// TradingView" catch-all, the same disclosure-completeness gap the analytics
+// test above already guards for a different host.
+test('privacy.html discloses Cloudflare Turnstile when the CSP allows it', () => {
+  const csp = /Content-Security-Policy: ([^\n]+)/.exec(read('_headers'))[1];
+  if (/challenges\.cloudflare\.com/.test(csp)) {
+    assert.match(read('privacy.html'), /Turnstile/, 'CSP allows Cloudflare Turnstile but privacy.html does not disclose it');
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Incident: .gitignore had no env pattern while .env.example invites copying
 // it to .env — one `git add -A` away from committing real secrets.
 test('.gitignore blocks real env files but keeps the example', () => {
