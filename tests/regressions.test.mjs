@@ -1405,7 +1405,7 @@ test('every course page quotes its own real lesson count, and every aggregate qu
 // own obvious sanity check, would get a total the widget itself contradicts.
 test("index.html's review-bar star counts sum to its own headline rating count", () => {
   const index = read('index.html');
-  const headline = /<div class="count">([\d,]+) ratings<\/div>/.exec(index);
+  const headline = /<div class="count"><span id="rs-reviews">([\d,]+)<\/span> ratings<\/div>/.exec(index);
   assert.ok(headline, 'index.html: expected the review-summary "<n> ratings" headline');
   const total = Number(headline[1].replace(/,/g, ''));
 
@@ -1467,6 +1467,38 @@ test("index.html's About-section join count is wired to the same live source as 
   // going forward -- assert the id is actually registered as a target, not
   // just a static number that happens to look plausible today.
   assert.match(index, /joined:\s*\[\['hb-joined',[^\]]*\],\s*\['about-joined',/, 'SocialStats: about-joined must share the "joined" STATS entry with hb-joined');
+});
+
+// Incident: the review-summary widget under the pricing cards (.review-score's
+// "5.0" and "2,256 ratings" headline) was a fourth hand-typed copy of the same
+// Whop rating/review count as the hero badge, mobile sticky CTA, and (for the
+// review count) the per-star breakdown reconciled above -- but unlike those,
+// it had no id and no SocialStats target. The day the owner's real rating or
+// review count changes, /api/live-stats and the Sheet CMS would update
+// #hb-rating/#hb-reviews and #mc-rating/#mc-reviews immediately while this
+// block, a few screens below the hero, kept showing the old number forever --
+// a visitor scrolling down would hit a contradicting, stale rating. Fixed by
+// giving it #rs-rating/#rs-reviews and wiring them into the existing
+// "rating"/"reviews" STATS entries, the same share-the-writer pattern already
+// used for mc-rating/mc-reviews and about-joined.
+test("index.html's review-summary headline rating/count is wired to the same live source as the hero badge, not a fourth hand-typed copy", () => {
+  const index = read('index.html');
+
+  const hbRating = /id="hb-rating">([^<]+)</.exec(index);
+  const hbReviews = /id="hb-reviews">([^<]+)</.exec(index);
+  assert.ok(hbRating && hbReviews, 'index.html: expected #hb-rating/#hb-reviews in the hero badge');
+
+  const rsRating = /id="rs-rating">([^<]+)</.exec(index);
+  const rsReviews = /id="rs-reviews">([^<]+)</.exec(index);
+  assert.ok(rsRating && rsReviews, 'index.html: expected #rs-rating/#rs-reviews in the review-summary widget');
+  assert.equal(rsRating[1], hbRating[1], 'index.html: review-summary rating is out of sync with the hero badge');
+  assert.equal(rsReviews[1], hbReviews[1], 'index.html: review-summary review count is out of sync with the hero badge');
+
+  // The SocialStats STATS table is the only thing that keeps them in sync
+  // going forward -- assert both ids are actually registered as targets, not
+  // just coincidentally matching today.
+  assert.match(index, /reviews:\s*\[\['hb-reviews',[^\]]*\],\s*\['mc-reviews',[^\]]*\],\s*\['rs-reviews',/, 'SocialStats: rs-reviews must share the "reviews" STATS entry with hb-reviews');
+  assert.match(index, /rating:\s*\[\['hb-rating',[^\]]*\],\s*\['mc-rating',[^\]]*\],\s*\['rs-rating',/, 'SocialStats: rs-rating must share the "rating" STATS entry with hb-rating');
 });
 
 // Incident: docs/ENTITLEMENTS.md quotes the same four-course lesson total

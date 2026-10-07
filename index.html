@@ -963,10 +963,13 @@
     <p style="text-align:center;color:var(--muted);font-size:.78rem;margin:22px auto 0;max-width:640px;">Memberships auto-renew each billing period until you cancel in your Whop account. Cancelling stops the next renewal; it does not end the period you already paid for. There are no refunds for any period, used or unused. See the <a href="terms.html" style="color:var(--gold-ink);">Terms</a> for the full billing terms. Educational content only — profits are never guaranteed.</p>
 
     <!-- Review summary — mirrors the owner's Whop listing (5.0 · 2,256 ratings)
-         snapshotted 2026-09-08. The review count and the members chip are
-         updated by /api/live-stats when connected, otherwise by the Sheet CMS;
-         either way each number has exactly one writer (see SocialStats below),
-         so the two feeds can no longer land a value under the wrong label.
+         snapshotted 2026-09-08. The headline rating/count are updated by
+         /api/live-stats when connected, otherwise by the Sheet CMS, through
+         the same "rating"/"reviews" SocialStats entries as the hero badge and
+         mobile sticky CTA (#rs-rating/#rs-reviews are a fourth target on those,
+         not a fourth hand-typed copy); the members chip has its own writer
+         too, so none of these numbers can land under the wrong label or go
+         stale while the others update.
          TODO: owner to substantiate — these are Whop platform ratings and member
          counts, not trading performance. If they are shown as current, they need a
          dated Whop listing export; if any number is ever restated as a result, it
@@ -974,9 +977,9 @@
          losing periods in the same range, and the calculation method. -->
     <div class="review-summary" data-reveal>
       <div class="review-score">
-        <div class="big">5.0</div>
+        <div class="big" id="rs-rating">5.0</div>
         <div class="stars">★★★★★</div>
-        <div class="count">2,256 ratings</div>
+        <div class="count"><span id="rs-reviews">2,256</span> ratings</div>
       </div>
       <div class="review-bars" aria-hidden="true">
         <div class="review-bar"><span>5 ★</span><span class="track"><span class="fill" style="width:97%"></span></span><span>97% (2187)</span></div>
@@ -1605,8 +1608,8 @@ const SocialStats = (function () {
     // two numbers (index.html's #mobile-cta) -- it used to hand-type them
     // separately from the hero badge, so it could silently drift out of sync
     // whenever either feed updated hb-rating/hb-reviews. Same writer now.
-    reviews: [['hb-reviews', (v) => v], ['mc-reviews', (v) => v]],
-    rating:  [['hb-rating', (v) => v], ['mc-rating', (v) => v]],
+    reviews: [['hb-reviews', (v) => v], ['mc-reviews', (v) => v], ['rs-reviews', (v) => v]],
+    rating:  [['hb-rating', (v) => v], ['mc-rating', (v) => v], ['rs-rating', (v) => v]],
   };
   const writtenRank = {};
   return function applyStats(source, values) {
