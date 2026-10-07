@@ -271,9 +271,40 @@ function flushMicrotasks() {
   return new Promise((resolve) => { setTimeout(resolve, 0); });
 }
 
-function runTickerBuilt({ reducedMotion = false } = {}) {
+// update() mutates cells in place via wrap.querySelectorAll('.lt-cell[data-sym="..."]')
+// rather than rebuilding the markup -- this mock mirrors just enough of that
+// lookup (keyed on the exact selector string the source generates, same
+// technique makeTickerEl()'s elCache already uses) with two independent
+// mock nodes per symbol, matching the real "both copies of the doubled row"
+// comment in update() itself, so a fix that only updated one copy would be
+// caught rather than passing on a mock that conflates them.
+function makeCellMutable() {
+  return { textContent: '', className: '', title: '' };
+}
+function makeCellGroup() {
+  const price = makeCellMutable();
+  const pct = makeCellMutable();
+  const sess = makeCellMutable();
+  return {
+    title: '',
+    price, pct, sess,
+    querySelector(sel) {
+      if (sel === '.lt-price') return price;
+      if (sel === '.lt-pct') return pct;
+      if (sel === '.lt-sess') return sess;
+      return null;
+    },
+  };
+}
+
+function runTickerBuilt({ reducedMotion = false, items: initialItems } = {}) {
   let rafCb = null;
+  let intervalFn = null;
+  let currentItems = initialItems || ['AAA', 'BBB', 'CCC', 'DDD'].map((symbol) => (
+    { symbol, label: symbol, price: 100, changePct: 1.2, asset: 'equity', tv: null }
+  ));
   const elCache = new Map();
+  const cellGroups = new Map(); // symbol -> [group, group], one per doubled-row copy
   const wrapEl = {
     set innerHTML(v) { this._html = v; elCache.clear(); },
     get innerHTML() { return this._html; },
@@ -281,14 +312,17 @@ function runTickerBuilt({ reducedMotion = false } = {}) {
       if (!elCache.has(sel)) elCache.set(sel, makeTickerEl());
       return elCache.get(sel);
     },
+    querySelectorAll(sel) {
+      const m = sel.match(/data-sym="([^"]*)"/);
+      const sym = m ? m[1] : sel;
+      if (!cellGroups.has(sym)) cellGroups.set(sym, [makeCellGroup(), makeCellGroup()]);
+      return cellGroups.get(sym);
+    },
   };
-  const items = ['AAA', 'BBB', 'CCC', 'DDD'].map((symbol) => (
-    { symbol, label: symbol, price: 100, changePct: 1.2, asset: 'equity', tv: null }
-  ));
   const sandbox = {
     console,
-    fetch: async () => ({ json: async () => ({ ok: true, items }) }),
-    setInterval: () => 1,
+    fetch: async () => ({ json: async () => ({ ok: true, items: currentItems }) }),
+    setInterval: (fn) => { intervalFn = fn; return 1; },
     requestAnimationFrame: (cb) => { rafCb = cb; return 1; },
     getComputedStyle: () => ({ paddingLeft: '0px' }),
     performance: { now: () => 0 },
@@ -305,9 +339,15 @@ function runTickerBuilt({ reducedMotion = false } = {}) {
   vm.runInContext(src, sandbox);
   return {
     wrapEl,
+    cellGroups,
     tick: (ts) => rafCb(ts),
     getRafCb: () => rafCb,
     ready: () => flushMicrotasks(),
+    setItems: (next) => { currentItems = next; },
+    // Fires the same setInterval callback tick() itself scheduled; since
+    // build() already ran, this real-code path goes through update(), not
+    // build() again -- exactly how a live 15s refresh behaves in production.
+    pollAgain: async () => { await intervalFn(); await flushMicrotasks(); },
   };
 }
 
@@ -343,4 +383,96 @@ test('live ticker: the pause button is omitted when prefers-reduced-motion is al
 
   assert.equal(t.wrapEl.innerHTML.includes('lt-pause'), false, 'nothing auto-scrolls under reduced-motion, so there is nothing for the button to pause');
   assert.equal(t.getRafCb(), null, 'the raf loop itself must not start either');
+});
+
+// cellHtml(), fmtPrice(), fmtPct(), and tvHref() had zero behavioral coverage
+// -- every reference to this file before now only drove marketSession() or
+// the visibility/pause plumbing around it, never the markup those functions
+// actually produce. A flipped >= to > in fmtPrice's thousands branch, a
+// dropped '+' sign, or a swapped a/span tag choice would ship on every
+// symbol in the tape with the full suite green. This drives the real
+// build() (via the real tick()/fetch path, not an extracted copy of
+// cellHtml) and asserts on the markup it actually writes to innerHTML.
+test('live ticker: build() renders price formatting, pct sign/class, and the TradingView link correctly', async () => {
+  // tick() requires at least 4 items before it will build/update at all
+  // (its own ok:false-equivalent guard against a partial feed); pad with
+  // two filler items so the two under test actually reach cellHtml().
+  const items = [
+    { symbol: 'BRK.A', label: 'BRK.A', price: 1234, changePct: 1.2, asset: 'equity', tv: 'BRKA' },
+    { symbol: 'PENNY', label: 'PENNY', price: 86.5, changePct: -3.45, asset: 'equity', tv: null },
+    { symbol: 'CCC', label: 'CCC', price: 50, changePct: 0, asset: 'equity', tv: null },
+    { symbol: 'DDD', label: 'DDD', price: 50, changePct: 0, asset: 'equity', tv: null },
+  ];
+  const t = runTickerBuilt({ items });
+  await t.ready();
+  const html = t.wrapEl.innerHTML;
+
+  // >=1000 branch: no decimals, with thousands grouping.
+  assert.match(html, /<span class="lt-price">1,234<\/span>/, 'prices at or above 1000 drop decimals');
+  // <1000 branch: fixed 2 decimals.
+  assert.match(html, /<span class="lt-price">86\.50<\/span>/, 'prices under 1000 keep two decimals');
+
+  // Sign and up/down class must track changePct, not just its magnitude.
+  assert.match(html, /<span class="lt-pct up">\+1\.20%<\/span>/, 'a positive changePct gets a leading + and the up class');
+  assert.match(html, /<span class="lt-pct down">-3\.45%<\/span>/, 'a negative changePct gets the down class and keeps its own sign');
+
+  // tv set -> a real link; tv null -> a plain span with no href to break.
+  assert.match(html, /<a class="lt-cell" data-sym="BRK\.A" href="https:\/\/www\.tradingview\.com\/chart\/\?symbol=BRKA" target="_blank" rel="noopener"/, 'an item with tv set renders as a clickable TradingView link');
+  assert.match(html, /<span class="lt-cell" data-sym="PENNY"[^>]*>/, 'an item with no tv renders as a plain span, not a dead link');
+  assert.equal(/<span class="lt-cell" data-sym="PENNY"[^>]*href=/.test(html), false, 'the no-tv cell must carry no href at all');
+});
+
+// esc()'s own comment states the invariant this test pins: quote data from
+// /api/ticker passes through a third-party API on the way, so nothing may
+// reach innerHTML unescaped. Nothing before this exercised that promise --
+// a dropped esc() call around item.symbol or item.label would inject
+// attacker-controlled markup straight into the homepage on every page load.
+test('live ticker: build() escapes hostile symbol/label text instead of injecting raw markup', async () => {
+  const items = [
+    { symbol: '<img src=x onerror=alert(1)>', label: '"></span><script>1</script>', price: 1, changePct: 0, asset: 'equity', tv: null },
+    { symbol: 'BBB', label: 'BBB', price: 1, changePct: 0, asset: 'equity', tv: null },
+    { symbol: 'CCC', label: 'CCC', price: 1, changePct: 0, asset: 'equity', tv: null },
+    { symbol: 'DDD', label: 'DDD', price: 1, changePct: 0, asset: 'equity', tv: null },
+  ];
+  const t = runTickerBuilt({ items });
+  await t.ready();
+  const html = t.wrapEl.innerHTML;
+
+  assert.equal(html.includes('<img src=x'), false, 'a raw <img> tag from item.symbol must never reach innerHTML');
+  assert.equal(html.includes('<script>1</script>'), false, 'a raw <script> tag from item.label must never reach innerHTML');
+  assert.ok(html.includes('&lt;img src=x onerror=alert(1)&gt;'), 'the hostile symbol must come through HTML-entity-escaped');
+  assert.ok(html.includes('&quot;&gt;&lt;/span&gt;&lt;script&gt;1&lt;/script&gt;'), 'the hostile label must come through HTML-entity-escaped');
+});
+
+// Incident risk: cellHtml() (build) and update() independently recompute the
+// same price/pct/session rendering from the same item fields -- nothing
+// proved they agree. A change to one without the other would leave the
+// initial paint correct but every 15s refresh silently stale or wrong,
+// since update() is the only code path a long-lived tab actually revisits.
+// Drives the real tick() -> update() path a second time through the same
+// setInterval callback production schedules, not a direct call to update().
+test('live ticker: a later poll updates price, pct sign, and class in place via update()', async () => {
+  const sym = 'AAA';
+  const others = ['BBB', 'CCC', 'DDD'].map((s) => (
+    { symbol: s, label: s, price: 1, changePct: 0, asset: 'equity', tv: null }
+  ));
+  const t = runTickerBuilt({ items: [
+    { symbol: sym, label: sym, price: 100, changePct: 1.2, asset: 'equity', tv: null },
+    ...others,
+  ] });
+  await t.ready();
+
+  t.setItems([
+    { symbol: sym, label: sym, price: 2501.4, changePct: -3.45, asset: 'equity', tv: null },
+    ...others,
+  ]);
+  await t.pollAgain();
+
+  const groups = t.cellGroups.get(sym);
+  assert.ok(groups, 'update() must look up the cell by the same data-sym selector build() rendered');
+  for (const g of groups) {
+    assert.equal(g.price.textContent, '2,501', 'update() must re-render the new price through the same >=1000 formatting rule');
+    assert.equal(g.pct.textContent, '-3.45%', 'update() must re-render the new, sign-flipped pct text');
+    assert.equal(g.pct.className, 'lt-pct down', 'update() must flip the pct class to match the new sign, not leave the stale up class');
+  }
 });
