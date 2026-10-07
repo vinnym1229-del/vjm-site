@@ -14,7 +14,7 @@
 // can reach a push.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -27,5 +27,28 @@ test('the banned live-probe-borrow workflow is never committed to the repo', () 
     false,
     '.github/workflows/_tmp-smoke-test.yml must not be committed -- see .opencode/decisions.md (2026-09-20) ' +
       'for why the Actions-workflow live-probe-borrow is out of scope on policy grounds. Delete it before committing.'
+  );
+});
+
+// opencode.yml runs on issue_comment/pull_request_review_comment, which fire
+// for a comment from ANY GitHub account on this public repo -- GitHub's
+// fork-PR approval gate does not cover comment-triggered workflows in the
+// base repo. Without an author_association check, the `/oc` string match
+// alone would let any stranger spend the owner's ANTHROPIC_API_KEY on demand
+// and hand attacker-supplied comment text to a write-capable agent. See
+// .opencode/decisions.md (2026-10-07) for the full incident.
+test('opencode.yml only runs for the owner and people with write access', () => {
+  const src = readFileSync(join(ROOT, '.github', 'workflows', 'opencode.yml'), 'utf8');
+  assert.match(
+    src,
+    /author_association/,
+    'opencode.yml\'s `if:` must gate on github.event.comment.author_association -- ' +
+      'a bare `/oc` string match lets any commenter on this public repo trigger the agent.'
+  );
+  assert.doesNotMatch(
+    src,
+    /anomalyco\/opencode\/github@latest/,
+    'opencode.yml must pin anomalyco/opencode/github to a specific release, not @latest -- ' +
+      'a mutable tag can change behavior with ANTHROPIC_API_KEY in scope and no PR review.'
   );
 });

@@ -3,6 +3,17 @@
 #   1. Install the app: https://github.com/apps/opencode-agent (on this repo)
 #   2. Repo Settings → Secrets and variables → Actions → add ANTHROPIC_API_KEY
 # Docs: https://opencode.ai/docs/github/
+#
+# This repo is public, and issue_comment/pull_request_review_comment fire for
+# a comment from ANY GitHub account, including a zero-permission stranger on
+# an issue they just opened — GitHub's fork-PR approval gate does not apply
+# to comment-triggered workflows in the base repo. Without an association
+# check, the `/oc` string match alone would let anyone spend the owner's
+# ANTHROPIC_API_KEY on demand and hand attacker-supplied comment text to a
+# write-capable agent (its repo permissions come from the separately
+# installed opencode-agent App, not from this workflow's own `permissions:`
+# block). The author_association check below restricts it to the owner and
+# people with write access.
 
 name: opencode
 on:
@@ -14,8 +25,9 @@ on:
 jobs:
   opencode:
     if: |
-      contains(github.event.comment.body, '/oc') ||
-      contains(github.event.comment.body, '/opencode')
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+      (contains(github.event.comment.body, '/oc') ||
+       contains(github.event.comment.body, '/opencode'))
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -27,7 +39,7 @@ jobs:
           persist-credentials: false
 
       - name: Run OpenCode
-        uses: anomalyco/opencode/github@latest
+        uses: anomalyco/opencode/github@v1.18.35
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
