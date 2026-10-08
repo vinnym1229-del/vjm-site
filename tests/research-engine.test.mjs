@@ -34,6 +34,7 @@ const {
   TIMING_CONVENTION,
   buildSmtEvents,
   confirmedSmtEvent,
+  clampInt,
 } = __test;
 
 function bar(t, o, h, l, c, v = 1000) {
@@ -376,6 +377,19 @@ assert.equal(median([1, 3]), 2, 'even-length must average the two middle values'
 assert.equal(median([3, 1, 2]), 2, 'must sort before picking the middle, not use input order');
 assert.equal(median(['4', null, 6]), 5, 'non-finite entries are dropped, not treated as 0');
 assert.equal(median([NaN, 'abc']), null, 'an all-non-finite input must stay unavailable');
+
+// clampInt() reads every GET /api/research-engine query param (expiryDays,
+// days, lookback, horizon, pivot) via URLSearchParams.get(), which returns
+// null -- not undefined -- for an omitted param. Number(null) is 0, a finite
+// number, so an omitted param must not silently clamp to `min` instead of
+// returning `fallback`.
+assert.equal(clampInt(null, 120, 2190, 365), 365, 'an omitted param must fall back, not clamp null to min');
+assert.equal(clampInt(undefined, 5, 120, 20), 20, 'an omitted param must fall back, not clamp undefined to min');
+assert.equal(clampInt('', 2, 12, 5), 5, 'an empty param must fall back, not clamp to min');
+assert.equal(clampInt('9999', 1, 45, 7), 45, 'an out-of-range value must still clamp to max');
+assert.equal(clampInt('-9999', 1, 45, 7), 1, 'an out-of-range value must still clamp to min');
+assert.equal(clampInt('30', 1, 45, 7), 30, 'a real in-range value must pass through, not fall back');
+assert.equal(clampInt('abc', 1, 45, 7), 7, 'an unparseable value must fall back');
 
 // statsFromFibEvents feeds the premium fib-retracement stats table directly;
 // it always reports all three tracked levels, even ones with zero touches.

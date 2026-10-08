@@ -589,7 +589,7 @@ function json(value,status=200){return new Response(JSON.stringify(value),{statu
 function statusError(message,status){const e=new Error(message);e.status=status;return e}
 function describe(error){return error&&error.message?error.message:String(error)}
 function cleanSymbol(value){const symbol=String(value||'').trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,'');if(!symbol||symbol.length>12)throw statusError('Invalid symbol.',400);return symbol}
-function clampInt(value,min,max,fallback){const n=Math.round(Number(value));return Number.isFinite(n)?Math.min(max,Math.max(min,n)):fallback}
+function clampInt(value,min,max,fallback){if(value===null||value===undefined||value==='')return fallback;const n=Math.round(Number(value));return Number.isFinite(n)?Math.min(max,Math.max(min,n)):fallback}
 function finite(value){if(value===null||value===undefined||value==='')return null;const n=Number(value);return Number.isFinite(n)?n:null}
 function average(values){const a=values.map(finite).filter((x)=>x!==null);return a.length?a.reduce((s,x)=>s+x,0)/a.length:null}
 function median(values){const a=values.map(finite).filter((x)=>x!==null).sort((x,y)=>x-y);if(!a.length)return null;const m=Math.floor(a.length/2);return a.length%2?a[m]:(a[m-1]+a[m])/2}
@@ -601,4 +601,4 @@ function dateOnly(value){return String(value||'').slice(0,10)}
 function isoDate(date){return date.toISOString().slice(0,10)}
 
 // Explicit exports allow deterministic calculation tests without exposing routes.
-export const __test = {TIMING_CONVENTION,studyProvenance,barCloseTime,scanDisplacement,classifyDirectionalOutcome,buildIntradayEvents,buildPriceActionModel,buildLatestLevels,analyseFib,statsFromFibEvents,combineFibStats,findGammaFlip,resampleWeekly,resampleMinutes,metrics,classifySweep,findSweepIndex,detectContinuationModel,groupProxyTradeDays,splitSession,scanFvgs,summarizeFvg,summarizeConditions,summarizeTiming,priorWeekRange,marketProfileLevels,cumulativeVwap,finite,median,swingLiquidityLevels,buildSmtEvents,confirmedSmtEvent};
+export const __test = {TIMING_CONVENTION,studyProvenance,barCloseTime,scanDisplacement,classifyDirectionalOutcome,buildIntradayEvents,buildPriceActionModel,buildLatestLevels,analyseFib,statsFromFibEvents,combineFibStats,findGammaFlip,resampleWeekly,resampleMinutes,metrics,classifySweep,findSweepIndex,detectContinuationModel,groupProxyTradeDays,splitSession,scanFvgs,summarizeFvg,summarizeConditions,summarizeTiming,priorWeekRange,marketProfileLevels,cumulativeVwap,finite,median,swingLiquidityLevels,buildSmtEvents,confirmedSmtEvent,clampInt};
