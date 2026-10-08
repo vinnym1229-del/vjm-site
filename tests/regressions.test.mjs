@@ -1465,6 +1465,33 @@ test("index.html's review-bar star counts sum to its own headline rating count",
   assert.equal(sum, total, 'index.html: review-bar star counts do not sum to the "ratings" headline');
 });
 
+// Incident: the sum-matches-headline check above only ever covered the five
+// (N) counts -- it has no opinion on each row's OWN `width:%` inline style,
+// which is a second hand-typed number (count/total as a percentage) that can
+// drift independently of the count itself. It already had: the 1★ row's bar
+// was hand-typed as width:0.05%, but 1/2256 is 0.0443%, which rounds to
+// 0.04%, not 0.05% -- the one row precise enough to carry decimals was the
+// one row that didn't match its own count. Low-stakes (the block is
+// aria-hidden and the gap is sub-pixel), but it's the same
+// "hand-typed-number-silently-drifted-from-its-source" defect class as the
+// count-sum incident above, just one level deeper, so it gets the same kind
+// of guard.
+test("index.html's review-bar widths match their own star counts, not just the counts' sum", () => {
+  const index = read('index.html');
+  const headline = /<div class="count"><span id="rs-reviews">([\d,]+)<\/span> ratings<\/div>/.exec(index);
+  assert.ok(headline, 'index.html: expected the review-summary "<n> ratings" headline');
+  const total = Number(headline[1].replace(/,/g, ''));
+
+  const rows = [...index.matchAll(/<div class="review-bar">.*?style="width:([\d.]+)%".*?\((\d+)\)<\/span><\/div>/g)];
+  assert.equal(rows.length, 5, 'index.html: expected 5 review-bar rows (5★ through 1★)');
+
+  for (const [, widthStr, countStr] of rows) {
+    const decimals = (widthStr.split('.')[1] || '').length;
+    const expected = (Number(countStr) / total * 100).toFixed(decimals);
+    assert.equal(widthStr, expected, `index.html: review-bar width:${widthStr}% does not match its own count (${countStr}/${total})`);
+  }
+});
+
 // Incident: index.html's mobile sticky CTA (#mobile-cta) hand-typed its own
 // third copy of the Whop rating/review count ("5.0★ (2,256)") in a plain
 // .mc-label span, with no id and no SocialStats target -- unlike the hero
