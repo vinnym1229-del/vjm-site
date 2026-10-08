@@ -59,3 +59,18 @@ test('entitlement-check flags an id listed in both WHOP_PRODUCTS_FUTURES and WHO
   assert.match(stdout, /"prod_shared_id" is in BOTH lists\. Complete wins/);
   assert.equal(status, 1);
 });
+
+test('entitlement-check sounds the (!!) alarm when an unlisted product resolves to a real tier anyway', () => {
+  // This is the tool's one actual safety tripwire: once an allowlist is
+  // configured, a product nobody listed must come back `null`. Every other
+  // test above only ever exercises the "correct" (null) side of that branch,
+  // so the alarm itself — the thing an owner is trusting to catch a real
+  // resolveTier() regression — had never been proven to fire. Forcing the
+  // probe id itself into the allowlist is the simplest way to make
+  // resolveTier() hand back a real tier for it, same as a genuine regression
+  // would, without touching resolveTier()'s own source.
+  const { stdout, status } = run({ ...process.env, WHOP_DEFAULT_TIER: '', WHOP_PRODUCTS_FUTURES: 'prod_some_other_thing_you_sell', WHOP_PRODUCTS_COMPLETE: 'prod_b' });
+  assert.match(stdout, /an UNLISTED product\s+-> FUTURES_CORE \(!!\)/);
+  assert.match(stdout, /An unlisted product still grants access — the allowlist is not taking effect\./);
+  assert.equal(status, 1);
+});
