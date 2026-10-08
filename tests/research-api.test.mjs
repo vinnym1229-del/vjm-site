@@ -489,6 +489,26 @@ function makeDailySeries(n, { start = 90, drift = 0.15, spread = 1.5, lastVolume
   return bars;
 }
 
+// A strictly rising daily series, no oscillation. A swing high needs a bar
+// whose high beats every bar within `pivot` bars on either side of it; an
+// always-rising tape never prints one (the bar `pivot` steps later always has
+// a higher high), so analyseFib() finds zero swing highs and every fib
+// level's touch count stays at 0 -- unlike makeDailySeries' sine term above,
+// which guarantees swing highs on purpose.
+function makeMonotonicSeries(n, { start = 90, drift = 1, spread = 1.5 } = {}) {
+  const bars = [];
+  let date = new Date('2026-01-05T00:00:00Z');
+  for (let i = 0; i < n; i++) {
+    const close = start + i * drift;
+    const open = i === 0 ? close - drift : bars[i - 1].c;
+    const high = Math.max(open, close) + spread;
+    const low = Math.min(open, close) - spread;
+    bars.push(dailyBar(date.toISOString(), open, high, low, close));
+    date = new Date(date.getTime() + 86400000);
+  }
+  return bars;
+}
+
 {
   const cronEnv = { ALPACA_API_KEY: 'test-key', ALPACA_SECRET_KEY: 'test-secret', RESEARCH_CRON_SECRET: 'cron-test-secret' };
   const cronHeaders = { 'X-Research-Cron': 'cron-test-secret' };
@@ -509,6 +529,30 @@ function makeDailySeries(n, { start = 90, drift = 0.15, spread = 1.5, lastVolume
       assert.deepEqual(data.data.fibStats.map((s) => s.level), [.382, .5, .618], 'all three fib levels always report, even with zero touches');
       assert.equal(data.data.timeframeBreakdown.length, 2, 'the default timeframe=combined runs both a Daily and a Weekly leg');
       assert.deepEqual(data.data.timeframeBreakdown.map((t) => t.timeframe), ['Daily', 'Weekly']);
+    } finally {
+      globalThis.fetch = stockFetch;
+    }
+  }
+
+  // module=stock: bestFib must report 'Insufficient N', not a fabricated
+  // percentage, when no fib level clears the 5-touch floor. A steadily-rising
+  // tape with no pullback never prints a swing high for analyseFib() to
+  // measure a retracement from, so fibStats' touches stay at 0 for all three
+  // levels -- every other module=stock test above uses makeDailySeries,
+  // whose sine term guarantees swing highs, so this falsy arm of
+  // `best?...toFixed(1)+'%':'Insufficient N'` had never actually run.
+  {
+    const stockFetch = globalThis.fetch;
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.pathname === '/v2/stocks/bars') return Response.json({ bars: { NVDA: makeMonotonicSeries(40) } });
+      return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
+    };
+    try {
+      const { status, data } = await callEngine(cronEnv, 'module=stock&symbol=NVDA', cronHeaders);
+      assert.equal(status, 200);
+      assert.deepEqual(data.data.fibStats.map((s) => s.touches), [0, 0, 0], 'a steadily-rising tape prints no swing high to retrace from');
+      assert.equal(data.data.summary.bestFib, 'Insufficient N', 'bestFib must not fabricate a percentage when no fib level has 5+ touches');
     } finally {
       globalThis.fetch = stockFetch;
     }
