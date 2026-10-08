@@ -232,8 +232,8 @@ async function stockModule(params, env) {
   const daily = (await fetchStockBars([symbol], '1Day', start, new Date().toISOString(), env, 15))[symbol] || [];
   if (daily.length < pivot * 2 + 25) throw statusError('Not enough adjusted daily bars were returned for this study.', 422);
   const weekly = resampleWeekly(daily);
-  const sets = timeframe === 'daily' ? [{name:'Daily',bars:daily,pivot,horizon}] : timeframe === 'weekly' ? [{name:'Weekly',bars:weekly,pivot:2,horizon:Math.max(4,Math.round(horizon/5))}] : [{name:'Daily',bars:daily,pivot,horizon},{name:'Weekly',bars:weekly,pivot:2,horizon:Math.max(4,Math.round(horizon/5))}];
-  const analyses = sets.map((x)=>({...x,result:analyseFib(x.bars,x.pivot,x.horizon,x.name)}));
+  const sets = timeframe === 'daily' ? [{name:'Daily',bars:daily,pivot,horizon,barDays:1}] : timeframe === 'weekly' ? [{name:'Weekly',bars:weekly,pivot:2,horizon:Math.max(4,Math.round(horizon/5)),barDays:7}] : [{name:'Daily',bars:daily,pivot,horizon,barDays:1},{name:'Weekly',bars:weekly,pivot:2,horizon:Math.max(4,Math.round(horizon/5)),barDays:7}];
+  const analyses = sets.map((x)=>({...x,result:analyseFib(x.bars,x.pivot,x.horizon,x.name,x.barDays)}));
   const fibStats = combineFibStats(analyses.map((x)=>x.result));
   const last = daily[daily.length-1], close = finite(last.c), return20 = daily.length>20 && close!==null && finite(daily[daily.length-21].c)!==null ? close / finite(daily[daily.length-21].c) - 1 : null;
   const allEvents = analyses.flatMap((x)=>x.result.events);
@@ -345,7 +345,12 @@ function studyProvenance(study, extra = {}) {
 // hi+pivot+1. Measuring retracement touches from hi+1 -- as this did -- let
 // every event trade on a pivot the tape had not yet printed, which inflated
 // touch counts, fill rates and new-high rates.
-function analyseFib(bars,pivot,horizon,timeframe) {
+//
+// `barDays` is the number of calendar days one bar in `bars` spans (1 for
+// daily, 7 for the Monday-keyed weekly resample) -- daysToFill is a bar-index
+// difference, so without this the Weekly set's "Median days" column would
+// silently report elapsed weekly bars instead of days.
+function analyseFib(bars,pivot,horizon,timeframe,barDays=1) {
   const fibs=[.382,.5,.618],events=[],swingHighs=[];
   for(let i=pivot;i<bars.length-pivot;i++){
     const high=finite(bars[i].h);if(high===null)continue;let isHigh=true;
@@ -368,7 +373,7 @@ function analyseFib(bars,pivot,horizon,timeframe) {
       // printed after the level was tagged, which is unknowable.
       const outcomeEnd=Math.min(bars.length-1,touch+horizon);let maxHigh=-Infinity,minLow=Infinity,fillIndex=null,newHigh=false;
       for(let j=touch+1;j<=outcomeEnd;j++){const h=finite(bars[j].h),l=finite(bars[j].l);if(h!==null){maxHigh=Math.max(maxHigh,h);if(fillIndex===null&&h>=high)fillIndex=j;if(h>high*1.001)newHigh=true}if(l!==null)minLow=Math.min(minLow,l)}
-      events.push({timeframe,level,touchDate:dateOnly(bars[touch].t),confirmDate:dateOnly(bars[confirmIndex].t),confirmBars:pivot,filled:fillIndex!==null,newHigh,daysToFill:fillIndex===null?null:fillIndex-touch,mfe:Number.isFinite(maxHigh)?maxHigh/price-1:null,mae:Number.isFinite(minLow)?minLow/price-1:null,low,high,lowDate:dateOnly(bars[lowIndex].t),highDate:dateOnly(bars[hi].t)});
+      events.push({timeframe,level,touchDate:dateOnly(bars[touch].t),confirmDate:dateOnly(bars[confirmIndex].t),confirmBars:pivot,filled:fillIndex!==null,newHigh,daysToFill:fillIndex===null?null:(fillIndex-touch)*barDays,mfe:Number.isFinite(maxHigh)?maxHigh/price-1:null,mae:Number.isFinite(minLow)?minLow/price-1:null,low,high,lowDate:dateOnly(bars[lowIndex].t),highDate:dateOnly(bars[hi].t)});
     }
   }
   const stats=statsFromFibEvents(events);let latestSwing=null;

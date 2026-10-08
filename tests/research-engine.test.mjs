@@ -184,6 +184,21 @@ assert.ok(
 );
 assert.equal(confirmedEvent.confirmBars, 2, 'events record how many bars the pivot needed to confirm');
 
+// stockModule's "combined"/"weekly" timeframe runs this same study on a
+// resampleWeekly() set, where one bar spans 7 calendar days -- daysToFill is a
+// bar-index difference, so without a barDays multiplier a filled weekly event
+// silently reports elapsed weekly bars under a column literally labeled
+// "Median days" (assets/research-engine.js's fibBody render), understating
+// real elapsed time by ~7x with no unit disclosure anywhere in the response.
+const confirmedFibWeekly = analyseFib(confirmedFibBars, 2, 6, 'Weekly', 7);
+const confirmedWeeklyEvent = confirmedFibWeekly.events.find((row) => row.level === 0.382);
+assert.equal(
+  confirmedWeeklyEvent.daysToFill,
+  confirmedEvent.daysToFill * 7,
+  'barDays must scale daysToFill into real calendar days, not leave it as a raw weekly-bar-index delta',
+);
+assert.equal(analyseFib(confirmedFibBars, 2, 6, 'Daily').events.find((row) => row.level === 0.382).daysToFill, confirmedEvent.daysToFill, 'the default barDays=1 must leave the Daily set unchanged');
+
 // The touch bar's own high must not settle the touch: daily bars cannot order
 // the intrabar path, so a same-bar spike back to the high is not a known fill.
 const sameBarFibBars = [
