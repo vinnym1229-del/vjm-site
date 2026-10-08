@@ -70,6 +70,17 @@ function makeBarsWithInvalidCloses(totalRaw, validN, start = 100) {
   return bars;
 }
 
+// Builds `n` otherwise-valid daily bars but zeroes out the close of the bar
+// at `invalidIndex` (not the last one) -- a halted/illiquid day in the
+// middle of the history rather than at the end. Lets a fixture pin
+// computeMetrics()'s coverage.to against the real last bar's own timestamp
+// while `closes.length` (post-filter) is one shorter than `bars.length`.
+function makeBarsWithGap(n, invalidIndex, start = 100) {
+  const bars = makeBars(n, start);
+  bars[invalidIndex] = { ...bars[invalidIndex], c: 0 };
+  return bars;
+}
+
 let ipCounter = 0;
 async function analyze(env, years, headers = {}) {
   ipCounter += 1;
@@ -231,6 +242,20 @@ try {
     assert.equal(status, 200);
     assert.equal(data.metrics.sma50, null);
     assert.equal(data.metrics.aboveSma50, null);
+  }
+
+  // A halted/illiquid day in the MIDDLE of the history (one invalid close,
+  // not at the end) makes closes.length one shorter than bars.length.
+  // coverage.to must still report the real last bar's own timestamp --
+  // re-deriving it as bars[closes.length - 1] would point one bar early.
+  {
+    const bars = makeBarsWithGap(90, 40);
+    const realLastBar = bars[bars.length - 1];
+    globalThis.fetch = async () => Response.json({ bars: { QQQ: bars } });
+    const { status, data } = await analyze(baseEnv(), 1, await sessionCookieHeader());
+    assert.equal(status, 200);
+    assert.equal(data.coverage.to, realLastBar.t);
+    assert.equal(data.coverage.tradingDays, 89);
   }
 
   // No Workers AI binding: still 200 with the deterministic metrics, but the

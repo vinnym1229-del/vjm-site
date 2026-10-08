@@ -123,7 +123,13 @@ export async function onRequestGet(context) {
 // ─── Metrics (deterministic, no AI involved) ───────────────────────────────
 
 function computeMetrics(bars) {
-  const closes = bars.map((b) => Number(b.c)).filter((c) => Number.isFinite(c) && c > 0);
+  // Keep each bar's timestamp attached through the filter: `bars.length` and
+  // `closes.length` diverge whenever any historical bar has an invalid close
+  // (a halted/illiquid day), so re-deriving coverage.to via `bars[n - 1]`
+  // (n = the *filtered* count) points at the wrong, earlier bar instead of
+  // the real last valid one.
+  const points = bars.map((b) => ({ t: b.t, c: Number(b.c) })).filter((p) => Number.isFinite(p.c) && p.c > 0);
+  const closes = points.map((p) => p.c);
   const n = closes.length;
   const last = closes[n - 1];
   const first = closes[0];
@@ -168,7 +174,7 @@ function computeMetrics(bars) {
   const upDays = rets.filter((r) => r > 0).length;
 
   return {
-    coverage: { from: bars[0].t, to: bars[n - 1].t, tradingDays: n },
+    coverage: { from: points[0].t, to: points[n - 1].t, tradingDays: n },
     lastClose: +last.toFixed(2),
     sma50: sma(50),
     sma200: sma(200),
