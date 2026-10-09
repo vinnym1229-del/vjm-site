@@ -143,9 +143,18 @@ function cleanUrl(v) {
   return URL_RE.test(s) ? s : '';
 }
 
+// Shared with content-sync.js's delete-sweep: a row the sync loop rejects
+// for its own reasons (missing name, bad url, ...) still needs its id
+// cleaned the same way sanitizeContentRow would, so the sweep can tell "the
+// owner deleted this row" apart from "this row failed validation this run"
+// without re-deriving the cleaning rule in two places.
+export function cleanContentId(row) {
+  return row && typeof row === 'object' ? cleanStr(row.id, 80) : '';
+}
+
 export function sanitizeContentRow(type, row) {
   if (!row || typeof row !== 'object') return null;
-  const id = cleanStr(row.id, 80);
+  const id = cleanContentId(row);
   if (!id) return null;
 
   if (type === 'announcements') {

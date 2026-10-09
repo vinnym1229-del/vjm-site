@@ -2,8 +2,9 @@
 //
 // POST (X-Research-Cron only): pulls the owner's content tables from the
 // authenticated Apps Script content bridge, sanitizes + upserts into D1
-// `site_content`, and forwards NEW announcements to the Discord announcements
-// webhook when CONTENT_DISCORD_DRYRUN is not "true".
+// `site_content`, sweeps out any D1 row no longer present in the sheet, and
+// forwards NEW announcements to the Discord announcements webhook when
+// CONTENT_DISCORD_DRYRUN is not "true".
 //
 // Owner workflow: edit Google Sheet tabs (announcements / trade_reviews /
 // prop_firms) → this sync runs hourly via GitHub Actions (or manual dispatch)
@@ -11,7 +12,7 @@
 
 import { json, checkRateLimit } from './_lib/http.js';
 import { timingSafeEqual } from './_lib/session.js';
-import { sanitizeContentRow, CONTENT_TYPES } from './_lib/integrations-core.js';
+import { sanitizeContentRow, cleanContentId, CONTENT_TYPES } from './_lib/integrations-core.js';
 import { postEmbed } from './_lib/discord.js';
 
 const MAX_ROWS_PER_TYPE = 200;
@@ -63,6 +64,30 @@ export async function onRequestPost(context) {
       } catch { skipped++; }
     }
     summary[type] = { received: rows.length, upserted, skipped };
+
+    // Reconcile deletions: the upsert loop above only ever adds or updates a
+    // row, so a row the owner removes from their Sheet tab was never cleared
+    // from D1 and kept rendering on the site indefinitely -- the opposite of
+    // this endpoint's own documented promise ("edit Google Sheet tabs ->
+    // website updates itself"). Sweep every D1 row for this type that wasn't
+    // seen in this sync's rows and delete it. Only run the sweep when the
+    // bridge actually returned rows for this type (rows.length > 0): an
+    // empty or degraded bridge response for one tab must never be read as
+    // "the owner deleted everything in it". Ids are collected from the raw
+    // rows, before sanitizeContentRow, so a row that only fails validation
+    // this one run (e.g. mid-edit in the sheet) keeps its last-good D1 copy
+    // instead of losing it to a sweep it was never really removed from.
+    if (rows.length > 0) {
+      const seenIds = [...new Set(rows.map(cleanContentId).filter(Boolean))];
+      if (seenIds.length > 0) {
+        const placeholders = seenIds.map((_, i) => `?${i + 2}`).join(',');
+        try {
+          await env.RESEARCH_DB.prepare(
+            `DELETE FROM site_content WHERE content_type = ?1 AND external_id NOT IN (${placeholders})`
+          ).bind(type, ...seenIds).run();
+        } catch { /* best-effort cleanup; a stale row is retried next sync, never left mid-delete */ }
+      }
+    }
   }
 
   // Announcements already forwarded are recorded in webhook_events for idempotency.

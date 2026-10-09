@@ -29,12 +29,19 @@ const BRIDGE_SECRET = 'bridge-test-secret';
 const DISCORD_HOOK = 'https://discord.com/api/webhooks/123/abc';
 
 // Minimal D1 fake covering exactly the queries content-sync.js issues.
-// site_content upserts are just counted; webhook_events tracks which
-// announcement ids have already been posted, matching the real idempotency
-// table so the "already posted" skip path is exercised for real.
-function makeDb({ postedAnnouncementIds = new Set(), failInsertIds = new Set() } = {}) {
+// webhook_events tracks which announcement ids have already been posted,
+// matching the real idempotency table so the "already posted" skip path is
+// exercised for real. site_content is tracked per-type as a real set of
+// surviving ids (not just an upsert counter) so the delete-sweep's effect
+// on what's actually left in the table can be asserted directly -- seedRows
+// lets a test pre-populate ids as if a prior sync had already landed them,
+// without that prior sync's own bridge call.
+function makeDb({ postedAnnouncementIds = new Set(), failInsertIds = new Set(), seedRows = {} } = {}) {
+  const siteContent = new Map(); // type -> Set(external_id)
+  for (const [type, ids] of Object.entries(seedRows)) siteContent.set(type, new Set(ids));
   return {
     postedAnnouncementIds,
+    siteContent,
     prepare(sql) {
       return {
         bind(...args) {
@@ -51,7 +58,19 @@ function makeDb({ postedAnnouncementIds = new Set(), failInsertIds = new Set() }
                 // args[1] is external_id (the ?2 bind) -- lets a test force a
                 // single row's write to fail without touching every row.
                 if (failInsertIds.has(args[1])) throw new Error('constraint violation');
+                const [type, externalId] = args;
+                if (!siteContent.has(type)) siteContent.set(type, new Set());
+                siteContent.get(type).add(externalId);
                 return { meta: { changes: 1 } };
+              }
+              if (sql.includes('DELETE FROM site_content')) {
+                // args: [type, ...idsToKeep] -- mirrors the real query's
+                // `content_type = ?1 AND external_id NOT IN (...)`.
+                const [type, ...keepIds] = args;
+                const keep = new Set(keepIds);
+                const set = siteContent.get(type);
+                if (set) for (const id of [...set]) if (!keep.has(id)) set.delete(id);
+                return { meta: { changes: 0 } };
               }
               if (sql.includes('INSERT OR IGNORE INTO webhook_events')) {
                 const [eventId] = args;
@@ -209,6 +228,49 @@ try {
     assert.equal(data.summary.announcements.received, 2);
     assert.equal(data.summary.announcements.upserted, 1);
     assert.equal(data.summary.announcements.skipped, 1);
+  }
+
+  // The delete-sweep: a row the owner removes from a Sheet tab must stop
+  // being served, not linger in D1 forever (content.js has no other way to
+  // remove it -- there was no DELETE anywhere against site_content before
+  // this fix). 'stale-member' was synced in some earlier run and is no
+  // longer in the bridge's response; 'keep-member' is. Only 'keep-member'
+  // should survive.
+  {
+    const db = makeDb({ seedRows: { team: ['stale-member', 'keep-member'] } });
+    globalThis.fetch = mockBridgeFetch({ team: [{ id: 'keep-member', name: 'Keep Member' }] });
+    const { status, data } = await postSync(baseEnv(db));
+    assert.equal(status, 200);
+    assert.equal(data.summary.team.upserted, 1);
+    assert.deepEqual([...db.siteContent.get('team')], ['keep-member']);
+  }
+
+  // An empty (or absent) bridge response for one tab must never be read as
+  // "the owner deleted everything in it" -- that's indistinguishable from a
+  // degraded bridge call that happened to return no rows for this one type.
+  // 'faqs' isn't in the bridge content at all this sync; its existing rows
+  // must be left untouched.
+  {
+    const db = makeDb({ seedRows: { faqs: ['faq-1', 'faq-2'] } });
+    globalThis.fetch = mockBridgeFetch({ announcements: [announcement('a1')] });
+    const { status } = await postSync(baseEnv(db));
+    assert.equal(status, 200);
+    assert.deepEqual([...db.siteContent.get('faqs')].sort(), ['faq-1', 'faq-2']);
+  }
+
+  // A row present in the sheet this run but rejected by sanitizeContentRow
+  // (here: a team row with no name) is still "seen" for sweep purposes --
+  // its id is read from the raw row, before sanitization -- so a row that's
+  // merely mid-edit in the sheet this one hour doesn't lose its last-good
+  // D1 copy to a sweep it was never really removed from.
+  {
+    const db = makeDb({ seedRows: { team: ['mid-edit'] } });
+    globalThis.fetch = mockBridgeFetch({ team: [{ id: 'mid-edit' }] }); // no `name` -> fails sanitizeContentRow
+    const { status, data } = await postSync(baseEnv(db));
+    assert.equal(status, 200);
+    assert.equal(data.summary.team.skipped, 1);
+    assert.equal(data.summary.team.upserted, 0);
+    assert.deepEqual([...db.siteContent.get('team')], ['mid-edit'], 'a row that only failed validation this run must not be swept');
   }
 
   // Discord embed fallbacks: a row that sanitizeContentRow allows through
