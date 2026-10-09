@@ -273,6 +273,34 @@ try {
     assert.deepEqual([...db.siteContent.get('team')], ['mid-edit'], 'a row that only failed validation this run must not be swept');
   }
 
+  // The sweep must not run on a response that landed exactly at the
+  // MAX_ROWS_PER_TYPE cap (200): both the Apps Script bridge's own readRows_
+  // (MAX_ROWS=200) and this file's own slice() enforce the same limit, so a
+  // tab with MORE than 200 real rows (plausible for a long-running
+  // trade_reviews log) is truncated before its ids ever reach this sync --
+  // "received 200" is indistinguishable from "the sheet actually has 200".
+  // Treating it as a complete snapshot would sweep every legitimate row the
+  // cap pushed out the very first time a tab crossed 200, which is a one-way
+  // loss of real history, not a row the owner removed. 'tr-200' was synced
+  // in an earlier run (back when the tab had <=200 rows or simply hadn't
+  // aged out of the capped window yet); the bridge this run returns exactly
+  // 200 *other* rows, so 'tr-200' must survive untouched.
+  {
+    const seeded = Array.from({ length: 201 }, (_, i) => 'tr-' + i);
+    const db = makeDb({ seedRows: { trade_reviews: seeded } });
+    const bridgeRows = Array.from({ length: 200 }, (_, i) => ({ id: 'tr-' + i, ticker: 'AAPL' }));
+    globalThis.fetch = mockBridgeFetch({ trade_reviews: bridgeRows });
+    const { status, data } = await postSync(baseEnv(db));
+    assert.equal(status, 200);
+    assert.equal(data.summary.trade_reviews.received, 200);
+    assert.equal(data.summary.trade_reviews.upserted, 200);
+    assert.ok(
+      db.siteContent.get('trade_reviews').has('tr-200'),
+      'a row truncated off a capped bridge response must not be swept as if the owner removed it',
+    );
+    assert.equal(db.siteContent.get('trade_reviews').size, 201, 'the 200 upserted ids plus the untouched tr-200');
+  }
+
   // Discord embed fallbacks: a row that sanitizeContentRow allows through
   // with no title (body-only is valid) must not post an empty embed title,
   // and a row with a real link must render the "Link:" line -- every prior

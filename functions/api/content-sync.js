@@ -77,7 +77,21 @@ export async function onRequestPost(context) {
     // rows, before sanitizeContentRow, so a row that only fails validation
     // this one run (e.g. mid-edit in the sheet) keeps its last-good D1 copy
     // instead of losing it to a sweep it was never really removed from.
-    if (rows.length > 0) {
+    //
+    // A response that landed exactly at MAX_ROWS_PER_TYPE is just as
+    // untrustworthy as an empty one, in the opposite direction: both the
+    // bridge's own readRows_ (apps-script/content-sync/Code.gs, MAX_ROWS=200)
+    // and the slice() above cap at this same number, so "received 200" can
+    // mean "the sheet has exactly 200 rows" OR "the sheet has 200+ and the
+    // rest were truncated before this sync ever saw their ids" -- those two
+    // cases are indistinguishable from here. Treating the truncated case as
+    // a complete snapshot swept every older row the cap pushed out on the
+    // very first sync after a tab (realistically trade_reviews or
+    // announcements, which grow over time) crossed 200 real rows -- a
+    // one-way loss of legitimate history, not a stale row the owner
+    // actually removed. Skip the sweep at the cap; it resumes the moment
+    // the count drops back under it.
+    if (rows.length > 0 && rows.length < MAX_ROWS_PER_TYPE) {
       const seenIds = [...new Set(rows.map(cleanContentId).filter(Boolean))];
       if (seenIds.length > 0) {
         const placeholders = seenIds.map((_, i) => `?${i + 2}`).join(',');
