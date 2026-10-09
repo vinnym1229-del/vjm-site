@@ -725,6 +725,56 @@ test('CMS schedule merge keeps each day\'s own start time for a session, not one
   assert.equal(nextFri.session.start, 8 * 60, "pjNextSession must surface Friday's own (earlier) start time, not Tuesday's");
 });
 
+test('CMS schedule merge clears a session cancelled on every day this week, not just a stale day', () => {
+  // The sheet's "blank host = off" convention is row-level: a session can be
+  // off on some days and on on others. The merge used to only initialize
+  // byName[session] once it found a HOSTED row, so a session with zero
+  // hosted rows this week (every day's host blank) never got a byName entry
+  // at all, PJ_SESSIONS.forEach's `if (upd)` saw undefined and skipped the
+  // reset, and the hard-coded default days survived — flashing "LIVE NOW"
+  // for a session the schedule grid right above correctly rendered as
+  // cancelled. Drive the real merge with an all-hostless week for CLASS and
+  // assert its days come back empty, so pjNextSession never surfaces it.
+  const sessionsSrc = index.match(/const PJ_SESSIONS = \[[\s\S]*?\n\];/)[0];
+  const nextSessionSrc = index.match(/function pjNextSession\(\) \{[\s\S]*?\n\}\n/)[0];
+  const parseTimeSrc = index.match(/function parseTimeET\(s\) \{[\s\S]*?\n {2}\}/)[0];
+  const mergeSrc = index.match(/const byName = \{\};[\s\S]*?PJ_SESSIONS\.forEach\(\(sess\) => \{[\s\S]*?\n {6}\}\);/)[0];
+
+  function dateForDow(dow, hour, min) {
+    const d = new Date();
+    d.setHours(hour, min, 0, 0);
+    while (d.getDay() !== dow) d.setDate(d.getDate() + 1);
+    return d;
+  }
+
+  const sandbox = { __FAKE_NOW__: null };
+  vm.createContext(sandbox);
+  vm.runInContext(
+    sessionsSrc + '\n' +
+    'function pjEtNow(){ const n = __FAKE_NOW__; return new Date(n.y, n.m, n.d, n.h, n.min); }\n' +
+    nextSessionSrc +
+    parseTimeSrc + '\n' +
+    "const DAY_NUM = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5 };\n" +
+    'function runMerge(active) {\n' + mergeSrc + '\n}\n' +
+    'this.pjNextSession = pjNextSession; this.PJ_SESSIONS = PJ_SESSIONS; this.runMerge = runMerge;',
+    sandbox,
+  );
+
+  // CLASS normally runs Tue/Thu at 5:30pm per the hard-coded default; this
+  // week's sheet marks both rows cancelled (blank host).
+  sandbox.runMerge([
+    { day: 'Tue', session: 'CLASS', timeET: '5:30 PM', host: '' },
+    { day: 'Thu', session: 'CLASS', timeET: '5:30 PM', host: '' },
+  ]);
+  const cls = sandbox.PJ_SESSIONS.find((s) => s.name === 'CLASS');
+  assert.equal(Object.keys(cls.days).length, 0, 'a session cancelled every day this week must have its days map cleared, not keep the hard-coded default');
+
+  const tue530 = dateForDow(2, 17, 45); // Tuesday 5:45pm, after CLASS's old default start
+  sandbox.__FAKE_NOW__ = { y: tue530.getFullYear(), m: tue530.getMonth(), d: tue530.getDate(), h: tue530.getHours(), min: tue530.getMinutes() };
+  const next = sandbox.pjNextSession();
+  assert.notEqual(next && next.session && next.session.name, 'CLASS', 'pjNextSession must never surface a session cancelled every day this week, live or upcoming');
+});
+
 test('pjNextSession returns the soonest session of the day, not the first one in array order', () => {
   // PJ_SESSIONS is written NYAM/NYPM/CLASS/ASIA — today's own reading order,
   // which also happens to be chronological with the site's current schedule.

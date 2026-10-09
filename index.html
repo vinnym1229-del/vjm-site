@@ -2684,13 +2684,19 @@ setInterval(tickSessionClock, 30000);
 
       const byName = {};
       active.forEach((s) => {
+        // Initialized even for a hostless row, so a session that's off EVERY
+        // day this week still gets an (empty) entry here -- otherwise byName
+        // never gains a key for it, PJ_SESSIONS.forEach's `if (upd)` below
+        // sees undefined and skips the reset entirely, and the hard-coded
+        // default days survive untouched, flashing "LIVE NOW" for a session
+        // the schedule grid right above correctly renders as cancelled.
+        if (!byName[s.session]) byName[s.session] = {};
         // Hostless rows are cancelled slots; counting them here would have the
         // countdown advertise a session nobody is running.
         if (!String(s.host || '').trim()) return;
         const mins = parseTimeET(s.timeET);
         if (mins == null) return;
         const dow = DAY_NUM[s.day];
-        if (!byName[s.session]) byName[s.session] = {};
         // Keyed by day, not just collected into a list, so a session that
         // genuinely starts at a different clock time on different days (an
         // early Friday before a holiday, say) keeps each day's own time
