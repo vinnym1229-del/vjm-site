@@ -643,7 +643,7 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
         maxLoss=type==='call'?-Infinity:-(strike-premium)*mult;
       }
       if(contracts===0){maxProfit=0;maxLoss=0;}
-      document.getElementById('op-out-be').textContent='$'+be.toFixed(2);
+      document.getElementById('op-out-be').textContent=(be<0?'-$':'$')+Math.abs(be).toFixed(2);
       document.getElementById('op-out-maxp').textContent=isFinite(maxProfit)?fmtUsd(maxProfit):'Unlimited';
       document.getElementById('op-out-maxl').textContent=isFinite(maxLoss)?fmtUsd(maxLoss):'Unlimited';
       var canvas=document.getElementById('op-chart');

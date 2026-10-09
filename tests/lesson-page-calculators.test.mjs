@@ -99,6 +99,19 @@ test('options-lab calc(): short put caps both sides at the premium and strike-mi
   assert.equal(out.maxLoss, '-$9,700');
 });
 
+// The same "$ lands before the number's own minus sign" defect class already
+// fixed on stock-lab.html's fmt() and stock-breakdown.html's fmtUsd() --
+// here it survived in a third spot because the breakeven output never
+// called this page's own (already-correct) fmtUsd(), instead formatting
+// itself inline with a bare '$'+be.toFixed(2). A put's breakeven is
+// strike-premium, which goes negative whenever premium exceeds strike (no
+// min/max on either input stops a member from typing that combination),
+// rendering e.g. "$-15.00" instead of "-$15.00" on the tool's own output.
+test('options-lab calc(): a put breakeven below zero keeps its minus sign before the $, not after', () => {
+  const out = runOptionCalc({ type: 'put', side: 'long', strike: 20, premium: 35, contracts: 1 });
+  assert.equal(out.be, '-$15.00');
+});
+
 test('options-lab calc(): contracts scale the $100 multiplier, not just the raw premium', () => {
   const out = runOptionCalc({ type: 'call', side: 'long', strike: 100, premium: 3, contracts: 2 });
   assert.equal(out.maxLoss, '-$600');
