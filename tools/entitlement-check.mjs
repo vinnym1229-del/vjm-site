@@ -64,7 +64,14 @@ for (const id of fList) if (cList.has(id)) {
 }
 for (const [label, list] of [['futures', fList], ['complete', cList]]) {
   for (const id of list) {
-    if (/\s/.test(id)) warn(`"${id}" (${label}) contains whitespace — check the separator.`);
+    // parseIdList() already splits on every \s-matched character, so an id that
+    // reaches here can never contain one — a literal whitespace check on it is
+    // dead. The real paste mistake it needs to catch is an invisible Unicode
+    // format character (zero-width space, BOM, etc.), which parseIdList does NOT
+    // treat as a separator and which is just as invisible to this warning if it
+    // only tested for \s. resolveTier()'s Set lookup is an exact string match, so
+    // one of these riding along in a copied id silently fails it forever.
+    if (/\p{Cf}/u.test(id)) warn(`"${id}" (${label}) contains an invisible formatting character — check for a stray zero-width space from copy/paste.`);
     if (id.length < 4) warn(`"${id}" (${label}) looks too short to be a Whop id.`);
     if (/^(prod|plan)_?$/i.test(id)) warn(`"${id}" (${label}) looks like a truncated id.`);
   }

@@ -60,6 +60,18 @@ test('entitlement-check flags an id listed in both WHOP_PRODUCTS_FUTURES and WHO
   assert.equal(status, 1);
 });
 
+test('entitlement-check flags an id carrying an invisible Unicode character, not just literal whitespace', () => {
+  // parseIdList() splits on /[,\s]+/, so a real space/tab/newline can never
+  // survive into an id by the time it reaches here — a literal \s test on it
+  // was dead code. The paste mistake that actually matters is invisible to
+  // both parseIdList's splitter and resolveTier()'s exact Set match: a
+  // zero-width space riding along in a copied Whop id. That id must still be
+  // flagged here, since production would reject it forever otherwise.
+  const { stdout, status } = run({ ...process.env, WHOP_DEFAULT_TIER: '', WHOP_PRODUCTS_FUTURES: 'prod_a​prod_b', WHOP_PRODUCTS_COMPLETE: 'prod_c' });
+  assert.match(stdout, /contains an invisible formatting character/);
+  assert.equal(status, 1);
+});
+
 test('entitlement-check sounds the (!!) alarm when an unlisted product resolves to a real tier anyway', () => {
   // This is the tool's one actual safety tripwire: once an allowlist is
   // configured, a product nobody listed must come back `null`. Every other
