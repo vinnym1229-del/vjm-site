@@ -8,7 +8,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;scroll-padding-top:132px}
-body{min-height:100vh;background:radial-gradient(circle at 50% -12%,rgba(209,67,67,.05),transparent 32%),linear-gradient(180deg,var(--bg),var(--bg2) 46%,#0e0e10);color:var(--text);font:400 15px/1.55 Inter,system-ui,sans-serif;overflow-x:hidden}
+body{min-height:100vh;background:radial-gradient(circle at 50% -12%,rgba(209,67,67,.05),transparent 32%),linear-gradient(180deg,var(--bg),var(--bg2) 46%,#0e0e10);color:var(--text);font:400 15px/1.55 'IBM Plex Sans',system-ui,sans-serif;overflow-x:hidden}
 button,input,select{font:inherit}
 button{cursor:pointer}
 a{color:inherit}

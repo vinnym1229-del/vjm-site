@@ -2411,6 +2411,28 @@ test('no page loads Google Fonts via a plain render-blocking <link rel="styleshe
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the font-loading tests above only check that the right fonts are
+// *fetched*, not that any stylesheet actually *uses* the one it fetches.
+// research-engine.html preloads 'Barlow Condensed'+'IBM Plex Sans' -- the
+// same pair site.css and curriculum.css use for the rest of the site -- but
+// assets/research-engine.css's own body{} rule set font-family to Inter,
+// a font this page never loads anywhere. Headings use 'Barlow Condensed'
+// correctly, so this went unnoticed, but every other piece of body copy on
+// the site's paid Research Engine tool (KPI captions, table cells, panel
+// notes, form labels) silently fell through to the browser/OS default
+// instead of the brand's typeface, while the page spent a preload
+// connection and bandwidth on IBM Plex Sans weights no selector ever used.
+test("research-engine.css's body rule uses the font it actually preloads", () => {
+  const css = read(join('assets', 'research-engine.css'));
+  const bodyRule = css.match(/^body\{[^}]*\}/m);
+  assert.ok(bodyRule, 'research-engine.css missing a top-level body{} rule');
+  assert.doesNotMatch(bodyRule[0], /\bInter\b/,
+    "research-engine.css's body rule references 'Inter', a font research-engine.html never loads");
+  assert.match(bodyRule[0], /'IBM Plex Sans'/,
+    "research-engine.css's body rule should use 'IBM Plex Sans', the font research-engine.html actually preloads");
+});
+
+// ---------------------------------------------------------------------------
 // Incident: every Cloudflare Turnstile widget guarding a premium-access-code
 // gate (premium-guidance.html's sign-in, research-engine.html's and
 // stock-lab.html's unlock gates, plus the one curriculum.js injects on all
