@@ -132,6 +132,28 @@ test('calcFib: retracement runs from the swing high down to the swing low, not i
   assert.match(html, /border-color:rgba\(255,255,255,\.07\)"><strong style="color:var\(--muted\)">0%/);
 });
 
+test('fmt: a negative value puts the minus sign before the currency prefix, not after it', () => {
+  const { sandbox } = makeSandbox();
+  vm.runInContext(fmtSrc + '\nthis.fmt = fmt;', sandbox);
+  const fmt = sandbox.fmt;
+
+  // runBasicResearch()/runPremiumResearch() both render a stock's dollar
+  // change as `fmt(q.change,'$')`, and `change` is `price - prevClose` from
+  // the API (functions/api/stock-research.js / premium-stock-research.js) --
+  // a perfectly ordinary negative number on any down day. The old
+  // `prefix+n.toLocaleString(...)` put the prefix before the number's own
+  // sign, rendering a stock down $2.50 as "$-2.5" instead of "-$2.5" --
+  // every member checking any declining ticker, on the free tier or the
+  // premium one, saw the malformed sign on the single most-read number on
+  // the page. options-lab.html's and futures-dissection.html's own
+  // `fmtUsd(n)` already special-case `n<0` for exactly this reason; this
+  // file's shared `fmt()` had silently drifted out of sync with that fix.
+  assert.equal(fmt(-2.5, '$'), '-$2.5', 'a negative dollar amount must read "-$2.5", not "$-2.5"');
+  assert.equal(fmt(2.5, '$'), '$2.5', 'a positive amount must be unaffected');
+  assert.equal(fmt(0, '$'), '$0', 'zero must be unaffected');
+  assert.equal(fmt(-50), '-50', 'a negative value with no prefix must be unaffected');
+});
+
 test('calcFib: swing high/low entered backwards still runs high-to-low, not negative', () => {
   const { sandbox, els, el } = makeSandbox();
   sandbox.selectedFibZone = '0.382-0.618';
