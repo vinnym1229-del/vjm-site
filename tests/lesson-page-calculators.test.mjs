@@ -161,6 +161,19 @@ test('stock-breakdown calc(): entry equal to stop must not divide by zero', () =
   assert.equal(out.shares, '0 shares');
 });
 
+// The account/risk/entry/stop/slip inputs carry min="0", but that attribute
+// is not enforced by JS and calc() reruns on every input event, so a member
+// can type a negative risk % (or paste one in) and reach a negative budget
+// and position cost. fmtUsd prepended '$' unconditionally before negating,
+// rendering '$-100' instead of '-$100' -- the same sign-placement defect
+// already fixed on stock-lab.html's fmt() (options-lab.html and
+// futures-dissection.html's own fmtUsd already get this right).
+test('stock-breakdown calc(): a negative risk % renders the minus sign before the $, not after', () => {
+  const out = runRiskCalc({ acct: 10000, riskPct: -1, entry: 50, stop: 48.75, slip: 0.05 });
+  assert.equal(out.budget, '-$100');
+  assert.equal(out.cost, '-$3,850');
+});
+
 // --- psychology-enhancer.html: Expectancy & R-Multiple Calculator (#psy-tool) --
 
 const psychologyEnhancer = readFileSync(join(ROOT, 'psychology-enhancer.html'), 'utf8');

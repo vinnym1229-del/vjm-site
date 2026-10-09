@@ -188,7 +188,7 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
     var wrapId='risk-tool';
     var ids=['st-acct','st-risk','st-entry','st-stop','st-slip'];
     function num(id){var v=parseFloat(document.getElementById(id).value);return isFinite(v)?v:0;}
-    function fmtUsd(n){return '$'+n.toLocaleString(undefined,{maximumFractionDigits:2});}
+    function fmtUsd(n){return (n<0?'-$':'$')+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:2});}
     function calc(){
       var acct=num('st-acct'), riskPct=num('st-risk'), entry=num('st-entry'), stop=num('st-stop'), slip=num('st-slip');
       var budget=acct*(riskPct/100);
