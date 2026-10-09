@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | tools/entitlement-check.mjs; tests/entitlement-check-tool.test.mjs | routine maintenance cycle -- fixing the dead `/\s/` whitespace check in entitlement-check.mjs's per-id sanity pass (unreachable since parseIdList already splits on \s, and blind to the real failure mode: an invisible Unicode format character surviving into an id) (664/664 green at 64e46de) | 2026-10-09 |
 
 ## Queued (unclaimed, safe to take)
 
