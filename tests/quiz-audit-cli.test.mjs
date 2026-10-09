@@ -105,6 +105,46 @@ test('the CLI fails and exits 1 when answer positions are lopsided and the shuff
   }
 });
 
+// The WARN branch (quiz-audit.mjs lines 176-182) needs the opposite
+// combination from the FAIL test above: source positions lopsided, but the
+// real, currently-shuffled assets/curriculum.js left in place as the render-
+// time defence. Every other CLI test here either leaves QUIZ_AUDIT_CURRICULUM_PATH
+// unset with a balanced fixture (shuffled=true, positionLeak=false, so the
+// `v.positionLeak && v.shuffled` check never fires) or sets it with a
+// stripped-down curriculum.js to drive the FAIL branch instead -- so nothing
+// before this test ever reaches the WARN console.log. A regression that
+// dropped that message (or swapped it for a silent no-op) would pass every
+// other test in this file.
+test('the CLI warns and exits 0 when answer positions are lopsided but the shuffle defence is active', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'quiz-audit-cli-'));
+  const fixture = join(dir, 'lopsided-warn.html');
+  // Same lopsided-positions shape as the FAIL fixture above, but this test
+  // does not override QUIZ_AUDIT_CURRICULUM_PATH, so the audit reads the
+  // real, shipped assets/curriculum.js -- whose shuffle defence is active.
+  const blocks = Array.from({ length: 12 }, (_, i) => `
+    <div class="quiz-q" data-qi="${i}">
+      <p class="qtext">Question ${i}?</p>
+      <label class="quiz-choice"><span>Ab.</span></label>
+      <label class="quiz-choice"><span>This is a longer wrong answer with extra words.</span></label>
+      <label class="quiz-choice"><span>Another longer wrong answer here too.</span></label>
+      <label class="quiz-choice"><span>Yet one more padded wrong answer choice.</span></label>
+    </div>`).join('\n');
+  const key = JSON.stringify(Array.from({ length: 12 }, () => ({ correct: 0 })));
+  writeFileSync(fixture, `<div class="quiz">${blocks}\n<script type="application/json">${key}</script></div>`);
+  try {
+    const { stdout, status } = run([fixture]);
+    assert.match(
+      stdout,
+      /WARN: the authored answer positions are lopsided, but assets\/curriculum\.js/,
+      `expected the position-leak WARN line:\n${stdout}`,
+    );
+    assert.doesNotMatch(stdout, /FAIL:/, `a shuffled page must not FAIL on source order:\n${stdout}`);
+    assert.equal(status, 0, 'a position leak covered by the shuffle defence must not fail CI');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('the CLI exits 0 and prints no FAIL line for a balanced fixture', () => {
   const dir = mkdtempSync(join(tmpdir(), 'quiz-audit-cli-'));
   const fixture = join(dir, 'balanced.html');
