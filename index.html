@@ -2294,9 +2294,26 @@ function runGrowthSim() {
     for (let i = 0; i < days; i++) { balance *= (1 + pct / 100); }
   }
   const gain = balance - start;
-  const pct = ((gain / start) * 100).toFixed(0);
-  document.getElementById('sim-end-val').textContent = '$' + Math.round(balance).toLocaleString();
-  document.getElementById('sim-gain-val').textContent = '+$' + Math.round(gain).toLocaleString() + ' (+' + pct + '%)';
+  const pctVal = (gain / start) * 100;
+  const balRounded = Math.round(balance);
+  const gainRounded = Math.round(gain);
+  const isGain = gainRounded >= 0;
+  // Daily Gain ($)/( %) both carry a min= attribute (1 and 0.1), but that
+  // only affects the spinner/validity state, not a directly typed value —
+  // nothing here stops a negative daily figure from reaching the math, same
+  // as the sim-start gap fixed above. A losing streak drove balance below
+  // start and both lines rendered the sign on the wrong side of the "$"
+  // ("$-8,800", "+$-10,000 (+-833%)") instead of in front of it, the same
+  // defect already fixed today on stock-lab/stock-breakdown/options-lab's
+  // dollar formatters — plus a hardcoded "+" that assumed every run ends in
+  // a gain. Match calcFutures' pnlEl pattern just below: abs() the magnitude,
+  // put the sign in front, and recolor for a loss instead of leaving it green.
+  document.getElementById('sim-end-val').textContent =
+    (balRounded < 0 ? '−$' : '$') + Math.abs(balRounded).toLocaleString();
+  document.getElementById('sim-end-val').style.color = isGain ? 'var(--green)' : 'var(--red)';
+  document.getElementById('sim-gain-val').textContent =
+    (isGain ? '+$' : '−$') + Math.abs(gainRounded).toLocaleString() + ' (' + (isGain ? '+' : '−') + Math.abs(pctVal).toFixed(0) + '%)';
+  document.getElementById('sim-gain-val').style.color = isGain ? 'var(--emerald)' : 'var(--red)';
   document.getElementById('sim-extra-val').textContent = `Starting $${start.toLocaleString()} · ${days} trading days`;
   document.getElementById('sim-result').style.display = 'block';
 }

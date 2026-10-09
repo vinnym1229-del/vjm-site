@@ -658,6 +658,41 @@ test('growth simulator renders nothing for a non-positive starting balance inste
   assert.equal(els['sim-result'].style.display, 'block');
 });
 
+test('growth simulator puts the sign before the $ (and recolors red) on a losing streak', () => {
+  // Daily Gain ($) and Daily Gain (%) both carry a min= attribute (1 and
+  // 0.1), same as Starting Balance's min="1" above -- but min= only affects
+  // the spinner/validity state, never a directly typed value, so nothing
+  // stops a negative daily figure from reaching the math. A losing streak
+  // drives balance below start, and both output lines put the sign on the
+  // wrong side of the "$" ("$-8,800" instead of "-$8,800") plus hardcoded a
+  // "+" that assumed every run ends in a gain ("+$-10,000 (+-833%)") -- the
+  // same sign-placement defect class already fixed today on stock-lab's
+  // fmt(), stock-breakdown's fmtUsd(), and options-lab's breakeven line.
+  const fnSrc = index.match(/function runGrowthSim\(\) \{[\s\S]*?\n\}\n/)[0];
+  const els = {};
+  const el = (id) => (els[id] ||= { value: '0', textContent: '', style: {} });
+  const sandbox = { document: { getElementById: el }, gainMode: 'dollar' };
+  vm.createContext(sandbox);
+  vm.runInContext(fnSrc + '\nthis.runGrowthSim = runGrowthSim;', sandbox);
+
+  el('sim-start').value = '1200';
+  el('sim-days').value = '20';
+  el('sim-daily-dollar').value = '-500';
+  sandbox.runGrowthSim();
+  assert.equal(els['sim-end-val'].textContent, '−$8,800', 'a losing streak must show the minus before the $, not after');
+  assert.equal(els['sim-end-val'].style.color, 'var(--red)', 'a sub-start ending balance must not stay green');
+  assert.equal(els['sim-gain-val'].textContent, '−$10,000 (−833%)', 'the loss and its % must both lead with the sign, not a hardcoded +');
+  assert.equal(els['sim-gain-val'].style.color, 'var(--red)', 'a loss must not stay emerald');
+
+  // A real gain still renders exactly as before (sign-first, no regression).
+  el('sim-daily-dollar').value = '200';
+  sandbox.runGrowthSim();
+  assert.equal(els['sim-end-val'].textContent, '$5,200');
+  assert.equal(els['sim-end-val'].style.color, 'var(--green)');
+  assert.equal(els['sim-gain-val'].textContent, '+$4,000 (+333%)');
+  assert.equal(els['sim-gain-val'].style.color, 'var(--emerald)');
+});
+
 test('session clock lives in the schedule section', () => {
   assert.match(index, /id="session-clock"/);
   assert.match(index, /tickSessionClock/);
