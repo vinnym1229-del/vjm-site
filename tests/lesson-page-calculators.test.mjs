@@ -176,15 +176,19 @@ test('stock-breakdown calc(): entry equal to stop must not divide by zero', () =
 
 // The account/risk/entry/stop/slip inputs carry min="0", but that attribute
 // is not enforced by JS and calc() reruns on every input event, so a member
-// can type a negative risk % (or paste one in) and reach a negative budget
-// and position cost. fmtUsd prepended '$' unconditionally before negating,
-// rendering '$-100' instead of '-$100' -- the same sign-placement defect
-// already fixed on stock-lab.html's fmt() (options-lab.html and
-// futures-dissection.html's own fmtUsd already get this right).
-test('stock-breakdown calc(): a negative risk % renders the minus sign before the $, not after', () => {
+// can type a negative risk % (or paste one in) and reach a negative budget.
+// This was first caught as a sign-placement defect (fmtUsd rendered '$-100'
+// instead of '-$100', fixed on stock-lab.html's fmt() too), but the sign fix
+// alone left a worse bug standing: budget negative over a positive
+// risk/share still floors to a negative share count ("shares: -77"), which
+// is nonsensical -- you cannot buy a negative number of shares, and cost
+// (shares*entry) went negative with it. budget is now floored at $0, so a
+// negative risk % can never produce anything but a real $0/0-shares result.
+test('stock-breakdown calc(): a negative risk % floors at $0 budget and 0 shares, never negative', () => {
   const out = runRiskCalc({ acct: 10000, riskPct: -1, entry: 50, stop: 48.75, slip: 0.05 });
-  assert.equal(out.budget, '-$100');
-  assert.equal(out.cost, '-$3,850');
+  assert.equal(out.budget, '$0');
+  assert.equal(out.shares, '0 shares');
+  assert.equal(out.cost, '$0');
 });
 
 // --- psychology-enhancer.html: Expectancy & R-Multiple Calculator (#psy-tool) --

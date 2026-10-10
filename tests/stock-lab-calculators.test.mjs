@@ -108,6 +108,30 @@ test('calcRisk: a budget that does not divide evenly floors the share count, nev
   assert.equal(els.riskResult.innerHTML, 'Max risk: $100 · Risk/share: $6 · Approx shares: 16');
 });
 
+// #riskPct carries no min attribute and calcRisk() reruns on every input
+// event, so nothing stops a directly typed negative risk % from reaching the
+// math -- the same "no guard on a directly-typed value" pattern already
+// fixed on stock-breakdown.html's Position-Size & Risk Calculator. Before
+// this fix, a negative risk % drove riskDollars negative and Math.floor of a
+// negative budget over a positive risk/share produced a negative share
+// count ("Approx shares: -20"), which is nonsensical -- you cannot buy a
+// negative number of shares. riskDollars is floored at 0 so the correct
+// result is 0 shares, not a fabricated or negative one.
+test('calcRisk: a negative risk % floors at $0 risk and 0 shares, never negative', () => {
+  const { sandbox, els, el } = makeSandbox();
+  vm.runInContext(
+    safeSrc + '\n' + elSrc + '\n' + fmtSrc + '\n' + calcRiskSrc + '\nthis.calcRisk = calcRisk;',
+    sandbox
+  );
+
+  el('accountSize').value = '10000';
+  el('riskPct').value = '-1';
+  el('entryPrice').value = '100';
+  el('stopPrice').value = '95';
+  sandbox.calcRisk();
+  assert.equal(els.riskResult.innerHTML, 'Max risk: $0 · Risk/share: $5 · Approx shares: 0');
+});
+
 test('calcFib: retracement runs from the swing high down to the swing low, not inverted', () => {
   const { sandbox, els, el } = makeSandbox();
   sandbox.selectedFibZone = '0.382-0.618';

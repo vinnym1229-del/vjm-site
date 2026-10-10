@@ -191,7 +191,7 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
     function fmtUsd(n){return (n<0?'-$':'$')+Math.abs(n).toLocaleString(undefined,{maximumFractionDigits:2});}
     function calc(){
       var acct=num('st-acct'), riskPct=num('st-risk'), entry=num('st-entry'), stop=num('st-stop'), slip=num('st-slip');
-      var budget=acct*(riskPct/100);
+      var budget=Math.max(0,acct*(riskPct/100));
       var riskPerShare=Math.abs(entry-stop)+slip;
       var shares=riskPerShare>0?Math.floor(budget/riskPerShare):0;
       var cost=shares*entry;
