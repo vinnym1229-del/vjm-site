@@ -3018,3 +3018,43 @@ test('pages using the tokens.css footer pattern style their footer links, not ju
       `${p}: footer links have no explicit color (CSS rule or inline style) -- they will render the browser's default link blue`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Incident: psychology-enhancer.html's free Expectancy & R-Multiple
+// Calculator (one of the two genuinely free-tier tools on the site) rendered
+// "Expectancy per trade ($)" as '$'+(er*oneR).toLocaleString(...) with no
+// sign check. A negative edge -- win rate/avg win too low to cover avg
+// loss+friction -- is the exact case this tool exists to surface (a system
+// with no edge should show a loss, not get skipped), but er*oneR<0 rendered
+// as "$-37.5" instead of "-$37.50": the sign landed after the "$" instead of
+// in front of it, the same defect class already fixed across stock-lab's
+// fmt(), stock-breakdown's fmtUsd(), options-lab's breakeven line, and
+// index.html's Growth Simulator -- missed here because this calculator was
+// never swept for it.
+test('psychology-enhancer\'s expectancy-in-dollars output puts the sign before the $ on a negative edge', () => {
+  const html = read('psychology-enhancer.html');
+  const fnSrc = html.match(/function calc\(\)\{[\s\S]*?\n    \}/)[0];
+  const numSrc = html.match(/function num\(id\)\{[\s\S]*?\}/)[0];
+  const els = {};
+  const el = (id) => (els[id] ||= { value: '0', textContent: '' });
+  const sandbox = { document: { getElementById: el }, window: {} };
+  vm.createContext(sandbox);
+  vm.runInContext(`${numSrc}\n${fnSrc}\nthis.calc = calc;`, sandbox);
+
+  // Win rate too low and avg win < avg loss -> negative expectancy.
+  el('py-winrate').value = '30';
+  el('py-avgwin').value = '1.0';
+  el('py-avgloss').value = '1.5';
+  el('py-friction').value = '0.05';
+  el('py-oner').value = '250';
+  sandbox.calc();
+  assert.equal(els['py-out-erd'].textContent, '-$200',
+    'a negative expectancy must show the minus before the $, not after ("$-200")');
+
+  // A real positive edge still renders exactly as before (no regression).
+  el('py-winrate').value = '60';
+  el('py-avgwin').value = '1.8';
+  el('py-avgloss').value = '1.0';
+  sandbox.calc();
+  assert.equal(els['py-out-erd'].textContent, '$157.5');
+});

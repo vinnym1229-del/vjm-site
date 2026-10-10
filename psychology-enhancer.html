@@ -242,7 +242,14 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
       var beDenom = avgW+avgL;
       var beWr = beDenom>0 ? (avgL+fric)/beDenom : 0;
       document.getElementById('py-out-er').textContent=er.toFixed(2)+'R';
-      document.getElementById('py-out-erd').textContent='$'+(er*oneR).toLocaleString(undefined,{maximumFractionDigits:2});
+      // A negative edge (win rate/avg win too low for avg loss+friction) is the
+      // whole point of this tool -- it's how a trader sees their system has no
+      // edge before risking money on it -- but er*oneR<0 rendered as "$-37.50"
+      // (sign after the "$") instead of "-$37.50": the same sign-placement
+      // defect already fixed across stock-lab/stock-breakdown/options-lab/the
+      // Growth Simulator, missed here because this calculator was never swept.
+      var erd=er*oneR;
+      document.getElementById('py-out-erd').textContent=(erd<0?'-$':'$')+Math.abs(erd).toLocaleString(undefined,{maximumFractionDigits:2});
       document.getElementById('py-out-be').textContent=(beWr*100).toFixed(1)+'%';
       var canvas=document.getElementById('py-chart');
       if(canvas&&window.currDrawBars){
