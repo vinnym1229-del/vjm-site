@@ -150,7 +150,7 @@ async function optionsModule(params, env) {
   const spot = await fetchSpot(symbol, env);
   const start = isoDate(new Date());
   const end = isoDate(new Date(Date.now() + expiryDays * 86400000));
-  const strikeLow = Math.max(1, spot * .90), strikeHigh = spot * 1.10;
+  const strikeHigh = spot * 1.10, strikeLow = Math.max(0.01, Math.min(spot * .90, strikeHigh - 0.01));
   const [contracts, snapshots] = await Promise.all([
     fetchOptionContracts(symbol, start, end, strikeLow, strikeHigh, env),
     fetchOptionChain(symbol, start, end, strikeLow, strikeHigh, env),

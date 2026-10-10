@@ -912,8 +912,8 @@ function makeResearchDb() {
 // symbol's snapshot -- the endpoint still answers 200 with an (empty or
 // partial) snapshot object, it just has no trade to report. Nothing had ever
 // driven this branch, and unlike the adjacent sibling guards this one is not
-// cosmetic: optionsModule uses spot unguarded immediately afterward in
-// `strikeLow = Math.max(1, spot * .90)` and the GEX dollar-value formula
+// cosmetic: optionsModule uses spot unguarded immediately afterward in the
+// strikeLow/strikeHigh range and the GEX dollar-value formula
 // (`gamma*oi*100*spot*spot...`). Had the check instead been the more common
 // `if (!spot)` shape, it would still work here since undefined is falsy, but
 // would also wrongly reject a legitimate (if degenerate) $0 strike floor --
@@ -964,6 +964,46 @@ function makeResearchDb() {
     assert.equal(data.error, 'Invalid symbol.');
   } finally {
     globalThis.fetch = noCallFetch;
+  }
+}
+
+// optionsModule's strike window (`spot*.90` to `spot*1.10`) used a flat $1
+// floor on strikeLow alone, with no matching floor on strikeHigh. For any
+// symbol trading under ~$0.909 -- a real penny stock or a biotech that has
+// gapped under $1, since `symbol` is a free user-supplied query param, not
+// restricted to QQQ/SPY -- that left strikeLow (pinned to 1.00) greater than
+// strikeHigh (spot*1.10, still under 1.00), an inverted strike_price_gte >
+// strike_price_lte range sent straight to both live Alpaca option queries.
+// Alpaca answers an inverted range with zero rows, not an error, so the
+// module completed with ok:true/contractsAnalyzed:0/gammaFlip:null -- a
+// confident "no gamma exposure" result for a real ticker, rather than either
+// a correct narrow strike window or a loud "unsupported" error. Confirmed
+// before fixing: Math.max(1, 0.50*.90)=1 > 0.50*1.10=0.55.
+{
+  const cronEnv = { ALPACA_API_KEY: 'test-key', ALPACA_SECRET_KEY: 'test-secret', RESEARCH_CRON_SECRET: 'cron-test-secret' };
+  const cronHeaders = { 'X-Research-Cron': 'cron-test-secret' };
+  const pennyFetch = globalThis.fetch;
+  const strikeParams = [];
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.pathname === '/v2/stocks/PENNY/snapshot') return Response.json({ latestTrade: { p: 0.50 } });
+    if (url.pathname === '/v2/options/contracts' || url.pathname === '/v1beta1/options/snapshots/PENNY') {
+      strikeParams.push({ gte: Number(url.searchParams.get('strike_price_gte')), lte: Number(url.searchParams.get('strike_price_lte')) });
+      return Response.json({ option_contracts: [], snapshots: {} });
+    }
+    return new Response(JSON.stringify({ message: `Unexpected test URL: ${url}` }), { status: 404 });
+  };
+  try {
+    const { status, data } = await callEngine(cronEnv, 'module=options&symbol=PENNY', cronHeaders);
+    assert.equal(status, 200);
+    assert.equal(data.ok, true);
+    assert.ok(strikeParams.length >= 2, 'both the contracts and option-chain calls must have fired');
+    for (const { gte, lte } of strikeParams) {
+      assert.ok(gte < lte, `strike_price_gte (${gte}) must stay below strike_price_lte (${lte}) for a sub-$1 spot`);
+    }
+    assert.deepEqual(data.parameters.strikeRange, [0.45, 0.55]);
+  } finally {
+    globalThis.fetch = pennyFetch;
   }
 }
 
