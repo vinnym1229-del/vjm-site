@@ -272,3 +272,20 @@ test('psychology-enhancer calc(): avg win and avg loss both zero must not divide
   const blank = runExpectancyCalc({ winrate: 50, avgwin: '', avgloss: '', friction: 0.05, oner: 250 });
   assert.equal(blank.breakeven, '0.0%');
 });
+
+// #py-winrate carries min="0" max="100", but like the other calculators on
+// this page that attribute is not enforced by JS and calc() reruns on every
+// input event, so a member can type (or fat-finger) a win rate outside
+// 0-100. Unclamped, a 150% win rate produced a confident-looking 3.15R
+// "edge" instead of a rejected or clamped input -- worse than a crash,
+// since nothing flags the number as impossible before it's used to size a
+// real position. Same defect class as stock-breakdown's negative risk %,
+// just on a two-sided bound here.
+test('psychology-enhancer calc(): win rate is clamped to 0-100%, not trusted past its own bounds', () => {
+  const over = runExpectancyCalc({ winrate: 150, avgwin: 1.8, avgloss: 1.0, friction: 0.05, oner: 250 });
+  assert.equal(over.er, '1.75R');
+  assert.equal(over.breakeven, '37.5%');
+  const under = runExpectancyCalc({ winrate: -20, avgwin: 1.8, avgloss: 1.0, friction: 0.05, oner: 250 });
+  assert.equal(under.er, '-1.05R');
+  assert.equal(under.breakeven, '37.5%');
+});
