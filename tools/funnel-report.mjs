@@ -49,7 +49,10 @@ const FUNNEL = [
 ];
 
 function query(sql) {
-  const out = execFileSync('npx', [
+  // FUNNEL_REPORT_NPX lets tests point this at a fake wrangler stand-in
+  // instead of shelling out to npx/wrangler/Cloudflare for real; unset in
+  // production, so this is a no-op outside the test suite.
+  const out = execFileSync(process.env.FUNNEL_REPORT_NPX || 'npx', [
     '--yes', 'wrangler', 'd1', 'execute', DB, '--remote', '--json', '--command', sql,
   ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   // wrangler prints banners before the JSON; take from the first bracket.
