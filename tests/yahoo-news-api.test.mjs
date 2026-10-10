@@ -112,6 +112,29 @@ try {
     assert.equal(data.items[0].title, correctTitle);
   }
 
+  // fixMojibake used to reinterpret the WHOLE title as mis-decoded bytes
+  // once any mojibake pattern was found anywhere in it, so an already-
+  // correct character outside the Latin-1 range sitting next to a real
+  // mojibake run (an em dash is routine Yahoo headline punctuation) got
+  // silently mangled by the same repair meant only for the mojibake part.
+  {
+    const correctTitle = 'café-fueled market open';
+    const mojibakeFragment = Array.from(Buffer.from(correctTitle, 'utf8'))
+      .map((b) => String.fromCharCode(b)).join('');
+    const mixedTitle = `Stock soars — ${mojibakeFragment}`;
+    globalThis.fetch = async () => Response.json({
+      news: [{
+        title: mixedTitle,
+        link: 'https://finance.yahoo.com/news/b',
+        providerPublishTime: 1735689600,
+      }],
+    });
+    const { status, data } = await fetchNews('?topic=forex');
+    assert.equal(status, 200);
+    assert.equal(data.items[0].title, `Stock soars — ${correctTitle}`,
+      'the em dash must survive the repair, not just the mojibake fragment');
+  }
+
   // Case-insensitive topic match.
   {
     globalThis.fetch = async () => Response.json({ news: [] });

@@ -113,12 +113,22 @@ export async function onRequestGet(context) {
 // garbage in the headline. A double-encoded curly apostrophe ("don't" ->
 // "donâ€™t") is a different, 3-byte Windows-1252 corruption this guard does
 // not match, so it passes through unrepaired.
+//
+// Only reinterpret the Latin-1-range run the mojibake pattern actually
+// lives in (every byte mojibake can produce is <=0xFF), not the whole
+// title. An em dash, curly quote, or any other already-correct character
+// above 0xFF is never a mojibake byte -- re-running it through the UTF-8
+// decoder alongside a real mojibake run silently corrupts it (an em dash
+// vanished into a blank in testing) even though it had nothing wrong with
+// it.
 function fixMojibake(s) {
   const str = String(s == null ? '' : s);
   if (!/[\u00C2-\u00C3][\u0080-\u00BF]/.test(str)) return str;
   try {
-    const bytes = Uint8Array.from([...str].map((c) => c.charCodeAt(0) & 0xff));
-    return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+    return str.replace(/[\u0000-\u00FF]+/g, (run) => {
+      const bytes = Uint8Array.from([...run].map((c) => c.charCodeAt(0)));
+      return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+    });
   } catch {
     return str;
   }
