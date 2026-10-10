@@ -828,6 +828,26 @@ const SECURE_BRIDGE = { MEMBERS_BRIDGE_URL: 'https://bridge.example.com/exec', M
       assert.equal(status, 401);
       assert.equal(data.error, GENERIC_BAD_CODE);
     }
+
+    // Well-formed JSON but ok:false -- the bridge REJECTING the request (bad
+    // HMAC, a secret rotated on one side only, see Code.gs's own rotation
+    // note) -- must fail closed to the generic 500, never the misleading
+    // GENERIC_BAD_CODE a real member would get here before this fix: a
+    // genuinely valid code collapsed into "no record" the same as an
+    // honest found:false, because data.ok !== true and !data.found were the
+    // same `return null` branch.
+    {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('challenges.cloudflare.com')) return Response.json({ success: true });
+        return Response.json({ ok: false, error: 'unauthorized' });
+      };
+      const env = { ...baseEnv(), TURNSTILE_SECRET_KEY: 'secret', ...SECURE_BRIDGE };
+      const { status, data } = await callVerify(env, { code: 'ABCD-6667', turnstileToken: 'tok' });
+      assert.equal(status, 500);
+      assert.equal(data.ok, false);
+      assert.notEqual(data.error, GENERIC_BAD_CODE,
+        'a bridge rejection must never be reported as a bad code to a member whose code may be perfectly valid');
+    }
   } finally {
     globalThis.fetch = originalFetch;
   }

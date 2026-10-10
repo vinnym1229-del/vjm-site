@@ -271,13 +271,15 @@ try {
     assert.equal(data.active, false);
   }
 
-  // Bridge answers ok:false (rejected the request): treated the same as "not
-  // found" by bridgeLookup's own `!data.ok` guard, not surfaced as an error.
+  // Bridge answers ok:false (rejected the request -- bad HMAC, a secret
+  // rotated on one side only): must fail closed to 502, never collapse into
+  // the same "not found" an honest found:false gets, or a live member hits
+  // this during a rotation gap and is told they're simply not a member.
   {
     globalThis.fetch = async () => Response.json({ ok: false });
     const { status, data } = await lookup(BRIDGE, 'rejecteduser');
-    assert.equal(status, 404);
-    assert.equal(data.active, false);
+    assert.equal(status, 502);
+    assert.equal(data.ok, false);
   }
 
   // A non-ok HTTP response from the bridge (outage, bad deploy) must fail

@@ -127,7 +127,16 @@ async function bridgeLookup(env, query) {
   });
   if (!res.ok) throw new Error('bridge');
   const data = await res.json().catch(() => null);
-  if (!data || data.ok !== true || !data.found) return null;
+  if (!data) return null;
+  // ok !== true is the bridge REJECTING the request (bad HMAC, rotated
+  // secret, misconfiguration) -- Apps Script can't return a real HTTP
+  // status (see content-sync.js's identical note), so this field is the
+  // only signal. That must fail closed to the caller's 502, never collapse
+  // into "not found" the way an honest found:false does, or a config/auth
+  // problem reads as "this member isn't active" to the exact audience
+  // (paying members) everything else here protects from false negatives.
+  if (data.ok !== true) throw new Error('bridge');
+  if (!data.found) return null;
   return data;
 }
 

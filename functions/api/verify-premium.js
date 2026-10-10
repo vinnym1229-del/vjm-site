@@ -297,7 +297,17 @@ async function lookupViaSecureBridge(env, query) {
   }
   if (!res.ok) throw Object.assign(new Error('bridge error'), { status: 502 });
   const data = await res.json().catch(() => null);
-  if (!data || data.ok !== true || !data.found) return null;
+  if (!data) return null;
+  // ok !== true is the bridge REJECTING the request (bad HMAC, rotated
+  // secret, misconfiguration), not "no such member" -- Apps Script can't
+  // return a real HTTP status (see content-sync.js's identical note), so
+  // this field is the only signal that exists. lookupViaLegacyBridge
+  // already fails closed on it; this path collapsed it into the same
+  // "not found" as an honest found:false, so a member with a genuinely
+  // valid code got told their code was wrong during a secret-rotation gap
+  // or any bridge misconfiguration instead of "service unavailable".
+  if (data.ok !== true) throw Object.assign(new Error('bridge rejected request'), { status: 502 });
+  if (!data.found) return null;
   const status = String(data.status || '').toLowerCase();
   if (status !== 'active' && status !== 'renewed') return null;
   return { discord: String(data.discord || '') };
