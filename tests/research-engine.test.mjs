@@ -850,6 +850,26 @@ function loadResearchEngineClient() {
 }
 
 // ---------------------------------------------------------------------------
+// Same panel's own money() helper put '$' directly in front of
+// n.toLocaleString(...) instead of in front of the magnitude, so a negative
+// value rendered as "$-532" instead of "-$532" (its sibling signedMoney()
+// already got this right). The page's own shipped default for "Target move
+// $" is -3 (research-engine.html), so every modeled profile's P/L and the
+// scenario/combined-P/L figures in hedgeSummary rendered mangled on first
+// load, before a member touches any input.
+// ---------------------------------------------------------------------------
+{
+  const { internal, getElementById } = loadResearchEngineClient();
+  getElementById('labMove').value = '-3'; // the page's own shipped default
+  internal.renderSlopeLab();
+  const profiles = getElementById('slopeProfiles').innerHTML;
+  const summary = getElementById('hedgeSummary').textContent;
+  assert.doesNotMatch(profiles, /\$-/, 'a losing profile must not render "$-" -- the sign belongs before the $');
+  assert.doesNotMatch(summary, /\$-/, 'the scenario/combined-P/L figures must not render "$-" -- the sign belongs before the $');
+  assert.match(summary, /Scenario: -\$3\.00/, 'a negative target move must render "-$3.00", not "$-3.00"');
+}
+
+// ---------------------------------------------------------------------------
 // Options module "Complete model outcome matrix" table: the Median MAE cell
 // used to pass classify(value, inverse=true) -- classify()'s only other
 // caller (thresholdClass(ifvgRate, .5, true), the FVG table) uses inverse to

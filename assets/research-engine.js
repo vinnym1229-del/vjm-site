@@ -38,7 +38,13 @@
   }
   function money(value, digits = 2) {
     const n = numeric(value);
-    return n !== null ? '$' + n.toLocaleString(undefined, {minimumFractionDigits:digits, maximumFractionDigits:digits}) : '—';
+    // Callers (renderSlopeLab's P/L and target-move figures) add their own
+    // leading '+' for a positive value and expect money() to contribute
+    // nothing for it, but to put '-' *before* the '$' for a negative one --
+    // toLocaleString() already embeds its own leading '-', so a bare
+    // '$'+n.toLocaleString(...) rendered e.g. -532 as "$-532" instead of
+    // "-$532". Math.abs()+explicit prefix matches signedMoney() below.
+    return n !== null ? (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString(undefined, {minimumFractionDigits:digits, maximumFractionDigits:digits}) : '—';
   }
   function pct(value, digits = 1) {
     const n = numeric(value);
