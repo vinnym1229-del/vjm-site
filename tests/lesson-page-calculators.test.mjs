@@ -112,6 +112,38 @@ test('options-lab calc(): a put breakeven below zero keeps its minus sign before
   assert.equal(out.be, '-$15.00');
 });
 
+// Same defect class, a fourth spot: the payoff chart's x-axis (price) labels
+// built their own bare '$'+v.toFixed(0), bypassing this page's own fmtUsd()
+// (already used for the y-axis and for maxProfit/maxLoss). #op-strike has no
+// min, so a negative strike drives the chart's price range (strike*0.6 to
+// strike*1.4) negative and the axis rendered e.g. "$-140" instead of "-$140".
+function runOptionChart(inputs) {
+  const { sandbox, els, el } = makeSandbox();
+  let captured = null;
+  sandbox.window.currDrawLine = (canvas, points, opts) => { captured = { points, opts }; };
+  vm.runInContext(`${olNumSrc}\n${olFmtUsdSrc}\n${olCalcSrc}\nthis.calc = calc;`, sandbox);
+  el('op-type').value = inputs.type;
+  el('op-side').value = inputs.side;
+  el('op-strike').value = String(inputs.strike);
+  el('op-premium').value = String(inputs.premium);
+  el('op-contracts').value = String(inputs.contracts);
+  sandbox.calc();
+  const xs = captured.points.map((p) => p.x);
+  return { xFmt: captured.opts.xFmt, xMin: Math.min(...xs), xMax: Math.max(...xs) };
+}
+
+test("options-lab calc(): a negative strike's chart x-axis keeps its minus sign before the $, not after", () => {
+  const out = runOptionChart({ type: 'call', side: 'long', strike: -100, premium: 3, contracts: 1 });
+  assert.equal(out.xFmt(out.xMin), '-$140');
+  assert.equal(out.xFmt(out.xMax), '-$60');
+});
+
+test("options-lab calc(): a real (positive) strike's chart x-axis renders unchanged", () => {
+  const out = runOptionChart({ type: 'call', side: 'long', strike: 100, premium: 3, contracts: 1 });
+  assert.equal(out.xFmt(out.xMin), '$60');
+  assert.equal(out.xFmt(out.xMax), '$140');
+});
+
 test('options-lab calc(): contracts scale the $100 multiplier, not just the raw premium', () => {
   const out = runOptionCalc({ type: 'call', side: 'long', strike: 100, premium: 3, contracts: 2 });
   assert.equal(out.maxLoss, '-$600');
