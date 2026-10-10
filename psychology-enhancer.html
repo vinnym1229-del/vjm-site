@@ -236,7 +236,7 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
     var wrapId='psy-tool';
     function num(id){var v=parseFloat(document.getElementById(id).value);return isFinite(v)?v:0;}
     function calc(){
-      var wr=Math.max(0,Math.min(100,num('py-winrate')))/100, avgW=num('py-avgwin'), avgL=num('py-avgloss'), fric=num('py-friction'), oneR=num('py-oner');
+      var wr=Math.max(0,Math.min(100,num('py-winrate')))/100, avgW=Math.max(0,num('py-avgwin')), avgL=Math.max(0,num('py-avgloss')), fric=Math.max(0,num('py-friction')), oneR=num('py-oner');
       var lr=1-wr;
       var er=(wr*avgW)-(lr*avgL)-fric;
       var beDenom = avgW+avgL;

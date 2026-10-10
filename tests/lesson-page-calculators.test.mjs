@@ -289,3 +289,23 @@ test('psychology-enhancer calc(): win rate is clamped to 0-100%, not trusted pas
   assert.equal(under.er, '-1.05R');
   assert.equal(under.breakeven, '37.5%');
 });
+
+// avg win/avg loss/friction carry no min attribute at all (unlike py-winrate's
+// min="0" max="100", clamped above), and "avg loss" is the one field on this
+// tool a member is naturally tempted to type as negative since a loss "feels"
+// negative. With the page's own defaults but avg loss fat-fingered as -1
+// instead of 1, the unclamped formula read 0.45*1.8 - 0.55*(-1) - 0.05 =
+// 1.31R/$327.50 -- a confident, 6x-inflated edge instead of the correct
+// 0.76R/$190 that flooring avg loss (and avg win/friction, same defect) at 0
+// produces. Same defect class and fix as the win-rate clamp just above, just
+// never applied to this calc()'s other three unbounded inputs.
+test('psychology-enhancer calc(): avg win, avg loss, and friction are floored at 0, not trusted past their own sign', () => {
+  const negLoss = runExpectancyCalc({ winrate: 45, avgwin: 1.8, avgloss: -1, friction: 0.05, oner: 250 });
+  assert.equal(negLoss.er, '0.76R');
+  assert.equal(negLoss.erDollars, '$190');
+  assert.equal(negLoss.breakeven, '2.8%');
+  const negFriction = runExpectancyCalc({ winrate: 45, avgwin: 1.8, avgloss: 1.0, friction: -0.05, oner: 250 });
+  assert.equal(negFriction.er, '0.26R');
+  const negWin = runExpectancyCalc({ winrate: 45, avgwin: -1.8, avgloss: 1.0, friction: 0.05, oner: 250 });
+  assert.equal(negWin.er, '-0.60R');
+});
