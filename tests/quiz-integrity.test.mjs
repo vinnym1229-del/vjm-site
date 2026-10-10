@@ -137,6 +137,76 @@ test('the shuffle actually reorders (it is not a no-op)', () => {
   assert.ok(slot0 < runs.length * 0.6, 'original index 1 must not stay pinned to the top slot');
 });
 
+// --- parseQuestions' own validation, and the zero-question path ----------
+// Every fixture above is a well-formed quiz block with a complete, well-typed
+// answer key -- the shape the four real course pages always ship, so none of
+// them ever exercise parseQuestions' own defensive branches. These pin what
+// happens to a quiz-q block with no matching key entry, too few choices, or a
+// key entry with a malformed correct index -- the shape a real authoring
+// mistake (a pasted-in question, an edited choice list) would take -- plus
+// auditQuestions/verdict given no questions at all.
+
+function quizHtml(blocks, key) {
+  const body = blocks.map((choices, i) =>
+    `<div class="quiz-q" data-qi="${i}">${choices.map((c) => `<span>${c}</span>`).join('')}</div>`).join('');
+  return `<div class="quiz">${body}<script type="application/json">${JSON.stringify(key)}</script></div>`;
+}
+
+test('parseQuestions drops a question block with no matching answer-key entry', () => {
+  // Three authored blocks, but the key array only covers the first two --
+  // the shape a <div class="quiz-q"> pasted in without updating its JSON
+  // sibling would take. The third block must be dropped, not crash or grade
+  // against the wrong (shifted) key entry.
+  const html = quizHtml(
+    [['a', 'b'], ['c', 'd'], ['e', 'f']],
+    [{ correct: 0 }, { correct: 1 }],
+  );
+  const qs = parseQuestions(html);
+  assert.equal(qs.length, 2, 'the unkeyed third block must be dropped, not crash');
+  assert.deepEqual(qs.map((q) => q.correct), [0, 1]);
+});
+
+test('parseQuestions drops a question block with fewer than two choices', () => {
+  assert.deepEqual(parseQuestions(quizHtml([['only one']], [{ correct: 0 }])), []);
+});
+
+test('parseQuestions drops a question whose key entry is not a valid choice index', () => {
+  const html = quizHtml(
+    [['a', 'b'], ['a', 'b'], ['a', 'b']],
+    [{ correct: 0 }, { correct: '1' }, { correct: 5 }],
+  );
+  const qs = parseQuestions(html);
+  // Block 0 (correct:0, a real index) survives; block 1 (correct is a
+  // string, not Number.isInteger) and block 2 (correct:5, past the end of
+  // a 2-choice list) must both be dropped rather than crash or mis-grade.
+  assert.equal(qs.length, 1);
+  assert.equal(qs[0].correct, 0);
+});
+
+test('auditQuestions on an empty set reports zero, not NaN or a division error', () => {
+  assert.deepEqual(auditQuestions([]), {
+    total: 0,
+    longest: 0,
+    longestPct: 0,
+    lengthRatio: 0,
+    correctLen: 0,
+    avgLen: 0,
+    positions: [],
+    topPosition: -1,
+    topPositionPct: 0,
+  });
+});
+
+test('verdict on zero pages reports zero and never fails CI', () => {
+  const v = verdict([], curriculum);
+  assert.equal(v.total, 0);
+  assert.equal(v.longestPct, 0);
+  assert.equal(v.topPositionPct, 0);
+  assert.equal(v.topPosition, -1);
+  assert.equal(v.lengthLeak, false, 'zero questions must never be reported as a length leak');
+  assert.equal(v.positionFails, false, 'zero questions must never fail the position-leak check');
+});
+
 // --- render-time integration -------------------------------------------
 // No browser here, so this is a deliberately tiny DOM stub: just enough of
 // classList / insertBefore / querySelector for initQuizzes to render and grade
