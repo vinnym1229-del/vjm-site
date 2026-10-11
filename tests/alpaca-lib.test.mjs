@@ -16,6 +16,7 @@
 // symbol as both a "top gainer" and a "top loser". Fixed by filtering on
 // sign before slicing; pinned below.
 import assert from 'node:assert/strict';
+import { mock } from 'node:test';
 import { alpacaConfigured, snapshots, summarizeSnapshot, movers, computedMovers } from '../functions/api/_lib/alpaca.js';
 
 // ─── alpacaConfigured ───────────────────────────────────────────────────────
@@ -71,6 +72,34 @@ try {
     await assert.rejects(() => snapshots(env, ['SPY']));
   }
 } finally {
+  globalThis.fetch = originalFetch;
+}
+
+// A hung upstream request must abort after getJson()'s own timeout instead
+// of leaving every Alpaca-backed caller (ticker.js, market-brief.js,
+// assistant.js, stock-research.js, premium-stock-research.js, this file's
+// own movers()/computedMovers()) waiting on a Promise that never settles.
+// functions/api/_lib/http.js's near-identical AbortController+setTimeout
+// helper (fetchJsonWithTimeout) already has this exact scenario pinned in
+// tests/http-lib.test.mjs, but alpaca.js's own separate getJson() -- which
+// duplicates that pattern with a hardcoded 8000ms default rather than
+// reusing the shared helper -- had never been exercised against it: a V8
+// coverage run showed its setTimeout callback at zero hits. Uses node:test's
+// timer mock so this doesn't actually wait out the real 8s default.
+try {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  globalThis.fetch = (url, opts) => new Promise((_resolve, reject) => {
+    opts.signal.addEventListener('abort', () => {
+      const err = new Error('aborted');
+      err.name = 'AbortError';
+      reject(err);
+    });
+  });
+  const pending = assert.rejects(() => snapshots(env, ['SPY']), /AbortError|aborted/);
+  mock.timers.tick(8000);
+  await pending;
+} finally {
+  mock.timers.reset();
   globalThis.fetch = originalFetch;
 }
 
