@@ -960,6 +960,30 @@ test('.env.example and docs/DEPLOYMENT.md document TURNSTILE_SITE_KEY/TURNSTILE_
     'expected turnstile.js turnstileConfigured() to still gate on env.TURNSTILE_SECRET_KEY');
 });
 
+// Incident: .env.example's own header says it IS the checklist to paste into
+// Cloudflare ("Configure these in Cloudflare Dashboard ... Copy names
+// exactly"), but five real, live-code env vars were never added to it even
+// though each is already correctly documented elsewhere -- the same
+// doc-discoverability gap the GOOGLE_CLIENT_ID/TURNSTILE fixes above closed,
+// missed because those earlier sweeps checked docs/DEPLOYMENT.md and
+// docs/API.md but never circled back to .env.example itself for every var:
+// INDEXING (the site-wide indexing kill-switch, docs/OWNER-CHECKLIST.md item
+// 1 and _headers), CANONICAL_HOST (indexing.js's host override, docs/API.md
+// and docs/ARCHITECTURE.md), and WHOP_API_KEY/WHOP_PRODUCT_ID/
+// FOREX_CALENDAR_SOURCE_URL (already pinned into docs/DEPLOYMENT.md by the
+// tests above, but absent from the one file an owner actually copies into
+// the dashboard).
+test('.env.example documents INDEXING, CANONICAL_HOST, WHOP_API_KEY/WHOP_PRODUCT_ID, and FOREX_CALENDAR_SOURCE_URL', () => {
+  const envExample = read('.env.example');
+  for (const name of ['INDEXING', 'CANONICAL_HOST', 'WHOP_API_KEY', 'WHOP_PRODUCT_ID', 'FOREX_CALENDAR_SOURCE_URL']) {
+    assert.match(envExample, new RegExp(name), `.env.example must mention ${name}`);
+  }
+  assert.match(read('functions/api/_lib/indexing.js'), /env\s*&&\s*env\.INDEXING/,
+    'expected indexing.js to still read env.INDEXING');
+  assert.match(read('functions/api/_lib/indexing.js'), /env\s*&&\s*env\.CANONICAL_HOST/,
+    'expected indexing.js to still read env.CANONICAL_HOST');
+});
+
 // Incident: removing the homepage's "Live From PJ's Desk" section (2026-09-08)
 // deleted the site's only consumer of the announcements/trade_reviews CMS
 // content types (loadLatest(), #latest, .ann-card/.review-card), but
