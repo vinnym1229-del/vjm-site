@@ -309,3 +309,17 @@ test('psychology-enhancer calc(): avg win, avg loss, and friction are floored at
   const negWin = runExpectancyCalc({ winrate: 45, avgwin: -1.8, avgloss: 1.0, friction: 0.05, oner: 250 });
   assert.equal(negWin.er, '-0.60R');
 });
+
+// "1R in dollars" (py-oner) was the one input left un-floored when the test
+// just above was added for its three siblings -- same line, same missing
+// min attribute, same reachable-by-typing path. A $ per R conversion factor
+// has no sensible negative value, and letting one through doesn't error, it
+// corrupts only the dollar line: with the page's defaults the edge is a
+// genuine +0.21R, but a -250 "1R in dollars" rendered "Expectancy per
+// trade ($): -$52.50" right next to "Expectancy per trade: 0.21R" --
+// a positive edge and a negative dollar figure on the same screen.
+test('psychology-enhancer calc(): 1R in dollars is floored at 0, a negative conversion factor cannot flip the dollar sign against a positive edge', () => {
+  const negOneR = runExpectancyCalc({ winrate: 45, avgwin: 1.8, avgloss: 1.0, friction: 0.05, oner: -250 });
+  assert.equal(negOneR.er, '0.21R');
+  assert.equal(negOneR.erDollars, '$0');
+});
