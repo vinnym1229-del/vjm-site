@@ -47,6 +47,57 @@ const elAlias = /const el=id=>document\.getElementById\(id\);/.exec(stockLab);
 assert.ok(elAlias, 'el shorthand no longer defined the expected way in stock-lab.html');
 const elSrc = elAlias[0];
 
+// Same brace-depth scan, but for a `const NAME=[...]`/`const NAME={...}`
+// literal rather than a function body.
+function extractConst(source, name, open, close) {
+  const marker = `const ${name}=${open}`;
+  const start = source.indexOf(marker);
+  assert.ok(start > -1, `${name} no longer defined in stock-lab.html`);
+  let depth = 0;
+  for (let i = start + marker.length - 1; i < source.length; i++) {
+    if (source[i] === open) depth++;
+    else if (source[i] === close) {
+      depth--;
+      if (depth === 0) return source.slice(start, i + 1) + ';';
+    }
+  }
+  throw new Error(`unbalanced braces extracting ${name} from stock-lab.html`);
+}
+
+const escSrc = extractFunction(stockLab, 'esc');
+const pctSrc = extractFunction(stockLab, 'pct');
+const baseTickerSrc = extractFunction(stockLab, 'baseTicker');
+const normalizeSymbolSrc = extractFunction(stockLab, 'normalizeSymbol');
+const findStockSrc = extractFunction(stockLab, 'findStock');
+// extractFunction's marker starts at "function", so it drops the "async "
+// keyword that precedes runPremiumResearch's own declaration; put it back.
+const runPremiumResearchSrc = 'async ' + extractFunction(stockLab, 'runPremiumResearch');
+const tvSymbolsSrc = extractConst(stockLab, 'TV_SYMBOLS', '{', '}');
+const watchlistSrc = extractConst(stockLab, 'WATCHLIST', '[', ']');
+
+// Sandbox with everything runPremiumResearch actually touches: the DOM via
+// `el`, a mocked `fetch`, and its own call chain (normalizeSymbol ->
+// baseTicker -> TV_SYMBOLS, findStock -> WATCHLIST, esc/fmt/pct). buildSourceLinks
+// is stubbed out -- it only populates a separate "more sources" link list,
+// unrelated to the premiumReport panel this test is checking.
+function makePremiumResearchSandbox(fetchImpl) {
+  const els = {};
+  const el = (id) => (els[id] ||= { value: '0', innerHTML: '' });
+  const sandbox = {
+    document: { getElementById: el },
+    fetch: fetchImpl,
+    buildSourceLinks() {},
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(
+    [elSrc, escSrc, fmtSrc, pctSrc, tvSymbolsSrc, baseTickerSrc, normalizeSymbolSrc,
+      watchlistSrc, findStockSrc, runPremiumResearchSrc,
+      'this.runPremiumResearch = runPremiumResearch;'].join('\n'),
+    sandbox
+  );
+  return { sandbox, els, el };
+}
+
 function makeSandbox() {
   const els = {};
   const el = (id) => (els[id] ||= { value: '0', innerHTML: '' });
@@ -195,4 +246,63 @@ test('calcFib: swing high/low entered backwards still runs high-to-low, not nega
   const html = els.fibLevels.innerHTML;
   assert.match(html, /0%<\/strong><div class="bar"><\/div><span>\$150<\/span>/, 'swapped inputs must still put 0% at the higher price');
   assert.match(html, /100%<\/strong><div class="bar"><\/div><span>\$100<\/span>/, 'swapped inputs must still put 100% at the lower price');
+});
+
+// functions/api/premium-stock-research.js's own success response (pinned by
+// tests/premium-stock-research-api.test.mjs) never sends a `memo` field --
+// its handler comment says so explicitly: "Owner memos stay client-side;
+// this endpoint only serves sourced market data." It also sends `source` as
+// an OBJECT ({name,feed}), not a string. Before this fix, runPremiumResearch
+// rendered every ticker's "premium checklist" with the exact same generic
+// placeholder text ("Research required"/"Verify"/"Manual verification
+// first") and stringified the whole source object into the literal text
+// "[object Object]" -- a paying Trifecta member analyzing any stock on this
+// page never saw the stock-specific research (why/catalyst/avoid/status)
+// that was sitting right there in the page's own WATCHLIST data the whole
+// time, because selectStock() never passed it through.
+test('runPremiumResearch: a watchlist symbol renders its own why/catalyst/avoid/status, not generic placeholder text', async () => {
+  const fetchImpl = async () => ({
+    ok: true,
+    json: async () => ({
+      ok: true,
+      quote: { price: 180.5, change: 2.1, changePercent: 1.18, marketCap: null },
+      source: { name: 'Alpaca Market Data (IEX)', feed: 'IEX' },
+    }),
+  });
+  const { sandbox, els } = makePremiumResearchSandbox(fetchImpl);
+
+  await sandbox.runPremiumResearch('NVDA');
+  const html = els.premiumReport.innerHTML;
+
+  // Real per-stock copy from WATCHLIST, not the generic fallback strings.
+  assert.match(html, /AI chip leader with massive institutional attention\./, 'Theme must use the watchlist record\'s own "why", not "Research required"');
+  assert.match(html, /Avoid chasing after vertical moves/, 'Risk must surface the watchlist record\'s own "avoid" note, not "Verify"');
+  assert.match(html, /Wait for Pullback/, 'Status must match the same status shown in the free watchlist table, not "Manual verification first"');
+  assert.doesNotMatch(html, /Research required|Manual verification first/, 'must not fall back to generic placeholder text when a watchlist record exists');
+
+  // The source line must read the API's real source name, never stringify
+  // the whole {name,feed} object.
+  assert.match(html, /Source: Alpaca Market Data \(IEX\)/, 'source must render its "name" field');
+  assert.doesNotMatch(html, /\[object Object\]/, 'must never render a stringified source object');
+});
+
+// A manually-typed ticker with no WATCHLIST entry has no real per-stock
+// research to show, so the generic placeholder text is the correct,
+// non-fabricated fallback here -- this must keep working exactly as before.
+test('runPremiumResearch: a ticker with no watchlist record still falls back to the generic placeholder text', async () => {
+  const fetchImpl = async () => ({
+    ok: true,
+    json: async () => ({
+      ok: true,
+      quote: { price: 10, change: 0.1, changePercent: 1, marketCap: null },
+      source: { name: 'Alpaca Market Data (IEX)', feed: 'IEX' },
+    }),
+  });
+  const { sandbox, els } = makePremiumResearchSandbox(fetchImpl);
+
+  await sandbox.runPremiumResearch('ZZZZ');
+  const html = els.premiumReport.innerHTML;
+  assert.match(html, /Research required/);
+  assert.match(html, /Manual verification first/);
+  assert.match(html, /Verify trend, earnings, news, fundamentals, and invalidation\./);
 });
