@@ -18,9 +18,9 @@ import { fileURLToPath } from 'node:url';
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const TOOL = join(ROOT, 'tools', 'entitlement-check.mjs');
 
-function run(env) {
+function run(env, args = []) {
   try {
-    return { stdout: execFileSync(process.execPath, [TOOL], { encoding: 'utf8', env }), status: 0 };
+    return { stdout: execFileSync(process.execPath, [TOOL, ...args], { encoding: 'utf8', env }), status: 0 };
   } catch (err) {
     return { stdout: err.stdout, status: err.status };
   }
@@ -85,4 +85,30 @@ test('entitlement-check sounds the (!!) alarm when an unlisted product resolves 
   assert.match(stdout, /an UNLISTED product\s+-> FUTURES_CORE \(!!\)/);
   assert.match(stdout, /An unlisted product still grants access — the allowlist is not taking effect\./);
   assert.equal(status, 1);
+});
+
+// Every test above drives the tool entirely through the WHOP_PRODUCTS_FUTURES/
+// WHOP_PRODUCTS_COMPLETE env vars -- the SECOND form this file's own Usage
+// comment documents. The FIRST, shown before it (`--futures="prod_a,plan_b"
+// --complete="prod_c"`), goes through arg() instead, and no test ever passed
+// a CLI flag, so arg() itself -- including the slice offset that strips
+// "--name=" and the quote-stripping regex -- had never actually run under
+// test. A silent regression there (an off-by-one on the slice, a quote left
+// dangling) would have shipped undetected since the function's return value
+// only ever flowed from `?? process.env...` in every prior run.
+test('entitlement-check reads --futures=/--complete= CLI flags, which win over a conflicting env var', () => {
+  const { stdout, status } = run(
+    { ...process.env, WHOP_DEFAULT_TIER: '', WHOP_PRODUCTS_FUTURES: 'env_should_lose', WHOP_PRODUCTS_COMPLETE: 'env_should_lose_too' },
+    ['--futures=prod_a,plan_b', '--complete=prod_c'],
+  );
+  assert.match(stdout, /WHOP_PRODUCTS_FUTURES\s+=\s+prod_a,plan_b/);
+  assert.match(stdout, /WHOP_PRODUCTS_COMPLETE\s+=\s+prod_c/);
+  assert.doesNotMatch(stdout, /env_should_lose/);
+  assert.equal(status, 0);
+});
+
+test('entitlement-check strips a quoted --futures="..." value instead of feeding the literal quotes to resolveTier()', () => {
+  const { stdout } = run({ ...process.env, WHOP_DEFAULT_TIER: '' }, ['--futures="prod_a"', '--complete=prod_b']);
+  assert.match(stdout, /WHOP_PRODUCTS_FUTURES\s+=\s+prod_a$/m);
+  assert.doesNotMatch(stdout, /"/);
 });
