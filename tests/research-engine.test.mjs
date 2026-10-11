@@ -55,6 +55,33 @@ assert.equal(
   'gamma-flip interpolation should use the closest sign change',
 );
 
+// A real GEX-by-strike surface routinely flips sign more than once across a
+// wide chain (dealer positioning is noisy strike-to-strike, not monotonic).
+// findGammaFlip must report the crossing nearest spot, not whichever
+// crossing it happens to find first while walking strikes low-to-high.
+assert.equal(
+  findGammaFlip([
+    { strike: 100, netGexMm: -5 },
+    { strike: 105, netGexMm: 2 },   // 1st sign change ~103.57, far from spot
+    { strike: 110, netGexMm: -3 },  // 2nd sign change = 107, nearest to spot
+    { strike: 115, netGexMm: 4 },   // 3rd sign change ~112.14, far from spot
+  ], 108),
+  107,
+  'gamma-flip must pick the sign change nearest spot, not the first one found while scanning strikes',
+);
+
+// When every strike shares the same net-GEX sign, there is no flip at all;
+// the function must say so explicitly (null) rather than fabricate a level.
+assert.equal(
+  findGammaFlip([
+    { strike: 100, netGexMm: 2 },
+    { strike: 105, netGexMm: 3 },
+    { strike: 110, netGexMm: 1 },
+  ], 105),
+  null,
+  'gamma-flip must report null when no sign change exists across the chain',
+);
+
 const weekly = resampleWeekly([
   bar('2026-08-17T00:00:00Z', 10, 12, 9, 11, 100),
   bar('2026-08-18T00:00:00Z', 11, 13, 10, 12, 120),
