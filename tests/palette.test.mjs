@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { auditTree, shippedFiles, extractColors, isRed, contrast, composite, hexToRgb } from '../tools/color-audit.mjs';
+import { auditTree, shippedFiles, extractColors, isRed, contrast, composite, hexToRgb, RETIRED } from '../tools/color-audit.mjs';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const read = (p) => readFileSync(join(ROOT, p), 'utf8');
@@ -21,6 +21,16 @@ test('no retired red literal survives anywhere in shipped source', () => {
   const offenders = rows.filter((r) => r.retired.length)
     .map((r) => `${r.path}: ${r.retired.join(', ')}`);
   assert.deepEqual(offenders, [], `retired palette literals came back:\n${offenders.join('\n')}`);
+});
+
+// shippedFiles() only walks root *.html and assets/*.{css,js} -- it never
+// looks inside .svg files, so manifest.json's PWA icon is invisible to the
+// test above the same way functions/api/_lib/discord.js's embed color was
+// invisible to it before that was fixed directly. Checked by hand instead.
+test('assets/icon.svg (the PWA install icon) carries no retired red literal', () => {
+  const svg = read('assets/icon.svg');
+  const offenders = RETIRED.filter((lit) => svg.toLowerCase().includes(lit.toLowerCase()));
+  assert.deepEqual(offenders, [], `assets/icon.svg still has a retired literal: ${offenders.join(', ')}`);
 });
 
 test('red stays a minority of the palette', () => {
