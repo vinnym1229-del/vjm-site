@@ -72,6 +72,11 @@ const HOOK = 'https://discord.com/api/webhooks/123/abc';
     );
     assert.equal(sentBody.username, 'PJ Trades Brief');
     assert.ok(sentBody.embeds[0].footer.text.includes('Educational only'));
+    // Default embed color must be the current brand red (tokens.css --vjm-red,
+    // 0xd14343), not 0xdc2626 -- the pre-rebrand alarm-red tools/color-audit.mjs's
+    // own RETIRED list bans everywhere else, which slipped through here because
+    // that audit only scans *.html/assets/*.{css,js}, never functions/.
+    assert.equal(sentBody.embeds[0].color, 0xd14343, 'embed sidebar must use the current brand red, not a retired pre-rebrand literal');
 
     await postEmbed(HOOK, { title: 't', description: 'd' }, true);
     assert.equal(sentBody.allowed_mentions, undefined, 'allowMentions=true drops the parse:[] restriction');

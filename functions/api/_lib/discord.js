@@ -18,7 +18,7 @@ export async function postEmbed(webhookUrl, embed, allowMentions = false) {
   const payload = {
     username: 'PJ Trades Brief',
     embeds: [{
-      color: 0xdc2626,
+      color: 0xd14343, // brand red (tokens.css --vjm-red); pre-rebrand alarm-red, not current palette
       timestamp: new Date().toISOString(),
       footer: { text: 'Educational only — not financial advice' },
       ...embed,
