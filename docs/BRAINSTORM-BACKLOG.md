@@ -149,6 +149,7 @@ Funnels to instrument (privacy-friendly, no PII):
 | 10.10 | Split monolith pages into shared layout partials via tiny build step (eleventy or esbuild) — only if it survives the "does it reduce bytes/complexity" test | M | H | measure first |
 | 10.11 | Load testing for brief generation day-start spike (queue dedupe so 10 cron hits = 1 run) | M | L | |
 | 10.12 | Uptime cron alerting: workflow pings health endpoints, posts failures to private Discord channel | M | L | |
+| 10.13 | Consolidate duplicate currency-formatter functions (`fmtUsd`/`money`) in `stock-lab.html`, `stock-breakdown.html`, `options-lab.html`, `futures-dissection.html`, `assets/research-engine.js`, `assets/curriculum.js` into one shared, tested `formatUsd()` | M | M | the same "minus sign after the $" bug has been fixed file-by-file ≥5 times in recent maintenance runs instead of once; `curriculum.js:440`'s `money(n){ return '$'+n; }` still has an unfixed instance today (negative plan-price differences at line 638 render `$-50` instead of `-$50`) — see 2026-10-11 scheduled review |
 
 ## 11. Owner operations (make PJ's life easy)
 
