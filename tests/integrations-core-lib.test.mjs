@@ -250,6 +250,13 @@ import {
   assert.equal(session.session, 'NYPM');
   assert.equal(session.active, 0);
 
+  // day is owner-typed free text too, same as session -- a lowercase or
+  // all-caps "mon"/"MON" in the sheet must resolve to a row, not vanish.
+  const lowerDay = sanitizeContentRow('schedule', { id: 's6', day: 'mon', session: 'NYAM' });
+  assert.equal(lowerDay && lowerDay.day, 'Mon', 'a lowercase day must normalize instead of being rejected');
+  const upperDay = sanitizeContentRow('schedule', { id: 's7', day: 'WED', session: 'NYAM' });
+  assert.equal(upperDay && upperDay.day, 'Wed', 'an uppercase day must normalize instead of being rejected');
+
   assert.equal(sanitizeContentRow('team', { id: 'tm1', name: '' }), null, 'team requires a name');
   assert.equal(sanitizeContentRow('faqs', { id: 'f1', question: '' }), null, 'faqs requires a question');
   assert.equal(sanitizeContentRow('bundles', { id: 'b1', name: '' }), null, 'bundles requires a name');

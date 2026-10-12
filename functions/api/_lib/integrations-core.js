@@ -203,7 +203,11 @@ export function sanitizeContentRow(type, row) {
     };
   }
   if (type === 'schedule') {
-    const day = cleanStr(row.day, 3);
+    // day is free-text from a Sheet cell; normalize case like session already
+    // does below, so "mon"/"MON"/"Mon" all resolve instead of silently
+    // dropping the row (content-sync has no error channel back to the sheet).
+    const rawDay = cleanStr(row.day, 3);
+    const day = rawDay.charAt(0).toUpperCase() + rawDay.slice(1).toLowerCase();
     const session = cleanStr(row.session, 10).toUpperCase();
     if (!['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(day)) return null;
     if (!['NYAM', 'NYPM', 'CLASS', 'ASIA'].includes(session)) return null;
