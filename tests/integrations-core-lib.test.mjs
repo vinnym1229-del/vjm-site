@@ -284,6 +284,10 @@ import {
   assert.equal(team.bio.includes('@everyone'), false, 'team bio must get the same @everyone guard as announcements');
   assert.equal(team.photoUrl, '', 'a javascript: photo_url must be dropped, not passed through');
   assert.equal(team.order, 0, 'a non-numeric order must default to 0, not NaN');
+  assert.equal(
+    sanitizeContentRow('team', { id: 'tm3', name: 'Priya', order: '2' }).order, 2,
+    'team must also parse a numeric-string order, not just fall through to the default',
+  );
 
   const faq = sanitizeContentRow('faqs', {
     id: 'f2', question: 'Do you offer refunds?', answer: 'No, see the Terms.', order: '3',
@@ -291,6 +295,10 @@ import {
   assert.equal(faq.question, 'Do you offer refunds?');
   assert.equal(faq.answer, 'No, see the Terms.');
   assert.equal(faq.order, 3, 'a numeric-string order must parse, not just a number');
+  assert.equal(
+    sanitizeContentRow('faqs', { id: 'f3', question: 'Blank order?' }).order, 0,
+    'faqs must also default a blank order to 0, not just parse a numeric one',
+  );
 
   const stat = sanitizeContentRow('stats', { id: 'st2', key: 'members', value: '2,240', label: 'Members' });
   assert.equal(stat.key, 'members');
@@ -303,6 +311,10 @@ import {
   assert.equal(result.imageUrl, 'https://example.com/a.jpg');
   assert.equal(result.caption, 'March payout');
   assert.equal(result.order, 0, 'order defaults to 0 when the sheet leaves it blank');
+  assert.equal(
+    sanitizeContentRow('results', { id: 'r4', image_url: 'https://example.com/b.jpg', order: '5' }).order, 5,
+    'results must also parse a numeric-string order, not just fall through to the default',
+  );
 
   // active/highlight/pinned boolean coercion: default true unless explicitly
   // false-ish; pinned/highlight default false unless explicitly true-ish.
