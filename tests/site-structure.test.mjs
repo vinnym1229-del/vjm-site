@@ -124,6 +124,38 @@ for (const page of ['index.html', 'options-lab.html']) {
   assert.match(source, /<\/main>/, `${page}'s <main> landmark must be closed`);
 }
 
+// An axe-core WCAG "best-practice" pass found 4 genuine gaps left after the
+// fixes above: 404.html had no <main> at all (it has no nav, so it never
+// appeared in the nav-bearing page lists elsewhere in this file), and three
+// pages each open with a small notice strip sitting directly in <body>,
+// above <nav> and outside any landmark — index.html's stream-countdown bar,
+// research-engine.html's "Research, not prediction" disclaimer, and
+// stock-lab.html's premium-access notice. A screen-reader user landmark-
+// navigating past these strips heard nothing: their text was unreachable by
+// landmark navigation even though it's real page content, not decoration.
+// (A fifth axe finding — forex-calendar.html's <aside> nested inside its
+// <header> — was checked against a live axe-core run and turned out to be
+// `landmark-complementary-is-top-level`, a rule axe-core 4.14 tags
+// "deprecated" and excludes from its default and wcag2a/wcag2aa/best-practice
+// runs; left alone rather than reshuffling the page's CSS grid for a rule
+// axe itself no longer enforces.)
+{
+  const source = readFileSync(resolve(root, '404.html'), 'utf8');
+  assert.match(source, /<main[ >]/, '404.html must wrap its content in a <main> landmark');
+  assert.match(source, /<\/main>/, "404.html's <main> landmark must be closed");
+}
+for (const [page, selector, label] of [
+  ['index.html', '#stream-countdown-bar', 'Next stream countdown'],
+  ['research-engine.html', 'top-strip', 'Research engine disclaimer'],
+  ['stock-lab.html', 'strip', 'Premium access notice'],
+]) {
+  const source = readFileSync(resolve(root, page), 'utf8');
+  const idOrClass = selector.startsWith('#') ? `id="${selector.slice(1)}"` : `class="${selector}"`;
+  const pattern = new RegExp(`<div ${idOrClass}[^>]*role="region"[^>]*aria-label="${label}"`);
+  assert.match(source, pattern,
+    `${page}'s ${selector} strip must be its own role="region" landmark so it isn't orphaned outside any landmark`);
+}
+
 // b13c553 reordered index.html's Curriculum dropdown/mobile-menu to put
 // Futures Dissection first (matching the homepage's own curriculum grid,
 // where it's the free flagship course) but only touched index.html -- every
