@@ -29,6 +29,14 @@ const endIdx = html.indexOf(END, startIdx);
 assert.ok(endIdx !== -1, 'could not locate the end of the car-image hydrate script');
 const hydrateSrc = html.slice(startIdx, endIdx);
 
+test('#ferrari-showcase is aria-hidden, not aria-label\'d (a <div> has an implicit role of "generic", which ARIA prohibits from carrying an accessible name -- browsers silently drop the name instead of erroring, so an aria-label here looks intentional but is never actually announced)', () => {
+  assert.match(html, /<div id="ferrari-showcase" aria-hidden="true">/,
+    'the decorative car showcase must be aria-hidden so assistive tech skips the whole subtree, matching its own .fs-loading/#fsCanvas children');
+  const divTag = html.match(/<div id="ferrari-showcase"[^>]*>/)[0];
+  assert.doesNotMatch(divTag, /aria-label=/,
+    'aria-label on a role-less <div> is a no-op per the ARIA spec (role "generic" prohibits naming) -- it reads as intentional but assistive tech never announces it');
+});
+
 test('index.html declares both car <img> tags with data-src, not src, and toggleTheme hydrates the revealed variant', () => {
   assert.match(html, /<img class="pj-car-image pj-car-light" data-src="assets\/ferrari-reference-light\.webp"[^>]*>/);
   assert.match(html, /<img class="pj-car-image pj-car-dark" data-src="assets\/ferrari-reference-dark\.webp"[^>]*>/);
