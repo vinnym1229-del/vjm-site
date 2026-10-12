@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | runtime browser sweep (serve static root locally, headless-Chromium console/network-error + internal-link check across all HTML pages) -- fresh angle vs. the many prior pure-static-analysis sweeps; will narrow to whatever file(s) a real finding points at | 2026-10-12 |
 
 ## Queued (unclaimed, safe to take)
 
