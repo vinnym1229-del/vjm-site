@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | fresh-eyes sweep + research-engine.js/whop-webhook.js branch-coverage gap triage -- confirming whether either file's remaining uncovered branches hide a real, isolable issue before claiming no-op | 2026-10-12 |
 
 ## Queued (unclaimed, safe to take)
 
