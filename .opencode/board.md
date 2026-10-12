@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | heading-order / internal-link / caching-header sweep -- fresh angle vs. the many prior pure-content and a11y-landmark sweeps; will narrow to whatever a real finding points at | 2026-10-12 |
 
 ## Queued (unclaimed, safe to take)
 
