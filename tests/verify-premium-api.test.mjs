@@ -517,6 +517,52 @@ try {
       'a D1 error while checking for a live sibling row must not grant access nor crash');
   }
 
+  // THE FIX: an upgrade, not just a renewal. The code's own row is STILL
+  // LIVE (active, unexpired) -- Futures Core, never revoked by the webhook's
+  // grant handler on upgrade -- but a newer row for the same member exists
+  // with a higher tier (Complete) because the member paid for the upgrade.
+  // The old gate only ever looked for a sibling once the member's own row
+  // was dead, so a live-but-stale code locked an upgraded, paying member
+  // into their old tier forever. The newest live row for the member must
+  // win even when the matched row itself is perfectly valid.
+  {
+    globalThis.fetch = async () => Response.json({ success: true });
+    const env = {
+      ...baseEnv(),
+      TURNSTILE_SECRET_KEY: 'secret',
+      RESEARCH_DB: makeDb(
+        { status: 'active', tier: TIERS.FUTURES_CORE, discord: 'upgrader', whop_member_id: 'mem_4', code_hash: 'cccc'.repeat(16) },
+        [{ status: 'active', tier: TIERS.COMPLETE, discord: 'upgrader', session_epoch: 2, whop_member_id: 'mem_4', code_hash: 'dddd'.repeat(16) }]
+      ),
+    };
+    const { status, data, res } = await callVerify(env, { code: 'VJM-OLDC-ODE1', turnstileToken: 'tok' });
+    assert.equal(status, 200, 'the member\'s own live-but-stale code must still sign them in');
+    assert.equal(data.discord, 'upgrader');
+    const claims = sessionClaims(res);
+    assert.equal(claims.t, TIERS.COMPLETE,
+      'signing in with the OLD, still-live code must carry the NEWER row\'s higher tier, not the stale one');
+    assert.equal(claims.sv, 2, 'the session epoch must come from the newer row, not the stale one');
+  }
+
+  // Ordinary case, unaffected: the member's own row IS the newest live one
+  // (no later purchase exists), so the sibling lookup must find nothing
+  // better and the original row's tier must stand.
+  {
+    globalThis.fetch = async () => Response.json({ success: true });
+    const env = {
+      ...baseEnv(),
+      TURNSTILE_SECRET_KEY: 'secret',
+      RESEARCH_DB: makeDb(
+        { status: 'active', tier: TIERS.COMPLETE, discord: 'onlybuyer', whop_member_id: 'mem_5', code_hash: 'eeee'.repeat(16) },
+        [{ status: 'active', tier: TIERS.COMPLETE, discord: 'onlybuyer', session_epoch: 1, whop_member_id: 'mem_5', code_hash: 'eeee'.repeat(16) }]
+      ),
+    };
+    const { status, data, res } = await callVerify(env, { code: 'VJM-ONLY-CODE', turnstileToken: 'tok' });
+    assert.equal(status, 200);
+    assert.equal(data.discord, 'onlybuyer');
+    assert.equal(sessionClaims(res).t, TIERS.COMPLETE, 'with no newer sibling, the member\'s own live tier must stand');
+  }
+
   // A status nobody recognized — a typo, a half-applied migration, a value
   // some future tool wrote — is not an entitlement. Fail closed, and do not
   // let the Sheet paper over it.

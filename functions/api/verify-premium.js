@@ -106,13 +106,20 @@ async function handlePost(context) {
   if (d1.ok && d1.row) {
     let row = d1.row;
     let state = entitlementRowState(row);
-    if (!state.live && row.whop_member_id) {
-      // A Whop renewal mints a fresh row for the same member instead of
-      // extending this one (see whop-webhook.js's grant handler), so THIS
-      // code's row can be expired while a newer, paid-for row for the same
-      // member is live. Check for that before telling a current member their
-      // membership ended -- same multi-row reality auth-google.js already
-      // handles for the Google sign-in path.
+    if (row.whop_member_id) {
+      // A Whop renewal OR an upgrade (e.g. Futures Core -> Complete) mints a
+      // fresh row for the same member instead of touching the row already in
+      // their hands (see whop-webhook.js's grant handler: isRenewal only
+      // changes the Discord copy, never what gets granted or whether the old
+      // row gets superseded). That means the code a member typed can still be
+      // perfectly live -- active, unexpired -- while a NEWER row for the same
+      // member exists with a different (often higher) tier. Gating this
+      // lookup on "my own row is dead" missed exactly that case: a member who
+      // paid for Complete but kept using their still-active Futures Core code
+      // got signed in at the old, lower tier forever, with nothing anywhere
+      // flagging it. auth-google.js never had this bug because it already
+      // resolves every row for an account and lets the newest live one win,
+      // unconditionally -- do the same here instead of only on failure.
       const sibling = await loadLiveEntitlementForMember(env, row.whop_member_id);
       if (sibling) { row = sibling; state = entitlementRowState(row); }
     }
