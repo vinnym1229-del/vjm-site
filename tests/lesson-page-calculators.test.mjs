@@ -149,6 +149,22 @@ test('options-lab calc(): contracts scale the $100 multiplier, not just the raw 
   assert.equal(out.maxLoss, '-$600');
 });
 
+// A negative #op-premium (no min on that input, same reachability as the
+// negative-strike/negative-contracts bugs above) used to flip the *sign* of
+// maxLoss/maxProfit, not just their formatting: maxLoss=-premium*mult with
+// premium=-3 computed to a positive $300, telling a long-call holder their
+// worst case was a $300 *gain* -- impossible, since a long option's worst
+// case is capped at the debit paid, never a profit. Floored premium at 0
+// (there's no real-world negative premium; a buyer never gets paid to buy).
+test('options-lab calc(): a negative premium cannot flip max loss/profit into an impossible sign', () => {
+  const longCall = runOptionCalc({ type: 'call', side: 'long', strike: 100, premium: -3, contracts: 1 });
+  assert.equal(longCall.maxLoss, '$0');
+  assert.equal(longCall.maxProfit, 'Unlimited');
+  const shortPut = runOptionCalc({ type: 'put', side: 'short', strike: 100, premium: -3, contracts: 1 });
+  assert.equal(shortPut.maxProfit, '$0');
+  assert.equal(shortPut.maxLoss, '-$10,000');
+});
+
 // A visitor typing 0 (or a negative) contracts must get a real $0 position,
 // not a fabricated 1-contract payoff -- the same falsy-zero/forced-minimum
 // bug this repo has already fixed on calcSizingSim, research-engine's

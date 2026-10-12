@@ -620,7 +620,7 @@ window.vjmTrack = window.vjmTrack || function (n, p) { try { window.vjmTrackQueu
     function calc(){
       var type=document.getElementById('op-type').value;
       var side=document.getElementById('op-side').value;
-      var strike=num('op-strike'), premium=num('op-premium');
+      var strike=num('op-strike'), premium=Math.max(0,num('op-premium'));
       var opContractsRaw=document.getElementById('op-contracts').value;
       var contracts=opContractsRaw===''?1:Math.max(0,Math.round(num('op-contracts')));
       var mult=100*contracts;
