@@ -52,3 +52,27 @@ test('opencode.yml only runs for the owner and people with write access', () => 
       'a mutable tag can change behavior with ANTHROPIC_API_KEY in scope and no PR review.'
   );
 });
+
+// morning-automation.yml's `brief` job validates RESEARCH_REFRESH_URL/
+// RESEARCH_CRON_SECRET are set before curling, printing a clear
+// "::error::Missing repository secret(s)" message -- but the sibling
+// `content` job was split out without that same guard (commit d2dcbda,
+// 2026-09-12) and two later commits fixed other error-swallowing bugs in
+// this exact file without ever adding it there too. With either secret
+// unset, "${RESEARCH_REFRESH_URL%/}/api/content-sync" becomes the bare
+// path "/api/content-sync"; curl exits 3 ("URL rejected: No host part in
+// the URL") under `set -euo pipefail` before the diagnostic node block
+// ever runs, so the owner sees only that opaque curl error in the Actions
+// log instead of being told which secret to fix.
+test('morning-automation.yml validates its secrets in both jobs, not just brief', () => {
+  const src = readFileSync(join(ROOT, '.github', 'workflows', 'morning-automation.yml'), 'utf8');
+  const contentJob = src.slice(src.indexOf('\n  content:'));
+  assert.ok(contentJob.length > 0 && contentJob.startsWith('\n  content:'), 'content job not found');
+  assert.match(
+    contentJob,
+    /Validate configuration/,
+    'the `content` job must validate RESEARCH_REFRESH_URL/RESEARCH_CRON_SECRET before curling, ' +
+      'the same guard the `brief` job already has -- otherwise an unset secret dies as an opaque ' +
+      '`curl: (3) URL rejected` instead of a clear "Missing repository secret(s)" error.'
+  );
+});
