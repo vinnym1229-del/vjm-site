@@ -74,7 +74,7 @@ const WATCH_RE = /<div class="correct"><span class="label">Watch for<\/span><p>(
 test('every LESSON_LIBRARY "Why it matters"/"Watch for" section matches the course page prose it was copied from', () => {
   let checked = 0;
   for (const lesson of LESSON_LIBRARY) {
-    if (lesson.level === 'Free start-here') continue; // premium-guidance.html has no lesson-card structure
+    if (lesson.level === 'Free start-here') continue; // premium-guidance.html has no lesson-card structure; covered by its own test below
     const cards = cardsFor(lesson.resource);
     const card = cards.find((c) => straighten(c).includes(straighten(lesson.title)));
     assert.ok(card, `${lesson.id}: title not found in any lesson-card of ${lesson.resource}`);
@@ -106,6 +106,39 @@ test('every LESSON_LIBRARY "Why it matters"/"Watch for" section matches the cour
   // Guards against the extraction itself silently matching nothing (e.g. a
   // page restructure that breaks WHY_RE/WATCH_RE) and the test passing empty.
   assert.ok(checked >= 40, `expected to check at least 40 sections, only checked ${checked}`);
+});
+
+// guidance-foundation (the free "Start Here" lesson) has no <details
+// class="lesson-card"> on its source page -- premium-guidance.html's six
+// steps are plain `.step` divs, not the numbered course-tab structure the
+// test above parses -- so it was exempted from drift protection entirely
+// rather than given its own. It carries the exact same risk: buildLessonPrompt()
+// fences these six `sections[].text` values verbatim into the assistant's LLM
+// prompt, and every signed-in member can reach this lesson (it isn't in
+// RESOURCE_TIERS, so authorizeResource() allows it unconditionally).
+test('the Free start-here lesson\'s six-step text matches premium-guidance.html\'s own .step markup', () => {
+  const lesson = LESSON_LIBRARY.find((l) => l.id === 'guidance-foundation');
+  assert.ok(lesson, 'guidance-foundation lesson missing from LESSON_LIBRARY');
+
+  const steps = [...read('premium-guidance.html').matchAll(
+    /<div class="step"><div class="num">\d+<\/div><h3>([^<]+)<\/h3><p>([^<]+)<\/p><\/div>/g,
+  )].map((m) => ({ heading: normalize(m[1]), text: normalize(m[2]) }));
+  assert.ok(steps.length >= 6, `expected at least 6 .step divs in premium-guidance.html, found ${steps.length}`);
+
+  let checked = 0;
+  for (const section of lesson.sections) {
+    if (section.heading === 'Overview') continue; // a summary, not copied from any one .step div
+    const heading = normalize(section.heading.replace(/^\d+\.\s*/, ''));
+    const step = steps.find((s) => s.heading === heading);
+    assert.ok(step, `${lesson.id} ${section.id}: no premium-guidance.html .step div titled "${heading}"`);
+    assert.equal(
+      normalize(section.text),
+      step.text,
+      `${lesson.id} ${section.id}: text has drifted from premium-guidance.html`,
+    );
+    checked++;
+  }
+  assert.equal(checked, 6, `expected to check exactly 6 steps, checked ${checked}`);
 });
 
 console.log('VJM assistant lesson-text drift tests passed.');
