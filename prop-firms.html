@@ -65,6 +65,7 @@
   .code-box{flex:1;font-family:var(--vjm-font-mono);background:#131315;border:1px dashed var(--vjm-border-strong);
     border-radius:10px;padding:10px 12px;text-align:center;letter-spacing:2px}
   .copy-btn{min-width:64px}
+  .copy-status{margin:4px 0 0;min-height:1.1em;font-size:.74rem;color:var(--vjm-muted)}
   .empty{padding:60px 20px;text-align:center;color:var(--vjm-muted)}
   footer{border-top:1px solid var(--vjm-border);padding:26px;text-align:center;color:var(--vjm-muted);font-size:.78rem;margin-top:50px}
   footer a{color:var(--vjm-muted)}
@@ -281,7 +282,8 @@ body.light-mode .nav-top{ background:rgba(0,0,0,.05); }
     if (f.notes) html += '<p style="color:var(--vjm-muted);font-size:.84rem;margin-top:8px">' + esc(f.notes) + '</p>';
     if (f.code) {
       html += '<div class="code-row"><div class="code-box">' + esc(f.code) + '</div>' +
-              '<button type="button" class="vjm-btn vjm-btn-ghost copy-btn">Copy</button></div>';
+              '<button type="button" class="vjm-btn vjm-btn-ghost copy-btn">Copy</button></div>' +
+              '<p class="copy-status" role="status" aria-live="polite"></p>';
     }
     html += '<a class="vjm-btn vjm-btn-primary" style="width:100%;margin-top:12px" target="_blank" rel="noopener noreferrer sponsored" href="' + esc(f.url) + '">Visit ' + esc(f.name) + ' ↗</a>';
     // Material connection restated on every card, so a reader who lands on a
@@ -296,10 +298,26 @@ body.light-mode .nav-top{ background:rgba(0,0,0,.05); }
             'confirmed by the owner.</p>';
     div.innerHTML = html;
     const btn = div.querySelector('.copy-btn');
+    const status = div.querySelector('.copy-status');
+    // The button's own textContent swap (Copy -> Copied) is visible feedback for
+    // sighted users, but it sits inside #firms' container-level aria-live="polite"
+    // and screen readers are inconsistent about announcing a text change on the
+    // very element that was just clicked/focused. A dedicated status line (the
+    // same role="status" aria-live="polite" pattern used for every other async
+    // result on this site, e.g. .nl-msg) makes the announcement reliable.
     if (btn) btn.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(f.code); btn.textContent = 'Copied'; }
-      catch { btn.textContent = f.code; }
-      setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
+      try {
+        await navigator.clipboard.writeText(f.code);
+        btn.textContent = 'Copied';
+        if (status) status.textContent = 'Code copied to clipboard.';
+      } catch {
+        btn.textContent = f.code;
+        if (status) status.textContent = 'Could not copy automatically -- code shown on the button above.';
+      }
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        if (status) status.textContent = '';
+      }, 1600);
     });
     return div;
   }

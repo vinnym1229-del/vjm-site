@@ -3192,3 +3192,28 @@ test('psychology-enhancer\'s expectancy-in-dollars output puts the sign before t
   sandbox.calc();
   assert.equal(els['py-out-erd'].textContent, '$157.5');
 });
+
+// ---------------------------------------------------------------------------
+// Incident: prop-firms.html's promo-code "Copy" button -- the site's only
+// copy-to-clipboard control -- announced success or clipboard failure only by
+// swapping its own textContent ("Copy" -> "Copied", or the raw code on
+// failure). #firms carries a container-level aria-live="polite", but
+// screen-reader support for announcing a text change on the exact node that
+// was just clicked/focused is inconsistent, and nothing else on the site
+// relies on that: every other async result (newsletter signup, status chips,
+// lock-gates) gets its own dedicated role="status" aria-live="polite" node.
+// A screen-reader user clicking Copy had no reliable non-visual confirmation
+// the code was captured.
+test('prop-firms.html\'s promo-code copy button has its own announced status, not just a self text swap', () => {
+  const html = read('prop-firms.html');
+  const cardFn = html.match(/function card\(f\)\{[\s\S]*?return div;/)[0];
+
+  assert.match(cardFn, /class="copy-status" role="status" aria-live="polite"/,
+    'promo-code card markup is missing a dedicated announced status element');
+
+  const handler = cardFn.match(/btn\.addEventListener\('click', async \(\) => \{[\s\S]*?\}\);/)[0];
+  assert.match(handler, /await navigator\.clipboard\.writeText\(f\.code\);[\s\S]*?status\.textContent = '[^']+'/,
+    'the copy success path must set the dedicated status element\'s text, not just the button\'s own');
+  assert.match(handler, /catch\s*\{[\s\S]*?status\.textContent = '[^']+'/,
+    'the clipboard-failure path must also announce via the dedicated status element');
+});
