@@ -897,6 +897,25 @@ function loadResearchEngineClient() {
 }
 
 // ---------------------------------------------------------------------------
+// renderLineChart()'s y-axis gridline labels never got the money() fix above
+// -- that fix only touched renderSlopeLab's own P/L/summary text, while the
+// chart it calls (renderLineChart, shared by the Slope Lab's chart) still
+// inlined the raw `$${v.toFixed(2)}` template literal money() replaced
+// everywhere else. The chart's plotted series values are floored at .01 by
+// calc()'s own Math.max, so they can never go negative, but the axis
+// gridline `v` is computed independently from the *padded* min/max (padding
+// subtracts 10% of the range from min), so a losing-enough scenario pads the
+// axis below zero even though nothing on the chart itself is negative.
+// ---------------------------------------------------------------------------
+{
+  const { internal, getElementById } = loadResearchEngineClient();
+  getElementById('labMove').value = '-8'; // pushes the padded axis min below zero (default IV/minutes)
+  internal.renderSlopeLab();
+  const chart = getElementById('slopeChart').innerHTML;
+  assert.doesNotMatch(chart, /\$-/, 'a negative y-axis gridline must not render "$-" -- the sign belongs before the $');
+}
+
+// ---------------------------------------------------------------------------
 // Options module "Complete model outcome matrix" table: the Median MAE cell
 // used to pass classify(value, inverse=true) -- classify()'s only other
 // caller (thresholdClass(ifvgRate, .5, true), the FVG table) uses inverse to
