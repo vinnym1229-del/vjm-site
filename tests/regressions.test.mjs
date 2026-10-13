@@ -1751,6 +1751,18 @@ test('the legal pages\' nav strip calls the stock tool "Stock Lab", not its old 
   }
 });
 
+// Incident: premium-guidance.html's flat nav labeled its direct
+// `href="stock-breakdown.html"` link "Curriculum" -- the one place on the
+// whole site that word was used for a single course instead of the
+// mega-nav/mobile-menu group name for all four curriculum pages. A member
+// clicking it, expecting what "Curriculum" means everywhere else on the
+// site, landed only on Stock Breakdown.
+test('premium-guidance.html\'s nav calls its stock-breakdown link "Stock Breakdown", not "Curriculum"', () => {
+  const html = read('premium-guidance.html');
+  assert.match(html, /href="stock-breakdown\.html"[^>]*>Stock Breakdown</, 'nav link to stock-breakdown.html must be labeled "Stock Breakdown"');
+  assert.doesNotMatch(html, /href="stock-breakdown\.html"[^>]*>Curriculum</, '"Curriculum" means the 4-course group everywhere else on the site');
+});
+
 // Incident: futures-dissection.html, stock-breakdown.html and
 // psychology-enhancer.html -- three of the site's four paid curriculum pages,
 // sharing near-identical nav/hero/lock-gate markup with options-lab.html --
