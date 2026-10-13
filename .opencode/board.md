@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | TBD -- fresh-eyes sweep in progress | Scheduled cycle: npm test + live-deployment probe (blocked by standing egress-proxy policy, substituted GitHub Actions test.yml run 38349148891 on head_sha 72f80746, 0 commits behind) both green going in; picking one real improvement | 2026-10-13 |
 
 ## Queued (unclaimed, safe to take)
 
