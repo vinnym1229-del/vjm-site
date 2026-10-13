@@ -1137,6 +1137,36 @@ test('the upgrade copy is derived from the two real prices and invents nothing',
     'only the Whop listing the site already uses may be linked');
 });
 
+// ---------------------------------------------------------------------------
+// Incident class: d1113a7 tied each course page's JSON-LD offer price to its
+// own visible lock-gate price after the two were found able to drift
+// independently on the SAME page. assets/curriculum.js's PLANS.futures_core/
+// complete prices (100/129, asserted two tests above) are a separate
+// hand-typed copy of the exact same two numbers index.html's own "Join
+// Futures Core" / "Get The Trifecta" bundle cards quote to a first-time
+// buyer. Nothing tied them together: a price change landed on the buy page
+// without updating curriculum.js (or vice versa) would leave every existing
+// test green while a signed-in member's under-tier upgrade gate quoted a
+// "$X/mo more" delta against a price the buy page no longer offers.
+test("index.html's buyer-facing tier prices match curriculum.js's PLANS prices", () => {
+  const plansPriceOf = (key) => {
+    const m = curriculumJs.match(new RegExp(`${key}: \\{[^}]*price: (\\d+)`));
+    assert.ok(m, `curriculum.js PLANS.${key}.price not found`);
+    return m[1];
+  };
+  const futuresCorePrice = plansPriceOf('futures_core');
+  const completePrice = plansPriceOf('complete');
+  const indexHtml = read('index.html');
+  assert.match(indexHtml, new RegExp(`id="cta-futures-core"[\\s\\S]{0,500}\\$${futuresCorePrice}/mo`),
+    `index.html's Futures Core CTA must quote the same price as curriculum.js's PLANS.futures_core (${futuresCorePrice})`);
+  assert.match(indexHtml, new RegExp(`id="cta-complete"[\\s\\S]{0,500}\\$${completePrice}/mo`),
+    `index.html's Trifecta CTA must quote the same price as curriculum.js's PLANS.complete (${completePrice})`);
+  assert.match(indexHtml, new RegExp(`id="price-futures">[\\s\\S]{0,40}\\$${futuresCorePrice}<span>/mo</span>`),
+    `index.html's Futures Only tier-price must match curriculum.js's PLANS.futures_core (${futuresCorePrice})`);
+  assert.match(indexHtml, new RegExp(`id="price-allmarkets">[\\s\\S]{0,60}\\$${completePrice}<span>/mo</span>`),
+    `index.html's Trifecta tier-price must match curriculum.js's PLANS.complete (${completePrice})`);
+});
+
 test('the lock and upgrade UI renders outside the region the middleware blanks', () => {
   // .gated-content is emptied server-side for exactly the visitors this UI is
   // written for, so anything rendered into it would be invisible to them.
