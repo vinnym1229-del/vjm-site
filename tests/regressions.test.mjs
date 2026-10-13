@@ -2996,6 +2996,33 @@ test('research-engine-setup.md documents the real signing secret, not the retire
     'must document the new members bridge, not just the legacy MEMBERS_STATUS_URL');
 });
 
+// Incident: both setup docs' "Verify" steps told a fresh owner to confirm
+// `configured.premiumSecret` is `true` on /api/research-engine?module=health
+// as proof of a correct deployment. That field (functions/api/research-
+// engine.js) is just Boolean(env.PREMIUM_ACCESS_CODES) -- a legacy var
+// functions/api/_lib/session.js says is "NEVER acceptable key material" for
+// the real session signing (that's SESSION_SIGNING_SECRET exclusively, per
+// the test above). research-engine-setup.md's own env-var table even marked
+// PREMIUM_ACCESS_CODES "Required: Yes" while its Purpose column in the same
+// row said "never used as signing key material" -- a direct contradiction,
+// and inconsistent with the sibling MEMBERS_STATUS_URL row correctly marked
+// "Legacy". A modern owner who never sets PREMIUM_ACCESS_CODES (nothing else
+// needs it) would see premiumSecret:false and, per the docs' own verify
+// step, read that as something being wrong -- and setting the var just to
+// satisfy the check silently turns on the legacy PREMIUM_ACCESS_CODES
+// Bearer-token auth fallback in research-engine.js/premium-stock-
+// research.js, adding an auth surface a fresh deployment never needed.
+test('setup docs do not tell an owner to verify the legacy premiumSecret flag as true', () => {
+  const setup = read('docs/research-engine-setup.md');
+  const installFirst = read('INSTALL-FIRST.md');
+  assert.doesNotMatch(setup, /confirm[^.\n]*premiumSecret[^.\n]*(?:is|are)\s*true/i,
+    'research-engine-setup.md must not tell an owner to verify premiumSecret as true');
+  assert.doesNotMatch(installFirst, /confirm[^.\n]*premiumSecret[^.\n]*(?:is|are)\s*`?true`?/i,
+    'INSTALL-FIRST.md must not tell an owner to verify premiumSecret as true');
+  assert.match(setup, /PREMIUM_ACCESS_CODES.{0,40}\|\s*Legacy\s*\|/s,
+    'research-engine-setup.md must mark PREMIUM_ACCESS_CODES "Legacy", not "Yes", in its Required column');
+});
+
 // Incident: docs/API.md documents every other page-critical public route
 // (verify-premium, auth-google, stock-research, market-brief, assistant...)
 // but never mentioned /api/content, /api/analytics, or /api/live-stats at

@@ -43,7 +43,7 @@ The included workflow at `.github/workflows/research-refresh.yml` then refreshes
 
 ## 5. Verify
 
-1. Open `/api/research-engine?module=health` and confirm `configured.alpaca` and `configured.premiumSecret` are `true`.
+1. Open `/api/research-engine?module=health` and confirm `configured.alpaca` is `true`. (`configured.premiumSecret` reflects the legacy `PREMIUM_ACCESS_CODES` var only and should stay `false` here.)
 2. Sign in through the site's premium gate.
 3. Open `/research-engine.html` and select **Options / Price Action**.
 4. Choose QQQ or SPY, select a 5-, 20-, or 40-trade-day sample, and click **Run full scan**.

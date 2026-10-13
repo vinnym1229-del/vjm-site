@@ -22,7 +22,7 @@ In the Pages project, add these encrypted production and preview secrets:
 | `ALPACA_API_KEY` | Yes | Alpaca API key ID; server-side only |
 | `ALPACA_SECRET_KEY` | Yes | Alpaca secret; server-side only |
 | `SESSION_SIGNING_SECRET` | Yes | session HMAC key (≥32 chars) — REQUIRED or sign-in fails closed |
-| `PREMIUM_ACCESS_CODES` | Yes | legacy member codes (bridge still validates against sheet); never used as signing key material |
+| `PREMIUM_ACCESS_CODES` | Legacy | legacy member codes (bridge still validates against sheet); never used as signing key material. Setting this also re-enables a legacy Bearer-token auth fallback on the Research Engine API — leave unset on a fresh deployment |
 | `MEMBERS_BRIDGE_URL` + `MEMBERS_BRIDGE_SECRET` | Yes | new Apps Script bridge used by the premium gate (preferred) |
 | `MEMBERS_STATUS_URL` | Legacy | old bridge — DELETE after the new bridge above is verified |
 | `RESEARCH_CRON_SECRET` | Recommended | Long random value required by the scheduled refresh workflow |
@@ -140,7 +140,7 @@ git diff --check
 
 After deployment:
 
-1. Open `/api/research-engine?module=health`; confirm `configured.alpaca`, `premiumSecret`, and (if enabled) `database` are true.
+1. Open `/api/research-engine?module=health`; confirm `configured.alpaca` is true (and `database` is true if enabled). `configured.premiumSecret` just reflects whether the legacy `PREMIUM_ACCESS_CODES` var is set — it should stay `false` on a fresh deployment that only uses the session cookie and the members bridge.
 2. Open `/research-engine.html`, unlock with a valid premium code, choose QQQ or SPY, and run the full scan for 5, 20, and 40 days.
 3. Confirm the browser network inspector never receives Alpaca credentials.
 4. Confirm the current-level table identifies SIP, BOATS, or the combined source; confirm every conditional row has `N`.
