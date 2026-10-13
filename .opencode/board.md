@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | prop-firms.html; tests/regressions.test.mjs; tests/site-contract.test.mjs | Fresh-eyes sweep found prop-firms.html's promo-code Copy button announcing success/failure only via its own textContent swap, unlike every other async result on the site; give it a dedicated role="status" aria-live="polite" line and cover it with a regression test | 2026-10-13 |
 
 ## Queued (unclaimed, safe to take)
 
