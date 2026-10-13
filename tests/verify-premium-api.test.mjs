@@ -92,6 +92,21 @@ async function callVerify(env, body) {
   assert.equal(data.ok, false);
 }
 
+// A syntactically-valid JSON body that isn't an object -- the literal
+// `null` -- must still fail closed with the clean bad-code message, not
+// crash into the outer 500 catch-all. `body && body.code` is the guard:
+// without it, `null.code` throws and a real client sending this (same
+// shape as any other malformed-but-parseable request) would be told
+// "Service temporarily unavailable" instead of "check your code", the
+// exact misdiagnosis-as-server-outage bug already fixed on assistant.js/
+// auth-google.js (2026-09-15) -- verify-premium.js already had this guard
+// then, it just never got a test pinning it.
+{
+  const { status, data } = await callVerify(baseEnv(), null);
+  assert.equal(status, 401);
+  assert.equal(data.error, GENERIC_BAD_CODE);
+}
+
 // Bad code format is rejected before any Turnstile check or bridge lookup.
 {
   const { status, data } = await callVerify(baseEnv(), { code: 'nope!' });
