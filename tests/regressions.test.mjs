@@ -1384,16 +1384,18 @@ test('the committed-once intro video and its poster get the same long-cache trea
 
 test('the committed-once brand/hero images get the same long-cache treatment as vendor/models/intro-video', () => {
   // assets/pj-logo.jpg (every page's favicon/apple-touch-icon/nav-brand),
-  // assets/pj-banner.jpg (index.html's hero/LCP image and every page's
-  // og:image/twitter:image), assets/ferrari-reference-light.webp/-dark.webp
-  // (index.html's own comment calls these a "committed-once... owner-approved
-  // reference" image), assets/testimonials.webp, and assets/icon.svg
-  // (manifest.json's sole PWA icon) are referenced with no ?v= cache-busting
-  // anywhere in the repo and are swapped only by a deliberate replacement
-  // commit, the same rationale the vendor/models/intro-video rules above
-  // already rely on. Without their own rule they fall through to the
-  // blanket 5-minute /assets/* default -- pj-logo.jpg gets needlessly
-  // revalidated on essentially every page view site-wide.
+  // assets/pj-banner.jpg (index.html's hero/LCP image only -- see the
+  // og-banner.jpg test below for why it's no longer also the og:image),
+  // assets/og-banner.jpg (every page's og:image/twitter:image),
+  // assets/ferrari-reference-light.webp/-dark.webp (index.html's own comment
+  // calls these a "committed-once... owner-approved reference" image),
+  // assets/testimonials.webp, and assets/icon.svg (manifest.json's sole PWA
+  // icon) are referenced with no ?v= cache-busting anywhere in the repo and
+  // are swapped only by a deliberate replacement commit, the same rationale
+  // the vendor/models/intro-video rules above already rely on. Without their
+  // own rule they fall through to the blanket 5-minute /assets/* default --
+  // pj-logo.jpg gets needlessly revalidated on essentially every page view
+  // site-wide.
   const headers = read('_headers');
   const blanket = /\/assets\/\*\n\s*Cache-Control: public, max-age=(\d+)/.exec(headers);
   assert.ok(blanket, '_headers must still set a blanket /assets/* Cache-Control');
@@ -1402,6 +1404,7 @@ test('the committed-once brand/hero images get the same long-cache treatment as 
   for (const path of [
     '/assets/pj-logo.jpg',
     '/assets/pj-banner.jpg',
+    '/assets/og-banner.jpg',
     '/assets/ferrari-reference-light.webp',
     '/assets/ferrari-reference-dark.webp',
     '/assets/testimonials.webp',
@@ -1411,6 +1414,56 @@ test('the committed-once brand/hero images get the same long-cache treatment as 
     const rule = new RegExp(`${escaped}\\n\\s*Cache-Control: public, max-age=(\\d+), immutable`).exec(headers);
     assert.ok(rule, `_headers has no long-cache rule for ${path}`);
     assert.ok(Number(rule[1]) > blanketMaxAge, `${path}'s max-age must exceed the general /assets/* default`);
+  }
+});
+
+// Reads a JPEG's real pixel dimensions from its SOF marker, independent of
+// anything a filename or meta tag claims about it.
+function jpegDimensions(buf) {
+  let offset = 2; // skip the SOI marker
+  while (offset < buf.length - 9) {
+    if (buf[offset] !== 0xff) { offset++; continue; }
+    const marker = buf[offset + 1];
+    if (marker === 0xd8 || marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { offset += 2; continue; }
+    if (marker === 0xd9) break; // EOI
+    const length = buf.readUInt16BE(offset + 2);
+    const isSOF = marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc;
+    if (isSOF) return { height: buf.readUInt16BE(offset + 5), width: buf.readUInt16BE(offset + 7) };
+    offset += 2 + length;
+  }
+  throw new Error('no SOF marker found');
+}
+
+// Incident: every page's og:image/twitter:image reused assets/pj-banner.jpg
+// — a 1600x316 YouTube channel banner with "SUBSCRIBE & TURN ON
+// NOTIFICATIONS" and a bell icon baked into the pixels. YouTube chrome
+// doesn't apply off YouTube, and 1600x316 (~5:1) is nowhere near the
+// ~1.91:1 shape Open Graph/Twitter cards are built around with no
+// og:image:width/height declared to tell a crawler what to expect, so
+// every Discord/Slack/iMessage/X unfurl of a shared link — the site's #1
+// growth channel per the "Join the Free Discord" CTA on every page — showed
+// a thin, often-illegible filmstrip with an off-platform CTA instead of a
+// clean brand card. assets/og-banner.jpg is a dedicated 1200x630 crop of
+// the same banner photo with the YouTube chrome cropped out; this pins its
+// real dimensions and makes sure no page points og:image/twitter:image back
+// at pj-banner.jpg again.
+test('the social-share image is a real 1200x630 OG card, not the YouTube-banner crop', () => {
+  const dims = jpegDimensions(readFileSync(join(ROOT, 'assets/og-banner.jpg')));
+  assert.deepEqual(dims, { width: 1200, height: 630 }, 'assets/og-banner.jpg must be a 1200x630 OG card');
+
+  for (const page of PAGES) {
+    const html = read(page);
+    if (!/<meta property="og:image"/.test(html)) continue;
+    assert.ok(
+      html.includes('<meta property="og:image" content="https://not-financial-advice-vjm.com/assets/og-banner.jpg">'),
+      `${page}: og:image must point at assets/og-banner.jpg, not pj-banner.jpg`,
+    );
+    assert.ok(
+      html.includes('<meta name="twitter:image" content="https://not-financial-advice-vjm.com/assets/og-banner.jpg">'),
+      `${page}: twitter:image must point at assets/og-banner.jpg, not pj-banner.jpg`,
+    );
+    assert.ok(html.includes('<meta property="og:image:width" content="1200">'), `${page}: missing og:image:width`);
+    assert.ok(html.includes('<meta property="og:image:height" content="630">'), `${page}: missing og:image:height`);
   }
 });
 

@@ -66,8 +66,12 @@
 
 # assets/pj-logo.jpg (11KB, referenced with no ?v= on every one of the 16
 # HTML pages' favicon/apple-touch-icon/nav-brand), assets/pj-banner.jpg
-# (95KB, index.html's above-the-fold hero/LCP image and every page's
-# og:image/twitter:image), assets/ferrari-reference-{light,dark}.webp
+# (95KB, index.html's above-the-fold hero/LCP image only — it used to be
+# reused as every page's og:image/twitter:image too, but that was a
+# 1600x316 YouTube channel banner with "SUBSCRIBE & TURN ON NOTIFICATIONS"
+# baked into it, the wrong aspect ratio and the wrong CTA for a link-share
+# preview; assets/og-banner.jpg (109KB) is the dedicated 1200x630 crop
+# used for og:image/twitter:image instead), assets/ferrari-reference-{light,dark}.webp
 # (140KB/143KB, index.html already calls these a "committed-once...
 # owner-approved reference" image in its own comment), and
 # assets/testimonials.webp (173KB) are the same "committed once, no ?v=
@@ -75,12 +79,15 @@
 # has ever needed an in-place edit, a replacement is a new commit under
 # the same rationale. Without their own rule they fell through to the
 # blanket 5-minute /assets/* default and got needlessly revalidated —
-# pj-logo.jpg on essentially every page view site-wide, the other four on
-# the homepage's highest-traffic load.
+# pj-logo.jpg on essentially every page view site-wide, og-banner.jpg on
+# every link-share unfurl, the rest on the homepage's highest-traffic load.
 /assets/pj-logo.jpg
   Cache-Control: public, max-age=604800, immutable
 
 /assets/pj-banner.jpg
+  Cache-Control: public, max-age=604800, immutable
+
+/assets/og-banner.jpg
   Cache-Control: public, max-age=604800, immutable
 
 /assets/ferrari-reference-light.webp
