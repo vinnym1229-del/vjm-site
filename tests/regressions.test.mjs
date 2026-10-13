@@ -626,11 +626,19 @@ test('course pages ship Course JSON-LD matching the free-tier rule', () => {
     // hours) and courseWorkload was never-measured seat time.
     assert.equal(ld.numberOfCredits, undefined, `${page}: numberOfCredits is not a lesson count`);
     assert.equal(ld.hasCourseInstance?.courseWorkload, undefined, `${page}: unmeasured courseWorkload must stay removed`);
-    // Offers must be purchasable: Futures Core is $100/mo and covers futures
-    // + psychology; Complete is $129/mo and adds stocks and options
-    // (functions/api/_lib/entitlements.js is the authority on that split).
-    const expectedPrice = ['futures-dissection.html', 'psychology-enhancer.html'].includes(page) ? '100.00' : '129.00';
+    // Offers must be purchasable, and must stay the price the page actually
+    // advertises: the JSON-LD price and the visible lock-gate price ("each
+    // course lock names the plan that actually unlocks that course", above)
+    // are two independent copies of the same number with nothing forcing
+    // them to agree, so a price change landed in one and not the other would
+    // leave Google showing a stale price in rich results while every test
+    // stayed green (each pinned its own copy, never the other one).
+    const gateMatch = /(?:Futures Core|The Trifecta) is \$(\d+)\/mo/.exec(read(page));
+    assert.ok(gateMatch, `${page}: no lock-gate "$N/mo" price to check the JSON-LD offer against`);
+    const expectedPrice = `${gateMatch[1]}.00`;
     assert.equal(ld.offers?.price, expectedPrice, `${page}: offer must match the tier that unlocks it`);
+    assert.equal(ld.offers?.priceSpecification?.price, expectedPrice,
+      `${page}: nested priceSpecification.price must match offers.price`);
   }
   // Futures Level 1 is genuinely ungated, and only that unit.
   const futuresLd = JSON.parse(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/.exec(read('futures-dissection.html'))[1]);
