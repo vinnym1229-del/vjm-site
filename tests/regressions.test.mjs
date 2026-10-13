@@ -1198,6 +1198,24 @@ test('each course lock names the plan that actually unlocks that course', () => 
   }
 });
 
+test('every password-type access-code input shares the same placeholder and aria-label', () => {
+  // premium-guidance.html's own input said "Member access code" while the
+  // sentence right above it said "premium access code", and every other
+  // gated page's input said "Premium access code" -- a one-page copy drift a
+  // screen-reader user would hear as naming a different, unexpected field.
+  for (const page of PAGES) {
+    const html = read(page);
+    for (const input of html.matchAll(/<input[^>]*type="password"[^>]*>/g)) {
+      const placeholder = input[0].match(/placeholder="([^"]*)"/);
+      const ariaLabel = input[0].match(/aria-label="([^"]*)"/);
+      assert.ok(placeholder, `${page}: password input has no placeholder`);
+      assert.ok(ariaLabel, `${page}: password input has no aria-label`);
+      assert.equal(placeholder[1], 'Premium access code', `${page}: password input placeholder drifted from the site-wide copy`);
+      assert.equal(ariaLabel[1], 'Premium access code', `${page}: password input aria-label drifted from the site-wide copy`);
+    }
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Incident: commit 05a2ede renamed the $129/mo "Complete" tier to "The
 // Trifecta" across the hero, bundle cards, and stock-breakdown/options-lab's
