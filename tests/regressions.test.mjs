@@ -3255,3 +3255,28 @@ test('prop-firms.html\'s promo-code copy button has its own announced status, no
   assert.match(handler, /catch\s*\{[\s\S]*?status\.textContent = '[^']+'/,
     'the clipboard-failure path must also announce via the dedicated status element');
 });
+
+// ---------------------------------------------------------------------------
+// Incident: index.html's X/Twitter social-btn (About row and footer row) set
+// aria-label="PJ Trades on X", replacing the link's accessible name entirely,
+// while its visible text reads "X / Twitter". That fails WCAG 2.5.3 "Label in
+// Name" (Level A): a speech-input user (Dragon, Voice Control, Voice Access)
+// says what they see -- "click X Twitter" -- and the accessibility tree never
+// exposes "Twitter" for them to match. Every sibling icon in the same rows
+// already gets this right (visible "YouTube" sits inside label "PJ Trades on
+// YouTube", same for TikTok/Instagram/Whop) -- only X/Twitter broke the
+// pattern, because "X / Twitter" is not a substring of "PJ Trades on X".
+test('every index.html social-btn\'s aria-label contains its visible text (WCAG 2.5.3 Label in Name)', () => {
+  const html = read('index.html');
+  const buttons = [...html.matchAll(/<a class="social-btn"[^>]*aria-label="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)];
+  assert.ok(buttons.length >= 8, 'expected at least 8 .social-btn links (4 per row x 2 rows) -- selector may be stale');
+
+  for (const [, label, inner] of buttons) {
+    const visibleText = inner.replace(/<svg[\s\S]*?<\/svg>/, '').trim();
+    const words = visibleText.match(/[A-Za-z0-9]+/g) || [];
+    for (const word of words) {
+      assert.match(label, new RegExp(word, 'i'),
+        `social-btn visible text "${visibleText}" has word "${word}" missing from its aria-label "${label}"`);
+    }
+  }
+});
