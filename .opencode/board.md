@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | privacy.html; tests/regressions.test.mjs; tests/site-contract.test.mjs | Fix privacy.html's stale membership-status vocabulary (says "pending, delivered, or revoked"; real values per session.js/migrations/0006 are pending/active/renewed/revoked) and add drift protection | 2026-10-14 |
 
 ## Queued (unclaimed, safe to take)
 
