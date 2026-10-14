@@ -1035,6 +1035,31 @@ test('.env.example documents INDEXING, CANONICAL_HOST, WHOP_API_KEY/WHOP_PRODUCT
     'expected indexing.js to still read env.CANONICAL_HOST');
 });
 
+// Incident: docs/DEPLOYMENT.md's Rollback section told the owner that, during
+// a live lockout, setting LEGACY_ALLOW_CODES_AS_KEY=true "temporarily" lets
+// pre-migration tokens verify "while cookies propagate" -- describing a
+// dual-key coexistence window that does not exist. session.js's
+// resolveSigningSecret() checks SESSION_SIGNING_SECRET first and returns it
+// unconditionally once set; the legacy branch is only ever reached when that
+// secret is absent or under 32 chars. SESSION_SIGNING_SECRET is documented
+// everywhere (including this same doc) as an already-required Production+
+// Preview secret, so an owner who followed this step exactly as written --
+// flipping the flag while leaving SESSION_SIGNING_SECRET in place, which
+// "temporarily" implies -- would see zero effect and keep members locked out
+// during a real incident while believing the documented fix had been
+// applied. Verified directly: signed a token with the legacy key, then
+// called verifySessionToken() against resolveSigningSecret()'s return value
+// with both vars set as the doc instructs -- verification failed.
+test('docs/DEPLOYMENT.md rollback does not claim a legacy/dedicated signing-key coexistence window', () => {
+  const doc = read('docs/DEPLOYMENT.md');
+  assert.doesNotMatch(doc, /cookies propagate/,
+    'must not describe a dual-key coexistence window -- resolveSigningSecret() has none');
+  assert.match(doc, /unset.{0,40}SESSION_SIGNING_SECRET/s,
+    'must tell the owner SESSION_SIGNING_SECRET has to be unset for the legacy flag to take effect');
+  assert.match(read('functions/api/_lib/session.js'), /if \(env\.SESSION_SIGNING_SECRET && String\(env\.SESSION_SIGNING_SECRET\)\.length >= 32\) \{\s*\n\s*return String\(env\.SESSION_SIGNING_SECRET\);/,
+    'expected resolveSigningSecret() to still return the dedicated secret unconditionally once set');
+});
+
 // Incident: removing the homepage's "Live From PJ's Desk" section (2026-09-08)
 // deleted the site's only consumer of the announcements/trade_reviews CMS
 // content types (loadLatest(), #latest, .ann-card/.review-card), but

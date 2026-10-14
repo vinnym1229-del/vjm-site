@@ -109,6 +109,16 @@ test('signing secret resolution fails closed', () => {
     LEGACY_ALLOW_CODES_AS_KEY: 'false',
     PREMIUM_ACCESS_CODES: 'CODE1,CODE2',
   }), null);
+  // SESSION_SIGNING_SECRET is checked first and returned unconditionally
+  // once set -- the legacy hatch is unreachable while it's present, so the
+  // two flags never coexist (see docs/DEPLOYMENT.md's Rollback section:
+  // flipping LEGACY_ALLOW_CODES_AS_KEY on does nothing for a locked-out
+  // member unless SESSION_SIGNING_SECRET is also unset).
+  assert.equal(resolveSigningSecret({
+    SESSION_SIGNING_SECRET: SECRET,
+    LEGACY_ALLOW_CODES_AS_KEY: 'true',
+    PREMIUM_ACCESS_CODES: 'CODE1,CODE2',
+  }), SECRET);
 });
 
 test('session cookies are HttpOnly+Secure+SameSite=Lax with Max-Age', () => {

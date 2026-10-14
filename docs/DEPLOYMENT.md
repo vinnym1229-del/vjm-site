@@ -66,9 +66,18 @@ done
 - D1 migrations are additive (CREATE TABLE IF NOT EXISTS) — old code runs fine with new tables; rollback needs no down-migration.
 - Session secret rotation invalidates all sessions by design. If a bad secret
   ships, set the previous value back to restore sessions.
-- Legacy token compatibility window: if members are locked out after deploy,
-  set `LEGACY_ALLOW_CODES_AS_KEY=true` temporarily so pre-migration tokens
-  verify while cookies propagate.
+- Legacy token compatibility window: `LEGACY_ALLOW_CODES_AS_KEY=true` is only
+  reachable while `SESSION_SIGNING_SECRET` is absent or under 32 chars —
+  `resolveSigningSecret()` checks `SESSION_SIGNING_SECRET` first and returns
+  it unconditionally once set, so there is no dual-key coexistence window and
+  simply adding the flag while leaving `SESSION_SIGNING_SECRET` in place does
+  nothing for locked-out members. If members get locked out right after
+  `SESSION_SIGNING_SECRET` is first introduced (their cookies were signed
+  under the old `PREMIUM_ACCESS_CODES`-as-key model), you must also unset
+  `SESSION_SIGNING_SECRET` before setting the legacy flag — this re-signs
+  ALL sessions, old and new logins alike, with the weaker legacy key, so
+  remove both vars (restoring `SESSION_SIGNING_SECRET`) as soon as sessions
+  are confirmed working again.
 
 ## Never do
 
