@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | TBD -- running fresh-eyes sweep | Scheduled maintenance cycle: npm test (719/719 green) + live-deploy probe hit the standing whole-`*.pages.dev`-domain egress block, substituted GitHub Actions `test.yml` run `38566780295` (passed, head_sha `9284c5c`, 0 commits behind) as the live signal, now scanning for one real improvement | 2026-10-14 |
 
 ## Queued (unclaimed, safe to take)
 
