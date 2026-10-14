@@ -3421,3 +3421,27 @@ test("docs/API.md's opening Cache-Control claim does not overclaim 'all' against
       `docs/API.md must keep documenting /api/${endpoint}'s public Cache-Control value`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Incident: docs/SECURITY.md's "Threat notes" section carried the identical
+// overclaim just fixed in docs/API.md above -- "Caching: all API responses
+// `Cache-Control: no-store`; personalized pages revalidate" -- contradicted
+// by the same three deliberately public, max-age'd endpoints (/api/ticker,
+// /api/content, /api/live-stats). The API.md fix never touched this file, so
+// the identical false "all" claim survived in a second doc describing the
+// same system. functions/api/_lib/http.js's json() helper does default to
+// no-store, so the line was accurate for most endpoints -- just not "all".
+test("docs/SECURITY.md's caching threat note does not overclaim 'all' against the same public-cache endpoints as docs/API.md", () => {
+  const doc = read('docs/SECURITY.md');
+  assert.doesNotMatch(doc, /all API responses `Cache-Control: no-store`/,
+    'docs/SECURITY.md\'s threat note claims every API response is no-store, contradicted by its own ticker/content/live-stats carve-out');
+
+  for (const [endpoint, value] of [
+    ['ticker', 'max-age=10'],
+    ['content', 'max-age=60'],
+    ['live-stats', 'max-age=300'],
+  ]) {
+    assert.match(doc, new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+      `docs/SECURITY.md must name /api/${endpoint}'s public Cache-Control carve-out, not just claim 'all' are no-store`);
+  }
+});
