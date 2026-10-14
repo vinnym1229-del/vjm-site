@@ -3356,3 +3356,30 @@ test("privacy.html's membership-status list matches the values the webhook/sessi
   assert.match(listed, /pending/);
   assert.match(listed, /revoked/);
 });
+
+// ---------------------------------------------------------------------------
+// Incident: docs/API.md opened with "All responses are JSON with
+// `Cache-Control: no-store`" -- a blanket claim contradicted by its own
+// per-endpoint sections for /api/ticker, /api/content, and /api/live-stats,
+// each of which documents a distinct public, max-age'd Cache-Control because
+// those three are deliberately edge-cacheable (read-only, non-session,
+// polled by every visitor). functions/api/_lib/http.js's json() helper does
+// default to no-store, and most endpoints inherit that unmodified, so the
+// opening line was accurate for the majority -- just not "all" of them. A
+// reader who trusted only the intro would wrongly conclude no endpoint is
+// ever cacheable, missing the three that explicitly are by design.
+test("docs/API.md's opening Cache-Control claim does not overclaim 'all' against its own documented public-cache endpoints", () => {
+  const doc = read('docs/API.md');
+  const intro = doc.slice(0, doc.indexOf('## POST /api/verify-premium'));
+  assert.doesNotMatch(intro, /All responses are JSON with `Cache-Control: no-store`/,
+    'docs/API.md\'s intro claims every response is no-store, contradicted by its own ticker/content/live-stats sections');
+
+  for (const [endpoint, value] of [
+    ['ticker', 'public, max-age=10, s-maxage=10'],
+    ['content', 'public, max-age=60'],
+    ['live-stats', 'public, max-age=300'],
+  ]) {
+    assert.match(doc, new RegExp(`Cache-Control: ${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`),
+      `docs/API.md must keep documenting /api/${endpoint}'s public Cache-Control value`);
+  }
+});
