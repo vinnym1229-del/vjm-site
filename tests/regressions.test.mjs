@@ -727,6 +727,19 @@ test('yahoo-news docs describe the real JSON endpoint and the topic parameter, n
     'docs/SECURITY.md must name the actual allowlisted Yahoo host');
 });
 
+// Incident: the same "RSS" staleness this fix above closed for the docs was
+// still sitting in functions/api/market-brief.js's own top-of-file comment --
+// it called its headline source "Yahoo Finance RSS" while fetchHeadlines(),
+// ~160 lines below in the same file, fetches the JSON search endpoint and
+// its own inline comment says RSS was retired. The migration note at
+// yahoo-news.js's header was fixed; its twin in market-brief.js never was.
+test('market-brief.js describes its own headline source consistently, not RSS', () => {
+  const src = read('functions/api/market-brief.js');
+  assert.doesNotMatch(src, /Yahoo Finance RSS/, 'market-brief.js header still claims an RSS headline source');
+  assert.match(src, /query1\.finance\.yahoo\.com\/v1\/finance\/search/,
+    'market-brief.js must still fetch the real JSON search endpoint');
+});
+
 // Incident: functions/api/forex-calendar.js accepts three impact values --
 // 'major' (default, red+orange combined), 'high' (red-folder-only), and
 // 'medium' (orange-folder-only); anything else 400s. forex-calendar.html's

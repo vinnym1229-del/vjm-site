@@ -9,7 +9,7 @@
 // Brief contents (all labeled):
 //  - futures-proxy lean (SPY/ES, QQQ/NQ composite heuristic — LOW confidence)
 //  - top movers (Alpaca screener when entitled, else computed universe)
-//  - headline links (Yahoo Finance RSS, real sources only)
+//  - headline links (Yahoo Finance JSON search endpoint, real sources only)
 //  - high-impact USD events count for the day (ForexFactory feed)
 // Narrative via Workers AI; everything degrades to data-only if AI is down.
 //
