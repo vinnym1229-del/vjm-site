@@ -612,6 +612,43 @@ try {
     assert.equal(data.brief.movers.source, 'computed from 10-symbol IEX snapshot universe',
       'a single-symbol override is invalid (parseUniverse requires >=2) and must silently fall back to DEFAULT_UNIVERSE');
   }
+
+  // Alpaca configured but BOTH the official screener and the computed-universe
+  // fallback fail outright (a correlated outage/rate-limit hitting the
+  // screener AND the snapshots endpoint computedMovers depends on) -- movers()
+  // and computedMovers() already fail closed to null internally, so the
+  // "## 2) Movers" block saw mv===null and had nothing further to report.
+  // Every sibling source in generateBrief pushes an explicit warning on its
+  // own failure (index proxies, unconfigured Alpaca, headlines); this was the
+  // one path that degraded silently with zero signal in `warnings`.
+  {
+    globalThis.fetch = async (url) => {
+      const href = String(url);
+      if (href.startsWith('https://data.alpaca.markets/v1beta1/screener/stocks/movers')) {
+        return new Response('', { status: 500 });
+      }
+      if (href.startsWith('https://data.alpaca.markets/v2/stocks/snapshots')) {
+        return new Response('', { status: 500 });
+      }
+      if (href.startsWith('https://query1.finance.yahoo.com/v1/finance/search')) {
+        return new Response(JSON.stringify({ news: [] }), { status: 200 });
+      }
+      if (href === 'https://nfs.faireconomy.media/ff_calendar_thisweek.json') {
+        return new Response(JSON.stringify([]), { status: 200 });
+      }
+      throw new Error('unexpected fetch target: ' + href);
+    };
+    const env = {
+      RESEARCH_CRON_SECRET: CRON_SECRET,
+      RESEARCH_DB: makeDb(),
+      ALPACA_API_KEY: 'k', ALPACA_SECRET_KEY: 's',
+    };
+    const { status, data } = await postBrief(env);
+    assert.equal(status, 200);
+    assert.equal(data.brief.movers, null);
+    assert.ok(data.brief.warnings.includes('Movers unavailable this run.'),
+      'a correlated screener+snapshot failure must self-report in warnings like every other degraded source, not go silent');
+  }
 } finally {
   globalThis.fetch = originalFetch;
 }

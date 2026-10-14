@@ -95,6 +95,12 @@ async function generateBrief(env) {
     if (mv) {
       const fmt = (arr) => arr.filter((m) => Number.isFinite(m.changePct)).map((m) => `${m.symbol} ${m.changePct >= 0 ? '+' : ''}${m.changePct}%`).join(', ');
       dataBlock += `Gainers: ${fmt(mv.gainers)}\nLosers: ${fmt(mv.losers)}\n`;
+    } else {
+      // Both the screener and the computed-universe fallback failed (e.g. a
+      // correlated Alpaca outage) — every other data source in this function
+      // self-reports a degraded run via `warnings`; movers was the one path
+      // that stayed silent.
+      warnings.push('Movers unavailable this run.');
     }
   }
 
