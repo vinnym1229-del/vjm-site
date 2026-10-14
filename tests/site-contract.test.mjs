@@ -353,7 +353,7 @@ const SITEMAP_LASTMOD_PINS = {
   'prop-firms.html': { lastmod: '2026-10-13', sha256: '2161b85dc106c79e56d421b8524137ffcf19310d45c6d4a0d9b9fc584c7262b8' },
   'risk-disclosure.html': { lastmod: '2026-10-13', sha256: '6807c041345facb48c69c7aa8c280fc9c7b6a281ea3165d1863eeb4db334347e' },
   'terms.html': { lastmod: '2026-10-13', sha256: 'b01ec82598fa592fabd1d2fddc8fe3df60b0a445e27bdefa8184094823ad23cb' },
-  'privacy.html': { lastmod: '2026-10-13', sha256: '547cfaf4f465a9f5b462e1c973873e98c599c47742a0f7574d69ac1ed432b76e' },
+  'privacy.html': { lastmod: '2026-10-14', sha256: 'e33c07ecf46786ee82c254543e060bdfc23a054b4ec2b78e3a3d43b82d4993a8' },
 };
 
 test('sitemap.xml <lastmod> values stay pinned to the page content they were last verified against', () => {

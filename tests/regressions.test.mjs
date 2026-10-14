@@ -7,6 +7,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
+import { LIVE_ENTITLEMENT_STATUSES } from '../functions/api/_lib/session.js';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const read = (p) => readFileSync(join(ROOT, p), 'utf8');
@@ -3279,4 +3280,37 @@ test('every index.html social-btn\'s aria-label contains its visible text (WCAG 
         `social-btn visible text "${visibleText}" has word "${word}" missing from its aria-label "${label}"`);
     }
   }
+});
+
+// ---------------------------------------------------------------------------
+// Incident: privacy.html told visitors the stored "membership status" field
+// could only be pending, delivered, or revoked -- the pre-migration-0006
+// vocabulary. The webhook stopped writing 'delivered' once D1 became the
+// single source of truth: migrations/0006_entitlement_authority.sql backfills
+// every existing 'delivered' row to 'active' and says in its own comment
+// "no new row will be written with it." session.js's LIVE_ENTITLEMENT_STATUSES
+// keeps 'delivered' only as a dead-row fallback so a half-applied migration
+// can't lock anyone out -- it is not a value a current membership can have.
+// So the policy named a status nothing writes anymore and omitted 'active'
+// and 'renewed', the two values every real paid membership actually has --
+// exactly backwards for the one paragraph whose whole point is telling a
+// member what the site holds about their own record.
+test("privacy.html's membership-status list matches the values the webhook/session code actually writes, not the pre-migration-0006 vocabulary", () => {
+  const html = read('privacy.html');
+  const item = html.match(/<li>the <strong>membership status<\/strong> \(([^)]+)\)/);
+  assert.ok(item, 'privacy.html: membership-status bullet not found -- selector may be stale');
+  const listed = item[1].toLowerCase();
+
+  assert.doesNotMatch(listed, /delivered/,
+    "privacy.html lists 'delivered' as a membership status, but migrations/0006_entitlement_authority.sql backfilled that value away and no new row is written with it");
+  for (const live of LIVE_ENTITLEMENT_STATUSES) {
+    if (live === 'delivered') continue; // legacy fallback only, not a current value -- checked above
+    assert.match(listed, new RegExp(live),
+      `privacy.html's membership-status list is missing '${live}', which session.js's LIVE_ENTITLEMENT_STATUSES names as a value a real membership can have`);
+  }
+  // 'pending' and 'revoked' are real stored states too (session.js's own doc
+  // comment names them), just not "live" ones -- LIVE_ENTITLEMENT_STATUSES
+  // intentionally excludes them, so check them separately rather than from it.
+  assert.match(listed, /pending/);
+  assert.match(listed, /revoked/);
 });
