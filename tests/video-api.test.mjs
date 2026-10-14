@@ -119,6 +119,7 @@ async function bodyBytes(res) {
   assert.equal(res.status, 200);
   assert.equal(res.headers.get('Content-Length'), String(TOTAL));
   assert.equal(res.headers.get('Accept-Ranges'), 'bytes');
+  assert.equal(res.headers.get('Cache-Control'), 'public, max-age=86400');
 }
 
 // A normal "bytes=start-end" range returns exactly that slice as 206.

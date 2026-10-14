@@ -126,6 +126,7 @@ export async function onRequestHead(context) {
       'Content-Type': CONTENT_TYPE,
       'Content-Length': String(obj.size),
       'Accept-Ranges': 'bytes',
+      'Cache-Control': CACHE_CONTROL,
     },
   });
 }
