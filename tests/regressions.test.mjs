@@ -799,6 +799,48 @@ test('docs/API.md documents /api/auth-google', () => {
     'expected auth-google.js to still verify against GOOGLE_CLIENT_ID');
 });
 
+// Incident: docs/API.md documented every member-facing sign-in endpoint
+// (verify-premium, logout-premium, auth-google, check-member-status) but
+// never mentioned /api/whop-webhook at all -- the entitlement-provisioning
+// endpoint that actually grants paid access the moment a Whop purchase
+// lands, per its own header comment ("PROVISIONS ACCESS IMMEDIATELY"). The
+// same "documented every sibling but this one" gap the market-brief,
+// premium-market-analyst, auth-google, and ticker fixes above each closed
+// once already -- arguably the most consequential endpoint to have missed.
+test('docs/API.md documents /api/whop-webhook', () => {
+  const doc = read('docs/API.md');
+  assert.match(doc, /## POST \/api\/whop-webhook/, 'docs/API.md must have a whop-webhook POST heading');
+  const section = doc.slice(doc.indexOf('## POST /api/whop-webhook'), doc.indexOf('## GET /api/stock-research'));
+  assert.match(section, /x-whop-signature/, 'docs/API.md: whop-webhook section omits its HMAC signature header');
+  assert.match(section, /session_epoch/, 'docs/API.md: whop-webhook section omits the revoke session_epoch bump');
+  assert.match(read('functions/api/whop-webhook.js'), /x-whop-signature/,
+    'expected whop-webhook.js to still verify x-whop-signature');
+});
+
+// Incident: docs/API.md never mentioned /api/newsletter/subscribe or
+// /api/newsletter/unsubscribe at all, despite both being real, public,
+// user-facing routes -- every page's signup form and /unsubscribe.html hit
+// them, and subscribe.js's own header comment calls it "the only endpoint on
+// the site that stores a personal identifier from an anonymous visitor". The
+// same "documented every sibling but this one" gap the market-brief,
+// premium-market-analyst, auth-google, ticker, and whop-webhook fixes above
+// each closed once already.
+test('docs/API.md documents /api/newsletter/subscribe and /api/newsletter/unsubscribe', () => {
+  const doc = read('docs/API.md');
+  assert.match(doc, /## POST \/api\/newsletter\/subscribe/,
+    'docs/API.md must have a newsletter subscribe POST heading');
+  assert.match(doc, /## POST \/api\/newsletter\/unsubscribe/,
+    'docs/API.md must have a newsletter unsubscribe POST heading');
+  const subSection = doc.slice(doc.indexOf('## POST /api/newsletter/subscribe'), doc.indexOf('## GET /api/newsletter/subscribe'));
+  assert.match(subSection, /consent/, 'docs/API.md: newsletter subscribe section omits the required consent flag');
+  const unsubSection = doc.slice(doc.indexOf('## POST /api/newsletter/unsubscribe'), doc.indexOf('## GET /api/newsletter/unsubscribe'));
+  assert.match(unsubSection, /token/, 'docs/API.md: newsletter unsubscribe section omits the token-based one-click path');
+  assert.match(read('functions/api/newsletter/subscribe.js'), /consent/,
+    'expected newsletter/subscribe.js to still require consent');
+  assert.match(read('functions/api/newsletter/unsubscribe.js'), /cleanToken/,
+    'expected newsletter/unsubscribe.js to still support token-based unsubscribe');
+});
+
 // Incident: docs/API.md documents every market-data endpoint (stock-research,
 // yahoo-news, forex-calendar, market-brief) but never mentioned /api/ticker
 // at all, despite it being the live feed behind the homepage ticker --
@@ -3113,9 +3155,9 @@ test('docs/API.md documents /api/content, /api/analytics, and /api/live-stats', 
     'expected content.js to still support a ticker filter on trade_reviews');
 
   assert.match(doc, /## POST \/api\/analytics/, 'docs/API.md must have an analytics POST heading');
-  const analyticsSection = doc.slice(doc.indexOf('## POST /api/analytics'), doc.indexOf('## GET /api/live-stats'));
-  assert.match(analyticsSection, /only public write endpoint/,
-    'docs/API.md: analytics section omits that this is the site\'s only public write endpoint');
+  const analyticsSection = doc.slice(doc.indexOf('## POST /api/analytics'), doc.indexOf('## POST /api/newsletter/subscribe'));
+  assert.match(analyticsSection, /built in-house/,
+    'docs/API.md: analytics section omits why this is built in-house instead of a vendor tag');
   assert.match(analyticsSection, /allowlist/, 'docs/API.md: analytics section omits the event-name allowlist');
   assert.match(read('functions/api/analytics.js'), /ALLOWED_EVENTS/,
     'expected analytics.js to still gate event names on an allowlist');

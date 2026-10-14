@@ -58,6 +58,36 @@ Public membership probe.
 - 404 `{ ok:true, active:false, message }` — same shape whether handle unknown or inactive
 - 429 rate limited · 400 invalid handle · 502/503 upstream/config issues
 
+## POST /api/whop-webhook
+
+Whop → site entitlement automation. Not member-facing; Whop calls this
+directly on a purchase, renewal, or cancellation. Verifies HMAC-SHA256 over
+the raw body (`x-whop-signature`, keyed on `WHOP_WEBHOOK_SECRET`) and
+`x-whop-timestamp` freshness (5-minute window), then dedupes by event id so a
+retried delivery is a no-op.
+- Grant: resolves the product/plan to an entitlement tier (`_lib/entitlements.js`);
+  an unrecognized product grants nothing. Mints a VJM-XXXX-XXXX code, stores
+  only its hash, and provisions `status='active'` immediately — access does
+  not wait on anyone copying a code anywhere. Posts the plaintext code to the
+  owner-only `DISCORD_WHOP_CODES_WEBHOOK` as a notification, not a gate; an
+  undelivered code only rolls the grant back when the member has no email on
+  file (their only way in), since one with an email can already sign in with
+  Google.
+- Renewal: Whop fires the same grant event on every recurring charge. The
+  member's original code still works; the fresh code/row is a spare.
+- Revoke: flips the member's rows to `status='revoked'` and bumps
+  `session_epoch`, which invalidates cookies already issued — not just the
+  next sign-in.
+- 200 → `{ ok:true, ... }` (includes no-ops: ignored event, duplicate
+  delivery, unrecognized product)
+- 400 → malformed JSON · 401 → missing/stale/invalid signature
+- 413 → body over 64KB · 422 → revoke event with no member id
+- 503 → `WHOP_WEBHOOK_SECRET`/`RESEARCH_DB` not configured, or code
+  generation exhausted its retries (Whop's own retry will mint a fresh one)
+
+Env: `WHOP_WEBHOOK_SECRET` + `RESEARCH_DB` required, `DISCORD_WHOP_CODES_WEBHOOK` optional.
+No rate limit — delivery is HMAC-verified, not public.
+
 ## GET /api/stock-research?symbol=TSLA
 
 Alpaca IEX snapshot. `{ ok, symbol, source:{feed}, mode:"observed", precision, asOf,
@@ -175,10 +205,10 @@ configured. 429 rate limited (120/min). `Cache-Control: public, max-age=60`.
 
 ## POST /api/analytics
 
-First-party funnel telemetry (`assets/funnel.js`) — the site's only public write endpoint,
-built in-house instead of a third-party vendor tag so visitor data never
-leaves this account. Records no IP, user agent, or member-identifying data; `visit`
-is a random per-tab id, not stable across tabs/sessions/devices.
+First-party funnel telemetry (`assets/funnel.js`), built in-house instead of
+a third-party vendor tag so visitor data never leaves this account. Records
+no IP, user agent, or member-identifying data; `visit` is a random per-tab
+id, not stable across tabs/sessions/devices.
 
 Request: `{ visit:"<per-tab id>", events:[{name, path, props}] }`, up to 25 events
 per batch. `name` must be one of a fixed allowlist of funnel stages (e.g.
@@ -191,6 +221,47 @@ chars total once encoded.
 - 429 → rate limited (120/min)
 - 503 → D1 binding `RESEARCH_DB` not configured
 - 502 → storage write failed
+
+## POST /api/newsletter/subscribe
+
+The only endpoint that stores a personal identifier from an anonymous
+visitor, so it validates and rate limits rather than trusts. A signup is an
+UPSERT on the address (never a duplicate row), consent (`body.consent === true`)
+is a required precondition rather than inferred, and Turnstile is enforced
+once `TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY` are set.
+
+Request: `{ email, firstName?, source?, consent:true, turnstileToken? }`
+- 200 → `{ ok:true, subscribed:true }` — identical whether the address was
+  already on the list or not (never an email-existence oracle)
+- 400 → invalid/missing email, or `consent` not `true`
+- 403 → Turnstile check failed · 429 → rate limited (10/min)
+- 503 → `RESEARCH_DB` not configured · 502 → write failed
+
+## GET /api/newsletter/subscribe
+
+What the signup form needs before it can submit: `{ ok:true, required:<bool>,
+siteKey:<public Turnstile site key>|null }`. `required:true, siteKey:null` is
+the one dangerous misconfiguration (secret set, site key missing) — reported
+so the form can say so on load instead of rejecting every signup silently.
+
+## POST /api/newsletter/unsubscribe
+
+Two ways in: a per-subscriber `token` (64 hex chars, from an email footer —
+what a `List-Unsubscribe` header points at) or a typed `email` for someone
+who deleted the mail. Never deletes the row; flips `status='unsubscribed'`
+so the address stays a suppression entry. Looser rate limit than signup —
+opting out must not be blockable from a shared IP.
+- 200 → `{ ok:true, unsubscribed:true }` — identical whether or not the
+  address/token matched anything
+- 400 → neither token nor a valid email given
+- 429 → rate limited (30/min) · 503 → `RESEARCH_DB` not configured
+
+## GET /api/newsletter/unsubscribe?token=…
+
+One-click unsubscribe (RFC 8058) for mail clients and plain links — no JS,
+no form, no confirmation step. A deliberate state change on a GET: an extra
+confirm-click step is a step people abandon. Redirects to
+`/unsubscribe.html?state=done|invalid|error`.
 
 ## GET /api/live-stats
 
