@@ -649,6 +649,35 @@ try {
     assert.ok(data.brief.warnings.includes('Movers unavailable this run.'),
       'a correlated screener+snapshot failure must self-report in warnings like every other degraded source, not go silent');
   }
+
+  // Calendar feed (ForexFactory) fails while everything else succeeds --
+  // todaysHighImpactCount() fails closed to null internally, the same
+  // silent-degradation class the movers block above was just fixed for.
+  {
+    globalThis.fetch = async (url) => {
+      const href = String(url);
+      if (href.startsWith('https://data.alpaca.markets/v1beta1/screener/stocks/movers')) {
+        return new Response(JSON.stringify({ gainers: [], losers: [] }), { status: 200 });
+      }
+      if (href.startsWith('https://query1.finance.yahoo.com/v1/finance/search')) {
+        return new Response(JSON.stringify({ news: [] }), { status: 200 });
+      }
+      if (href === 'https://nfs.faireconomy.media/ff_calendar_thisweek.json') {
+        return new Response('', { status: 500 });
+      }
+      throw new Error('unexpected fetch target: ' + href);
+    };
+    const env = {
+      RESEARCH_CRON_SECRET: CRON_SECRET,
+      RESEARCH_DB: makeDb(),
+      ALPACA_API_KEY: 'k', ALPACA_SECRET_KEY: 's',
+    };
+    const { status, data } = await postBrief(env);
+    assert.equal(status, 200);
+    assert.equal(data.brief.calendarEventCountToday, null);
+    assert.ok(data.brief.warnings.includes('Calendar data unavailable this run.'),
+      'a ForexFactory calendar-fetch failure must self-report in warnings like every other degraded source, not go silent');
+  }
 } finally {
   globalThis.fetch = originalFetch;
 }

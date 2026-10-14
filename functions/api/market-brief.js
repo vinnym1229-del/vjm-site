@@ -117,6 +117,14 @@ async function generateBrief(env) {
   // 4) Calendar context (count of today's USD high-impact events)
   const calendarCount = await todaysHighImpactCount();
   dataBlock += `USD high-impact events scheduled today: ${calendarCount === null ? 'unknown' : calendarCount}\n`;
+  if (calendarCount === null) {
+    // todaysHighImpactCount() fails closed to null on a non-ok response, a
+    // thrown fetch error, a timeout, or bad JSON from the ForexFactory feed --
+    // the same silent-degradation class the "2) Movers" block above was just
+    // fixed for. Every other source here self-reports via warnings; this was
+    // the other path left silent.
+    warnings.push('Calendar data unavailable this run.');
+  }
 
   const lean = computeFuturesLean({ spyChangePct: spyPct, qqqChangePct: qqqPct });
 
