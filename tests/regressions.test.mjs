@@ -3445,3 +3445,37 @@ test("docs/SECURITY.md's caching threat note does not overclaim 'all' against th
       `docs/SECURITY.md must name /api/${endpoint}'s public Cache-Control carve-out, not just claim 'all' are no-store`);
   }
 });
+
+// Incident: docs/NEWSLETTER.md states this project's own rule in plain words
+// -- "What is not built: sending... someone can subscribe, and you have their
+// address, but they will not receive anything until you send it. Do not
+// advertise a welcome email until there is one." -- because no mail provider
+// is wired into this repo (functions/api/newsletter/subscribe.js only upserts
+// a D1 row; grepping the whole repo for MailApp/GmailApp/SMTP/SendGrid/
+// Mailchimp/etc. turns up nothing but a doc comment and a test asserting the
+// absence). Despite that, both of this site's lead-capture success states
+// told visitors an email had already landed: assets/newsletter.js's success
+// swap said "Check your inbox for the guides," and index.html's homepage-quiz
+// lead form (which promises "the free starter lessons by email" before
+// submit) said "Sent — check your inbox." on success. Anyone who finished the
+// quiz or signed up for the newsletter and actually checked their inbox found
+// nothing, and never would. Fixed both to say only what is true today: the
+// address is saved and future sends will honor the unsubscribe link.
+test('newsletter/lead-capture success copy never claims an email was already sent, since no mail provider is wired into this repo', () => {
+  const newsletterSrc = read('assets/newsletter.js');
+  const indexSrc = read('index.html');
+  for (const [label, src] of [['assets/newsletter.js', newsletterSrc], ['index.html', indexSrc]]) {
+    assert.doesNotMatch(src, /check your inbox/i,
+      `${label}'s success copy tells a visitor to check their inbox, but docs/NEWSLETTER.md states no mail provider is wired into this repo -- nothing is ever sent`);
+    assert.doesNotMatch(src, /\bSent\b.*inbox/i,
+      `${label}'s success copy claims an email was sent, which this site cannot do yet`);
+  }
+  // docs/NEWSLETTER.md's own rule must still say what it says today, so this
+  // test's premise can't silently go stale if mail sending is ever added.
+  // The sentence wraps across a line break in the doc's prose, so flatten
+  // whitespace before matching it (same approach as the OWNER-CHECKLIST.md
+  // prose check above).
+  const newsletterDoc = read('docs/NEWSLETTER.md').replace(/\s+/g, ' ');
+  assert.match(newsletterDoc, /Do not advertise a welcome email until there is one/,
+    'docs/NEWSLETTER.md no longer states the no-welcome-email rule this test enforces -- if a mail provider was added, this test should be updated/removed, not left passing by accident');
+});

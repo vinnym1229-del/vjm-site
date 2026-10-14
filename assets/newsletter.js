@@ -165,8 +165,14 @@
           // its own live region and its own focus the replacement announces
           // nothing to a screen reader and strands keyboard focus on <body>
           // once the submit button it was on is gone.
+          // No welcome email exists to point anyone at yet (there is no mail
+          // provider wired into this repo at all, see docs/NEWSLETTER.md) --
+          // telling someone to go look for one would be a promise this site
+          // cannot keep, so this says only what is actually true right now:
+          // the address is saved and future sends will honor the
+          // unsubscribe link.
           form.innerHTML = '<p class="nl-kicker" role="status" aria-live="polite" tabindex="-1">You’re on the list</p>'
-            + '<p class="nl-sub" style="margin:0">Check your inbox for the guides. Every email has an '
+            + '<p class="nl-sub" style="margin:0">We’ll email you as guides go out. Every email will have an '
             + 'unsubscribe link at the bottom, and you can also '
             + '<a href="/unsubscribe.html">unsubscribe here</a> any time.</p>';
           form.querySelector('.nl-kicker').focus();

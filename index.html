@@ -2086,7 +2086,11 @@ function renderQuizLead(track) {
     window.vjmLead.submit(input.value, { track: track, source: 'homepage-quiz', consent: consented, turnstileToken: form.dataset.turnstileToken || '' }).then(function (res) {
       button.disabled = false;
       if (res.ok) {
-        msg.textContent = 'Sent — check your inbox.';
+        // Same reasoning as assets/newsletter.js's success copy: no mail
+        // provider is wired into this site yet, so telling someone an email
+        // is waiting would promise something that cannot happen. Say only
+        // what is true now.
+        msg.textContent = 'You’re on the list — we’ll email you.';
         form.style.display = 'none';
       } else if (res.reason === 'invalid_email') {
         msg.textContent = 'That does not look like an email address — check it and try again.';
