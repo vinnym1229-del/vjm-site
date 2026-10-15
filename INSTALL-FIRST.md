@@ -8,7 +8,7 @@ Upload the package to the repository connected to your existing Cloudflare Pages
 
 ## 2. Add Cloudflare secrets
 
-In **Cloudflare Dashboard â†’ Workers & Pages â†’ your Pages project â†’ Settings â†’ Variables and Secrets**, add these as encrypted secrets for Production and Preview:
+In **Cloudflare Dashboard → Workers & Pages → your Pages project → Settings → Variables and Secrets**, add these as encrypted secrets for Production and Preview:
 
 - `SESSION_SIGNING_SECRET` (REQUIRED — dedicated session key, ≥32 random chars)
 - `ALPACA_API_KEY`
