@@ -845,15 +845,24 @@ body.light-mode .curr .vjm-miss{background:rgba(0,0,0,.03);}
       if (retry) {
         retry.type = 'button';
         retry.addEventListener('click', () => {
+          // Clear every missed question's state, but scroll to only the
+          // first one — calling scrollIntoView() once per missed question
+          // left the page parked on the *last* one, since each call
+          // overrides the browser's one scroll target before the previous
+          // animation finishes. A learner with misses spread across a long
+          // quiz would land far past earlier missed questions whose radios
+          // had already been silently cleared.
+          let first = null;
           result.missed.forEach((m) => {
             const block = qs(`.quiz-q[data-qi="${m.qi}"]`, quiz);
             if (!block) return;
+            if (!first) first = block;
             qsa('input[type="radio"]', block).forEach((r) => { r.checked = false; });
             qsa('.quiz-choice', block).forEach((c) => c.classList && c.classList.remove('correct', 'incorrect'));
             const ex = qs('.quiz-explain', block);
             if (ex && ex.classList) ex.classList.remove('show');
-            if (typeof block.scrollIntoView === 'function') block.scrollIntoView({ behavior: 'smooth', block: 'center' });
           });
+          if (first && typeof first.scrollIntoView === 'function') first.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
         attach(box, retry);
       }
