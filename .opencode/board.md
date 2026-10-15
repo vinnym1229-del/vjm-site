@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | docs/DEPLOYMENT.md; tests/regressions.test.mjs | Document the `AI` Workers AI binding (functions/api/_lib/ai.js) in DEPLOYMENT.md's secrets/bindings table -- same "documented somewhere but not in the one deploy checklist doc" gap already fixed for WHOP_API_KEY, FOREX_CALENDAR_SOURCE_URL, GOOGLE_CLIENT_ID, TURNSTILE_SITE_KEY/SECRET_KEY | 2026-10-15 |
 
 ## Queued (unclaimed, safe to take)
 
