@@ -276,6 +276,8 @@ test('index.html hero countdown status only re-announces when its text actually 
   const dayNamesSrc = index.match(/const PJ_DAY_NAMES = \[[^\]]*\];/)[0];
   const nextSessionSrc = index.match(/function pjNextSession\(\) \{[\s\S]*?\n\}\n/)[0];
   const fmtClockSrc = index.match(/function pjFmtClock\(mins\) \{[\s\S]*?\n\}\n/)[0];
+  const offsetSrc = index.match(/function nyUtcOffsetMinutes\(date\) \{[\s\S]*?\n\}\n/)[0];
+  const wallClockSrc = index.match(/function nyWallClockToInstant\([^)]*\) \{[\s\S]*?\n\}\n/)[0];
   const tickSrc = index.match(/function tickCountdown\(\) \{[\s\S]*?\n\}\n/)[0];
   assert.ok(tickSrc, 'tickCountdown() not found');
 
@@ -295,7 +297,13 @@ test('index.html hero countdown status only re-announces when its text actually 
   };
   vm.createContext(sandbox);
   vm.runInContext(
+    // pjEtNow()/pjRealNow() are both pinned to the same fake moment here --
+    // tickCountdown() reads NY calendar fields off pjEtNow() and now builds
+    // its target via the real nyWallClockToInstant() (extracted, unmodified)
+    // against pjRealNow(), so this exercises the real fix, not a shortcut.
     'function pjEtNow(){ const n = __FAKE_NOW__; return new Date(n.y, n.m, n.d, n.h, n.min); }\n' +
+    'function pjRealNow(){ const n = __FAKE_NOW__; return nyWallClockToInstant(n.y, n.m, n.d, n.h, n.min); }\n' +
+    offsetSrc + '\n' + wallClockSrc + '\n' +
     sessionsSrc + '\n' + dayNamesSrc + '\n' + nextSessionSrc + '\n' + fmtClockSrc + '\n' + tickSrc +
     'this.tickCountdown = tickCountdown;',
     sandbox,
@@ -315,6 +323,56 @@ test('index.html hero countdown status only re-announces when its text actually 
   sandbox.tickCountdown();
   assert.equal(writes.length, 2, 'a genuine state change (session goes live) must still be announced');
   assert.match(writes[1], /LIVE NOW/);
+});
+
+// ---------------------------------------------------------------------------
+// Incident: index.html's hero countdown built its target by calling
+// setDate()/setHours() on pjEtNow()'s return value -- a Date whose fields
+// read correctly as the NY wall clock, but whose underlying timestamp is
+// the visitor's OWN local timezone reinterpreting those NY numbers as if
+// they were local. Mutating it with setDate()/setHours() therefore applies
+// the visitor's own DST calendar to NY's clock. For about a week around
+// each DST changeover -- any visitor whose local timezone doesn't flip on
+// the exact same night as New York (true for virtually every non-US/Canada
+// visitor, and for anyone in a timezone with no DST at all) -- the
+// countdown silently drifted by an hour, even though the "Next: ..."
+// session label right next to it stayed correct. nyWallClockToInstant()
+// fixes this by converting a NY wall-clock date/time straight to a real
+// UTC instant without ever mutating a borrowed-timezone object, so its
+// result must never depend on the visitor's own clock.
+test('nyWallClockToInstant() is independent of the visitor\'s own timezone across a DST changeover', () => {
+  const index = read('index.html');
+  const offsetSrc = index.match(/function nyUtcOffsetMinutes\(date\) \{[\s\S]*?\n\}\n/)[0];
+  const wallClockSrc = index.match(/function nyWallClockToInstant\([^)]*\) \{[\s\S]*?\n\}\n/)[0];
+  assert.ok(wallClockSrc, 'nyWallClockToInstant() not found');
+
+  const sandbox = {};
+  vm.createContext(sandbox);
+  vm.runInContext(offsetSrc + '\n' + wallClockSrc + 'this.nyWallClockToInstant = nyWallClockToInstant;', sandbox);
+
+  const originalTz = process.env.TZ;
+  try {
+    // Fri Oct 30, 2026 17:30 ET -- still EDT (UTC-4), before that Sunday's
+    // 2am fall-back -- and Mon Nov 2, 2026 09:30 ET -- already EST (UTC-5),
+    // the next-session target a Friday-evening visitor's countdown resolves
+    // to. Real elapsed time between two fixed instants cannot depend on
+    // which timezone is asking, so every zone must agree on both.
+    for (const [y, m, d, hh, mm, expected] of [
+      [2026, 9, 30, 17, 30, '2026-10-30T21:30:00.000Z'],
+      [2026, 10, 2, 9, 30, '2026-11-02T14:30:00.000Z'],
+    ]) {
+      const byTz = {};
+      for (const tz of ['America/New_York', 'UTC', 'Asia/Tokyo']) {
+        process.env.TZ = tz;
+        byTz[tz] = sandbox.nyWallClockToInstant(y, m, d, hh, mm).toISOString();
+      }
+      assert.equal(byTz['UTC'], byTz['America/New_York'], 'must not depend on the visitor\'s own timezone');
+      assert.equal(byTz['Asia/Tokyo'], byTz['America/New_York'], 'must not depend on the visitor\'s own timezone');
+      assert.equal(byTz['America/New_York'], expected);
+    }
+  } finally {
+    process.env.TZ = originalTz;
+  }
 });
 
 // ---------------------------------------------------------------------------

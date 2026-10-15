@@ -343,7 +343,7 @@ test('sitemap.xml\'s own comment names every permanently-noindexed page it exclu
 // again without sitemap.xml being updated alongside it, the hash mismatch
 // fails loudly instead of silently drifting for weeks like the original bug.
 const SITEMAP_LASTMOD_PINS = {
-  'index.html': { lastmod: '2026-10-14', sha256: 'b15b002613d1eb2d342d3c3ec5cad38542552f56e53419da50da0800a4dad319' },
+  'index.html': { lastmod: '2026-10-15', sha256: '2a0a4b61b42540db3f5632aeb4d595103217103f2cbed1f46cbea43b58deafec' },
   'stock-breakdown.html': { lastmod: '2026-10-13', sha256: '8f6caac63a24ae48bb208f5c285606dfd8aa7b4d652388995c2c17309f4c4e07' },
   'futures-dissection.html': { lastmod: '2026-10-13', sha256: 'e9d290cf6ec1841b9cc193b45f540c69792aed98684aca0ca2f5de7c25d65133' },
   'psychology-enhancer.html': { lastmod: '2026-10-13', sha256: '8a0132cdacdece37ae41c707dc284dd89043a9b6bcd4eb29c42592af1bca39bd' },

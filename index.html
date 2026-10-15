@@ -1798,6 +1798,41 @@ function pjEtNow() {
   return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
 }
 
+// pjEtNow()'s round-trip through toLocaleString() is safe to READ (its
+// fields correctly show the New York wall clock) but unsafe to MUTATE:
+// its underlying timestamp is the visitor's own local timezone
+// reinterpreting NY's wall-clock numbers as if they were local, so
+// setDate()/setHours() on it advances using the VISITOR's DST calendar,
+// not New York's. For ~1 week around each DST changeover -- any time the
+// visitor's own timezone doesn't flip on the same night as NY (true for
+// every non-US/Canada visitor, and for any visitor whose zone has no DST
+// at all) -- that silently drifts the result by an hour. These two
+// helpers build the real UTC instant for a given NY wall-clock
+// date/time directly, with no dependency on the visitor's clock.
+function nyUtcOffsetMinutes(date) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).formatToParts(date).reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});
+  const hour = parts.hour === '24' ? 0 : Number(parts.hour);
+  const asIfUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), hour, Number(parts.minute), Number(parts.second));
+  return Math.round((asIfUtc - date.getTime()) / 60000);
+}
+
+function nyWallClockToInstant(y, m, d, hh, mm) {
+  const guess = Date.UTC(y, m, d, hh, mm, 0);
+  const offsetMin = nyUtcOffsetMinutes(new Date(guess));
+  return new Date(guess - offsetMin * 60000);
+}
+
+// Thin, overridable wrapper around "the real current instant" -- kept
+// separate from pjEtNow() so a test can pin it exactly like pjEtNow(),
+// the same convention this file already uses throughout.
+function pjRealNow() {
+  return new Date();
+}
+
 function pjNextSession() {
   const now = pjEtNow();
   for (let offset = 0; offset < 8; offset++) {
@@ -1856,16 +1891,23 @@ function tickCountdown() {
   }
 
   const s = next.session;
-  const target = pjEtNow();
-  target.setDate(target.getDate() + next.dayOffset);
-  target.setHours(Math.floor(s.start / 60), s.start % 60, 0, 0);
-  const total = Math.max(0, Math.floor((target - pjEtNow()) / 1000));
+  const nowNy = pjEtNow();
+  const target = nyWallClockToInstant(
+    nowNy.getFullYear(), nowNy.getMonth(), nowNy.getDate() + next.dayOffset,
+    Math.floor(s.start / 60), s.start % 60
+  );
+  const total = Math.max(0, Math.floor((target - pjRealNow()) / 1000));
   const hh = String(Math.floor(total / 3600)).padStart(2, '0');
   const mm = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
   const ss = String(total % 60).padStart(2, '0');
 
-  const when = next.dayOffset === 0 ? 'Today' : next.dayOffset === 1 ? 'Tomorrow' : PJ_DAY_NAMES[target.getDay()];
-  const etDow = pjEtNow().getDay();
+  // Day-of-week for the target's calendar date, computed from the NY
+  // calendar date directly (not by reading target.getDay(), which would
+  // reinterpret the now-correct real instant through the visitor's own
+  // local timezone and could land on the wrong day near midnight).
+  const targetDow = new Date(Date.UTC(nowNy.getFullYear(), nowNy.getMonth(), nowNy.getDate() + next.dayOffset)).getUTCDay();
+  const when = next.dayOffset === 0 ? 'Today' : next.dayOffset === 1 ? 'Tomorrow' : PJ_DAY_NAMES[targetDow];
+  const etDow = nowNy.getDay();
   display.className = 'cd-time';
   if (etDow === 0 || etDow === 6) {
     display.textContent = '';
