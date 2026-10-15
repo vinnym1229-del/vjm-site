@@ -325,3 +325,29 @@ test('chatbot widget light-mode text colors clear WCAG AA against their own back
   assert.ok(contrast(hexToRgb(footColor), white) >= 4.5,
     `.vjm-chat-foot's unchanged color (${footColor}) no longer clears AA on a light-mode background`);
 });
+
+// premium-guidance.html carries its own inline :root/body.light-mode palette
+// instead of assets/site.css's shared tokens (same pattern as stock-lab.html
+// and forex-calendar.html), so the shared-token test above never sees it.
+// Its dark --muted had drifted to #6f6f76 -- the project's own "muted on a
+// LIGHT background" constant (see .vjm-chat-foot above) -- instead of the
+// #9a9aa0 every sibling dark-mode page uses, landing at 3.92:1 on --bg
+// (#0c0c0d) against a 4.5:1 floor. Automated contrast/axe sweeps never
+// caught it because the two sections using --muted (#lesson-coverage,
+// the Lesson Assistant/AI Trend Analyst disclaimers) carry `hidden` in the
+// markup and only unhide after a real signed-in session check passes.
+test("premium-guidance.html's own inline --muted clears WCAG AA against --bg in both themes", () => {
+  const html = read('premium-guidance.html');
+  const darkBlock = html.match(/:root\{([^}]*)\}/)[1];
+  const lightBlock = html.match(/body\.light-mode\{([^}]*)\}/)[1];
+  const varOf = (src, name) => {
+    const m = src.match(new RegExp(`--${name}:(#[0-9a-fA-F]{3,8})`));
+    return m ? hexToRgb(m[1]) : null;
+  };
+  for (const [block, label] of [[darkBlock, 'dark'], [lightBlock, 'light']]) {
+    const bg = varOf(block, 'bg'), muted = varOf(block, 'muted');
+    assert.ok(bg && muted, `${label}: premium-guidance.html's own --bg/--muted must be declared as hex`);
+    const ratio = contrast(muted, bg);
+    assert.ok(ratio >= 4.5, `${label}: premium-guidance.html's own --muted on --bg is ${ratio.toFixed(2)}:1`);
+  }
+});
