@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | INSTALL-FIRST.md | Fix mojibake (double-encoded UTF-8 arrows) found by a fresh-eyes sweep | 2026-10-15 |
 
 ## Queued (unclaimed, safe to take)
 
