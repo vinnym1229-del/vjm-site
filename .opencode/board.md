@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | fresh-eyes sweep, scope TBD pending agent findings | Run the scheduled maintenance cycle: verify tests/live deployment, then find and fix one real improvement | 2026-10-15 |
 
 ## Queued (unclaimed, safe to take)
 
