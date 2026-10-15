@@ -42,9 +42,11 @@ function makeEl() {
 }
 
 // A quick-filter button stub that actually tracks its own active class and
-// lets a test fire the click handler the page script registers on it.
+// aria-pressed attribute, and lets a test fire the click handler the page
+// script registers on it.
 function makeQuickButton(impact, range, active) {
   const classes = new Set(active ? ['active'] : []);
+  const attrs = { 'aria-pressed': active ? 'true' : 'false' };
   const listeners = {};
   return {
     dataset: { impact, range },
@@ -54,6 +56,8 @@ function makeQuickButton(impact, range, active) {
       contains: (c) => classes.has(c),
       toggle: (c, force) => (force ? classes.add(c) : classes.delete(c)),
     },
+    setAttribute(name, value) { attrs[name] = value; },
+    getAttribute(name) { return attrs[name]; },
     addEventListener(ev, fn) { listeners[ev] = fn; },
     fire(ev) { listeners[ev](); },
   };
@@ -162,7 +166,8 @@ function setupQuickButtonSandbox() {
   vm.createContext(sandbox);
   vm.runInContext(extractAppScript(), sandbox);
   const active = () => quickButtons.filter((b) => b.classList.contains('active')).map((b) => `${b.dataset.impact}/${b.dataset.range}`);
-  return { elements, quickButtons, active };
+  const pressed = () => quickButtons.filter((b) => b.getAttribute('aria-pressed') === 'true').map((b) => `${b.dataset.impact}/${b.dataset.range}`);
+  return { elements, quickButtons, active, pressed };
 }
 
 test('changing the Range dropdown directly updates which quick-filter pill is highlighted', () => {
@@ -193,6 +198,38 @@ test('clicking a quick-filter pill still sets both dropdowns and highlights itse
   assert.equal(elements.get('impact').value, 'major');
   assert.equal(elements.get('range').value, 'today');
   assert.deepEqual(active(), ['major/today']);
+});
+
+// Incident: syncQuickButtons() only ever toggled the ".active" CSS class,
+// the same visual-only signal fixed on ~10 other toggle-button widgets
+// across this site (premTab, setAnalystYears, period/sim/gain-mode tabs,
+// etc. -- see decisions.md). A screen-reader or keyboard-only visitor
+// tabbing through these 5 filter pills heard five identical "button"s with
+// no indication which preset, if any, was applied. Fixed by having
+// syncQuickButtons() also set aria-pressed alongside the class toggle.
+test('the quick-filter pills carry aria-pressed in sync with the active class', () => {
+  const { pressed } = setupQuickButtonSandbox();
+  assert.deepEqual(pressed(), ['major/week'], 'page loads with the Week pill marked pressed');
+});
+
+test('changing a dropdown directly updates aria-pressed, not just the active class', () => {
+  const { elements, pressed } = setupQuickButtonSandbox();
+  elements.get('range').value = 'today';
+  elements.get('range').dispatch('change');
+  assert.deepEqual(pressed(), ['major/today'], 'Today pill must become aria-pressed, Week pill must not stay pressed');
+});
+
+test('a dropdown combination no pill represents leaves none aria-pressed', () => {
+  const { elements, pressed } = setupQuickButtonSandbox();
+  elements.get('range').value = 'future';
+  elements.get('range').dispatch('change');
+  assert.deepEqual(pressed(), []);
+});
+
+test('clicking a quick-filter pill sets its own aria-pressed to true', () => {
+  const { quickButtons, pressed } = setupQuickButtonSandbox();
+  quickButtons[3].fire('click'); // "Today" button
+  assert.deepEqual(pressed(), ['major/today']);
 });
 
 console.log('VJM forex-calendar stale-UI tests passed.');
