@@ -33,6 +33,7 @@ via PR).
 | `FOREX_CALENDAR_SOURCE_URL` | optional, swaps in a paid/private economic-calendar feed for `/api/forex-calendar` — omit it and the default public ForexFactory feed is used, matching forex-calendar.html's own "API note" to the owner |
 | `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | optional bot-check on verify-premium and the newsletter/lead-capture forms — soft-required by design (checks are skipped until `TURNSTILE_SECRET_KEY` is set, per `_lib/turnstile.js`); set BOTH or the widget renders unchecked (site key only) or every submit is rejected (secret only) — see docs/OWNER-CHECKLIST.md |
 | D1 bindings: `RESEARCH_DB`, `RATELIMIT_DB` | snapshots, rate limits, audit, content, analytics, newsletter (all migrations share these bindings) |
+| `AI` binding (no value — Cloudflare Dashboard → Pages project → Settings → Functions → AI bindings, name it exactly `AI`) | optional narrative layer for `/api/assistant`, `/api/market-brief`, and `/api/premium-market-analyst` (Workers AI free daily allocation, no API key, no per-token billing) — omit it and all three silently degrade to data-only output, never break (see `functions/api/_lib/ai.js`) |
 
 Apply migrations (all of them — later migrations add the content CMS,
 entitlement-tier columns, analytics, and newsletter tables that production

@@ -1024,6 +1024,26 @@ test('.env.example and docs/DEPLOYMENT.md document TURNSTILE_SITE_KEY/TURNSTILE_
     'expected turnstile.js turnstileConfigured() to still gate on env.TURNSTILE_SECRET_KEY');
 });
 
+// Incident: the `AI` Workers AI binding (functions/api/_lib/ai.js) powers the
+// narrative layer for /api/assistant, /api/market-brief, and
+// /api/premium-market-analyst, and .env.example already explains how to bind
+// it -- but docs/DEPLOYMENT.md's secrets/bindings table, the one doc whose
+// entire job is "here is every secret/binding to set in Cloudflare," never
+// mentioned it. Same doc-discoverability gap already closed above for
+// WHOP_API_KEY, FOREX_CALENDAR_SOURCE_URL, GOOGLE_CLIENT_ID, and
+// TURNSTILE_SITE_KEY/TURNSTILE_SECRET_KEY; the AI binding was a second
+// instance those sweeps missed.
+test('.env.example and docs/DEPLOYMENT.md document the AI Workers AI binding', () => {
+  assert.match(read('.env.example'), /Workers AI/,
+    '.env.example must mention the Workers AI binding');
+  assert.match(read('docs/DEPLOYMENT.md'), /\bAI\b.*binding/,
+    'docs/DEPLOYMENT.md must mention the AI binding');
+  assert.match(read('docs/DEPLOYMENT.md'), /assistant.*market-brief.*premium-market-analyst/,
+    'docs/DEPLOYMENT.md must say which endpoints the AI binding powers');
+  assert.match(read('functions/api/_lib/ai.js'), /Boolean\(env\.AI/,
+    'expected ai.js aiConfigured() to still gate on env.AI');
+});
+
 // Incident: .env.example's own header says it IS the checklist to paste into
 // Cloudflare ("Configure these in Cloudflare Dashboard ... Copy names
 // exactly"), but five real, live-code env vars were never added to it even
