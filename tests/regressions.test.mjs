@@ -32,6 +32,44 @@ test('every same-site fragment link resolves to a real id', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: stock-lab.html's #premium section opened <div class="premium-
+// tools" id="premiumTools"> but never closed it before </section> -- one
+// </div> short (30 <div opens vs 29 </div> closes on that line). Browsers'
+// HTML5 parse-error recovery happened to mask it (the stray </section>
+// implicitly pops premiumTools off the open-element stack too, and since
+// premiumTools had no later sibling inside #premium, the recovered DOM came
+// out identical to the intended one) -- so there was no visible symptom,
+// but any future edit adding a sibling after the premiumTools block inside
+// #premium would have silently nested it *inside* premiumTools instead of
+// beside it. No other page or tag pair had this problem; checked with a
+// real open-element-stack walk, not a naive count, with <script>/<style>/
+// comments stripped first to avoid false positives from JSON-LD or template
+// literals that contain literal "<div"/"</div>" text.
+test('every page\'s <div>/<section> tags are balanced (no HTML5 parse-error recovery relied on)', () => {
+  const VOID = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+    'link', 'meta', 'param', 'source', 'track', 'wbr']);
+  const stripNonMarkup = (html) => html
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
+  const problems = [];
+  for (const p of PAGES) {
+    const html = stripNonMarkup(read(p));
+    const stack = [];
+    for (const m of html.matchAll(/<(\/?)(div|section)\b[^>]*?(\/?)>/gi)) {
+      const closing = m[1] === '/';
+      const tag = m[2].toLowerCase();
+      if (VOID.has(tag) || m[3] === '/') continue;
+      if (!closing) { stack.push(tag); continue; }
+      const top = stack.pop();
+      if (!top || top !== tag) problems.push(`${p}: found </${tag}> but innermost open tag was ${top ? `<${top}>` : '(none)'}`);
+    }
+    if (stack.length) problems.push(`${p}: ${stack.length} unclosed <${stack[stack.length - 1]}>`);
+  }
+  assert.deepEqual(problems, [], `unbalanced div/section markup:\n  ${problems.join('\n  ')}`);
+});
+
+// ---------------------------------------------------------------------------
 // Incident: research-engine.html's premium access-code field carried
 // autocomplete="current-password" while every other copy of the same gate
 // (stock-lab, premium-guidance, futures-dissection, psychology-enhancer,
