@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | TBD — scoping via fresh-eyes sweep | 733/733 tests green going in; `pj.vjm.pages.dev` live-probe blocked by the standing whole-`*.pages.dev` egress-proxy policy (403/`connect_rejected`), substituted GitHub Actions `test.yml` run `38852725867` (passed, head_sha `c8875f7`, this run's exact starting HEAD) as the last-known-good live signal. Looking for one real (a)-(e) improvement. | 2026-10-16 |
 
 ## Queued (unclaimed, safe to take)
 
