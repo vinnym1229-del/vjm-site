@@ -48,7 +48,7 @@ async function lookup(env, symbol) {
   }
 }
 
-// The 30/min rate-limit guard (keyed by scope+ip+symbol, since this route
+// The 30/min rate-limit guard (keyed by scope+ip only, since this route
 // costs a real Alpaca call) trips before the 31st request for the same
 // symbol from the same IP reaches fetch at all.
 {
@@ -70,6 +70,33 @@ async function lookup(env, symbol) {
     const limitedData = await limited.json();
     assert.equal(limitedData.ok, false);
     assert.equal(calls, 30, 'the limited request must never reach Alpaca');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+// The same guard must cap total volume from one IP even when every request
+// uses a *different* symbol -- proving the bucket is no longer keyed by the
+// attacker-controlled symbol itself. Before the fix, each distinct symbol
+// started its own fresh, unthrottled bucket, so cycling through fake symbols
+// let one IP make unbounded real Alpaca calls.
+{
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => { calls += 1; return Response.json({ SYM0: {} }); };
+  try {
+    const ip = '10.7.0.2';
+    const reqWith = (symbol) => onRequestGet({
+      request: new Request(`https://example.com/api/stock-research?symbol=${symbol}`, {
+        headers: { 'CF-Connecting-IP': ip },
+      }),
+      env: baseEnv(),
+    });
+    for (let i = 0; i < 30; i++) await reqWith(`SYM${i}`);
+    assert.equal(calls, 30);
+    const limited = await reqWith('SYM30');
+    assert.equal(limited.status, 429, 'a 31st distinct symbol from the same IP must still be capped');
+    assert.equal(calls, 30, 'the limited request must never reach Alpaca, even with a brand-new symbol');
   } finally {
     globalThis.fetch = originalFetch;
   }

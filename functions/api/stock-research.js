@@ -23,9 +23,19 @@ export async function onRequestGet(context) {
     }, 503);
   }
 
-  const limit = await checkRateLimit(env, request, 'stock-research', 30, symbol);
+  // No per-symbol identifier here on purpose: this route costs a real Alpaca
+  // call per request, and keying the bucket by the symbol in the query string
+  // -- as this call used to -- let an attacker cycle through a new fake
+  // symbol (cleanSymbol() accepts any 1-10 char [A-Z0-9.^-] string) on every
+  // request, each one starting its own fresh, unthrottled bucket, for
+  // unbounded request volume against the shared Alpaca key from one IP.
+  // Every sibling route that also costs an upstream call (yahoo-news.js,
+  // which takes the same ?symbol= param; ticker.js; research-engine.js;
+  // market-brief.js) already caps per-IP only, with no identifier; this call
+  // was the outlier.
+  const limit = await checkRateLimit(env, request, 'stock-research', 30);
   if (!limit.allowed) {
-    return json({ ok: false, error: 'Too many requests for this symbol. Try again shortly.' }, 429);
+    return json({ ok: false, error: 'Too many requests. Try again shortly.' }, 429);
   }
 
   try {

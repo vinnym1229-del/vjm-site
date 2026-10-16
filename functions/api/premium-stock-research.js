@@ -33,7 +33,13 @@ export async function onRequestGet(context) {
     return json({ ok: false, error: 'Live quotes are not configured on the server.' }, 503);
   }
 
-  const limit = await checkRateLimit(env, request, 'premium-stock', 30, symbol);
+  // No per-symbol identifier here on purpose: same bucket-bypass this route's
+  // free sibling (stock-research.js) carried -- keying by the symbol in the
+  // query string let an attacker cycle through a new fake symbol on every
+  // request, each starting its own fresh, unthrottled bucket, for unbounded
+  // request volume against the shared Alpaca key from one authenticated
+  // session. Per-IP only now, matching every other upstream-calling route.
+  const limit = await checkRateLimit(env, request, 'premium-stock', 30);
   if (!limit.allowed) return json({ ok: false, error: 'Too many requests. Try again shortly.' }, 429);
 
   try {

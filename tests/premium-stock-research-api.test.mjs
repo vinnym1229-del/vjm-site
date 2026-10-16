@@ -133,7 +133,7 @@ async function lookup(env, symbol, headers = {}) {
   assert.equal(status, 401);
 }
 
-// The 30/min rate-limit guard (scope 'premium-stock', keyed by ip+symbol)
+// The 30/min rate-limit guard (scope 'premium-stock', keyed by ip only)
 // trips before the 31st request reaches Alpaca -- same guard the free
 // /api/stock-research sibling already pins (tests/stock-research-api.test.mjs),
 // but never checked here even though this is the paid route paying members
@@ -161,6 +161,37 @@ async function lookup(env, symbol, headers = {}) {
     const limitedData = await limited.json();
     assert.equal(limitedData.ok, false);
     assert.equal(calls, 30, 'the limited request must never reach Alpaca');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+// The same guard must cap total volume from one IP+session even when every
+// request uses a *different* symbol -- proving the bucket is no longer keyed
+// by the attacker-controlled symbol itself, same gap just closed on the free
+// /api/stock-research sibling. Before the fix, each distinct symbol started
+// its own fresh, unthrottled bucket.
+{
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => { calls += 1; return Response.json({ SYM0: {} }); };
+  try {
+    const ip = '10.9.0.2';
+    const cookie = await (async () => {
+      const token = await signSession({ exp: Date.now() + 60000 }, SIGNING_SECRET);
+      return { Cookie: `__Host-vjm_session=${token}` };
+    })();
+    const reqWith = (symbol) => onRequestGet({
+      request: new Request(`https://example.com/api/premium-stock-research?symbol=${symbol}`, {
+        headers: { 'CF-Connecting-IP': ip, ...cookie },
+      }),
+      env: baseEnv(),
+    });
+    for (let i = 0; i < 30; i++) await reqWith(`SYM${i}`);
+    assert.equal(calls, 30);
+    const limited = await reqWith('SYM30');
+    assert.equal(limited.status, 429, 'a 31st distinct symbol from the same IP+session must still be capped');
+    assert.equal(calls, 30, 'the limited request must never reach Alpaca, even with a brand-new symbol');
   } finally {
     globalThis.fetch = originalFetch;
   }
