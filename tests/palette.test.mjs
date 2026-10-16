@@ -352,6 +352,43 @@ test("premium-guidance.html's own inline --muted clears WCAG AA against --bg in 
   }
 });
 
+// options-lab.html's own inline palette (same independent-:root pattern as
+// premium-guidance.html/stock-lab.html/forex-calendar.html) had its dark
+// --gold set to #e26060 -- the file's own --red literal, not the #d14343
+// every sibling page's dark --gold uses -- a copy-paste mixup. .tab-btn.active
+// (the page's top-level "Options Basics" / "GEX" / "Full Curriculum"
+// selector, active by default on first paint) paints white text on
+// background:var(--gold), which only cleared 3.46:1 on #e26060 -- under the
+// 4.5:1 AA floor. Simply swapping --gold to #d14343 was rejected: that value
+// is also used as this page's own SVG chart annotation text color directly on
+// --card (#161618), where it only clears ~3.96:1, so fixing the button that
+// way would have traded one AA failure for another in the same file. Fixed
+// by pointing .tab-btn.active at --gold2 (#a63333 dark / #8c1a14 light)
+// instead -- a token this file already declared but never referenced
+// anywhere, and the exact color assets/curriculum.css's own `.group-tab.active`
+// (the same "active top-level tab, white text" pattern) pairs with --gold in
+// its gradient for solid-fill buttons. --gold itself, and every other
+// consumer of it in this file, is untouched.
+test("options-lab.html's .tab-btn.active uses --gold2, which clears WCAG AA for white text in both themes", () => {
+  const html = read('options-lab.html');
+  assert.match(html, /\.tab-btn\.active\s*\{\s*background:\s*var\(--gold2\)/,
+    'options-lab.html .tab-btn.active must paint its background from --gold2, not --gold');
+
+  const darkBlock = html.match(/:root\s*\{([^}]*)\}/)[1];
+  const lightBlock = html.match(/body\.light-mode\s*\{([^}]*)\}/)[1];
+  const varOf = (src, name) => {
+    const m = src.match(new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{3,8})`));
+    return m ? hexToRgb(m[1]) : null;
+  };
+  const white = hexToRgb('#ffffff');
+  for (const [block, label] of [[darkBlock, 'dark'], [lightBlock, 'light']]) {
+    const gold2 = varOf(block, 'gold2');
+    assert.ok(gold2, `${label}: options-lab.html's own --gold2 must be declared as hex`);
+    const ratio = contrast(white, gold2);
+    assert.ok(ratio >= 4.5, `${label}: options-lab.html's white-on-gold2 is ${ratio.toFixed(2)}:1`);
+  }
+});
+
 // unsubscribe.html's .back/#theme-toggle hover states used the plain
 // --vjm-red token (tokens.css's dark value #d14343), which only clears
 // 4.28:1 against --vjm-bg (#0c0c0d) -- under the 4.5:1 AA floor, same bug
