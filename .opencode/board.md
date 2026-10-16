@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | TBD — fresh-eyes sweep + coverage report, scope narrows once a lead is picked | Scheduled maintenance cycle: tests green (731/731), check:syntax clean, CI green on HEAD a4816b8; live-deployment curl probes blocked by this session's egress proxy policy (pages.dev CONNECT -> 403, confirmed via agent-proxy status endpoint, same known artifact as prior runs) so substituted the matching GitHub Actions test.yml run as the live signal. Looking for one real improvement. | 2026-10-16 00:40 UTC |
 
 ## Queued (unclaimed, safe to take)
 
