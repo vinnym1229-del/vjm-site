@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | TBD — running npm test + live-deployment probes first, will narrow scope once a target is picked | 2026-10-16 14:40 UTC |
 
 ## Queued (unclaimed, safe to take)
 
