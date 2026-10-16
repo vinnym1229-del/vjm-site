@@ -9,9 +9,18 @@
 import assert from 'node:assert/strict';
 import { onRequestGet } from '../functions/api/check-member-status.js';
 
+// Each call that doesn't supply its own headers gets a distinct
+// CF-Connecting-IP so the shared 'member-status' rate-limit bucket (8/min,
+// no per-request identifier as of the enumeration fix below) never trips
+// across this file's unrelated calls -- same pattern as verify-premium-api
+// and auth-google-api's test files for the same shared-bucket reason.
+let ipCounter = 0;
 async function lookup(env, discord, headers) {
+  ipCounter += 1;
   const res = await onRequestGet({
-    request: new Request(`https://example.com/api/check-member-status?discord=${encodeURIComponent(discord)}`, { headers }),
+    request: new Request(`https://example.com/api/check-member-status?discord=${encodeURIComponent(discord)}`, {
+      headers: headers || { 'CF-Connecting-IP': `10.5.4.${ipCounter}` },
+    }),
     env,
   });
   return { status: res.status, data: await res.json() };
@@ -201,6 +210,25 @@ try {
   }
   const limited = await lookup({}, 'ratelimituser', headers);
   assert.equal(limited.status, 429);
+  assert.equal(limited.data.ok, false);
+}
+
+// ---------------------------------------------------------------------------
+// The limit must be per IP, not per handle -- otherwise an attacker can
+// enumerate membership status for an unbounded list of Discord handles from
+// one IP by never repeating a handle, since each new handle would start its
+// own fresh bucket. Same dedicated-IP-per-test pattern as above.
+// ---------------------------------------------------------------------------
+{
+  const ip = `10.5.6.${Math.floor(Math.random() * 1000)}`;
+  const headers = { 'CF-Connecting-IP': ip };
+  let last;
+  for (let i = 0; i < 8; i++) {
+    last = await lookup({}, `enum${i}handle`, headers);
+    assert.equal(last.status, 503); // unconfigured, but still a counted hit
+  }
+  const limited = await lookup({}, 'enum8handle', headers);
+  assert.equal(limited.status, 429, 'a 9th distinct handle from the same IP must still be capped');
   assert.equal(limited.data.ok, false);
 }
 

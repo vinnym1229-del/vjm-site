@@ -32,7 +32,15 @@ async function handle(context) {
     return json({ ok: false, error: 'Enter a valid Discord username.' }, 400);
   }
 
-  const limit = await checkRateLimit(env, request, 'member-status', 8, raw.slice(0, 16));
+  // No per-handle identifier here on purpose: this endpoint's whole job is
+  // guarding against someone enumerating Discord handles to learn who is a
+  // paying member (docs/MASTER-AUDIT.md's P0-5). Keying the bucket by the
+  // very value being enumerated -- as this call used to -- let an attacker
+  // cycle through a handle list from one IP with each handle starting a
+  // fresh, unthrottled bucket. verify-premium.js/auth-google.js face the
+  // same enumeration risk over codes/emails and already omit an identifier
+  // for the same reason; this call now matches that convention.
+  const limit = await checkRateLimit(env, request, 'member-status', 8);
   if (!limit.allowed) {
     return json({ ok: false, error: 'Too many lookups. Wait a minute and try again.' }, 429);
   }
