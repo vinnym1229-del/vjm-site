@@ -3595,3 +3595,27 @@ test('newsletter/lead-capture success copy never claims an email was already sen
   assert.match(newsletterDoc, /Do not advertise a welcome email until there is one/,
     'docs/NEWSLETTER.md no longer states the no-welcome-email rule this test enforces -- if a mail provider was added, this test should be updated/removed, not left passing by accident');
 });
+
+// Incident: index.html's homepage-quiz lead form promised "your recommended
+// track ... by email" before submit. The form does compute and send that
+// track (assets/funnel.js's submitLead() bundles it into payload.props), but
+// functions/api/newsletter/subscribe.js never reads body.props at all -- only
+// email/consent/turnstileToken/firstName/source are stored, so the track is
+// silently discarded with no error and no row anywhere ties a subscriber to
+// the track they were promised. Unlike "the free starter lessons" (generic
+// content any future send could include for the whole list), a per-visitor
+// "your recommended track" promise cannot be kept once the field it depends
+// on is gone the moment the request completes. Fixed by dropping the
+// personalized claim from the pre-submit copy; the generic lessons promise
+// stays, since nothing stops a future campaign from including it.
+test('homepage quiz lead-capture copy never promises a personalized "recommended track" by email, since the field is never persisted', () => {
+  const indexSrc = read('index.html');
+  assert.doesNotMatch(indexSrc, /recommended track.{0,40}by email/is,
+    'index.html\'s quiz lead-capture box promises a per-visitor "recommended track" by email, but functions/api/newsletter/subscribe.js never reads or stores body.props.track -- that promise cannot be kept');
+  // The endpoint itself must still not read a props field, so this test's
+  // premise cannot silently go stale if persistence is ever added without
+  // the copy being revisited.
+  const subscribeSrc = read('functions/api/newsletter/subscribe.js');
+  assert.doesNotMatch(subscribeSrc, /body\.props/,
+    'functions/api/newsletter/subscribe.js now reads body.props -- if a per-visitor field like the quiz track is persisted, the lead-capture copy may be safe to re-personalize and this test should be revisited');
+});
