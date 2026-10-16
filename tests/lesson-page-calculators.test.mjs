@@ -239,6 +239,17 @@ test('stock-breakdown calc(): a negative risk % floors at $0 budget and 0 shares
   assert.equal(out.cost, '$0');
 });
 
+// st-slip ("Slippage/gap buffer") carries the same unenforced min="0" as
+// every sibling field. Unlike riskPct above, a negative slip was never
+// floored: riskPerShare = |entry-stop|+slip, so slip:-5 against the page's
+// own default entry/stop (50/48.75) renders "Effective risk per share:
+// -$3.75" -- a nonsensical negative per-share risk figure on the one tool
+// whose job is producing a dollar number to size a real position from.
+test('stock-breakdown calc(): a negative slippage floors riskPerShare at the entry/stop gap, never negative', () => {
+  const out = runRiskCalc({ acct: 25000, riskPct: 1, entry: 50, stop: 48.75, slip: -5 });
+  assert.equal(out.riskPerShare, '$1.25');
+});
+
 // --- psychology-enhancer.html: Expectancy & R-Multiple Calculator (#psy-tool) --
 
 const psychologyEnhancer = readFileSync(join(ROOT, 'psychology-enhancer.html'), 'utf8');
