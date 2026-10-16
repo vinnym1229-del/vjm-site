@@ -855,6 +855,73 @@ test('docs/API.md documents forex-calendar\'s high impact filter, not just major
     'docs/API.md: forex-calendar heading omits the high impact filter');
 });
 
+// Incident: stock-research.js and premium-stock-research.js both carry a real
+// 30/min checkRateLimit() guard (the exact limiter the 2026-10-16 bucket-key
+// fix hardened to per-IP-only) and both can 502 when the upstream Alpaca call
+// or snapshot parse fails, but docs/API.md's stock-research section never
+// mentioned either status code, and its premium-stock-research section
+// -- despite the handler also gating on tier (403 upgrade_required) and on
+// Alpaca being configured (503) -- said nothing beyond "401 otherwise". A
+// developer integrating against either route, or triaging a "why am I
+// getting blocked" report, had no documented explanation for the codes
+// they'd actually see.
+test('docs/API.md documents stock-research\'s and premium-stock-research\'s rate limit and failure codes', () => {
+  assert.match(read('functions/api/stock-research.js'), /checkRateLimit\(env, request, 'stock-research', 30\)/,
+    'expected stock-research.js to still rate-limit at 30/min per IP');
+  assert.match(read('functions/api/premium-stock-research.js'), /checkRateLimit\(env, request, 'premium-stock', 30\)/,
+    'expected premium-stock-research.js to still rate-limit at 30/min per IP');
+  const doc = read('docs/API.md');
+  const stockSection = doc.slice(doc.indexOf('## GET /api/stock-research'), doc.indexOf('## GET /api/premium-stock-research'));
+  assert.match(stockSection, /429 rate limited/, 'docs/API.md: stock-research section omits its 429 rate limit');
+  assert.match(stockSection, /502/, 'docs/API.md: stock-research section omits its 502 upstream-failure code');
+  const premiumSection = doc.slice(doc.indexOf('## GET /api/premium-stock-research'), doc.indexOf('## GET /api/premium-market-analyst'));
+  assert.match(premiumSection, /upgrade_required/, 'docs/API.md: premium-stock-research section omits its 403 upgrade_required tier gate');
+  assert.match(premiumSection, /503/, 'docs/API.md: premium-stock-research section omits its 503 Alpaca-unconfigured code');
+  assert.match(premiumSection, /502/, 'docs/API.md: premium-stock-research section omits its 502 upstream-failure code');
+  assert.match(premiumSection, /429 rate limited/, 'docs/API.md: premium-stock-research section omits its 429 rate limit');
+});
+
+// Incident: yahoo-news.js and forex-calendar.js each carry a real 30/min
+// checkRateLimit() guard (both third-party-proxying routes an attacker could
+// otherwise hammer), but docs/API.md documented neither route's 429 --
+// the same "rate limit enforced in source, never mentioned in the doc" gap
+// the stock-research fix above closed for a different endpoint pair.
+test('docs/API.md documents yahoo-news\'s and forex-calendar\'s rate limit', () => {
+  assert.match(read('functions/api/yahoo-news.js'), /checkRateLimit\(context\.env, context\.request, 'yahoo-news', 30\)/,
+    'expected yahoo-news.js to still rate-limit at 30/min per IP');
+  assert.match(read('functions/api/forex-calendar.js'), /checkRateLimit\(env, request, 'forex-cal', 30\)/,
+    'expected forex-calendar.js to still rate-limit at 30/min per IP');
+  const doc = read('docs/API.md');
+  const newsSection = doc.slice(doc.indexOf('## GET /api/yahoo-news'), doc.indexOf('## GET /api/forex-calendar'));
+  assert.match(newsSection, /429 rate limited/, 'docs/API.md: yahoo-news section omits its 429 rate limit');
+  const calendarSection = doc.slice(doc.indexOf('## GET /api/forex-calendar'), doc.indexOf('## GET /api/ticker'));
+  assert.match(calendarSection, /429 rate limited/, 'docs/API.md: forex-calendar section omits its 429 rate limit');
+});
+
+// Incident: research-engine.js is the highest-stakes market-data route on the
+// site (up to 20 upstream Alpaca calls per request per its own header
+// comment) and gates on session (401), tier (403 upgrade_required, Complete
+// / "The Trifecta" only), Alpaca configuration (503), a 30/min rate limit
+// that doubles as a brute-force guard on the premium-token check, and falls
+// back to a saved D1 snapshot (cached:true) before ever 502ing -- but
+// docs/API.md's research-engine heading said only "Premium-gated research
+// ... Health exposes booleans only", documenting none of it. The highest-risk
+// endpoint in the family had the thinnest doc entry.
+test('docs/API.md documents research-engine\'s full error surface', () => {
+  const src = read('functions/api/research-engine.js');
+  assert.match(src, /checkRateLimit\(context\.env, context\.request, 'research-engine', 30\)/,
+    'expected research-engine.js to still rate-limit at 30/min per IP');
+  assert.match(src, /code:\s*'upgrade_required'/, 'expected research-engine.js to still gate tier with upgrade_required');
+  const doc = read('docs/API.md');
+  const section = doc.slice(doc.indexOf('## GET /api/research-engine'), doc.indexOf('## GET /api/assistant'));
+  assert.match(section, /401/, 'docs/API.md: research-engine section omits its 401 no-session code');
+  assert.match(section, /upgrade_required/, 'docs/API.md: research-engine section omits its 403 upgrade_required tier gate');
+  assert.match(section, /503/, 'docs/API.md: research-engine section omits its 503 Alpaca-unconfigured code');
+  assert.match(section, /502/, 'docs/API.md: research-engine section omits its 502 failure code');
+  assert.match(section, /429 rate limited/, 'docs/API.md: research-engine section omits its 429 rate limit');
+  assert.match(section, /cached/, 'docs/API.md: research-engine section omits its saved-snapshot fallback');
+});
+
 // Incident: docs/API.md documents every market-data endpoint in this family
 // (stock-research, yahoo-news, forex-calendar, research-engine) but never
 // mentioned /api/market-brief at all, despite it being the endpoint behind

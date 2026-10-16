@@ -95,11 +95,13 @@ No rate limit — delivery is HMAC-verified, not public.
 
 Alpaca IEX snapshot. `{ ok, symbol, source:{feed}, mode:"observed", precision, asOf,
 quote:{price,change,changePercent,volume,vwap,prevClose,marketCap:null} }`
-`marketCap` is always null on the free tier (no shares-outstanding source) — the UI omits it rather than showing stale values. 503 when Alpaca unconfigured.
+`marketCap` is always null on the free tier (no shares-outstanding source) — the UI omits it rather than showing stale values. 503 when Alpaca unconfigured, 502 if the upstream call or snapshot parse fails, 429 rate limited (30/min).
 
 ## GET /api/premium-stock-research?symbol=TSLA
 
-Same payload shape as above but requires a premium session (cookie or legacy Bearer). 401 otherwise.
+Same payload shape as above but requires a premium session (cookie or legacy Bearer). 401 with
+none, 403 `code:"upgrade_required"` if the session's tier doesn't include The Trifecta.
+503 when Alpaca unconfigured, 502 if the upstream call or snapshot parse fails, 429 rate limited (30/min).
 
 ## GET /api/premium-market-analyst?years=1|3|5
 
@@ -120,7 +122,7 @@ Yahoo Finance JSON search-endpoint headlines (≤12), sanitized/deduped, cached 
 Not RSS — Yahoo retired its RSS feed; `symbol` and `topic` are mutually exclusive, `topic` is a
 closed allowlist mapped to a fixed query (used by forex-calendar.html's headline panel).
 `{ ok, items:[{title,link,publisher,pubDate,description}], source, fetchedAt }`
-502 with explicit unavailable state on feed failure — no placeholder items.
+502 with explicit unavailable state on feed failure — no placeholder items. 429 rate limited (30/min).
 
 ## GET /api/forex-calendar?currency=USD&impact=major|high|medium
 
@@ -128,7 +130,7 @@ ForexFactory weekly calendar (public feed), USD high/medium events, ≤120 rows.
 `impact` defaults to `major` (red + orange folders combined); `high` is red-folder-only,
 `medium` is orange-folder-only. Any other value 400s.
 `{ ok, events:[{title,currency,date(ISO),impact,forecast,previous,actual}], source, notice }`
-Actual values appear only after release. 502 explicit-unavailable on failure.
+Actual values appear only after release. 502 explicit-unavailable on failure. 429 rate limited (30/min).
 Feed URL overridable via `FOREX_CALENDAR_SOURCE_URL` (see docs/DEPLOYMENT.md) — omit it
 and the default public feed above is used.
 
@@ -169,6 +171,11 @@ discordDetail, brief }`; 502 on generation failure.
 
 Premium-gated research (cookie session or `X-Research-Cron`). See
 docs/research-engine-setup.md for module parameters. Health exposes booleans only.
+Data modules (options/intraday/stock/sectors/biotech): 401 with no session, 403
+`code:"upgrade_required"` if the session's tier doesn't include The Trifecta, 503 if Alpaca
+unconfigured. On a live-fetch failure, serves the latest saved snapshot (`cached:true`) when
+one exists in `RESEARCH_DB`, otherwise 502. 429 rate limited (30/min) — also guards the
+premium-token check against brute-forcing.
 
 ## GET /api/assistant
 
