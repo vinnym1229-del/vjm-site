@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | TBD after test/live-probe/fresh-eyes sweep | Scheduled maintenance cycle: run test suite, probe live deployment, pick one real improvement | 2026-10-16 |
 
 ## Queued (unclaimed, safe to take)
 
