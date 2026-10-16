@@ -351,3 +351,35 @@ test("premium-guidance.html's own inline --muted clears WCAG AA against --bg in 
     assert.ok(ratio >= 4.5, `${label}: premium-guidance.html's own --muted on --bg is ${ratio.toFixed(2)}:1`);
   }
 });
+
+// unsubscribe.html's .back/#theme-toggle hover states used the plain
+// --vjm-red token (tokens.css's dark value #d14343), which only clears
+// 4.28:1 against --vjm-bg (#0c0c0d) -- under the 4.5:1 AA floor, same bug
+// class already fixed for live-ticker.js's .lt-pct.down. Hover-only text
+// never shows up in an anonymous axe/contrast crawl, which is why this one
+// survived. Fixed to --vjm-red-bright, the token the project already uses
+// whenever plain --vjm-red fails this exact check (see newsletter.css's own
+// comment on the same tradeoff). Pin both themes so a future tokens.css
+// retune can't silently reintroduce the failure.
+test("unsubscribe.html's hover states use --vjm-red-bright, which clears WCAG AA against --vjm-bg in both themes", () => {
+  const html = read('unsubscribe.html');
+  const tokens = read('assets/tokens.css');
+  const darkBlock = tokens.match(/:root\s*\{([^}]*)\}/)[1];
+  const lightBlock = tokens.match(/body\.light-mode\s*\{([^}]*)\}/)[1];
+  const varOf = (src, name) => {
+    const m = src.match(new RegExp(`--vjm-${name}:\\s*(#[0-9a-fA-F]{3,8})`));
+    return m ? hexToRgb(m[1]) : null;
+  };
+
+  for (const selector of ['.back:hover', '#theme-toggle:hover']) {
+    assert.match(html, new RegExp(`${selector.replace(/[.#]/, '\\$&')}\\{color:var\\(--vjm-red-bright\\)\\}`),
+      `unsubscribe.html's ${selector} no longer uses --vjm-red-bright`);
+  }
+
+  for (const [block, label] of [[darkBlock, 'dark'], [lightBlock, 'light']]) {
+    const bg = varOf(block, 'bg'), redBright = varOf(block, 'red-bright');
+    assert.ok(bg && redBright, `${label}: tokens.css's --vjm-bg/--vjm-red-bright must be declared as hex`);
+    const ratio = contrast(redBright, bg);
+    assert.ok(ratio >= 4.5, `${label}: tokens.css's --vjm-red-bright on --vjm-bg is ${ratio.toFixed(2)}:1`);
+  }
+});
