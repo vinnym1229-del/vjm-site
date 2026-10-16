@@ -81,3 +81,56 @@ test('an empty/failed bundles fetch leaves the static tier-grid and its tabs alo
   assert.equal(tierGrid.innerHTML, '', 'no CMS items -> #tier-grid keeps its static fallback markup untouched');
   assert.notEqual(periodTabs.style.display, 'none', 'the tabs stay visible when the static, period-aware tier-grid is still in play');
 });
+
+// Same bug class, same loadCmsSections IIFE, different container: the "3) FAQ"
+// section replaces #faq-list's innerHTML from the owner's curated Sheet rows,
+// but the <head> FAQPage JSON-LD block (#faq-jsonld) that search engines read
+// is a separate, static <script> nothing else ever touches -- so without this
+// fix, publishing real FAQ rows makes the visible page and the structured data
+// permanently disagree about what the FAQs are.
+function makeFaqStub(items) {
+  const faqList = { id: 'faq-list', innerHTML: '' };
+  const faqJsonLd = { id: 'faq-jsonld', textContent: '{"@type":"FAQPage","mainEntity":[{"name":"stale static question"}]}' };
+  const document = {
+    getElementById(id) {
+      if (id === 'faq-list') return faqList;
+      if (id === 'faq-jsonld') return faqJsonLd;
+      return null;
+    },
+    querySelector() { return null; },
+  };
+  function fetchStub(url) {
+    const isFaqs = String(url).includes('type=faqs');
+    return Promise.resolve({
+      json: () => Promise.resolve(isFaqs ? { ok: true, items } : { ok: false }),
+    });
+  }
+  return { faqList, faqJsonLd, document, fetchStub };
+}
+
+async function runFaq(items) {
+  const { faqList, faqJsonLd, document, fetchStub } = makeFaqStub(items);
+  const context = { document, fetch: fetchStub, console, SocialStats: () => {} };
+  vm.createContext(context);
+  vm.runInContext(extractLoadCmsSections(), context);
+  for (let i = 0; i < 8; i++) await Promise.resolve();
+  return { faqList, faqJsonLd };
+}
+
+test('CMS FAQ rows rebuild the FAQPage JSON-LD to match the new #faq-list, not just the visible accordion', async () => {
+  const { faqList, faqJsonLd } = await runFaq([
+    { question: 'Do you trade futures or stocks?', answer: 'Futures only.' },
+  ]);
+  assert.match(faqList.innerHTML, /Do you trade futures or stocks\?/, 'the faqs fetch should have replaced #faq-list');
+  const jsonLd = JSON.parse(faqJsonLd.textContent);
+  assert.equal(jsonLd.mainEntity.length, 1, 'JSON-LD must carry exactly the owner-published FAQ rows');
+  assert.equal(jsonLd.mainEntity[0].name, 'Do you trade futures or stocks?', 'JSON-LD question must match the new visible one');
+  assert.equal(jsonLd.mainEntity[0].acceptedAnswer.text, 'Futures only.', 'JSON-LD answer must match the new visible one');
+  assert.ok(!faqJsonLd.textContent.includes('stale static question'), 'the old static JSON-LD content must not survive the CMS override');
+});
+
+test('an empty/failed faqs fetch leaves the static #faq-list and its JSON-LD alone', async () => {
+  const { faqList, faqJsonLd } = await runFaq([]);
+  assert.equal(faqList.innerHTML, '', 'no CMS items -> #faq-list keeps its static fallback markup untouched');
+  assert.match(faqJsonLd.textContent, /stale static question/, 'no CMS items -> the static JSON-LD is left untouched too');
+});

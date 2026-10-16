@@ -34,7 +34,7 @@
   ]
 }
 </script>
-<script type="application/ld+json">
+<script type="application/ld+json" id="faq-jsonld">
 {
   "@context": "https://schema.org",
   "@type": "FAQPage",
@@ -2804,6 +2804,11 @@ setInterval(tickSessionClock, 30000);
     .catch(() => {});
 
   // 3) FAQ — replaces the static 3 when the owner has published their own.
+  // The <head> FAQPage JSON-LD block (#faq-jsonld) describes these same
+  // questions to search engines; it must be rebuilt from the same `d.items`
+  // right alongside #faq-list, or Google keeps indexing 3 stale questions
+  // that no longer match what a visitor actually sees -- a structured-data
+  // mismatch that can get the rich result suppressed.
   fetch('/api/content?type=faqs', { cache: 'no-store' })
     .then((r) => r.json().catch(() => ({})))
     .then((d) => {
@@ -2811,6 +2816,18 @@ setInterval(tickSessionClock, 30000);
       document.getElementById('faq-list').innerHTML = d.items.map((f) =>
         '<details><summary>' + esc(f.question) + '</summary><p>' + esc(f.answer || '') + '</p></details>'
       ).join('');
+      const jsonLd = document.getElementById('faq-jsonld');
+      if (jsonLd) {
+        jsonLd.textContent = JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: d.items.map((f) => ({
+            '@type': 'Question',
+            name: f.question,
+            acceptedAnswer: { '@type': 'Answer', text: f.answer || '' }
+          }))
+        });
+      }
     })
     .catch(() => {});
 

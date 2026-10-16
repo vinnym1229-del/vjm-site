@@ -77,7 +77,7 @@ test('FAQ matches Whop verbatim + JSON-LD schema present', () => {
 // copy but never propagated to the schema) and nothing caught it. Compare
 // every question/answer pair exactly instead of just their opening words.
 test('FAQ JSON-LD answers are byte-identical to the visible FAQ, not just prefix matches', () => {
-  const ldBlocks = [...index.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+  const ldBlocks = [...index.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)]
     .map(m => JSON.parse(m[1]));
   const faq = ldBlocks.find(b => b['@type'] === 'FAQPage');
   assert.ok(faq, 'FAQPage JSON-LD block not found');
