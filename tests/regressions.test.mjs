@@ -1820,9 +1820,45 @@ test('every page wires up an apple-touch-icon next to its favicon link, not just
     const html = read(page);
     const iconMatch = html.match(/<link rel="icon" type="image\/jpeg" href="([^"]+)">/);
     assert.ok(iconMatch, `${page}: missing its favicon <link rel="icon">`);
+    const expected = iconMatch[1].replace('pj-logo.jpg', 'apple-touch-icon.png');
     assert.ok(
-      html.includes(`<link rel="apple-touch-icon" href="${iconMatch[1]}">`),
-      `${page}: missing <link rel="apple-touch-icon" href="${iconMatch[1]}">`,
+      html.includes(`<link rel="apple-touch-icon" href="${expected}">`),
+      `${page}: missing <link rel="apple-touch-icon" href="${expected}">`,
+    );
+  }
+});
+
+// Reads a PNG's real pixel dimensions from its IHDR chunk, independent of
+// anything a filename claims about it.
+function pngDimensions(buf) {
+  assert.ok(buf.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])), 'not a PNG');
+  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+}
+
+// Incident: every page's apple-touch-icon pointed straight at
+// assets/pj-logo.jpg, a 208x187 (non-square) JPEG. iOS/iPadOS forces
+// whatever image an apple-touch-icon link names into a fixed *square* tile
+// with the OS's own rounded-corner mask when a visitor taps "Add to Home
+// Screen" -- unlike the favicon tab, it does not preserve the source's
+// aspect ratio. A 208x187 source gets squeezed or cropped by the OS to fit,
+// visibly distorting the "PJ TRADES" wordmark that already runs close to
+// the card's own edges with little safety margin. assets/apple-touch-icon.png
+// is a dedicated square crop (pj-logo.jpg padded top/bottom with its own
+// #111111 card background, not stretched) made just for this tag; the
+// favicon link keeps pointing at pj-logo.jpg since tab favicons aren't
+// forced square. This pins the new asset's real dimensions so it can't
+// silently drift non-square again, and pins that no page's apple-touch-icon
+// still points at the non-square source.
+test('the apple-touch-icon is a real square asset, not the non-square favicon source', () => {
+  const dims = pngDimensions(readFileSync(join(ROOT, 'assets/apple-touch-icon.png')));
+  assert.equal(dims.width, dims.height, 'assets/apple-touch-icon.png must be square for iOS\'s forced-square icon mask');
+  assert.ok(dims.width >= 180, 'assets/apple-touch-icon.png must clear iOS\'s 180x180 recommended size');
+
+  for (const page of PAGES) {
+    const html = read(page);
+    assert.ok(
+      !/<link rel="apple-touch-icon" href="[^"]*pj-logo\.jpg">/.test(html),
+      `${page}: apple-touch-icon must not point at the non-square pj-logo.jpg`,
     );
   }
 });

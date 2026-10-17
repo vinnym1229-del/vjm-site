@@ -32,7 +32,7 @@ Audit run against the working tree (`node tools/paywall-audit.mjs`):
 | `options-lab.html` | 4 | 51 | 0 | 3 | 11,381 | 100 KB | 159 KB |
 | `psychology-enhancer.html` | 13 | 62 | 0 | 3 | 16,048 | 158 KB | 210 KB |
 | `stock-breakdown.html` | 4 | 46 | 0 | 3 | 12,789 | 113 KB | 132 KB |
-| **total** | **24** | **202** | **7** | **12** | **49,968** | **458 KB** | **620 KB** |
+| **total** | **24** | **202** | **7** | **12** | **49,968** | **458 KB** | **621 KB** |
 
 Read that as:
 
