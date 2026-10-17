@@ -3633,6 +3633,35 @@ test("privacy.html's membership-status list matches the values the webhook/sessi
 });
 
 // ---------------------------------------------------------------------------
+// Incident: the membership-status fix directly above (commit 9c54ba5,
+// 2026-10-14) rewrote what this exact page tells a visitor the site stores
+// about them -- a real change to the policy's substance, not a cosmetic one
+// -- but never touched the page's own "Last updated: October 7, 2026." line
+// three lines above the section it edited, so privacy.html spent three days
+// (until this fix) telling every reader the policy was last revised a full
+// week before it actually was. sitemap.xml's <lastmod> (checked separately
+// by the pinned-hash test above in this file) did move correctly, because
+// that bookkeeping is mechanical and runs on every edit regardless of
+// substance -- it is the human-readable sentence a visitor actually reads
+// that silently fell behind. This is a literal pin, same as every other
+// dated/hashed fact this suite pins: it only has to move again when someone
+// deliberately edits this sentence, which should happen whenever -- and only
+// when -- this page's actual legal/data-handling content changes, not on
+// every cosmetic edit (see decisions.md 2026-10-11, which confirmed
+// terms.html/risk-disclosure.html's unchanged date was correct across a run
+// of purely cosmetic commits). Catching "was this edit substantive" isn't
+// something a test can judge, but catching "does the sentence match what
+// whoever last touched this file believed it should say" is exactly what a
+// pin test is for.
+test('privacy.html\'s "Last updated" line is a deliberate, current pin, not a stale leftover', () => {
+  const html = read('privacy.html');
+  const m = html.match(/<p>Last updated: ([^.]+)\. Contact:/);
+  assert.ok(m, 'privacy.html: "Last updated" sentence not found -- selector may be stale');
+  assert.equal(m[1], 'October 17, 2026',
+    'privacy.html\'s "Last updated" date no longer matches this pin -- if the policy\'s actual content changed, update this pin to the date of that edit; if only this date was touched, update the pin to match it');
+});
+
+// ---------------------------------------------------------------------------
 // Incident: docs/API.md opened with "All responses are JSON with
 // `Cache-Control: no-store`" -- a blanket claim contradicted by its own
 // per-endpoint sections for /api/ticker, /api/content, and /api/live-stats,
