@@ -1787,6 +1787,27 @@ test('the social-share image is a real 1200x630 OG card, not the YouTube-banner 
   }
 });
 
+// Incident: the homepage's Organization JSON-LD (name/url/founder/sameAs/
+// description) never declared a `logo`, the one property Google's
+// structured-data guidelines call out specifically so a Knowledge Panel or
+// brand-name search result can show the brand mark. PJ Trades already has
+// the right asset for this (assets/pj-logo.jpg, used sitewide as the
+// favicon/apple-touch-icon/nav-brand), it just was never wired into the
+// Organization entity. This pins the logo's real on-disk dimensions so the
+// JSON-LD can't silently drift from the actual file if it's ever replaced.
+test('the homepage Organization JSON-LD declares a real, correctly-sized logo', () => {
+  const dims = jpegDimensions(readFileSync(join(ROOT, 'assets/pj-logo.jpg')));
+  const html = read('index.html');
+  const m = html.match(/"@type":\s*"Organization"[\s\S]*?"logo":\s*\{([\s\S]*?)\}/);
+  assert.ok(m, 'index.html: Organization JSON-LD must declare a logo');
+  const logoBlock = m[1];
+  assert.match(logoBlock, /"@type":\s*"ImageObject"/, 'Organization logo must be an ImageObject');
+  assert.match(logoBlock, /"url":\s*"https:\/\/not-financial-advice-vjm\.com\/assets\/pj-logo\.jpg"/,
+    'Organization logo url must point at the real asset');
+  assert.match(logoBlock, new RegExp(`"width":\\s*${dims.width}\\b`), `Organization logo width must match the real file (${dims.width})`);
+  assert.match(logoBlock, new RegExp(`"height":\\s*${dims.height}\\b`), `Organization logo height must match the real file (${dims.height})`);
+});
+
 // ---------------------------------------------------------------------------
 // Incident: psychology-enhancer.html grew from 59 to 62 lesson-card entries
 // over time, but its own hero stat ("59 Lessons"), index.html's curriculum
