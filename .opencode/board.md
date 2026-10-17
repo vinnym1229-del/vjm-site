@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | TBD — fresh-eyes sweep in progress (scheduled cycle) | npm test green on `e95feec`; CI "Test suite" green on same SHA (live-site curl blocked by standing egress-proxy policy, substituted per usual pattern); dispatching a fresh-eyes agent to find one improvement | 2026-10-17 |
 
 ## Queued (unclaimed, safe to take)
 
