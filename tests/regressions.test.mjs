@@ -1808,6 +1808,25 @@ test('the homepage Organization JSON-LD declares a real, correctly-sized logo', 
   assert.match(logoBlock, new RegExp(`"height":\\s*${dims.height}\\b`), `Organization logo height must match the real file (${dims.height})`);
 });
 
+// Incident: index.html wires up <link rel="apple-touch-icon"> right next to
+// its favicon <link>, but none of the other 15 pages did. iOS/iPadOS Safari
+// reads the *currently-loaded page's own* apple-touch-icon link when a
+// visitor taps "Add to Home Screen" -- it does not consult manifest.json's
+// icon list the way Chrome/Android does -- so every other page fell back to
+// an auto-generated screenshot of the page instead of the brand mark that's
+// already one line away as the favicon href.
+test('every page wires up an apple-touch-icon next to its favicon link, not just index.html', () => {
+  for (const page of PAGES) {
+    const html = read(page);
+    const iconMatch = html.match(/<link rel="icon" type="image\/jpeg" href="([^"]+)">/);
+    assert.ok(iconMatch, `${page}: missing its favicon <link rel="icon">`);
+    assert.ok(
+      html.includes(`<link rel="apple-touch-icon" href="${iconMatch[1]}">`),
+      `${page}: missing <link rel="apple-touch-icon" href="${iconMatch[1]}">`,
+    );
+  }
+});
+
 // ---------------------------------------------------------------------------
 // Incident: psychology-enhancer.html grew from 59 to 62 lesson-card entries
 // over time, but its own hero stat ("59 Lessons"), index.html's curriculum

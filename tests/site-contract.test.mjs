@@ -344,16 +344,16 @@ test('sitemap.xml\'s own comment names every permanently-noindexed page it exclu
 // fails loudly instead of silently drifting for weeks like the original bug.
 const SITEMAP_LASTMOD_PINS = {
   'index.html': { lastmod: '2026-10-17', sha256: 'e3df3c6b4609687b81a116670a0b419b41cb5a44a4b766f4b994105cb815ae86' },
-  'stock-breakdown.html': { lastmod: '2026-10-16', sha256: '37df9af032e69693a3a44f36fc516630e32fc3dd840ad3fda75e28ae4c8f47d6' },
-  'futures-dissection.html': { lastmod: '2026-10-13', sha256: 'e9d290cf6ec1841b9cc193b45f540c69792aed98684aca0ca2f5de7c25d65133' },
-  'psychology-enhancer.html': { lastmod: '2026-10-13', sha256: '8a0132cdacdece37ae41c707dc284dd89043a9b6bcd4eb29c42592af1bca39bd' },
-  'options-lab.html': { lastmod: '2026-10-16', sha256: '92555547953086d0450791b49004627870a946c2ad43f567e1e622365ccd018c' },
-  'premarket.html': { lastmod: '2026-10-13', sha256: 'de732d39a6b303f518178150b0a6be9e2636a016a818f7a1d57244787c81bae9' },
-  'forex-calendar.html': { lastmod: '2026-10-15', sha256: '6187014dcc1631ff3ee6fe8952294366f710150ca4d233220772ce44a6587db6' },
-  'prop-firms.html': { lastmod: '2026-10-17', sha256: 'c1cb5e98edd4dd59d041aa3df9113125d7e8e9dbfdf4deb180d0359aeba55db8' },
-  'risk-disclosure.html': { lastmod: '2026-10-13', sha256: '6807c041345facb48c69c7aa8c280fc9c7b6a281ea3165d1863eeb4db334347e' },
-  'terms.html': { lastmod: '2026-10-13', sha256: 'b01ec82598fa592fabd1d2fddc8fe3df60b0a445e27bdefa8184094823ad23cb' },
-  'privacy.html': { lastmod: '2026-10-17', sha256: '6036fa435c0611fe653639b800ec41b4cf8f45fd4ea00a5ba4d921e42e2f6849' },
+  'stock-breakdown.html': { lastmod: '2026-10-17', sha256: 'c361d137c81b8dccc1e62e219944990490517212d5771fb85dd92e072b7de8a4' },
+  'futures-dissection.html': { lastmod: '2026-10-17', sha256: 'ce6da0bb8f0676aad01fa3917a6904a1bcc8a3b5d244ed8d0c06fe2b77259e6c' },
+  'psychology-enhancer.html': { lastmod: '2026-10-17', sha256: '11cab61ddece667c1497d08375b47d121c4b0041dd8a7c8453c9350c98659d54' },
+  'options-lab.html': { lastmod: '2026-10-17', sha256: '2407b61e789d228da6af3a1534c92bcc7a68c4bf9a2fe6481c41a467e46b4d15' },
+  'premarket.html': { lastmod: '2026-10-17', sha256: 'ef67e7d91cb21e5c5c13f1537bc2cbf8d59dece39f84748cf0d3da5a0c9cf787' },
+  'forex-calendar.html': { lastmod: '2026-10-17', sha256: '4b8f92339ce72ce1aa8dab64c2d395a3aa15740b030d48be53227a99f8882c28' },
+  'prop-firms.html': { lastmod: '2026-10-17', sha256: '944ced17f339cce42ae0ba4b1b5f20ac2c4335201260b0b36a73dc847e80b44f' },
+  'risk-disclosure.html': { lastmod: '2026-10-17', sha256: '2e9b2add4b479193c5087212a4daf13ee581f145efabc0d57ec10c1b74a6930b' },
+  'terms.html': { lastmod: '2026-10-17', sha256: '78e06d5aa7e0659a7ced48a79fb5cd33bf576c1d7d50d2d65582b54f2747d42f' },
+  'privacy.html': { lastmod: '2026-10-17', sha256: '9bf2a36a4ea8df72baa51c382308a42c820146e631922d3ed9805c3063c7a698' },
 };
 
 test('sitemap.xml <lastmod> values stay pinned to the page content they were last verified against', () => {
