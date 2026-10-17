@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | TBD — fresh-eyes sweep in progress (scheduled cycle) | npm test 747/747 green on `402ebc2`; CI "Test suite" green on same SHA (run 39052503547; live-site curl blocked by standing egress-proxy policy, substituted per usual pattern); this container also hit the standing shallow-clone divergence artifact (local pj vs origin/pj showed 50/50 unrelated commits), resolved non-destructively via `git reset --hard origin/pj` (working tree was already clean) then `git fetch --unshallow` to restore full history; dispatching a fresh-eyes agent to find one improvement | 2026-10-17 |
 
 ## Queued (unclaimed, safe to take)
 
