@@ -160,8 +160,16 @@
     try {
       const res = await fetch('/api/verify-premium', { credentials: 'same-origin', cache: 'no-store' });
       const data = await res.json().catch(() => ({}));
-      return !!(data.ok && data.active);
-    } catch { return false; }
+      const active = !!(data.ok && data.active);
+      // /api/verify-premium's GET already returns the signed tier claim
+      // specifically so the upgrade gate can state it as fact instead of
+      // guessing (see that handler's own comment); PLANS is the only set of
+      // tier keys this page recognizes, so an unrecognized/absent tier (e.g.
+      // a pre-tier legacy session once the owner enables
+      // STRICT_LEGACY_SESSIONS) is reported as unknown, not papered over.
+      const tier = active && data.tier in PLANS ? data.tier : null;
+      return { active, tier };
+    } catch { return { active: false, tier: null }; }
   }
 
   // Cloudflare Turnstile: public site key, safe to ship client-side. The
@@ -248,8 +256,8 @@
       btn.addEventListener('click', async () => {
         const msg = btn.closest('.lock-gate').querySelector('.lock-msg');
         setMsg(msg, 'Checking saved premium session...', true);
-        const ok = await checkPremium();
-        if (ok) { setMsg(msg, 'Premium session active. Loading your course...', true); location.reload(); }
+        const { active } = await checkPremium();
+        if (active) { setMsg(msg, 'Premium session active. Loading your course...', true); location.reload(); }
         else setMsg(msg, 'No active session found. Enter your code above.', false);
       });
     });
@@ -610,9 +618,9 @@ body.light-mode .curr .vjm-miss{background:rgba(0,0,0,.03);}
     return a;
   }
 
-  function renderUnderTierGate(gate, course) {
+  function renderUnderTierGate(gate, course, heldTier) {
     const need = PLANS[course.plan];
-    const held = course.plan === 'complete' ? PLANS.futures_core : null;
+    const held = heldTier && PLANS[heldTier] ? PLANS[heldTier] : null;
     // A signed-in member does not need a code box or a "check my session"
     // button; both are removed, not merely hidden behind more copy.
     qsa('.lock-form', gate).forEach((f) => { f.hidden = true; f.style.display = 'none'; });
@@ -681,7 +689,7 @@ body.light-mode .curr .vjm-miss{background:rgba(0,0,0,.03);}
     attach(gate, panel);
   }
 
-  function renderLockState(state) {
+  function renderLockState(state, heldTier) {
     const course = pageCourse();
     const gates = qsa('.lock-gate');
     if (!course || !gates.length || !canRender()) return;
@@ -690,7 +698,7 @@ body.light-mode .curr .vjm-miss{background:rgba(0,0,0,.03);}
       if (gate.getAttribute && gate.getAttribute('data-vjm-lock') === state) return;
       if (gate.setAttribute) gate.setAttribute('data-vjm-lock', state);
       try {
-        if (state === 'under_tier') renderUnderTierGate(gate, course);
+        if (state === 'under_tier') renderUnderTierGate(gate, course, heldTier);
         else renderSignedOutGate(gate, course);
         rendered++;
       } catch { /* a broken panel must never hide the gate itself */ }
@@ -975,11 +983,11 @@ body.light-mode .curr .vjm-miss{background:rgba(0,0,0,.03);}
   // The server's decision is readable here (it stamps data-locked="1" on what
   // it stripped), so the two cases are told apart instead of conflated.
   async function initEntitlementState() {
-    const active = await checkPremium();
+    const { active, tier } = await checkPremium();
     const stripped = lockedByServer();
     if (active && !stripped) { unlockAll(); return 'entitled'; }
     const state = active ? 'under_tier' : 'signed_out';
-    renderLockState(state);
+    renderLockState(state, tier);
     return state;
   }
 
