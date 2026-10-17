@@ -3007,9 +3007,11 @@ test("psychology-enhancer.html's expectancy sample-size cross-check computes the
 // challenges.cloudflare.com doesn't even start until the browser finishes
 // parsing the whole page, adding a fresh connection's latency directly in
 // front of the widget that gates the page's core action. index.html and
-// prop-firms.html are deliberately excluded: they load Turnstile lazily via
-// assets/newsletter.js's loadTurnstileScript(), gated behind an env check,
-// so a static preconnect there could warm a connection that's never used.
+// prop-firms.html were originally excluded from this fix on the theory that
+// since they load Turnstile lazily via assets/newsletter.js's
+// loadTurnstileScript(), gated behind an env check, a static preconnect
+// there could warm a connection that's never used. See the test below this
+// one for why that turned out to be backwards.
 test('pages that statically load Cloudflare Turnstile preconnect to its origin', () => {
   const pages = ['stock-lab.html', 'premium-guidance.html', 'research-engine.html',
     'options-lab.html', 'futures-dissection.html', 'psychology-enhancer.html', 'stock-breakdown.html'];
@@ -3019,6 +3021,37 @@ test('pages that statically load Cloudflare Turnstile preconnect to its origin',
       `${p}: expected the static Turnstile script tag this test targets`);
     assert.match(html, /<link rel="preconnect" href="https:\/\/challenges\.cloudflare\.com">/,
       `${p} missing preconnect for the Turnstile origin its own widget depends on`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Incident: the "never used" worry above assumed the env check was the
+// reason to skip these two pages, but index.html's and prop-firms.html's
+// own newsletter forms make challenges.cloudflare.com's connection *more*
+// worth warming early, not less. assets/newsletter.js's initTurnstile()
+// (run on DOMContentLoaded whenever a form.nl-signup exists -- both pages
+// have one) first awaits a same-origin fetch to /api/newsletter/subscribe
+// for its config, and only after that round-trip resolves and returns a
+// siteKey does it call loadTurnstileScript() to inject the Cloudflare
+// script tag. So the DNS+TCP+TLS handshake to challenges.cloudflare.com on
+// these two pages doesn't just start late like the static-script pages
+// above -- it starts after an entire extra network round-trip, serialized
+// behind it. A <head> preconnect hint fires immediately at parse time, in
+// parallel with that fetch, so by the time loadTurnstileScript() runs the
+// connection is already warm; the env-check path that skips loading
+// Turnstile at all (siteKey not configured) just lets an idle preconnected
+// socket time out, which costs nothing. _headers' CSP already allow-lists
+// challenges.cloudflare.com in script-src/connect-src/frame-src, confirming
+// it's live in production, not a theoretical dependency.
+test('pages that lazily load Cloudflare Turnstile via newsletter.js also preconnect to its origin', () => {
+  const pages = ['index.html', 'prop-firms.html'];
+  for (const p of pages) {
+    const html = read(p);
+    assert.match(html, /<form class="nl-signup"/, `${p}: expected the nl-signup form this test targets`);
+    assert.match(html, /<script src="assets\/newsletter\.js" defer><\/script>/,
+      `${p}: expected the newsletter.js include that lazily loads Turnstile`);
+    assert.match(html, /<link rel="preconnect" href="https:\/\/challenges\.cloudflare\.com">/,
+      `${p} missing preconnect for the Turnstile origin its lazy-loaded widget depends on`);
   }
 });
 

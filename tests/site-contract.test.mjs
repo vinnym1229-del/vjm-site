@@ -343,14 +343,14 @@ test('sitemap.xml\'s own comment names every permanently-noindexed page it exclu
 // again without sitemap.xml being updated alongside it, the hash mismatch
 // fails loudly instead of silently drifting for weeks like the original bug.
 const SITEMAP_LASTMOD_PINS = {
-  'index.html': { lastmod: '2026-10-16', sha256: '777aa42fdf041bc54c36304e1546bf1a590e82cc05bfe0da973891d2b881800b' },
+  'index.html': { lastmod: '2026-10-17', sha256: '0a0196d326e03a70b8f994542209ac8904035b3d57e4515c7cc938678ca1c73a' },
   'stock-breakdown.html': { lastmod: '2026-10-16', sha256: '37df9af032e69693a3a44f36fc516630e32fc3dd840ad3fda75e28ae4c8f47d6' },
   'futures-dissection.html': { lastmod: '2026-10-13', sha256: 'e9d290cf6ec1841b9cc193b45f540c69792aed98684aca0ca2f5de7c25d65133' },
   'psychology-enhancer.html': { lastmod: '2026-10-13', sha256: '8a0132cdacdece37ae41c707dc284dd89043a9b6bcd4eb29c42592af1bca39bd' },
   'options-lab.html': { lastmod: '2026-10-16', sha256: '92555547953086d0450791b49004627870a946c2ad43f567e1e622365ccd018c' },
   'premarket.html': { lastmod: '2026-10-13', sha256: 'de732d39a6b303f518178150b0a6be9e2636a016a818f7a1d57244787c81bae9' },
   'forex-calendar.html': { lastmod: '2026-10-15', sha256: '6187014dcc1631ff3ee6fe8952294366f710150ca4d233220772ce44a6587db6' },
-  'prop-firms.html': { lastmod: '2026-10-13', sha256: '2161b85dc106c79e56d421b8524137ffcf19310d45c6d4a0d9b9fc584c7262b8' },
+  'prop-firms.html': { lastmod: '2026-10-17', sha256: 'c1cb5e98edd4dd59d041aa3df9113125d7e8e9dbfdf4deb180d0359aeba55db8' },
   'risk-disclosure.html': { lastmod: '2026-10-13', sha256: '6807c041345facb48c69c7aa8c280fc9c7b6a281ea3165d1863eeb4db334347e' },
   'terms.html': { lastmod: '2026-10-13', sha256: 'b01ec82598fa592fabd1d2fddc8fe3df60b0a445e27bdefa8184094823ad23cb' },
   'privacy.html': { lastmod: '2026-10-14', sha256: 'e33c07ecf46786ee82c254543e060bdfc23a054b4ec2b78e3a3d43b82d4993a8' },
