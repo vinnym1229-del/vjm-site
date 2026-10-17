@@ -11,7 +11,7 @@ Threat model in one line: anonymous visitors, premium members with codes, and th
 | S3 | Sessions move from localStorage to `HttpOnly; Secure; SameSite=Lax` cookies; tokens never in URLs or response bodies | **Done** | verify-premium.js, all pages migrated; tests assert no token keys/URL tokens |
 | S4 | Legacy `?token=` verification path removed | **Done** | site-structure test asserts absence |
 | S5 | Generic auth errors (no code/status enumeration) on verify + member lookup | **Done** | `GENERIC_BAD_CODE`, unified 404 path in check-member-status |
-| S6 | Rate limiting per IP+identifier (verify 10/min, member-status 8/min, quotes 30/min) via D1 when bound, best-effort in-memory otherwise | **Done** (D1 recommended) | `_lib/http.js checkRateLimit`, migration 0002 |
+| S6 | Rate limiting per IP only (verify 10/min, member-status 8/min, quotes 30/min) via D1 when bound, best-effort in-memory otherwise — no route scopes a bucket by a caller-supplied identifier (member-status's Discord handle and the stock-research pair's `?symbol=` were both moved off identifier-scoping on 2026-10-16 after it let an attacker dodge the cap by cycling identifiers) | **Done** (D1 recommended) | `_lib/http.js checkRateLimit`, migration 0002 |
 | S7 | Audit events (verify grant/reject, logout) written with hashed subjects only | **Done** (best-effort) | verify-premium.js `auditEvent` |
 | S8 | Security headers: CSP (no wildcards), HSTS, nosniff, frame-ancestors, Referrer-Policy, Permissions-Policy, COOP | **Done** for static assets | `_headers` |
 | S9 | Apps Script bridge redesigned as authenticated single-record lookup with HMAC+nonce+replay window | **Code shipped** (`apps-script/member-sync/`), deployment is an owner action | docs/APPS-SCRIPT-INTEGRATION.md |

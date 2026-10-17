@@ -3824,3 +3824,44 @@ test('homepage quiz lead-capture copy never promises a personalized "recommended
   assert.doesNotMatch(subscribeSrc, /body\.props/,
     'functions/api/newsletter/subscribe.js now reads body.props -- if a per-visitor field like the quiz track is persisted, the lead-capture copy may be safe to re-personalize and this test should be revisited');
 });
+
+// Incident: docs/SECURITY.md's S6 control row has claimed "Rate limiting per
+// IP+identifier" since the control was first documented, but the only two
+// routes that ever scoped a bucket by a caller-supplied identifier instead of
+// IP alone -- check-member-status.js (by Discord handle) and
+// stock-research.js/premium-stock-research.js (by ?symbol=) -- were both
+// fixed on 2026-10-16 specifically because identifier-scoping let an attacker
+// cycle through fresh identifiers to dodge the cap entirely. Every
+// checkRateLimit() call site under functions/ is per-IP only today, so the
+// doc's "+identifier" described a bypass the code was deliberately changed
+// to remove, not the current design.
+test("docs/SECURITY.md's rate-limiting control does not claim per-identifier scoping no route still uses", () => {
+  const doc = read('docs/SECURITY.md');
+  assert.doesNotMatch(doc, /Rate limiting per IP\+identifier/,
+    'docs/SECURITY.md: S6 still claims per-IP+identifier scoping, but every checkRateLimit() call site in functions/ is IP-only (2026-10-16 fix)');
+  assert.match(doc, /Rate limiting per IP\b/,
+    'docs/SECURITY.md: S6 should still name per-IP as the scoping');
+
+  // Prove it, not just assert the doc text: walk functions/ and confirm no
+  // checkRateLimit() call site actually passes a 5th (identifier) argument.
+  const walk = (dir) => {
+    let out = [];
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, entry.name);
+      if (entry.isDirectory()) out = out.concat(walk(p));
+      else if (entry.name.endsWith('.js') && p !== join(ROOT, 'functions/api/_lib/http.js')) out.push(p);
+    }
+    return out;
+  };
+  let sawAnyCall = false;
+  for (const file of walk(join(ROOT, 'functions'))) {
+    const src = readFileSync(file, 'utf8');
+    for (const m of src.matchAll(/checkRateLimit\(([^)]*)\)/g)) {
+      sawAnyCall = true;
+      const argCount = m[1].split(',').length;
+      assert.ok(argCount <= 4,
+        `${file}: checkRateLimit() call passes ${argCount} arguments (an identifier) -- docs/SECURITY.md documents IP-only scoping`);
+    }
+  }
+  assert.ok(sawAnyCall, 'sanity: expected to find at least one checkRateLimit() call under functions/');
+});
