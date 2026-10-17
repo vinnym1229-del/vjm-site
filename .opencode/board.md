@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | TBD — fresh-eyes sweep in progress, scope narrows once a real issue is confirmed | Scheduled maintenance cycle: tests (751/751) + check:syntax green on `dc4a8fe`; live `*.pages.dev` curl probes blocked by the standing egress-proxy policy (same as every prior run), substituted GitHub Actions `test.yml` run `39068877981` (passed, head_sha `dc4a8fe`, exact starting HEAD) as the live signal. Dispatching a fresh-eyes agent now. | 2026-10-17 |
 
 ## Queued (unclaimed, safe to take)
 
