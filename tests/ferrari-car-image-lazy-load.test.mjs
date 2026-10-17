@@ -3,14 +3,20 @@
 // turntable on every browser that reaches the branch at index.html's
 // `stage.querySelector('.pj-car-image')` check. Both used to carry a real
 // `src` attribute, so the browser's preload scanner fetched both ~145KB
-// WebP files unconditionally on every visit -- even on phones/small tablets
-// and under reduced motion, where assets/site.css's own
-// `@media (max-width: 1099px), (prefers-reduced-motion: reduce)` rule hides
-// #ferrari-showcase entirely (display:none never stops an <img> src from
-// being fetched), and even on wide screens where only one of the two theme
-// variants is ever actually shown. This test drives the real hydrate script
-// (now keyed off data-src, not src) through a minimal sandbox to prove it
-// only ever fetches the variant that will actually be visible.
+// WebP files unconditionally on every visit -- even under reduced motion,
+// where assets/site.css's own `@media (prefers-reduced-motion: reduce)`
+// rule hides #ferrari-showcase entirely (display:none never stops an <img>
+// src from being fetched), and even on wide screens where only one of the
+// two theme variants is ever actually shown. The hydrate gate must NOT also
+// skip phones/small tablets: unlike the dead WebGL branch, a higher-
+// specificity mobile override in assets/site.css re-enables this
+// photographic branch (smaller, reflowed) below 1100px rather than hiding
+// it, so gating hydration on that width left most mobile visitors with a
+// correctly-visible but permanently empty box (fixed 2026-10-17). This test
+// drives the real hydrate script (now keyed off data-src, not src) through
+// a minimal sandbox to prove it fetches the right variant for every
+// visitor, including narrow ones, and skips fetching only under reduced
+// motion.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -42,8 +48,8 @@ test('index.html declares both car <img> tags with data-src, not src, and toggle
   assert.match(html, /<img class="pj-car-image pj-car-dark" data-src="assets\/ferrari-reference-dark\.webp"[^>]*>/);
   assert.doesNotMatch(html, /<img class="pj-car-image pj-car-(light|dark)" src=/,
     'a real src on these tags means the browser fetches it unconditionally, defeating the hydrate script entirely');
-  assert.match(hydrateSrc, /window\.matchMedia\('\(max-width: 1099px\), \(prefers-reduced-motion: reduce\)'\)/,
-    'the hydrate gate must match the same breakpoint assets/site.css and the WebGL branch use, or they can disagree about when the section is visible');
+  assert.match(hydrateSrc, /window\.matchMedia\('\(prefers-reduced-motion: reduce\)'\)/,
+    'the hydrate gate must key off reduced-motion only -- unlike the dead WebGL branch, the photographic branch stays visible (reflowed, not hidden) below 1100px per assets/site.css\'s mobile override, so gating on width here leaves the box empty for mobile visitors');
   assert.match(html, /if \(window\.pjHydrateCarImage\) window\.pjHydrateCarImage\(\);/,
     'toggleTheme must hydrate the newly-revealed variant, or switching theme shows a blank frame until next reload');
 });
@@ -80,10 +86,17 @@ function run({ hidden, isLight }) {
   return { lightImg, darkImg, setHidden: (v) => { matches = v; changeListeners.forEach((cb) => cb()); } };
 }
 
-test('narrow/reduced-motion visitors (section hidden) fetch neither car image', () => {
+test('reduced-motion visitors fetch neither car image', () => {
   const { lightImg, darkImg } = run({ hidden: true, isLight: true });
   assert.equal(lightImg.src, null);
   assert.equal(darkImg.src, null);
+});
+
+test('a narrow-screen (phone/tablet) light-mode visitor still fetches the light variant -- the photographic branch stays visible, just reflowed, below 1100px', () => {
+  const { lightImg, darkImg } = run({ hidden: false, isLight: true });
+  assert.equal(lightImg.src, 'assets/ferrari-reference-light.webp',
+    'the mobile CSS override makes #ferrari-showcase visible (smaller, below the copy) rather than hiding it, so a narrow visitor must still get the image');
+  assert.equal(darkImg.src, null, 'the dark variant is never shown for this visitor and must not be fetched');
 });
 
 test('a wide-screen light-mode visitor (the site default) fetches only the light variant', () => {
@@ -98,10 +111,10 @@ test('a wide-screen dark-mode visitor fetches only the dark variant', () => {
   assert.equal(lightImg.src, null, 'the light variant is never shown for this visitor and must not be fetched');
 });
 
-test('rotating past the breakpoint after load (section starts hidden, then becomes visible) still hydrates the image', () => {
+test('turning Reduce Motion off after load (section starts hidden, then becomes visible) still hydrates the image', () => {
   const { lightImg, setHidden } = run({ hidden: true, isLight: true });
   assert.equal(lightImg.src, null, 'sanity: nothing fetched while still hidden');
   setHidden(false);
   assert.equal(lightImg.src, 'assets/ferrari-reference-light.webp',
-    'the mq "change" listener must hydrate once the section actually becomes visible, or a resized/rotated visitor sees a blank frame');
+    'the mq "change" listener must hydrate once the section actually becomes visible, or a visitor who turns Reduce Motion off mid-session sees a blank frame');
 });

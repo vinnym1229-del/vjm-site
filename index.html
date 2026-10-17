@@ -304,16 +304,24 @@
   <script>
   // Both car photos above are declared with data-src, not src, so the
   // browser's preload scanner never fetches either one on its own. A plain
-  // src on both meant every visit downloaded ~290KB of WebP no matter what:
-  // the whole section is display:none on phones/small tablets and under
-  // reduced motion (assets/site.css's @media (max-width: 1099px),
-  // (prefers-reduced-motion: reduce) rule -- same one the WebGL branch below
-  // bails out on), and even on wide screens only one of the two theme
-  // variants is ever visible at a time. This hydrates only the variant that
-  // will actually be shown, and re-checks on resize/orientation-change so a
-  // tablet rotated past the breakpoint after load still gets its image.
+  // src on both meant every visit downloaded ~290KB of WebP no matter what,
+  // and even on wide screens only one of the two theme variants is ever
+  // visible at a time. This hydrates only the variant that will actually
+  // be shown, and re-checks on change so a visitor who toggles Reduce
+  // Motion after load still gets their image.
+  //
+  // This gate must NOT also skip phones/small tablets the way the WebGL
+  // branch below does: that <=1099px hide is assets/site.css's *generic*
+  // #ferrari-showcase rule, but a more specific mobile override further
+  // down in site.css (body.pj-home .pj-reference-hero...#ferrari-showcase,
+  // under @media (max-width: 1099px)) re-enables this photographic branch
+  // at a smaller size -- the owner wanted the car "right in your face" on
+  // a phone, not hidden. Gating on that width here left the box visible
+  // per CSS but permanently un-hydrated (no src ever set) on every phone
+  // and tablet, i.e. most of the site's mobile traffic saw an empty box
+  // where the hero photo belongs.
   (function () {
-    var mq = window.matchMedia('(max-width: 1099px), (prefers-reduced-motion: reduce)');
+    var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     function hydrate() {
       if (mq.matches) return;
       var img = document.querySelector(document.body.classList.contains('light-mode') ? '.pj-car-light' : '.pj-car-dark');
