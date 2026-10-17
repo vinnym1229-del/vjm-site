@@ -2051,6 +2051,31 @@ test("index.html's review-summary headline rating/count is wired to the same liv
   assert.match(index, /rating:\s*\[\['hb-rating',[^\]]*\],\s*\['mc-rating',[^\]]*\],\s*\['rs-rating',/, 'SocialStats: rs-rating must share the "rating" STATS entry with hb-rating');
 });
 
+// Incident: the About section's Whop CTA button ("⭐ Whop — 5.0 ★", below the
+// Buffett quote) was a fifth hand-typed copy of the same Whop rating as the
+// hero badge, mobile sticky CTA, and review-summary headline reconciled
+// above -- but unlike those, it had no id and no SocialStats target. The day
+// the owner's real rating changes, every other copy on the page would update
+// while this button, right next to a "Join on Whop" link, kept advertising
+// the old number forever. Fixed by giving it #ab-rating and wiring it into
+// the existing "rating" STATS entry, the same share-the-writer pattern
+// already used for mc-rating, rs-rating, and about-joined.
+test("index.html's About-section Whop CTA rating is wired to the same live source as the hero badge, not a fifth hand-typed copy", () => {
+  const index = read('index.html');
+
+  const hbRating = /id="hb-rating">([^<]+)</.exec(index);
+  assert.ok(hbRating, 'index.html: expected #hb-rating in the hero badge');
+
+  const abRating = /id="ab-rating">([^<]+)</.exec(index);
+  assert.ok(abRating, 'index.html: expected #ab-rating in the About-section Whop CTA button');
+  assert.equal(abRating[1], hbRating[1], 'index.html: About-section CTA rating is out of sync with the hero badge');
+
+  // The SocialStats STATS table is the only thing that keeps them in sync
+  // going forward -- assert the id is actually registered as a target, not
+  // just a static number that happens to look plausible today.
+  assert.match(index, /rating:\s*\[\['hb-rating',[^\]]*\],\s*\['mc-rating',[^\]]*\],\s*\['rs-rating',[^\]]*\],\s*\['ab-rating',/, 'SocialStats: ab-rating must share the "rating" STATS entry with hb-rating');
+});
+
 // Incident: docs/ENTITLEMENTS.md quotes the same four-course lesson total
 // ("can read all 206 lessons straight from source", describing the
 // public-repo lesson-body exposure) as the HTML pages fixed above, but this

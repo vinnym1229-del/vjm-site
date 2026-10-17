@@ -1260,7 +1260,7 @@
         <p style="font-size:1.02rem;line-height:1.75;color:var(--text);">With ten years of hands-on experience navigating the fast-paced world of financial markets, <strong>PJ Trades</strong> is a seasoned day trader specializing in <strong style="color:var(--gold-ink);">futures</strong>.</p>
         <p style="font-size:1.02rem;line-height:1.75;color:var(--text);margin-top:16px;">Disciplined technical analysis and risk management, taught as a repeatable process rather than a promise of outcomes.</p>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:24px;">
-          <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=site" target="_blank" rel="noopener" class="btn btn-gold">⭐ Whop — 5.0 ★</a>
+          <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=site" target="_blank" rel="noopener" class="btn btn-gold">⭐ Whop — <span id="ab-rating">5.0</span> ★</a>
           <a href="https://discord.gg/pjtrades" target="_blank" rel="noopener" class="btn btn-outline">💬 Discord</a>
         </div>
         <!-- Same social accounts and icons as the footer's .social-row (and the
@@ -1626,7 +1626,7 @@ const SocialStats = (function () {
     // separately from the hero badge, so it could silently drift out of sync
     // whenever either feed updated hb-rating/hb-reviews. Same writer now.
     reviews: [['hb-reviews', (v) => v], ['mc-reviews', (v) => v], ['rs-reviews', (v) => v]],
-    rating:  [['hb-rating', (v) => v], ['mc-rating', (v) => v], ['rs-rating', (v) => v]],
+    rating:  [['hb-rating', (v) => v], ['mc-rating', (v) => v], ['rs-rating', (v) => v], ['ab-rating', (v) => v]],
   };
   const writtenRank = {};
   return function applyStats(source, values) {
