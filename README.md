@@ -1,4 +1,4 @@
-# VJM / St Trades website
+# PJ Trades website
 
 Static site deployed on Cloudflare Pages with Pages Functions under `functions/api`.
 

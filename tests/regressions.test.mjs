@@ -690,6 +690,23 @@ test('the PWA manifest name carries no leftover "x St" suffix', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: every brand-cleanup sweep above (602b6f2, a96acd9, and the
+// manifest.json fix) only ever grepped HTML/JSON site files, so README.md --
+// added later (a4816b8) describing this branch's own current setup in
+// present tense, not a dated historical record -- opened with the pre-
+// rebrand "VJM / St Trades website" heading while every live brand surface
+// (every page's <title>, og:title, nav brand, manifest.json) already read
+// "PJ Trades". Unlike docs/MASTER-AUDIT.md's identical-looking heading,
+// which is a dated, disclaimered historical snapshot and correctly left
+// alone, README.md makes no such disclaimer -- it is read as describing the
+// repo today.
+test('README.md does not carry the pre-rebrand "St Trades" brand name', () => {
+  const readme = read('README.md');
+  assert.ok(!/St Trades/i.test(readme), `README.md still mentions the pre-rebrand "St Trades" brand name`);
+  assert.match(readme, /^# PJ Trades\b/, 'README.md should open naming the current "PJ Trades" brand');
+});
+
+// ---------------------------------------------------------------------------
 // Incident: 96 of 100 quiz answers were the longest option, so a member who
 // never opened a lesson scored 96% by always picking the longest. Chance is
 // 25%; this pins the leak closed.
