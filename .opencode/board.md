@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | TBD -- fresh-eyes sweep of less-visited ground (functions/_lib/*.js edge cases, tools/*.mjs test coverage, site.css/inline-style specificity conflicts, service worker/manifest.json, schema.org completeness, canonical correctness, cross-page copy duplication); refined once a concrete lead is found | One full autonomous maintenance cycle per task brief: claim, sweep, fix-or-no-op, log | 2026-10-18 |
 
 ## Queued (unclaimed, safe to take)
 
