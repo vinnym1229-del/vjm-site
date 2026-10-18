@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | tests/research-engine.test.mjs | Pin summarizeConditions's vwapHitRate/medianMinutesToVwap branch, found uncovered via a V8 coverage sweep | 2026-10-18 |
 
 ## Queued (unclaimed, safe to take)
 
