@@ -403,6 +403,20 @@ assert.equal(summarized[0].continuationRate, 0.5);
 assert.ok(Math.abs(summarized[0].medianMfe - 0.0065) < 1e-12);
 assert.equal(summarized.find((row) => row.condition === 'Continuation Model').n, 1, 'model events must remain in their parent condition and also appear in the model subset');
 
+// vwapHitRate/medianMinutesToVwap only populate from events that carry a
+// real boolean vwapHit (classifySweep sets one on every sweep event once
+// the bar window has a usable VWAP series, null otherwise) -- the fixture
+// above never set vwapHit, so this branch had no direct coverage.
+const vwapSummarized = summarizeConditions([
+  { condition: 'PWH', continuation: true, reversal: false, vwapHit: true, minutesToVwap: 12, mfe: 0.01, mae: -0.004 },
+  { condition: 'PWH', continuation: false, reversal: true, vwapHit: false, minutesToVwap: null, mfe: 0.006, mae: -0.01 },
+  { condition: 'PWH', continuation: true, reversal: false, vwapHit: null, minutesToVwap: null, mfe: 0.008, mae: -0.005 },
+]);
+const pwhSummary = vwapSummarized.find((row) => row.condition === 'PWH');
+assert.equal(pwhSummary.n, 3, 'a null (no-VWAP-series) vwapHit event still counts toward n');
+assert.equal(pwhSummary.vwapHitRate, 0.5, 'only the two boolean-vwapHit events count toward the rate, not the null one');
+assert.equal(pwhSummary.medianMinutesToVwap, 12, 'the one hit event is the only finite minutesToVwap value in the median');
+
 const timing = summarizeTiming([
   { condition: 'PDH', minute: 590, continuation: true },
   { condition: 'PDH', minute: 650, continuation: false },
