@@ -87,6 +87,7 @@ function makePremiumResearchSandbox(fetchImpl) {
     document: { getElementById: el },
     fetch: fetchImpl,
     buildSourceLinks() {},
+    premiumSeq: 0,
   };
   vm.createContext(sandbox);
   vm.runInContext(
@@ -289,6 +290,41 @@ test('runPremiumResearch: a watchlist symbol renders its own why/catalyst/avoid/
 // A manually-typed ticker with no WATCHLIST entry has no real per-stock
 // research to show, so the generic placeholder text is the correct,
 // non-fabricated fallback here -- this must keep working exactly as before.
+// Incident: runPremiumResearch had the same stale-response race already
+// fixed in index.html's checkStatus() (tests/status-checker-race.test.mjs)
+// and in this page's own loadNews()/runBasicResearch() (tests/stock-lab-
+// symbol-race.test.mjs) -- selectStock() fires it on every watchlist
+// "Analyze" click, so clicking a second row before the first row's
+// /api/premium-stock-research fetch resolves could let the first (now
+// stale) response land after the second's and overwrite a paying Trifecta
+// member's premiumReport panel with the wrong stock's research. Fixed with
+// the same per-call sequence counter: discard a response once a newer call
+// has started.
+test('runPremiumResearch: ignores a stale response that resolves after a newer symbol has been requested', async () => {
+  const pending = {};
+  const fetchImpl = (url) => {
+    const symbol = decodeURIComponent(/symbol=([^&]+)/.exec(url)[1]);
+    return new Promise((resolve) => { pending[symbol] = resolve; });
+  };
+  const settle = (symbol, quote) => pending[symbol]({
+    ok: true,
+    json: async () => ({ ok: true, quote, source: { name: 'Alpaca Market Data (IEX)' } }),
+  });
+  const { sandbox, els } = makePremiumResearchSandbox(fetchImpl);
+
+  const firstCall = sandbox.runPremiumResearch('NVDA'); // NVDA in flight
+  const secondCall = sandbox.runPremiumResearch('AVGO'); // AVGO requested before NVDA resolves
+
+  // Resolve the OLDER request (NVDA) after the newer one (AVGO).
+  settle('AVGO', { price: 200, change: 1, changePercent: 0.5, marketCap: null });
+  await secondCall;
+  settle('NVDA', { price: 900, change: -1, changePercent: -0.1, marketCap: null });
+  await firstCall;
+
+  assert.match(els.premiumReport.innerHTML, /\$200/, 'the stale NVDA response must not overwrite the newer AVGO quote');
+  assert.doesNotMatch(els.premiumReport.innerHTML, /\$900/);
+});
+
 test('runPremiumResearch: a ticker with no watchlist record still falls back to the generic placeholder text', async () => {
   const fetchImpl = async () => ({
     ok: true,
