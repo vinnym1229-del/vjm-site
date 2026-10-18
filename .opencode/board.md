@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | TBD — scoping this run's single improvement after npm test/live-probe/fresh-eyes sweep | Scheduled maintenance cycle: tests green (755/755), CI green on starting HEAD `48c3fe0`, live curl probe hit the standing egress-proxy block (substituting CI as live signal) | 2026-10-18 |
 
 ## Queued (unclaimed, safe to take)
 
