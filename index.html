@@ -2228,6 +2228,7 @@ function premTab(tab) {
 // Live lookup only — there is intentionally NO client-side fallback list of
 // members. If the bridge is unreachable we say so instead of guessing.
 
+let statusRequestSeq = 0;
 async function checkStatus() {
   const inputEl = document.getElementById('status-discord-input');
   const input = inputEl.value.trim().toLowerCase();
@@ -2236,6 +2237,7 @@ async function checkStatus() {
   const text = document.getElementById('status-text');
   const sub = document.getElementById('status-sub');
   if (!input) return;
+  const requestId = ++statusRequestSeq;
 
   result.style.display = 'block';
   result.style.background = 'rgba(255,255,255,0.04)';
@@ -2255,6 +2257,10 @@ async function checkStatus() {
   } catch (err) {
     live = false;
   }
+
+  // A newer check started while this one was in flight -- its result is
+  // already on screen, so don't clobber it with this stale response.
+  if (requestId !== statusRequestSeq) return;
 
   if (!live) {
     // Honest failure state: never guess membership from a local list.
