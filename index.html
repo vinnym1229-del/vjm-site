@@ -2596,6 +2596,14 @@ window.addEventListener('hashchange', function () {
       iframe.allowFullscreen = true;
       facade.innerHTML = '';
       facade.appendChild(iframe);
+      // The facade div is no longer a play button once it just wraps a
+      // real player — without this, AT and keyboard users land on a
+      // leftover role="button"/tabindex="0" stop in the tab order that
+      // does nothing (activate() already returned) right before the
+      // iframe's own focusable controls, same cleanup showNote() does
+      // below for the fallback-note case.
+      facade.removeAttribute('role');
+      facade.removeAttribute('tabindex');
       return;
     }
     if (mp4) {
@@ -2609,6 +2617,8 @@ window.addEventListener('hashchange', function () {
           v.playsInline = true;
           facade.innerHTML = '';
           facade.appendChild(v);
+          facade.removeAttribute('role');
+          facade.removeAttribute('tabindex');
         } else {
           showNote('🎥 PJ\'s intro video is dropping here soon. Meanwhile — <a href="https://whop.com/pjtradespremium?utm_source=pjtrades&utm_medium=site&utm_content=site" target="_blank" rel="noopener" style="color:var(--gold-ink);">join the live sessions on Whop</a>.');
         }
