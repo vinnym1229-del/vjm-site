@@ -2248,11 +2248,18 @@ async function checkStatus() {
   sub.style.color = 'var(--muted)';
   sub.textContent = '';
 
-  let isActive = false, live = true;
+  let isActive = false, live = true, inputError = null;
   try {
     const res = await fetch('/api/check-member-status?discord=' + encodeURIComponent(input), { credentials: 'same-origin' });
     const data = await res.json().catch(() => ({ ok: false }));
-    if (!data.ok && !('active' in data)) throw new Error(data.error || 'lookup failed');
+    if (!data.ok && !('active' in data)) {
+      // 400 (bad handle) and 429 (rate limited) are the visitor's own input
+      // or pace, not an outage -- the backend already computed the exact
+      // message to show. Everything else (502/503/network failure) really
+      // is the service being down, so that path keeps the generic copy.
+      if ((res.status === 400 || res.status === 429) && data.error) inputError = data.error;
+      throw new Error(data.error || 'lookup failed');
+    }
     isActive = !!data.active;
   } catch (err) {
     live = false;
@@ -2261,6 +2268,17 @@ async function checkStatus() {
   // A newer check started while this one was in flight -- its result is
   // already on screen, so don't clobber it with this stale response.
   if (requestId !== statusRequestSeq) return;
+
+  if (inputError) {
+    result.style.background = 'rgba(255,255,255,0.04)';
+    result.style.border = '1px solid var(--border)';
+    icon.textContent = '⚠️';
+    text.style.color = 'var(--muted)';
+    text.textContent = 'CHECK YOUR INPUT';
+    sub.style.color = 'var(--muted)';
+    sub.textContent = inputError;
+    return;
+  }
 
   if (!live) {
     // Honest failure state: never guess membership from a local list.
