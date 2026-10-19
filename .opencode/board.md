@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj: .opencode/board.md, .opencode/decisions.md only (no code change expected) | Run the standard test/live-probe/improvement cycle | 2026-10-19 |
 
 ## Queued (unclaimed, safe to take)
 
