@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | TBD — fresh-eyes sweep in progress, will narrow once a target is picked | Scheduled maintenance cycle: tests green (762/762), live-deployment curl probe blocked by this session's network policy (403 on pj.vjm.pages.dev CONNECT, confirmed via agent-proxy status, not retried per standing rule), now auditing for one real, verifiable improvement | 2026-10-19 |
 
 ## Queued (unclaimed, safe to take)
 
