@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | static accessibility audit (alt text, label/for, heading order, duplicate ids) across all 16 HTML pages — not yet covered by any of today's four earlier cycles | 2026-10-19 |
 
 ## Queued (unclaimed, safe to take)
 
