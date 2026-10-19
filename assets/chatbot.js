@@ -281,7 +281,7 @@
 .vjm-chat-panel.open{display:flex;}
 .vjm-chat-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;
  background:rgba(255,255,255,.03);border-bottom:1px solid #2a2a2e;color:#ededee;font-family:'DM Sans',sans-serif;}
-.vjm-chat-close{background:none;border:none;color:#9a9aa0;font-size:1.2rem;cursor:pointer;line-height:1;}
+.vjm-chat-close{background:none;border:none;color:#9a9aa0;font-size:1.2rem;cursor:pointer;line-height:1;min-width:44px;min-height:44px;}
 .vjm-chat-log{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;}
 .vjm-msg{max-width:88%;padding:9px 13px;border-radius:14px;font-size:.86rem;line-height:1.45;white-space:pre-wrap;
  font-family:'DM Sans',sans-serif;}
