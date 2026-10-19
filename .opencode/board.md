@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj: .opencode/board.md, .opencode/decisions.md only (investigation, no code change anticipated) | Run npm test + live-deployment probe, then a fresh-eyes sweep for one real, previously-unflagged improvement (priority: broken > copy/a11y > test coverage > performance), avoiding every category this board/decisions.md already marks fixed, declined or owner-gated. | 2026-10-19 |
 
 ## Queued (unclaimed, safe to take)
 
