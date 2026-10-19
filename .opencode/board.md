@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | assets/site.css `.modal-close`; a new touch-target test — taking Queued row 8 | 2026-10-19 |
 
 ## Queued (unclaimed, safe to take)
 
