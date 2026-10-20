@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | fresh-eyes sweep (non-functions/, non-_headers scope; exact files TBD pending findings) | Routine cycle: 772/772 tests green going in; `research-refresh.yml`'s cron hit a real-but-flagged intermittent 503 on the `intraday` module (likely Cloudflare edge/CPU limit inside `functions/api/research-engine.js` — backend territory, not actioned, logging for owner visibility). Dispatched a fresh-eyes agent pointed at less-explored ground (meta/OG/JSON-LD completeness, page-weight/preconnect, keyboard focus management, untested conditional logic) to find one real, verifiable, small improvement. | 2026-10-20 |
 
 ## Queued (unclaimed, safe to take)
 
