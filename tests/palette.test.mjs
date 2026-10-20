@@ -352,23 +352,31 @@ test("premium-guidance.html's own inline --muted clears WCAG AA against --bg in 
   }
 });
 
-// options-lab.html's own inline palette (same independent-:root pattern as
-// premium-guidance.html/stock-lab.html/forex-calendar.html) had its dark
-// --gold set to #e26060 -- the file's own --red literal, not the #d14343
-// every sibling page's dark --gold uses -- a copy-paste mixup. .tab-btn.active
-// (the page's top-level "Options Basics" / "GEX" / "Full Curriculum"
-// selector, active by default on first paint) paints white text on
-// background:var(--gold), which only cleared 3.46:1 on #e26060 -- under the
-// 4.5:1 AA floor. Simply swapping --gold to #d14343 was rejected: that value
-// is also used as this page's own SVG chart annotation text color directly on
-// --card (#161618), where it only clears ~3.96:1, so fixing the button that
-// way would have traded one AA failure for another in the same file. Fixed
-// by pointing .tab-btn.active at --gold2 (#a63333 dark / #8c1a14 light)
-// instead -- a token this file already declared but never referenced
-// anywhere, and the exact color assets/curriculum.css's own `.group-tab.active`
-// (the same "active top-level tab, white text" pattern) pairs with --gold in
-// its gradient for solid-fill buttons. --gold itself, and every other
-// consumer of it in this file, is untouched.
+// options-lab.html's own inline :root block declares dark --gold as #e26060
+// (this file's own --red literal, a copy-paste mixup -- every sibling
+// curriculum page's dark --gold is #d14343). That literal is dead on arrival
+// in the real page, though: assets/curriculum.css is <link>ed AFTER this
+// inline <style> block closes and its own :root also declares --gold
+// (#d14343), so with equal specificity the normal CSS cascade (later source
+// wins on a tie) silently overrides the inline value for every element on
+// the page -- confirmed by actually rendering the file in a headless browser
+// and reading getComputedStyle(document.documentElement) rather than trusting
+// either file's text in isolation. So .tab-btn.active's white text was never
+// really sitting on #e26060 at 3.46:1; the live background was always
+// #d14343 at 4.57:1, already clearing the 4.5:1 AA floor. A prior cycle's fix
+// (commit 38937368929) didn't know that and swapped the button to --gold2
+// instead, believing it was escaping a live failure -- that swap is harmless
+// (6.68:1 dark / 9.24:1 light) and this test keeps pinning it, but treat the
+// inline #e26060 as shadowed dead weight, not a bug to re-derive: a direct
+// re-read of this page's own :root block alone will keep saying --gold is
+// "wrong" when the cascade has already corrected every consumer of it back
+// to #d14343. That correction is exactly what exposes a real failure
+// elsewhere, though -- see the SVG-label test below: this page's "Zero Gamma
+// Flip" chart annotation also used var(--gold), and the real, cascade-
+// corrected #d14343 only clears 3.95:1 against this page's --card
+// background, still under the 4.5:1 text floor. --gold was never safe to use
+// as foreground text color on --card in this file; --gold-ink was already
+// the token reserved for that role everywhere else on the page.
 test("options-lab.html's .tab-btn.active uses --gold2, which clears WCAG AA for white text in both themes", () => {
   const html = read('options-lab.html');
   assert.match(html, /\.tab-btn\.active\s*\{\s*background:\s*var\(--gold2\)/,
@@ -386,6 +394,36 @@ test("options-lab.html's .tab-btn.active uses --gold2, which clears WCAG AA for 
     assert.ok(gold2, `${label}: options-lab.html's own --gold2 must be declared as hex`);
     const ratio = contrast(white, gold2);
     assert.ok(ratio >= 4.5, `${label}: options-lab.html's white-on-gold2 is ${ratio.toFixed(2)}:1`);
+  }
+});
+
+// Resolves --gold-ink/--card the way a real browser does: assets/curriculum.css
+// loads after this page's own inline <style> and wins any shared custom
+// property on a specificity tie (see the comment above), so a value found
+// only in this page's own :root block, like the two tests above used to do
+// for --gold, can be dead on arrival. last-match-wins over the inline block
+// followed by curriculum.css's block mirrors that cascade order directly
+// instead of trusting either file's text in isolation.
+test('options-lab.html\'s SVG "Zero Gamma Flip" label uses --gold-ink, which clears WCAG AA against --card in both themes', () => {
+  const html = read('options-lab.html');
+  const css = read('assets/curriculum.css');
+  assert.match(html, /<text[^>]*style="fill:var\(--gold-ink\)[^"]*"[^>]*>Zero Gamma Flip<\/text>/,
+    'options-lab.html\'s "Zero Gamma Flip" SVG label must paint its fill from --gold-ink, not --gold');
+
+  const blockOf = (re, src) => { const m = src.match(re); return m ? m[1] : ''; };
+  const darkBlock = `${blockOf(/:root\s*\{([^}]*)\}/, html)};${blockOf(/:root\s*\{([^}]*)\}/, css)}`;
+  const lightBlock = `${blockOf(/body\.light-mode\s*\{([^}]*)\}/, html)};${blockOf(/body\.light-mode\s*\{([^}]*)\}/, css)}`;
+  const varOf = (src, name) => {
+    const re = new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{3,8})`, 'g');
+    let m, last = null;
+    while ((m = re.exec(src))) last = m;
+    return last ? hexToRgb(last[1]) : null;
+  };
+  for (const [block, label] of [[darkBlock, 'dark'], [lightBlock, 'light']]) {
+    const goldInk = varOf(block, 'gold-ink'), card = varOf(block, 'card');
+    assert.ok(goldInk && card, `${label}: options-lab.html's real cascade-resolved --gold-ink/--card must be declared as hex`);
+    const ratio = contrast(goldInk, card);
+    assert.ok(ratio >= 4.5, `${label}: options-lab.html's cascade-resolved gold-ink-on-card is ${ratio.toFixed(2)}:1`);
   }
 });
 
