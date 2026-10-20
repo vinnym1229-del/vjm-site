@@ -3572,6 +3572,37 @@ test('Code.gs and APPS-SCRIPT-INTEGRATION.md document the Bundles features pipe-
     'expected sanitizeContentRow to still split bundles.features on "|"');
 });
 
+// Incident: integrations-core.js's sanitizeContentRow('trade_reviews', ...)
+// silently coerces two owner-typed cells instead of failing the sync --
+// `direction` only becomes "short" when the cell contains "short" anywhere
+// (anything else, including a typo, becomes "long"), and `result` must be
+// an exact win/loss/scratch/be match or it becomes "unclassified". Unlike
+// Schedule's enum (which drops the row so the gap is visible) or Bundles'
+// delimiter (now documented), this tab's own Code.gs comment and
+// APPS-SCRIPT-INTEGRATION.md's Sheet contract used to just list the column
+// names with no mention that a mistyped cell ships as silently-wrong data
+// instead of an error. Found the same way the Bundles gap was: the Sheet
+// contract documented every OTHER tab's silent-coercion/drop behavior
+// (Schedule's enum, Bundles' delimiter) but said nothing about this one,
+// even though TradeReviews is the tab with the most non-obvious coercions
+// of any of them (two, not one).
+test('Code.gs and APPS-SCRIPT-INTEGRATION.md document TradeReviews\' silent direction/result coercion', () => {
+  const codeGs = read('apps-script/content-sync/Code.gs');
+  assert.match(codeGs, /silently becomes "long"/, 'Code.gs must warn that an unrecognized direction silently becomes "long"');
+  assert.match(codeGs, /silently becomes "unclassified"/, 'Code.gs must warn that an unrecognized result silently becomes "unclassified"');
+
+  const doc = read('docs/APPS-SCRIPT-INTEGRATION.md');
+  assert.match(doc, /TradeReviews specifics/, 'docs/APPS-SCRIPT-INTEGRATION.md must document TradeReviews-specific behavior');
+  assert.match(doc, /silently becomes `long`/, 'docs/APPS-SCRIPT-INTEGRATION.md must warn that an unrecognized direction silently becomes `long`');
+  assert.match(doc, /silently becomes `unclassified`/, 'docs/APPS-SCRIPT-INTEGRATION.md must warn that an unrecognized result silently becomes `unclassified`');
+
+  const lib = read('functions/api/_lib/integrations-core.js');
+  assert.match(lib, /direction:\s*\/short\/i\.test\(String\(row\.direction\)\)\s*\?\s*'short'\s*:\s*'long'/,
+    'expected sanitizeContentRow to still default an unrecognized direction to "long"');
+  assert.match(lib, /:\s*'unclassified'/,
+    'expected sanitizeContentRow to still default an unrecognized result to "unclassified"');
+});
+
 // Incident: prop-firms.html's footer CSS set color:var(--vjm-muted) on the
 // <footer> element itself (which is what tools/contrast-audit.mjs's walk of
 // ambient text picks up) but never styled the <a> tags inside it. An <a>'s

@@ -12,6 +12,13 @@
  *   Announcements: id | title | body | link | pinned | created_at
  *   TradeReviews:  id | ticker | direction | result | r_multiple | notes |
  *                  image_url | traded_at
+ *                  (direction: only becomes "short" if the cell contains
+ *                  "short" anywhere, case-insensitive -- anything else,
+ *                  including a typo, silently becomes "long". result: must
+ *                  be exactly win/loss/scratch/be (case-insensitive) or it
+ *                  silently becomes "unclassified". A blank ticker drops the
+ *                  whole row, same as a blank id. None of this fails the
+ *                  sync or warns anywhere.)
  *   PropFirms:     id | name | url | code | discount | image_url | notes |
  *                  active
  *   Schedule:      id | day | session | time_et | host | note | active

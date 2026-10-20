@@ -101,6 +101,14 @@ Every row needs a non-empty `id`; rows without one are dropped. Extra columns
 are ignored, so adding your own is safe. Headers are matched
 case-insensitively with spaces folded to underscores.
 
+**TradeReviews specifics.** `direction` only becomes `short` when the cell
+contains "short" anywhere, case-insensitive — anything else, including a
+typo like "Shrot" or a blank cell, silently becomes `long`. `result` must be
+exactly `win`, `loss`, `scratch`, or `be` (case-insensitive); anything else
+silently becomes `unclassified` instead of failing the sync or warning
+anywhere. A row with no `ticker` is dropped entirely, the same as a row with
+no `id`.
+
 **Schedule specifics.** `day` is `Mon`–`Fri`. `session` must be exactly
 `NYAM`, `NYPM`, `CLASS` or `ASIA` — anything else and the server drops the row,
 so that day quietly loses a session. **Leave `host` blank to mark a slot as
