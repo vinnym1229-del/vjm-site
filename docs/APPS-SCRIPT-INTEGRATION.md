@@ -109,6 +109,12 @@ silently becomes `unclassified` instead of failing the sync or warning
 anywhere. A row with no `ticker` is dropped entirely, the same as a row with
 no `id`.
 
+**PropFirms specifics.** `active` defaults to listed: leave the cell blank,
+or type anything other than exactly `false`, `no`, or `0` (case-insensitive),
+and the firm stays on the live promo list. A typo meant to retire a firm --
+"flase", "n", a stray space -- does not match any of those three and
+silently leaves it active, with nothing failing or warning.
+
 **Schedule specifics.** `day` is `Mon`–`Fri`. `session` must be exactly
 `NYAM`, `NYPM`, `CLASS` or `ASIA` — anything else and the server drops the row,
 so that day quietly loses a session. **Leave `host` blank to mark a slot as

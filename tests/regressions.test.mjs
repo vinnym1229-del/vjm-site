@@ -3603,6 +3603,30 @@ test('Code.gs and APPS-SCRIPT-INTEGRATION.md document TradeReviews\' silent dire
     'expected sanitizeContentRow to still default an unrecognized result to "unclassified"');
 });
 
+// Incident: integrations-core.js's sanitizeContentRow('prop_firms', ...)
+// treats `active` as listed-by-default: `!/^(false|no|0)$/i.test(row.active
+// ?? 'true')` keeps a firm active unless the cell is exactly "false", "no",
+// or "0" (case-insensitive). The owner's intent for this column only ever
+// runs one direction -- retiring a firm -- so a typo while typing that one
+// value ("flase", "n", a stray trailing space) does not match the regex and
+// silently leaves the firm live on the promo list with no failure or
+// warning, the same undocumented-coercion gap class as Bundles' delimiter
+// and TradeReviews' direction/result, just never caught for this column.
+// Schedule's `active` shares the exact same regex but was out of scope here
+// -- its own doc paragraph already covers the happy path and raising the
+// same typo risk there is a separate, later fix if it's worth making.
+test('Code.gs and APPS-SCRIPT-INTEGRATION.md document PropFirms\' active-by-default typo risk', () => {
+  const codeGs = read('apps-script/content-sync/Code.gs');
+  assert.match(codeGs, /silently leaves it active/, 'Code.gs must warn that a mistyped active cell silently leaves the firm active');
+
+  const doc = read('docs/APPS-SCRIPT-INTEGRATION.md');
+  assert.match(doc, /PropFirms specifics/, 'docs/APPS-SCRIPT-INTEGRATION.md must document PropFirms-specific behavior');
+  assert.match(doc, /silently leaves it active/, 'docs/APPS-SCRIPT-INTEGRATION.md must warn that a mistyped active cell silently leaves the firm active');
+
+  assert.match(read('functions/api/_lib/integrations-core.js'), /!\/\^\(false\|no\|0\)\$\/i\.test\(String\(row\.active \?\? 'true'\)\)/,
+    'expected sanitizeContentRow to still default prop_firms.active to listed unless exactly false/no/0');
+});
+
 // Incident: prop-firms.html's footer CSS set color:var(--vjm-muted) on the
 // <footer> element itself (which is what tools/contrast-audit.mjs's walk of
 // ambient text picks up) but never styled the <a> tags inside it. An <a>'s

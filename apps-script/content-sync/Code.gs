@@ -21,6 +21,10 @@
  *                  sync or warns anywhere.)
  *   PropFirms:     id | name | url | code | discount | image_url | notes |
  *                  active
+ *                  (active: blank/anything-but-false/no/0 keeps the firm
+ *                  listed. A typo meant to retire it -- "flase", "n", a
+ *                  stray space -- does NOT match and silently leaves it active,
+ *                  with no warning.)
  *   Schedule:      id | day | session | time_et | host | note | active
  *   Team:          id | name | role | bio | photo_url | socials | order
  *   Faqs:          id | question | answer | order
