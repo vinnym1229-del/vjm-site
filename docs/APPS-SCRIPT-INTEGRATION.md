@@ -120,7 +120,12 @@ silently leaves it active, with nothing failing or warning.
 so that day quietly loses a session. **Leave `host` blank to mark a slot as
 off**: it renders struck through (the way Monday 2:30 does now) rather than
 vanishing and leaving a gap, and it is excluded from the live countdown and
-from the "15 sessions a week" count. `active` = `false` removes a row outright.
+from the "15 sessions a week" count. `active` defaults to listed the same way
+PropFirms' does: leave the cell blank, or type anything other than exactly
+`false`, `no`, or `0` (case-insensitive), and the slot stays on the live
+schedule. A typo meant to take it off -- "flase", "n", a stray space -- does
+not match any of those three and silently leaves it active, with nothing
+failing or warning.
 
 **Bundles specifics.** `features` holds every bullet for that pricing card in
 one cell — separate them with `|`, e.g. `Live sessions | Discord | Replays`.

@@ -3627,6 +3627,30 @@ test('Code.gs and APPS-SCRIPT-INTEGRATION.md document PropFirms\' active-by-defa
     'expected sanitizeContentRow to still default prop_firms.active to listed unless exactly false/no/0');
 });
 
+// Incident: Schedule shares the exact same `active` default-listed regex as
+// PropFirms (!/^(false|no|0)$/i.test(row.active ?? 'true')) -- a typo while
+// typing "false" to take a slot off the schedule ("flase", "n", a stray
+// space) does not match and silently leaves the slot active, with no
+// failure or warning. The previous cycle's PropFirms fix deliberately left
+// this one out as a separate, smaller follow-up since Schedule's own doc
+// paragraph already covered the happy path (day/session enums, the
+// struck-through "off" convention) but said nothing about the typo risk on
+// `active` specifically.
+test('Code.gs and APPS-SCRIPT-INTEGRATION.md document Schedule\'s active-by-default typo risk', () => {
+  const codeGs = read('apps-script/content-sync/Code.gs');
+  assert.match(codeGs, /Schedule:[\s\S]{0,300}silently leaves it active/,
+    'Code.gs must warn near the Schedule tab that a mistyped active cell silently leaves the slot active');
+
+  const doc = read('docs/APPS-SCRIPT-INTEGRATION.md');
+  assert.match(doc, /Schedule specifics/, 'docs/APPS-SCRIPT-INTEGRATION.md must document Schedule-specific behavior');
+  assert.match(doc, /Schedule specifics[\s\S]{0,800}silently leaves it active/,
+    'docs/APPS-SCRIPT-INTEGRATION.md must warn in the Schedule paragraph that a mistyped active cell silently leaves the slot active');
+
+  assert.match(read('functions/api/_lib/integrations-core.js'),
+    /type === 'schedule'[\s\S]{0,850}!\/\^\(false\|no\|0\)\$\/i\.test\(String\(row\.active \?\? 'true'\)\)/,
+    'expected sanitizeContentRow to still default schedule.active to listed unless exactly false/no/0');
+});
+
 // Incident: prop-firms.html's footer CSS set color:var(--vjm-muted) on the
 // <footer> element itself (which is what tools/contrast-audit.mjs's walk of
 // ambient text picks up) but never styled the <a> tags inside it. An <a>'s

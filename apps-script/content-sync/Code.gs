@@ -26,6 +26,9 @@
  *                  stray space -- does NOT match and silently leaves it active,
  *                  with no warning.)
  *   Schedule:      id | day | session | time_et | host | note | active
+ *                  (active: same blank/anything-but-false/no/0 default as
+ *                  PropFirms -- a typo meant to take a slot off the schedule
+ *                  silently leaves it active, with no warning.)
  *   Team:          id | name | role | bio | photo_url | socials | order
  *   Faqs:          id | question | answer | order
  *   Bundles:       id | name | price | period | save_badge | features |
