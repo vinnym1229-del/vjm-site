@@ -350,3 +350,98 @@ test('psychology-enhancer calc(): 1R in dollars is floored at 0, a negative conv
   assert.equal(negOneR.er, '0.21R');
   assert.equal(negOneR.erDollars, '$0');
 });
+
+// --- futures-dissection.html: Tick Value & P&L Calculator (#fut-tool) ------
+//
+// This is the fourth of the four matched curriculum-tool pages (futures-
+// dissection, stock-breakdown, options-lab, psychology-enhancer -- the same
+// COURSE_PAGES grouping tests/regressions.test.mjs uses) but, unlike its
+// three siblings above, its own calc() had never been executed by a test --
+// only the page's surrounding markup was checked, the exact gap this test
+// file's header comment exists to close for the OTHER three pages. A member
+// sizes a real futures position off this tool's point/tick/P&L output, so
+// the same defect classes already caught on the sibling tools (a bare
+// '$'+n putting a short trade's minus sign after the dollar sign instead of
+// before it, or a fabricated non-zero contract count instead of a real $0
+// position) would ship here undetected too. Read calc()/fmtUsd()/specFor()
+// directly first: both are already written defensively (fmtUsd already
+// puts the sign before the '$', and contracts is already floored at 0 via
+// Math.max(0, ...)) -- so these are pure regression tests pinning already-
+// correct behavior, not bug fixes, the same role pj-futures.test.mjs plays
+// for index.html's own calcFutures.
+const futuresDissection = readFileSync(join(ROOT, 'futures-dissection.html'), 'utf8');
+const fdSpecsSrc = futuresDissection.match(/var specs=\[[\s\S]*?\];/)[0];
+const fdNumSrc = extractFunction(futuresDissection, 'num', 'futures-dissection.html');
+const fdFmtUsdSrc = extractFunction(futuresDissection, 'fmtUsd', 'futures-dissection.html');
+const fdSpecForSrc = extractFunction(futuresDissection, 'specFor', 'futures-dissection.html');
+const fdCalcSrc = extractFunction(futuresDissection, 'calc', 'futures-dissection.html');
+
+function runFuturesCalc(inputs) {
+  const { sandbox, els, el } = makeSandbox();
+  vm.runInContext(`${fdSpecsSrc}\n${fdNumSrc}\n${fdFmtUsdSrc}\n${fdSpecForSrc}\n${fdCalcSrc}\nthis.calc = calc;`, sandbox);
+  el('fu-contract').value = inputs.contract;
+  el('fu-entry').value = String(inputs.entry);
+  el('fu-exit').value = String(inputs.exit);
+  el('fu-contracts').value = inputs.contracts === undefined ? '1' : String(inputs.contracts);
+  sandbox.calc();
+  return {
+    points: els['fu-out-points'].textContent,
+    ticks: els['fu-out-ticks'].textContent,
+    pnl: els['fu-out-pnl'].textContent,
+  };
+}
+
+test("futures-dissection calc(): the page's own ES defaults match the worked point/tick/P&L math", () => {
+  // Page defaults: ES, entry 21500, exit 21568, 1 contract.
+  // points = 68, ticks = 68/0.25 = 272, P&L = 68*$50*1 = $3,400.
+  const out = runFuturesCalc({ contract: 'ES', entry: 21500, exit: 21568, contracts: 1 });
+  assert.equal(out.points, '68.00');
+  assert.equal(out.ticks, '272');
+  assert.equal(out.pnl, '$3,400');
+});
+
+test('futures-dissection calc(): a 20-point NQ move and the same move in MNQ keep exactly the 10x multiplier relationship the lesson teaches', () => {
+  // Same worked numbers lesson 2's own quiz explanation states: NQ moves
+  // $400 (at $20/pt) and MNQ moves $40 (at $2/pt) for an identical 20-point move.
+  const nq = runFuturesCalc({ contract: 'NQ', entry: 21500, exit: 21520, contracts: 1 });
+  assert.equal(nq.pnl, '$400');
+  const mnq = runFuturesCalc({ contract: 'MNQ', entry: 21500, exit: 21520, contracts: 1 });
+  assert.equal(mnq.pnl, '$40');
+});
+
+// Same sign-placement defect class already fixed on stock-lab.html's fmt(),
+// stock-breakdown.html's fmtUsd(), and options-lab.html's breakeven/chart
+// output: a losing trade (exit below entry, the normal outcome of a short
+// or a failed long) must render its minus sign before the '$', not after.
+// This page's own fmtUsd() already gets it right -- pinning that here so a
+// future edit that reintroduces a bare '$'+n.toLocaleString() fails this
+// test instead of shipping a "$-3,400" readout on a real P&L figure.
+test('futures-dissection calc(): a losing trade keeps its minus sign before the $, not after', () => {
+  const out = runFuturesCalc({ contract: 'ES', entry: 21568, exit: 21500, contracts: 1 });
+  assert.equal(out.points, '-68.00');
+  assert.equal(out.pnl, '-$3,400');
+});
+
+// #fu-contracts carries min="1" but, like every other calculator on this
+// site's curriculum pages, that attribute is not enforced by JS and calc()
+// reruns on every input event -- a member can type 0 or a negative contract
+// count. Unclamped, this is the same "fabricated 1-contract floor" class
+// fixed on options-lab.html and index.html's calcSizingSim; here calc()
+// already floors contracts at 0 via Math.max(0, ...), so 0 or a negative
+// value must render a real $0 position, never a nonzero P&L.
+test('futures-dissection calc(): 0 or negative contracts render a real $0 position, not a fabricated nonzero P&L', () => {
+  const zero = runFuturesCalc({ contract: 'ES', entry: 21500, exit: 21568, contracts: 0 });
+  assert.equal(zero.pnl, '$0');
+  const negative = runFuturesCalc({ contract: 'ES', entry: 21500, exit: 21568, contracts: -3 });
+  assert.equal(negative.pnl, '$0');
+});
+
+// An empty #fu-contracts field (a member selecting-all-and-deleting while
+// editing) is handled as its own branch, separate from the 0/negative
+// floor above: fuContractsRaw==='' short-circuits to the page's real
+// 1-contract default rather than falling through to Math.round('') (NaN)
+// and silently zeroing the position the same way a deliberate 0 does.
+test('futures-dissection calc(): an emptied contracts field defaults to a real 1-contract position, not a silent $0', () => {
+  const out = runFuturesCalc({ contract: 'ES', entry: 21500, exit: 21568, contracts: '' });
+  assert.equal(out.pnl, '$3,400');
+});
