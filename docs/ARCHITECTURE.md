@@ -18,18 +18,39 @@ of churning working pages twice.
 
 ```
 functions/api/
-  _lib/session.js      HMAC session tokens, cookie builders, secret resolution
-  _lib/http.js         JSON envelope, rate limiter, symbol validation, fetch helper
-  verify-premium.js    POST sign-in (cookie issuance) / GET session check
-  logout-premium.js    cookie clear
+  _lib/session.js       HMAC session tokens, cookie builders, secret resolution
+  _lib/http.js          JSON envelope, rate limiter, symbol validation, fetch helper
+  _lib/entitlements.js  tier/session-version model — what a paying member can see
+  _lib/integrations-core.js pure Sheet-row/Whop/Discord-safe-content helpers (no network)
+  _lib/alpaca.js        shared Alpaca accessors (assistant, market-brief)
+  _lib/ai.js            Workers AI wrapper, fails soft to data-only output
+  _lib/backtest-core.js deterministic event-study engine (pure functions)
+  _lib/discord.js       Discord webhook sender (strips pings, enforces embed limits)
+  _lib/indexing.js      which responses search engines are allowed to index
+  _lib/turnstile.js     server-side Turnstile verification, shared by abusable endpoints
+  verify-premium.js     POST sign-in (cookie issuance) / GET session check
+  auth-google.js        "Sign in with Google" convenience layer on verify-premium
+  logout-premium.js     cookie clear
   check-member-status.js public membership probe (generic answers)
-  stock-research.js    public quote snapshot (Alpaca IEX)
+  stock-research.js     public quote snapshot (Alpaca IEX)
   premium-stock-research.js gated quote snapshot
-  yahoo-news.js        sanitized headlines (Yahoo JSON search endpoint, not RSS — retired)
-  forex-calendar.js    weekly economic calendar w/ explicit unavailability
-  research-engine.js   (codex) premium research modules + snapshots
-apps-script/member-sync/  authenticated single-record sheet bridge
-migrations/            D1 schema (research + security tables)
+  premium-market-analyst.js gated AI trend analyst (members-only per owner request)
+  yahoo-news.js         sanitized headlines (Yahoo JSON search endpoint, not RSS — retired)
+  forex-calendar.js     weekly economic calendar w/ explicit unavailability
+  research-engine.js    (codex) premium research modules + snapshots
+  content.js            GET owner-curated CMS tables (announcements, bundles, schedule, …)
+  content-sync.js       cron-only pull from the Apps Script bridge into D1
+  whop-webhook.js       Whop → entitlement automation (HMAC-verified, no rate limit)
+  analytics.js          first-party funnel collection
+  assistant.js          course-companion chatbot backend
+  live-stats.js         auto-updating headline numbers (replacing hand-typed copy)
+  market-brief.js       Pre-Market Brief (cached)
+  ticker.js             homepage ticker tape data
+  newsletter/subscribe.js, newsletter/unsubscribe.js
+apps-script/
+  content-sync/  hourly Sheet → D1 bridge (announcements, trade reviews, prop firms, schedule, team, bundles)
+  member-sync/   authenticated single-record sheet bridge
+migrations/            D1 schema (8 files: research, security, content platform, whop, entitlements, analytics, newsletter)
 tests/                 node:test suites (auth, contracts, structure, research)
 _headers               CSP/HSTS/etc for static assets
 ```

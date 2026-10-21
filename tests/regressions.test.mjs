@@ -4017,3 +4017,40 @@ test("docs/SECURITY.md's rate-limiting control does not claim per-identifier sco
   }
   assert.ok(sawAnyCall, 'sanity: expected to find at least one checkRateLimit() call under functions/');
 });
+
+// Incident: docs/ARCHITECTURE.md's "Module map" was written when
+// functions/api/ had ~10 files and never grew with it -- by the time this
+// test was added the directory held 19 top-level files plus newsletter/, and
+// the map still only named the original 9 (missing content.js, content-sync.js
+// and apps-script/content-sync/ entirely, even though those are the live CMS
+// bridge this week's cycles kept fixing bugs in; also missing whop-webhook.js,
+// auth-google.js, assistant.js, analytics.js, ticker.js, live-stats.js,
+// market-brief.js, premium-market-analyst.js, and 8 of the 10 _lib/ helpers).
+// A maintainer skimming the doc for "what endpoints exist" would miss more
+// than half the real API surface, including the payment webhook. Fixed by
+// listing every real file; this test walks the actual directories so the doc
+// can't silently drift out of sync with the next endpoint someone adds.
+test('ARCHITECTURE.md\'s module map names every real functions/api and apps-script file', () => {
+  const doc = read('docs/ARCHITECTURE.md');
+  const mapMatch = doc.match(/## Module map\s*\n```([\s\S]*?)```/);
+  assert.ok(mapMatch, 'docs/ARCHITECTURE.md must have a fenced "## Module map" code block');
+  const map = mapMatch[1];
+
+  const walkJs = (dir) => {
+    let out = [];
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, entry.name);
+      if (entry.isDirectory()) out = out.concat(walkJs(p));
+      else if (entry.name.endsWith('.js')) out.push(entry.name);
+    }
+    return out;
+  };
+  for (const name of walkJs(join(ROOT, 'functions/api'))) {
+    assert.ok(map.includes(name), `functions/api file "${name}" is missing from ARCHITECTURE.md's Module map`);
+  }
+  for (const entry of readdirSync(join(ROOT, 'apps-script'), { withFileTypes: true })) {
+    if (entry.isDirectory()) {
+      assert.ok(map.includes(entry.name), `apps-script/${entry.name}/ is missing from ARCHITECTURE.md's Module map`);
+    }
+  }
+});
