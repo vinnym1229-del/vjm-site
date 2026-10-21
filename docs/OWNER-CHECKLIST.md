@@ -163,8 +163,9 @@ format, and the `List-Unsubscribe` headers to set.
       detects exactly that case and says so on load rather than letting people
       fail one at a time. Setting only the site key renders a widget that is
       never checked. Unsubscribing is never gated by it.
-- [ ] Read the list any time:
-      `npx wrangler d1 execute vjm-content --remote --command "SELECT status, COUNT(*) FROM newsletter_subscribers GROUP BY status"`
+- [ ] Read the list any time (`<DB>` is your D1 database's name, not a
+      separate "content" database — see docs/NEWSLETTER.md):
+      `npx wrangler d1 execute <DB> --remote --command "SELECT status, COUNT(*) FROM newsletter_subscribers GROUP BY status"`
 
 ## 6. Content only you have
 
@@ -259,7 +260,7 @@ format, and the `List-Unsubscribe` headers to set.
 - A Futures-tier session can open `/futures-dissection` and is refused
   `/options-lab` (this only becomes a real test after item 2).
 - Newsletter: sign up with an address you control, then check the row landed:
-  `npx wrangler d1 execute vjm-content --remote --command "SELECT email, status FROM newsletter_subscribers ORDER BY id DESC LIMIT 5"`
+  `npx wrangler d1 execute <DB> --remote --command "SELECT email, status FROM newsletter_subscribers ORDER BY id DESC LIMIT 5"`
 - Unsubscribe: visit `/unsubscribe`, submit that address, confirm the row
   flips to `unsubscribed` rather than disappearing.
 - Schedule: the session clock names the next session and the day is right in

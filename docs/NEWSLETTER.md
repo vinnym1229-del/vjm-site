@@ -2,11 +2,15 @@
 
 ## What was built, and what was deliberately not
 
-The site now collects newsletter signups into **your own D1 database**
-(`vjm-content`, table `newsletter_subscribers`). Four forms feed it: the
-homepage newsletter section, the homepage's prop-firm giveaway entry form,
-the prop-firms page, and the lead-capture box the homepage's "where should I
-start" quiz renders once it recommends a track. All four post to
+The site now collects newsletter signups into table `newsletter_subscribers`,
+in the same single D1 database (bound as `RESEARCH_DB`) every other table in
+this site shares — there is no separate "content" database. See
+docs/research-engine-setup.md's "Create persistent storage" step for the name
+you gave it when it was first created, and docs/DEPLOYMENT.md's D1-bindings
+note. Four forms feed it: the homepage newsletter section, the homepage's
+prop-firm giveaway entry form, the prop-firms page, and the lead-capture box
+the homepage's "where should I start" quiz renders once it recommends a
+track. All four post to
 `/api/newsletter/subscribe` and are distinguished in the `source` column by
 `home`, `giveaway`, `prop-firms`, and `homepage-quiz` respectively.
 
@@ -25,10 +29,14 @@ advertise a welcome email until there is one.
 
 ## Reading the list
 
+`<DB>` below is your D1 database's name (the one from
+docs/research-engine-setup.md's "Create persistent storage" step, not a
+literal string to type as-is).
+
 The whole list, and the only query that matters at send time:
 
 ```bash
-npx wrangler d1 execute vjm-content --remote \
+npx wrangler d1 execute <DB> --remote \
   --command "SELECT email, first_name, source, created_at
              FROM newsletter_subscribers
              WHERE status = 'subscribed'
@@ -38,7 +46,7 @@ npx wrangler d1 execute vjm-content --remote \
 As CSV, to paste into whatever you send with:
 
 ```bash
-npx wrangler d1 execute vjm-content --remote --json \
+npx wrangler d1 execute <DB> --remote --json \
   --command "SELECT email, first_name, unsub_token FROM newsletter_subscribers WHERE status = 'subscribed'" \
   | jq -r '.[0].results[] | [.email, .first_name, .unsub_token] | @csv'
 ```
@@ -52,7 +60,7 @@ without that clause once, you will not notice until someone complains.
 Quick counts:
 
 ```bash
-npx wrangler d1 execute vjm-content --remote \
+npx wrangler d1 execute <DB> --remote \
   --command "SELECT status, COUNT(*) FROM newsletter_subscribers GROUP BY status"
 ```
 

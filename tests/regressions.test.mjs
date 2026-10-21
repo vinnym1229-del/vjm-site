@@ -2158,6 +2158,37 @@ test('docs/NEWSLETTER.md states the correct count of newsletter form sources', (
     `docs/NEWSLETTER.md: expected "${word} forms feed it" for the ${count} real sources found`);
 });
 
+// Incident: docs/NEWSLETTER.md stated newsletter_subscribers lives in a D1
+// database literally named `vjm-content`, and docs/OWNER-CHECKLIST.md's own
+// `wrangler d1 execute` commands assumed that same name -- but
+// docs/research-engine-setup.md, the one place in this repo that actually
+// instructs creating the database ("Create a D1 database named ..."), names
+// it `vjm-research`. All three docs are describing the exact same single D1
+// binding: every functions/api/*.js file that touches D1 (content, entitlements,
+// whop codes, analytics, newsletter included) binds it as `RESEARCH_DB`, and
+// docs/DEPLOYMENT.md already says so in its own bindings table. Two confident,
+// disagreeing literal names for one resource meant whichever doc an owner
+// read first handed them a command that fails against their real database.
+// Fixed by replacing every guessed name outside the one doc that actually
+// creates the database with a `<DB>` placeholder the owner fills in with
+// their own database's real name. Pins both ways this can drift back: a
+// re-guessed literal name in either doc, and research-engine-setup.md's own
+// creation step disappearing without the others being told to follow.
+test('docs/NEWSLETTER.md and docs/OWNER-CHECKLIST.md never hardcode a D1 database name of their own', () => {
+  const created = /Create a D1 database named `([^`]+)`/.exec(read('docs/research-engine-setup.md'));
+  assert.ok(created, 'docs/research-engine-setup.md: expected the "Create a D1 database named `<name>`" step -- the one place this repo names the database');
+
+  for (const doc of ['docs/NEWSLETTER.md', 'docs/OWNER-CHECKLIST.md']) {
+    const text = read(doc);
+    const calls = [...text.matchAll(/wrangler d1 execute (\S+)/g)];
+    assert.ok(calls.length > 0, `${doc}: expected at least one "wrangler d1 execute" command`);
+    for (const m of calls) {
+      assert.equal(m[1], '<DB>',
+        `${doc}: "wrangler d1 execute ${m[1]}" hardcodes a database name instead of the <DB> placeholder -- it must not guess a name that can disagree with docs/research-engine-setup.md's own (currently \`${created[1]}\`)`);
+    }
+  }
+});
+
 // Incident: privacy.html, terms.html and risk-disclosure.html each carry a
 // small nav strip that links to stock-lab.html, but the link text still read
 // "Stock Tracker" -- the tool's name before it became "Stock Lab" everywhere
