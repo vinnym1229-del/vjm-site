@@ -440,6 +440,35 @@ test('every quiz keeps its answer key in sync with its markup', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Incident: every "Check your understanding" quiz question is a native
+// radio group (one <input type="radio"> per option, sharing a `name`) with
+// no fieldset/legend and no aria-labelledby tying the group to its question
+// -- a sighted visitor reads the <p class="qtext"> above the options, but a
+// screen-reader user who jumps straight to the radio group (NVDA/JAWS "form
+// field" navigation, which many screen-reader users rely on precisely to
+// skip prose) hears four option labels with no indication of what question
+// they answer. Fixed by giving each .qtext an id and wrapping that
+// question's .quiz-choice labels in a role="radiogroup" aria-labelledby
+// pointing at it, across all 100 questions on the four course pages. This
+// test pins the association so a future quiz question added by hand can't
+// quietly skip it the way the original 100 did.
+test('every quiz question\'s radio group is labelled by its question text', () => {
+  for (const p of COURSE_PAGES) {
+    const html = read(p);
+    const blocks = html.split(/<div class="quiz-q" data-qi="\d+">/).slice(1);
+    assert.ok(blocks.length > 0, `${p}: no quiz-q blocks found`);
+    blocks.forEach((b, bi) => {
+      const qtextMatch = /<p class="qtext" id="([^"]+)">/.exec(b);
+      assert.ok(qtextMatch, `${p} q${bi}: .qtext has no id to be labelled by`);
+      const groupMatch = /<div class="quiz-choice-group" role="radiogroup" aria-labelledby="([^"]+)">/.exec(b);
+      assert.ok(groupMatch, `${p} q${bi}: choices are not wrapped in a role="radiogroup"`);
+      assert.equal(groupMatch[1], qtextMatch[1],
+        `${p} q${bi}: radiogroup's aria-labelledby ("${groupMatch[1]}") does not point at .qtext's id ("${qtextMatch[1]}")`);
+    });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Business rule (owner decision 2026-08): the ONLY free course content is the
 // futures starter course Level 1; the psychology essay stays public.
 test('free tier is exactly the futures starter course + the essay', () => {

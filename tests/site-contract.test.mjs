@@ -344,10 +344,10 @@ test('sitemap.xml\'s own comment names every permanently-noindexed page it exclu
 // fails loudly instead of silently drifting for weeks like the original bug.
 const SITEMAP_LASTMOD_PINS = {
   'index.html': { lastmod: '2026-10-19', sha256: 'f1b9a62c6e4b45475b16df178261517ba6c2b858c598f1f9f4290767bd0be075' },
-  'stock-breakdown.html': { lastmod: '2026-10-17', sha256: '6a8f42edc17c2770cafd1f6b743f1e96514adbdab8513da440a1d305c1412db0' },
-  'futures-dissection.html': { lastmod: '2026-10-17', sha256: 'e203e0a3f04fe4cf6581eb85811094e006f3b1d61bb99e162f091135210a631d' },
-  'psychology-enhancer.html': { lastmod: '2026-10-17', sha256: 'e3b97186b8552aeba03f9788f19401d3ec1de748ef7bb159c8ebeca9cf553a57' },
-  'options-lab.html': { lastmod: '2026-10-20', sha256: '03576f3182f2e17e6d7d82039514eb82103cd5e4d2b3cf30a89ffc36521b6133' },
+  'stock-breakdown.html': { lastmod: '2026-10-22', sha256: '0824cb02c40d333ef79602a2216fd82e5a55b55945421ae7230475cdb38bff01' },
+  'futures-dissection.html': { lastmod: '2026-10-22', sha256: '5960e824460c8a40cc416f53a43db6da09f5cb7d9c99dd906b28847c85b0c678' },
+  'psychology-enhancer.html': { lastmod: '2026-10-22', sha256: '593d06140213bb6b256c7627853ffa9168151bcfc43c7c3904877f2d92877082' },
+  'options-lab.html': { lastmod: '2026-10-22', sha256: 'e7299844c7975ba2d6f336cce54bcc00f497b3a0f0a7bc46055a581f705407ff' },
   'premarket.html': { lastmod: '2026-10-17', sha256: 'e0f8b9710a0dac84e586139ffc757b3cbd790265272546b1a2efbe6fda0670e9' },
   'forex-calendar.html': { lastmod: '2026-10-19', sha256: 'cb0c132efaea929b4b25fc49e996c38c7c33c5a0f7438331588fbea529278c2d' },
   'prop-firms.html': { lastmod: '2026-10-17', sha256: '2abb08c775dadf6bfc8041a9a7ebb6488c3c7018824ed25bb782026eabfaee64' },
