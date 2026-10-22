@@ -6,7 +6,6 @@
   --vjm-bg: #0c0c0d;
   --vjm-bg2: #131315;
   --vjm-card: #161618;
-  --vjm-card2: #1d1d20;
   --vjm-border: #2a2a2e;
   --vjm-border-strong: #3a3a40;
   --vjm-text: #ededee;
@@ -23,8 +22,6 @@
 
   --vjm-radius-s: 10px;
   --vjm-radius-m: 16px;
-  --vjm-radius-l: 22px;
-  --vjm-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   --vjm-glow-red: 0 0 24px rgba(209, 67, 67, 0.05);
 
   --vjm-font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
@@ -127,7 +124,6 @@ body.light-mode {
   --vjm-bg: #ffffff;
   --vjm-bg2: #f6f6f7;
   --vjm-card: #ffffff;
-  --vjm-card2: #fafafa;
   --vjm-border: #e3e3e6;
   --vjm-border-strong: #cfcfd4;
   --vjm-text: #141416;
@@ -142,7 +138,6 @@ body.light-mode {
   --vjm-amber: #26262a;
   --vjm-blue: #26262a;
 
-  --vjm-shadow: 0 12px 40px rgba(0, 0, 0, 0.10);
   --vjm-glow-red: 0 0 24px rgba(179, 37, 29, 0.04);
 }
 body.light-mode .vjm-page {

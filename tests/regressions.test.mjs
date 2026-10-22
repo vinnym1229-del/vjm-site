@@ -4106,3 +4106,32 @@ test('ARCHITECTURE.md\'s module map names every real functions/api and apps-scri
     }
   }
 });
+
+// Incident: assets/tokens.css declared --vjm-card2, --vjm-radius-l, and
+// --vjm-shadow (each defined once in the dark :root block and, for --vjm-
+// card2/--vjm-shadow, redefined again in the body.light-mode override) but
+// no page, stylesheet, or script ever read any of the three with var(...) --
+// they were dead on arrival, carried in both theme blocks for no reason.
+// Removed the six dead declarations (three tokens x two theme blocks);
+// this test walks every file var(...) can appear in and fails if a future
+// token is declared here without ever being consumed, so a design token
+// can't go stale and silently bloat the file again.
+test('every --vjm-* custom property declared in tokens.css is actually used somewhere', () => {
+  const tokensCss = read('assets/tokens.css');
+  const rootBlock = tokensCss.match(/:root\s*\{([\s\S]*?)\n\}/);
+  assert.ok(rootBlock, 'tokens.css must have a :root block');
+  const declared = [...rootBlock[1].matchAll(/(--vjm-[\w-]+)\s*:/g)].map((m) => m[1]);
+  assert.ok(declared.length > 0, 'sanity: expected to find declared --vjm-* tokens');
+
+  let haystack = tokensCss;
+  for (const f of ['assets/curriculum.css', 'assets/newsletter.css', 'assets/research-engine.css', 'assets/site.css']) {
+    haystack += read(f);
+  }
+  for (const p of PAGES) haystack += read(p);
+  for (const f of readdirSync(join(ROOT, 'assets')).filter((n) => n.endsWith('.js'))) {
+    haystack += read(join('assets', f));
+  }
+
+  const unused = declared.filter((name) => !haystack.includes(`var(${name}`));
+  assert.deepEqual(unused, [], `tokens.css declares these but nothing reads them with var(...): ${unused.join(', ')}`);
+});
