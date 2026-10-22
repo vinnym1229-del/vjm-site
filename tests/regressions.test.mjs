@@ -4135,3 +4135,22 @@ test('every --vjm-* custom property declared in tokens.css is actually used some
   const unused = declared.filter((name) => !haystack.includes(`var(${name}`));
   assert.deepEqual(unused, [], `tokens.css declares these but nothing reads them with var(...): ${unused.join(', ')}`);
 });
+
+// Incident: index.html's <meta name="description"> grew to 267 characters
+// (team-session count, prop-firm giveaway figure, Whop star rating, and the
+// "Educational only -- not financial advice" disclaimer all packed in) --
+// well past the ~155-160 character point where Google truncates SERP
+// snippets. The disclaimer sat at the very end, so it was the one thing
+// guaranteed to be cut from the one surface a visitor reads before ever
+// clicking through to the real page. Trimmed to keep the disclaimer inside
+// the visible window; this test keeps the homepage description from
+// creeping back past the truncation point as copy gets added over time.
+test('the homepage meta description fits inside Google\'s SERP truncation window', () => {
+  const html = read('index.html');
+  const description = html.match(/<meta name="description" content="([^"]*)">/);
+  assert.ok(description, 'index.html must have a meta description');
+  assert.ok(description[1].length <= 160,
+    `index.html's meta description is ${description[1].length} chars, over the ~160-char SERP truncation point: "${description[1]}"`);
+  assert.match(description[1], /not financial advice/i,
+    'index.html\'s meta description must keep the disclaimer inside the truncation window');
+});
