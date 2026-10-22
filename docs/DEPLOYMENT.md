@@ -32,6 +32,8 @@ via PR).
 | `WHOP_API_KEY` / `WHOP_PRODUCT_ID` | optional, enables real Whop review/member counts on the homepage hero badge via `/api/live-stats` (Account API key, `access_pass:basic:read` scope) — omit either and it silently falls back to the site's static numbers, never breaks the page. Whop's product API has no aggregate star-rating field, so the "5.0★" figure stays Sheet-CMS (or static-default) only, regardless of this var |
 | `FOREX_CALENDAR_SOURCE_URL` | optional, swaps in a paid/private economic-calendar feed for `/api/forex-calendar` — omit it and the default public ForexFactory feed is used, matching forex-calendar.html's own "API note" to the owner |
 | `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | optional bot-check on verify-premium and the newsletter/lead-capture forms — soft-required by design (checks are skipped until `TURNSTILE_SECRET_KEY` is set, per `_lib/turnstile.js`); set BOTH or the widget renders unchecked (site key only) or every submit is rejected (secret only) — see docs/OWNER-CHECKLIST.md |
+| `INDEXING` | optional kill switch, no default needed — indexing turns on automatically the moment the production domain matches `CANONICAL_HOST` below, per `functions/api/_lib/indexing.js`; set this to anything other than `on` to hold the whole site out of search results without a deploy (see docs/OWNER-CHECKLIST.md) |
+| `CANONICAL_HOST` | optional, default `not-financial-advice-vjm.com` (hardcoded in `functions/api/_lib/indexing.js`, must equal robots.txt's `canonical-origin:` line — `tests/indexing.test.mjs` pins the two). Set this ONLY if the production domain differs from that default; changing it here alone does not move the canonical — robots.txt, sitemap.xml, and every page's `<link rel="canonical">` still need the matching code-level update, or indexing and the visible canonical will disagree |
 | D1 bindings: `RESEARCH_DB`, `RATELIMIT_DB` | snapshots, rate limits, audit, content, analytics, newsletter (all migrations share these bindings) |
 | `AI` binding (no value — Cloudflare Dashboard → Pages project → Settings → Functions → AI bindings, name it exactly `AI`) | optional narrative layer for `/api/assistant`, `/api/market-brief`, and `/api/premium-market-analyst` (Workers AI free daily allocation, no API key, no per-token billing) — omit it and all three silently degrade to data-only output, never break (see `functions/api/_lib/ai.js`) |
 
@@ -59,7 +61,10 @@ done
    - `/api/research-engine?module=health` shows configured flags true
    - calendar page renders real events or explicit unavailable state
 5. Owner approves legal/perf copy (see OWNER-CHECKLIST).
-6. Promote to production.
+6. Promote to production. Indexing then switches on by itself the moment the
+   production domain matches `CANONICAL_HOST` (see the secrets table above) —
+   no action needed unless the domain differs from that default or you want
+   to hold the site back (`INDEXING`).
 
 ## Rollback
 

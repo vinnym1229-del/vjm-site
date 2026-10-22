@@ -8,6 +8,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import { LIVE_ENTITLEMENT_STATUSES } from '../functions/api/_lib/session.js';
+import { CANONICAL_HOST } from '../functions/api/_lib/indexing.js';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const read = (p) => readFileSync(join(ROOT, p), 'utf8');
@@ -1158,6 +1159,28 @@ test('docs/DEPLOYMENT.md and docs/API.md document BRIEF_UNIVERSE', () => {
     'docs/API.md must mention BRIEF_UNIVERSE in the market-brief section');
   assert.match(read('functions/api/market-brief.js'), /env\.BRIEF_UNIVERSE/,
     'expected market-brief.js to still read env.BRIEF_UNIVERSE');
+});
+
+// Incident: functions/api/_lib/indexing.js's own header comment calls the
+// site's indexing switch a decision that is "made per request ... nobody has
+// to remember anything" -- but the two env vars that actually drive it,
+// CANONICAL_HOST (override the hardcoded canonical domain) and INDEXING (the
+// emergency hold switch), appeared in neither docs/DEPLOYMENT.md's secrets
+// table nor its Deploy checklist, the one doc an owner promoting the site to
+// production would read. INDEXING was at least named in docs/OWNER-CHECKLIST,
+// but CANONICAL_HOST -- the var that matters the moment the production
+// domain differs from the hardcoded default -- was undocumented everywhere,
+// the same "real var, no owner-facing paper trail" gap class as
+// FOREX_CALENDAR_SOURCE_URL and BRIEF_UNIVERSE above.
+test('docs/DEPLOYMENT.md documents CANONICAL_HOST and INDEXING', () => {
+  const doc = read('docs/DEPLOYMENT.md');
+  assert.match(doc, /CANONICAL_HOST/, 'docs/DEPLOYMENT.md must mention CANONICAL_HOST');
+  assert.match(doc, /\bINDEXING\b/, 'docs/DEPLOYMENT.md must mention INDEXING');
+  assert.match(doc, new RegExp(CANONICAL_HOST.replace(/\./g, '\\.')),
+    "docs/DEPLOYMENT.md's stated CANONICAL_HOST default must match the real hardcoded value");
+  const lib = read('functions/api/_lib/indexing.js');
+  assert.match(lib, /env\s*&&\s*env\.CANONICAL_HOST/, 'expected indexing.js to still read env.CANONICAL_HOST');
+  assert.match(lib, /env\s*&&\s*env\.INDEXING/, 'expected indexing.js to still read env.INDEXING');
 });
 
 // Incident: GOOGLE_CLIENT_ID is marked required by auth-google.js's own
