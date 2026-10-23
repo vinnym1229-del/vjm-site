@@ -4143,14 +4143,24 @@ test('every --vjm-* custom property declared in tokens.css is actually used some
 // snippets. The disclaimer sat at the very end, so it was the one thing
 // guaranteed to be cut from the one surface a visitor reads before ever
 // clicking through to the real page. Trimmed to keep the disclaimer inside
-// the visible window; this test keeps the homepage description from
-// creeping back past the truncation point as copy gets added over time.
-test('the homepage meta description fits inside Google\'s SERP truncation window', () => {
-  const html = read('index.html');
-  const description = html.match(/<meta name="description" content="([^"]*)">/);
-  assert.ok(description, 'index.html must have a meta description');
-  assert.ok(description[1].length <= 160,
-    `index.html's meta description is ${description[1].length} chars, over the ~160-char SERP truncation point: "${description[1]}"`);
-  assert.match(description[1], /not financial advice/i,
-    'index.html\'s meta description must keep the disclaimer inside the truncation window');
-});
+// the visible window. psychology-enhancer.html had the same overflow (199
+// chars) without a disclaimer to protect, just a feature list guaranteed to
+// run past the cutoff -- fixed the same way. Both are real, eventually-
+// indexed pages (unlike research-engine.html/stock-lab.html, which stay
+// noindexed forever as gated premium tools, so trimming their descriptions
+// would buy nothing). This test keeps both descriptions from creeping back
+// past the truncation point as copy gets added over time; other pages still
+// over budget are left for a future cycle rather than widening this one.
+for (const [page, requireDisclaimer] of [['index.html', true], ['psychology-enhancer.html', false]]) {
+  test(`${page}'s meta description fits inside Google's SERP truncation window`, () => {
+    const html = read(page);
+    const description = html.match(/<meta name="description" content="([^"]*)">/);
+    assert.ok(description, `${page} must have a meta description`);
+    assert.ok(description[1].length <= 160,
+      `${page}'s meta description is ${description[1].length} chars, over the ~160-char SERP truncation point: "${description[1]}"`);
+    if (requireDisclaimer) {
+      assert.match(description[1], /not financial advice/i,
+        `${page}'s meta description must keep the disclaimer inside the truncation window`);
+    }
+  });
+}
