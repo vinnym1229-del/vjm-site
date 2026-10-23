@@ -4151,14 +4151,18 @@ test('every --vjm-* custom property declared in tokens.css is actually used some
 // at the very end, so it was cut too. stock-breakdown.html (172 chars) was
 // the fifth: no disclaimer to protect, just "beyond-beginner" and
 // "professional" trimmed from an otherwise-intact curriculum list, same
-// pattern as psychology-enhancer.html and options-lab.html. All five are
+// pattern as psychology-enhancer.html and options-lab.html.
+// futures-dissection.html (165 chars) was the sixth: no disclaimer to
+// protect either, just the adjectives "complete" and "professional" trimmed
+// from an otherwise-intact contract list (all eight tickers -- ES, MES, NQ,
+// MNQ, YM, MYM, RTY, M2K -- and all four topic nouns kept). All six are
 // real, eventually-indexed pages (unlike research-engine.html/stock-lab.html,
 // which stay noindexed forever as gated premium tools, so trimming their
-// descriptions would buy nothing). This test keeps all five descriptions
+// descriptions would buy nothing). This test keeps all six descriptions
 // from creeping back past the truncation point as copy gets added over
-// time; other pages still over budget (futures-dissection.html,
-// prop-firms.html) are left for a future cycle rather than widening this one.
-for (const [page, requireDisclaimer] of [['index.html', true], ['psychology-enhancer.html', false], ['options-lab.html', false], ['premarket.html', true], ['stock-breakdown.html', false]]) {
+// time; prop-firms.html (165 chars) is still over budget, left for a future
+// cycle rather than widening this one.
+for (const [page, requireDisclaimer] of [['index.html', true], ['psychology-enhancer.html', false], ['options-lab.html', false], ['premarket.html', true], ['stock-breakdown.html', false], ['futures-dissection.html', false]]) {
   test(`${page}'s meta description fits inside Google's SERP truncation window`, () => {
     const html = read(page);
     const description = html.match(/<meta name="description" content="([^"]*)">/);
