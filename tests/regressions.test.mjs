@@ -4145,13 +4145,16 @@ test('every --vjm-* custom property declared in tokens.css is actually used some
 // clicking through to the real page. Trimmed to keep the disclaimer inside
 // the visible window. psychology-enhancer.html had the same overflow (199
 // chars) without a disclaimer to protect, just a feature list guaranteed to
-// run past the cutoff -- fixed the same way. Both are real, eventually-
+// run past the cutoff -- fixed the same way, and options-lab.html (197
+// chars) followed next, same pattern again. All three are real, eventually-
 // indexed pages (unlike research-engine.html/stock-lab.html, which stay
 // noindexed forever as gated premium tools, so trimming their descriptions
-// would buy nothing). This test keeps both descriptions from creeping back
-// past the truncation point as copy gets added over time; other pages still
-// over budget are left for a future cycle rather than widening this one.
-for (const [page, requireDisclaimer] of [['index.html', true], ['psychology-enhancer.html', false]]) {
+// would buy nothing). This test keeps all three descriptions from creeping
+// back past the truncation point as copy gets added over time; other pages
+// still over budget (premarket.html, stock-breakdown.html,
+// futures-dissection.html, prop-firms.html) are left for a future cycle
+// rather than widening this one.
+for (const [page, requireDisclaimer] of [['index.html', true], ['psychology-enhancer.html', false], ['options-lab.html', false]]) {
   test(`${page}'s meta description fits inside Google's SERP truncation window`, () => {
     const html = read(page);
     const description = html.match(/<meta name="description" content="([^"]*)">/);
