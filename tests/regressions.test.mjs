@@ -4155,14 +4155,19 @@ test('every --vjm-* custom property declared in tokens.css is actually used some
 // futures-dissection.html (165 chars) was the sixth: no disclaimer to
 // protect either, just the adjectives "complete" and "professional" trimmed
 // from an otherwise-intact contract list (all eight tickers -- ES, MES, NQ,
-// MNQ, YM, MYM, RTY, M2K -- and all four topic nouns kept). All six are
-// real, eventually-indexed pages (unlike research-engine.html/stock-lab.html,
-// which stay noindexed forever as gated premium tools, so trimming their
-// descriptions would buy nothing). This test keeps all six descriptions
-// from creeping back past the truncation point as copy gets added over
-// time; prop-firms.html (165 chars) is still over budget, left for a future
-// cycle rather than widening this one.
-for (const [page, requireDisclaimer] of [['index.html', true], ['psychology-enhancer.html', false], ['options-lab.html', false], ['premarket.html', true], ['stock-breakdown.html', false], ['futures-dissection.html', false]]) {
+// MNQ, YM, MYM, RTY, M2K -- and all four topic nouns kept). prop-firms.html
+// (165 chars) was the seventh and last page over budget: no disclaimer to
+// protect, just "current" and the word "list" trimmed from the
+// owner-managed-list sentence and "promo images" shortened to "images"
+// (promo context already established by "promo codes" two words earlier) --
+// every fact (prop-firm links, promo codes, images, owner-managed,
+// updated from one sheet, educational directory only) kept intact. All
+// seven are real, eventually-indexed pages (unlike
+// research-engine.html/stock-lab.html, which stay noindexed forever as
+// gated premium tools, so trimming their descriptions would buy nothing).
+// This test keeps all seven descriptions from creeping back past the
+// truncation point as copy gets added over time.
+for (const [page, requireDisclaimer] of [['index.html', true], ['psychology-enhancer.html', false], ['options-lab.html', false], ['premarket.html', true], ['stock-breakdown.html', false], ['futures-dissection.html', false], ['prop-firms.html', false]]) {
   test(`${page}'s meta description fits inside Google's SERP truncation window`, () => {
     const html = read(page);
     const description = html.match(/<meta name="description" content="([^"]*)">/);
