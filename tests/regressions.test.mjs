@@ -4148,14 +4148,17 @@ test('every --vjm-* custom property declared in tokens.css is actually used some
 // run past the cutoff -- fixed the same way, and options-lab.html (197
 // chars) followed next, same pattern again. premarket.html (180 chars) was
 // the fourth: like index.html, its disclaimer ("Not financial advice.") sat
-// at the very end, so it was cut too. All four are real, eventually-indexed
-// pages (unlike research-engine.html/stock-lab.html, which stay noindexed
-// forever as gated premium tools, so trimming their descriptions would buy
-// nothing). This test keeps all four descriptions from creeping back past
-// the truncation point as copy gets added over time; other pages still over
-// budget (stock-breakdown.html, futures-dissection.html, prop-firms.html)
-// are left for a future cycle rather than widening this one.
-for (const [page, requireDisclaimer] of [['index.html', true], ['psychology-enhancer.html', false], ['options-lab.html', false], ['premarket.html', true]]) {
+// at the very end, so it was cut too. stock-breakdown.html (172 chars) was
+// the fifth: no disclaimer to protect, just "beyond-beginner" and
+// "professional" trimmed from an otherwise-intact curriculum list, same
+// pattern as psychology-enhancer.html and options-lab.html. All five are
+// real, eventually-indexed pages (unlike research-engine.html/stock-lab.html,
+// which stay noindexed forever as gated premium tools, so trimming their
+// descriptions would buy nothing). This test keeps all five descriptions
+// from creeping back past the truncation point as copy gets added over
+// time; other pages still over budget (futures-dissection.html,
+// prop-firms.html) are left for a future cycle rather than widening this one.
+for (const [page, requireDisclaimer] of [['index.html', true], ['psychology-enhancer.html', false], ['options-lab.html', false], ['premarket.html', true], ['stock-breakdown.html', false]]) {
   test(`${page}'s meta description fits inside Google's SERP truncation window`, () => {
     const html = read(page);
     const description = html.match(/<meta name="description" content="([^"]*)">/);

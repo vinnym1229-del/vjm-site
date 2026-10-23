@@ -344,7 +344,7 @@ test('sitemap.xml\'s own comment names every permanently-noindexed page it exclu
 // fails loudly instead of silently drifting for weeks like the original bug.
 const SITEMAP_LASTMOD_PINS = {
   'index.html': { lastmod: '2026-10-22', sha256: 'eaeef72f17225d12f3b5a0aa2da99afb6fdd4261680170c08c7b28d8cb266466' },
-  'stock-breakdown.html': { lastmod: '2026-10-22', sha256: '0824cb02c40d333ef79602a2216fd82e5a55b55945421ae7230475cdb38bff01' },
+  'stock-breakdown.html': { lastmod: '2026-10-23', sha256: '14f422bc56d12425750357c100d48115d8fd5251691f6d2366f94780633e415d' },
   'futures-dissection.html': { lastmod: '2026-10-22', sha256: '5960e824460c8a40cc416f53a43db6da09f5cb7d9c99dd906b28847c85b0c678' },
   'psychology-enhancer.html': { lastmod: '2026-10-23', sha256: '8ef292defc654755088e55e5bf14084472d06985bc85eba4c4f83d0b01002e88' },
   'options-lab.html': { lastmod: '2026-10-23', sha256: 'd769a7718c0dcb85c1eaefcf46ac6e0ecbd818363ae789b8676a76624c11d95a' },
