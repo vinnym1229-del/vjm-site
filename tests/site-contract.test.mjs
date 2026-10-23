@@ -348,7 +348,7 @@ const SITEMAP_LASTMOD_PINS = {
   'futures-dissection.html': { lastmod: '2026-10-23', sha256: '53a7816a4e877520b476ff50c44b9a214bdf930c220e4fe508d29c58e0b70b0b' },
   'psychology-enhancer.html': { lastmod: '2026-10-23', sha256: '8ef292defc654755088e55e5bf14084472d06985bc85eba4c4f83d0b01002e88' },
   'options-lab.html': { lastmod: '2026-10-23', sha256: 'd769a7718c0dcb85c1eaefcf46ac6e0ecbd818363ae789b8676a76624c11d95a' },
-  'premarket.html': { lastmod: '2026-10-23', sha256: 'c4375e4ac05210a7a24b7a18f8d7d7155ab4756d546faafa886211d5789da121' },
+  'premarket.html': { lastmod: '2026-10-23', sha256: 'adc543207047154a5fed8f59479eeeeac449def8bf48e0d75aa96f291e0cc174' },
   'forex-calendar.html': { lastmod: '2026-10-19', sha256: 'cb0c132efaea929b4b25fc49e996c38c7c33c5a0f7438331588fbea529278c2d' },
   'prop-firms.html': { lastmod: '2026-10-23', sha256: 'f946213cc07b6d8746eb786bdff15ac052b360c29da78f2831676adef2afe5f1' },
   'risk-disclosure.html': { lastmod: '2026-10-17', sha256: 'b849e59c1583382784ece8d76454019c5026b77782a355ef70acfa496ba99a01' },

@@ -4190,9 +4190,7 @@ for (const [page, requireDisclaimer] of [['index.html', true], ['psychology-enha
 // the same title already said it. Trimmed to drop only that redundant
 // tail; brand name, value prop, and both tickers (NQ, ES) stayed intact.
 // og:title/twitter:title carry a separate, already-short string ("PJ
-// Trades — Futures, Made Simple.") and weren't touched. premarket.html's
-// <title> (64 chars) is also over this budget but wasn't fixed this
-// cycle -- a separate, smaller change left for later.
+// Trades — Futures, Made Simple.") and weren't touched.
 // This test keeps index.html's title from creeping back past the
 // truncation point as copy gets added over time.
 test("index.html's <title> fits inside Google's SERP title-truncation window", () => {
@@ -4201,4 +4199,24 @@ test("index.html's <title> fits inside Google's SERP title-truncation window", (
   assert.ok(title, 'index.html must have a <title>');
   assert.ok(title[1].length <= 60,
     `index.html's <title> is ${title[1].length} chars, over the ~60-char SERP title-truncation point: "${title[1]}"`);
+});
+
+// Incident: premarket.html's <title> was 64 characters ("Pre-Market Brief
+// | PJ Trades — NQ/ES Futures Lean, Movers & News") -- flagged as a
+// follow-up when index.html's title was fixed for the same ~60-char SERP
+// truncation point. The cut word ("Futures") was redundant: the page's
+// own meta description and <h2> already qualify the lean as a
+// "futures-proxy lean", so dropping the adjective from the title loses no
+// fact a visitor needs to decide whether to click through. Trimmed to
+// drop only that word; brand name, both tickers (NQ, ES), and "Movers &
+// News" stayed intact. og:title/twitter:title carry the same pre-trim
+// string and weren't touched, same precedent as index.html's og/twitter
+// title and the meta-description-truncation series' og/twitter
+// descriptions.
+test("premarket.html's <title> fits inside Google's SERP title-truncation window", () => {
+  const html = read('premarket.html');
+  const title = html.match(/<title>([^<]*)<\/title>/);
+  assert.ok(title, 'premarket.html must have a <title>');
+  assert.ok(title[1].length <= 60,
+    `premarket.html's <title> is ${title[1].length} chars, over the ~60-char SERP title-truncation point: "${title[1]}"`);
 });
