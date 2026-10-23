@@ -4180,3 +4180,25 @@ for (const [page, requireDisclaimer] of [['index.html', true], ['psychology-enha
     }
   });
 }
+
+// Incident: index.html's <title> was 70 characters ("PJ Trades | Live
+// Futures Trading & Education — NQ, ES, Futures Courses") -- past the
+// ~60-character / ~600px point where Google's search-result title link
+// gets truncated with "...". The homepage's title is the one clickable
+// line every search-result impression shows first, and the cut piece
+// ("Futures Courses") was pure redundancy -- "Futures Trading" earlier in
+// the same title already said it. Trimmed to drop only that redundant
+// tail; brand name, value prop, and both tickers (NQ, ES) stayed intact.
+// og:title/twitter:title carry a separate, already-short string ("PJ
+// Trades — Futures, Made Simple.") and weren't touched. premarket.html's
+// <title> (64 chars) is also over this budget but wasn't fixed this
+// cycle -- a separate, smaller change left for later.
+// This test keeps index.html's title from creeping back past the
+// truncation point as copy gets added over time.
+test("index.html's <title> fits inside Google's SERP title-truncation window", () => {
+  const html = read('index.html');
+  const title = html.match(/<title>([^<]*)<\/title>/);
+  assert.ok(title, 'index.html must have a <title>');
+  assert.ok(title[1].length <= 60,
+    `index.html's <title> is ${title[1].length} chars, over the ~60-char SERP title-truncation point: "${title[1]}"`);
+});
