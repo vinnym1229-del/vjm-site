@@ -30,6 +30,29 @@
   // light-mode overrides but never got a control to actually reach dark mode.
   // Wire up any #theme-toggle this shared script finds, skipping one that
   // already has its own onclick (options-lab.html's) so it isn't double-bound.
+  // Every lock-form's Turnstile widget (injectTurnstileWidgets(), below) only
+  // had its data-theme set once, at the moment it was created -- that fix
+  // matched the widget to whichever theme was active then, but Cloudflare
+  // bakes the theme into the rendered iframe once and has no live-restyle
+  // hook, so toggling theme AFTER a widget has already rendered left it
+  // frozen in the old theme: a visitor mid-unlock on any gated level who
+  // flips the toggle sees a CAPTCHA box stuck in the wrong theme next to the
+  // now-recolored panel around it. Removing and re-rendering each widget
+  // with the new theme is the only way Turnstile supports a restyle. Shared
+  // (not folded into initThemeToggle) because options-lab.html's own
+  // self-contained toggleTheme() -- the one page with its own onclick,
+  // skipped below -- needs to call this too.
+  function resyncTurnstileTheme(isLight) {
+    const theme = isLight ? 'light' : 'dark';
+    document.querySelectorAll('.cf-turnstile').forEach((el) => {
+      el.dataset.theme = theme;
+      if (!window.turnstile || !el.dataset.sitekey) return;
+      try { window.turnstile.remove(el); } catch { /* never rendered yet */ }
+      window.turnstile.render(el, { sitekey: el.dataset.sitekey, theme });
+    });
+  }
+  window.vjmResyncTurnstileTheme = resyncTurnstileTheme;
+
   function initThemeToggle() {
     const btn = document.getElementById('theme-toggle');
     if (!btn || btn.hasAttribute('onclick')) return;
@@ -40,6 +63,7 @@
       const isLight = document.body.classList.toggle('light-mode');
       try { localStorage.setItem('st-theme', isLight ? 'light' : 'dark'); } catch { /* storage blocked */ }
       sync(isLight);
+      resyncTurnstileTheme(isLight);
     });
     sync(document.body.classList.contains('light-mode'));
   }

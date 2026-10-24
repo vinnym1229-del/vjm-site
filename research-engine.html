@@ -117,10 +117,29 @@
   function sync(isLight) {
     btn.innerHTML = (isLight ? '☀️' : '🌙') + ' <span class="theme-label-text">' + (isLight ? 'Light' : 'Dark') + '</span>';
   }
+  // The #re-ts Turnstile widget below only had its data-theme corrected at
+  // page-load time -- that fix matched the widget to whichever theme was
+  // active on arrival, but Cloudflare bakes the theme into the rendered
+  // iframe once and has no live-restyle hook, so toggling theme AFTER the
+  // widget has already rendered left it frozen in the old theme. Removing
+  // and re-rendering the widget with the new theme is the only way
+  // Turnstile supports a restyle.
+  function resyncTurnstileTheme(isLight) {
+    var theme = isLight ? 'light' : 'dark';
+    var widgets = document.querySelectorAll('.cf-turnstile');
+    for (var i = 0; i < widgets.length; i++) {
+      var el = widgets[i];
+      el.dataset.theme = theme;
+      if (!window.turnstile || !el.dataset.sitekey) continue;
+      try { window.turnstile.remove(el); } catch (e) { /* never rendered yet */ }
+      window.turnstile.render(el, { sitekey: el.dataset.sitekey, theme: theme });
+    }
+  }
   btn.addEventListener('click', function () {
     var isLight = document.body.classList.toggle('light-mode');
     try { localStorage.setItem('st-theme', isLight ? 'light' : 'dark'); } catch (e) { /* storage blocked */ }
     sync(isLight);
+    resyncTurnstileTheme(isLight);
   });
   sync(document.body.classList.contains('light-mode'));
 })();

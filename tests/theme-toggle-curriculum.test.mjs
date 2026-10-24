@@ -52,7 +52,7 @@ function stubButton(attrs = {}) {
   };
 }
 
-function run({ button, storageThrows } = {}) {
+function run({ button, storageThrows, turnstileWidget = null, turnstileLoaded = true } = {}) {
   const store = new Map();
   const localStorage = {
     getItem: (k) => (store.has(k) ? store.get(k) : null),
@@ -60,6 +60,11 @@ function run({ button, storageThrows } = {}) {
     removeItem: (k) => { store.delete(k); },
   };
   const bodyClasses = new Set();
+  const turnstileCalls = { removed: [], rendered: [] };
+  const turnstile = {
+    remove: (el) => turnstileCalls.removed.push(el),
+    render: (el, params) => turnstileCalls.rendered.push({ el, params }),
+  };
   const sandbox = {
     console,
     fetch: async () => ({ json: async () => ({}) }),
@@ -69,7 +74,7 @@ function run({ button, storageThrows } = {}) {
       readyState: 'complete',
       addEventListener() {},
       createElement: () => ({ setAttribute() {}, classList: { add() {} } }),
-      querySelectorAll: () => [],
+      querySelectorAll: (sel) => (sel === '.cf-turnstile' && turnstileWidget ? [turnstileWidget] : []),
       querySelector: () => null,
       getElementById: (id) => (id === 'theme-toggle' ? button : null),
       body: {
@@ -83,9 +88,10 @@ function run({ button, storageThrows } = {}) {
     },
   };
   sandbox.window = sandbox;
+  if (turnstileLoaded) sandbox.turnstile = turnstile;
   vm.createContext(sandbox);
   vm.runInContext(curriculum, sandbox);
-  return { store, bodyClasses };
+  return { store, bodyClasses, turnstileCalls };
 }
 
 test('a #theme-toggle with no onclick gets wired up and toggles + persists the theme', async () => {
@@ -106,6 +112,48 @@ test('a #theme-toggle with no onclick gets wired up and toggles + persists the t
   assert.match(button.innerHTML, /Dark/);
 });
 
+// Incident: the four curriculum pages' per-level lock-form Turnstile widgets
+// (injectTurnstileWidgets()) only had data-theme set once, at creation time.
+// Cloudflare bakes the theme into the rendered iframe once and has no
+// live-restyle hook, so flipping #theme-toggle after a widget had already
+// rendered left it frozen in the old theme -- a member mid-unlock on any
+// gated level who toggled theme saw a mismatched CAPTCHA box next to the
+// now-recolored panel around it. initThemeToggle()'s click handler must
+// call the shared resyncTurnstileTheme() (also used by options-lab.html's
+// own self-contained toggleTheme(), the one page skipped above) to remove
+// and re-render every .cf-turnstile widget in the new theme.
+test('a #theme-toggle click re-renders an already-rendered Turnstile widget in the new theme', async () => {
+  const button = stubButton();
+  const widget = { dataset: { theme: 'dark', sitekey: 'test-sitekey' } };
+  const { bodyClasses, turnstileCalls } = run({ button, turnstileWidget: widget });
+  await new Promise((r) => setTimeout(r, 0));
+
+  button.click(); // dark -> light
+  assert.equal(bodyClasses.has('light-mode'), true);
+  assert.equal(widget.dataset.theme, 'light', 'widget dataset.theme should flip to light');
+  assert.equal(turnstileCalls.removed.length, 1, 'turnstile.remove should be called once');
+  assert.equal(turnstileCalls.removed[0], widget);
+  assert.equal(turnstileCalls.rendered.length, 1, 'turnstile.render should be called once');
+  assert.equal(turnstileCalls.rendered[0].params.theme, 'light');
+  assert.equal(turnstileCalls.rendered[0].params.sitekey, 'test-sitekey');
+
+  button.click(); // light -> dark
+  assert.equal(widget.dataset.theme, 'dark', 'widget dataset.theme should flip back to dark');
+  assert.equal(turnstileCalls.removed.length, 2);
+  assert.equal(turnstileCalls.rendered.length, 2);
+  assert.equal(turnstileCalls.rendered[1].params.theme, 'dark');
+});
+
+test('a #theme-toggle click before Turnstile has loaded still updates data-theme without throwing', async () => {
+  const button = stubButton();
+  const widget = { dataset: { theme: 'dark', sitekey: 'test-sitekey' } };
+  const { bodyClasses } = run({ button, turnstileWidget: widget, turnstileLoaded: false });
+  await new Promise((r) => setTimeout(r, 0));
+  assert.doesNotThrow(() => button.click());
+  assert.equal(bodyClasses.has('light-mode'), true);
+  assert.equal(widget.dataset.theme, 'light');
+});
+
 test('a #theme-toggle that already has its own onclick (options-lab.html) is left alone', async () => {
   const button = stubButton({ onclick: 'toggleTheme()' });
   await new Promise((r) => setTimeout(r, 0));
@@ -113,6 +161,43 @@ test('a #theme-toggle that already has its own onclick (options-lab.html) is lef
   await new Promise((r) => setTimeout(r, 0));
   assert.equal(button.boundListenerCount, 0, 'a button with its own onclick must not get a second listener bound');
   assert.equal(bodyClasses.has('light-mode'), false, 'init must not itself flip the theme as a side effect');
+});
+
+// options-lab.html owns its own toggle (the one skipped above) and so needs
+// its own call to the shared Turnstile re-theme fix rather than getting it
+// through initThemeToggle() -- same incident as the tests above, just the
+// one page whose click handler lives in its own markup instead of
+// curriculum.js. Runs the real function from the file (not a re-typed copy)
+// so a future edit to either side of the call can't silently drift apart.
+test("options-lab.html's own toggleTheme() calls the shared Turnstile re-theme fix", () => {
+  const html = read('options-lab.html');
+  const fnMatch = html.match(/function toggleTheme\(\) \{[\s\S]*?\n\}/);
+  assert.ok(fnMatch, 'toggleTheme() not found in options-lab.html');
+
+  const turnstileCalls = { removed: [], rendered: [] };
+  const widget = { dataset: { theme: 'dark', sitekey: 'test-sitekey' } };
+  const bodyClasses = new Set();
+  const btn = { innerHTML: '' };
+  const sandbox = {
+    document: {
+      getElementById: (id) => (id === 'theme-toggle' ? btn : null),
+      body: { classList: { toggle: (c) => { bodyClasses.has(c) ? bodyClasses.delete(c) : bodyClasses.add(c); return bodyClasses.has(c); } } },
+    },
+    localStorage: { setItem() {} },
+    themeButtonHtml: () => '',
+  };
+  sandbox.window = sandbox;
+  sandbox.window.vjmResyncTurnstileTheme = (isLight) => {
+    widget.dataset.theme = isLight ? 'light' : 'dark';
+    turnstileCalls.removed.push(widget);
+    turnstileCalls.rendered.push({ theme: isLight ? 'light' : 'dark' });
+  };
+  vm.createContext(sandbox);
+  vm.runInContext(`${fnMatch[0]}\ntoggleTheme();`, sandbox);
+
+  assert.equal(bodyClasses.has('light-mode'), true, 'toggleTheme should still flip light-mode itself');
+  assert.equal(turnstileCalls.removed.length, 1, 'toggleTheme should call window.vjmResyncTurnstileTheme');
+  assert.equal(widget.dataset.theme, 'light');
 });
 
 test('a page with no #theme-toggle at all does not throw during init', async () => {

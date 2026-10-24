@@ -43,7 +43,7 @@ function extractWiringScript(html) {
   return html.slice(start, end + '})();'.length);
 }
 
-function run(html, { storedTheme = null, bodyLight = false, storageThrows = false } = {}) {
+function run(html, { storedTheme = null, bodyLight = false, storageThrows = false, turnstileLoaded = true } = {}) {
   const script = extractWiringScript(html);
   const store = new Map();
   if (storedTheme !== null) store.set('st-theme', storedTheme);
@@ -59,9 +59,21 @@ function run(html, { storedTheme = null, bodyLight = false, storageThrows = fals
     addEventListener: (_ev, fn) => listeners.push(fn),
     click: () => listeners.forEach((fn) => fn()),
   };
+  // A single already-rendered Turnstile widget, the same shape the real
+  // #pg-ts/#re-ts/#stocklab-ts div has: a data-sitekey and a data-theme the
+  // page-load-time fix already set. remove()/render() calls are recorded so
+  // the toggle test below can prove the click handler actually re-themes it,
+  // not just that it doesn't throw.
+  const widget = { dataset: { theme: 'dark', sitekey: 'test-sitekey' } };
+  const turnstileCalls = { removed: [], rendered: [] };
+  const turnstile = {
+    remove: (el) => turnstileCalls.removed.push(el),
+    render: (el, params) => turnstileCalls.rendered.push({ el, params }),
+  };
   const sandbox = {
     document: {
       getElementById: (id) => (id === 'theme-toggle' ? btn : null),
+      querySelectorAll: (sel) => (sel === '.cf-turnstile' ? [widget] : []),
       body: {
         classList: {
           toggle(c) { bodyClasses.has(c) ? bodyClasses.delete(c) : bodyClasses.add(c); return bodyClasses.has(c); },
@@ -70,10 +82,11 @@ function run(html, { storedTheme = null, bodyLight = false, storageThrows = fals
       },
     },
     localStorage,
+    window: { turnstile: turnstileLoaded ? turnstile : undefined },
   };
   vm.createContext(sandbox);
   vm.runInContext(script, sandbox);
-  return { btn, store, bodyClasses };
+  return { btn, store, bodyClasses, widget, turnstileCalls };
 }
 
 for (const page of PAGES) {
@@ -98,6 +111,43 @@ for (const page of PAGES) {
     assert.equal(bodyClasses.has('light-mode'), false, 'second click should turn light mode back off');
     assert.equal(store.get('st-theme'), 'dark');
     assert.match(btn.innerHTML, /Dark/);
+  });
+
+  // Incident: Turnstile bakes its theme into the rendered iframe once and has
+  // no live-restyle hook, so a widget that was already on screen (the
+  // member unlock gate below the field this toggle lives next to) stayed
+  // frozen in the old theme after a toggle click -- a visitor who flips to
+  // dark mid-unlock saw a stark white CAPTCHA box stuck in the newly dark
+  // sign-in card. The click handler must remove and re-render it with the
+  // theme that just became active, not just flip body.light-mode.
+  test(`${page}: clicking the toggle re-renders an already-rendered Turnstile widget in the new theme`, () => {
+    const html = read(page);
+    const { btn, widget, turnstileCalls } = run(html, { bodyLight: false });
+
+    btn.click(); // dark -> light
+    assert.equal(widget.dataset.theme, 'light', 'widget dataset.theme should flip to light');
+    assert.equal(turnstileCalls.removed.length, 1, 'turnstile.remove should be called once');
+    assert.equal(turnstileCalls.removed[0], widget);
+    assert.equal(turnstileCalls.rendered.length, 1, 'turnstile.render should be called once');
+    assert.equal(turnstileCalls.rendered[0].el, widget);
+    assert.equal(turnstileCalls.rendered[0].params.theme, 'light');
+    assert.equal(turnstileCalls.rendered[0].params.sitekey, 'test-sitekey');
+
+    btn.click(); // light -> dark
+    assert.equal(widget.dataset.theme, 'dark', 'widget dataset.theme should flip back to dark');
+    assert.equal(turnstileCalls.removed.length, 2);
+    assert.equal(turnstileCalls.rendered.length, 2);
+    assert.equal(turnstileCalls.rendered[1].params.theme, 'dark');
+  });
+
+  // Turnstile's script tag is async/defer; a fast click before it has loaded
+  // must not throw, and must still leave data-theme correct so the widget
+  // auto-renders in the right theme once Turnstile does load.
+  test(`${page}: clicking the toggle before Turnstile has loaded still updates data-theme without throwing`, () => {
+    const html = read(page);
+    const { btn, widget } = run(html, { bodyLight: false, turnstileLoaded: false });
+    assert.doesNotThrow(() => btn.click());
+    assert.equal(widget.dataset.theme, 'light');
   });
 
   test(`${page}: a blocked localStorage does not stop the toggle from working`, () => {

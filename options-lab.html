@@ -1064,6 +1064,13 @@ function toggleTheme() {
   btn.innerHTML = themeButtonHtml(isLight);
   // Always store the explicit choice — 'dark' is what opts out of the default.
   try { localStorage.setItem('st-theme', isLight ? 'light' : 'dark'); } catch (e) { /* storage blocked */ }
+  // This page owns its own toggle (the only one with an onclick, so
+  // curriculum.js's initThemeToggle skips it) but still needs curriculum.js's
+  // shared Turnstile re-theme fix for this page's own lock-form widgets --
+  // see assets/curriculum.js's resyncTurnstileTheme() for why a widget that
+  // has already rendered needs removing and re-rendering, not just a
+  // data-theme update, to actually pick up a theme flipped after the fact.
+  if (window.vjmResyncTurnstileTheme) window.vjmResyncTurnstileTheme(isLight);
 }
 (function() {
   // Light is the DEFAULT (owner request, 2026-09-01): only an explicit stored

@@ -29,10 +29,10 @@ Audit run against the working tree (`node tools/paywall-audit.mjs`):
 | page | gated regions | gated lessons | free lessons | worked cases | paid words | paid markup | page source |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | `futures-dissection.html` | 3 | 43 | 7 | 3 | 9,750 | 88 KB | 121 KB |
-| `options-lab.html` | 4 | 51 | 0 | 3 | 11,381 | 102 KB | 161 KB |
+| `options-lab.html` | 4 | 51 | 0 | 3 | 11,381 | 102 KB | 162 KB |
 | `psychology-enhancer.html` | 13 | 62 | 0 | 3 | 16,048 | 164 KB | 216 KB |
 | `stock-breakdown.html` | 4 | 46 | 0 | 3 | 12,789 | 115 KB | 133 KB |
-| **total** | **24** | **202** | **7** | **12** | **49,968** | **468 KB** | **631 KB** |
+| **total** | **24** | **202** | **7** | **12** | **49,968** | **468 KB** | **632 KB** |
 
 Read that as:
 
