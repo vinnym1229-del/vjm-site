@@ -458,3 +458,33 @@ test("unsubscribe.html's hover states use --vjm-red-bright, which clears WCAG AA
     assert.ok(ratio >= 4.5, `${label}: tokens.css's --vjm-red-bright on --vjm-bg is ${ratio.toFixed(2)}:1`);
   }
 });
+
+// site.css's own --border went from #e3e3e6 to #d4d4db (see that file's
+// comment on the token) because a white .vjm-card/.card on a white page with
+// a near-white border has no visible edge at all. tokens.css's light-mode
+// --vjm-border is the same token under a different name for premarket.html's
+// and prop-firms.html's .vjm-card instances, and never got the same fix --
+// it shipped the pre-fix value, so those two pages' card borders stayed
+// effectively invisible (1.28:1) while index.html's identical cards (via
+// site.css) read correctly. Pin tokens.css to the same literal site.css
+// already ships so a future retune can't silently drop back to the
+// pre-fix value on just one of the two files. (Still short of the 3:1 AA
+// floor for non-text UI boundaries, same as site.css's own fix -- a true
+// pass would need a materially darker gray, an owner-level design call
+// this isn't; this closes the propagation gap, not the full AA finding.)
+test("tokens.css's light-mode --vjm-border matches site.css's already-fixed --border literal", () => {
+  const tokens = read('assets/tokens.css');
+  const site = read('assets/site.css');
+  const lightBlock = tokens.match(/body\.light-mode\s*\{([^}]*)\}/)[1];
+  const vjmBorder = lightBlock.match(/--vjm-border:\s*(#[0-9a-fA-F]{3,8});/);
+  const siteBorderBlock = site.match(/body\.light-mode\s*\{([^}]*)\}/)[1];
+  const siteBorder = siteBorderBlock.match(/--border:\s*(#[0-9a-fA-F]{3,8});/);
+  assert.ok(vjmBorder && siteBorder, 'both --vjm-border (tokens.css) and --border (site.css) must be declared as hex');
+  assert.equal(vjmBorder[1].toLowerCase(), siteBorder[1].toLowerCase(),
+    `tokens.css's light-mode --vjm-border (${vjmBorder[1]}) no longer matches site.css's --border (${siteBorder[1]})`);
+
+  const card = hexToRgb('#ffffff');
+  const ratio = contrast(hexToRgb(vjmBorder[1]), card);
+  assert.ok(ratio > contrast(hexToRgb('#e3e3e6'), card),
+    'the fixed --vjm-border must be a visible improvement over the retired #e3e3e6 value, not a lateral change');
+});

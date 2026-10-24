@@ -124,7 +124,12 @@ body.light-mode {
   --vjm-bg: #ffffff;
   --vjm-bg2: #f6f6f7;
   --vjm-card: #ffffff;
-  --vjm-border: #e3e3e6;
+  /* Was #e3e3e6: same invisible-edge problem site.css's --border already
+     fixed (see its comment) for the same reason -- a white .vjm-card on a
+     white page with a near-white border has no visible edge. That fix
+     never propagated here, so premarket.html/prop-firms.html's .vjm-card
+     instances still shipped the pre-fix value. Matching site.css's value. */
+  --vjm-border: #d4d4db;
   --vjm-border-strong: #cfcfd4;
   --vjm-text: #141416;
   --vjm-muted: #5f5f66;
