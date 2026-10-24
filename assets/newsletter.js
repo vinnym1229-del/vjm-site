@@ -95,6 +95,37 @@
     } catch (e) { /* a failed widget must not take the form down with it */ }
   }
 
+  // Same gap the curriculum pages' lock-form widgets had (see assets/
+  // curriculum.js's resyncTurnstileTheme()): mountTurnstile() above only
+  // ever set the widget's theme once, at render time, but Cloudflare bakes
+  // the theme into the rendered iframe once and has no live-restyle hook.
+  // A visitor who loads light (the default), scrolls to one of these forms
+  // so the widget renders, then flips #theme-toggle is left with a widget
+  // frozen in the old theme. Removing and re-rendering with the new theme
+  // is the only restyle Turnstile supports, so every mounted widget needs
+  // the identical callbacks mountTurnstile gave it, not just a new sitekey.
+  function resyncTurnstileTheme(isLight) {
+    if (!window.turnstile) return;
+    var theme = isLight ? 'light' : 'dark';
+    document.querySelectorAll('.nl-turnstile').forEach(function (slot) {
+      if (!slot.dataset.rendered) return;
+      var form = slot.closest('form');
+      if (!form) return;
+      try { window.turnstile.remove(form.dataset.turnstileWidgetId || slot); } catch (e) { /* already gone */ }
+      delete form.dataset.turnstileToken;
+      try {
+        var widgetId = window.turnstile.render(slot, {
+          sitekey: turnstile.siteKey,
+          theme: theme,
+          callback: function (token) { form.dataset.turnstileToken = token; },
+          'expired-callback': function () { delete form.dataset.turnstileToken; },
+          'error-callback': function () { delete form.dataset.turnstileToken; }
+        });
+        if (widgetId) form.dataset.turnstileWidgetId = widgetId;
+      } catch (e) { /* a failed widget must not take the form down with it */ }
+    });
+  }
+
   function renderWidgets() {
     if (!turnstile.ready || !turnstile.siteKey || !window.turnstile) return;
     document.querySelectorAll('form.nl-signup').forEach(mountTurnstile);
@@ -262,6 +293,7 @@
    * caller re-implementing the fetch-config-then-render dance. */
   window.vjmTurnstile = {
     mount: mountTurnstile,
+    resyncTheme: resyncTurnstileTheme,
     required: function () { return turnstile.required; },
     misconfigured: function () { return turnstile.required && !turnstile.siteKey; }
   };

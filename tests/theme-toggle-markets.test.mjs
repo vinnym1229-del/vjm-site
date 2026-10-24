@@ -43,7 +43,7 @@ function extractWiringScript(html) {
   return html.slice(start, end + '})();'.length);
 }
 
-function run(html, { storedTheme = null, bodyLight = false, storageThrows = false } = {}) {
+function run(html, { storedTheme = null, bodyLight = false, storageThrows = false, vjmTurnstile = null } = {}) {
   const script = extractWiringScript(html);
   const store = new Map();
   if (storedTheme !== null) store.set('st-theme', storedTheme);
@@ -71,6 +71,8 @@ function run(html, { storedTheme = null, bodyLight = false, storageThrows = fals
     },
     localStorage,
   };
+  sandbox.window = sandbox;
+  if (vjmTurnstile) sandbox.window.vjmTurnstile = vjmTurnstile;
   vm.createContext(sandbox);
   vm.runInContext(script, sandbox);
   return { btn, store, bodyClasses };
@@ -108,6 +110,31 @@ for (const page of PAGES) {
     assert.match(btn.innerHTML, /Light/);
   });
 }
+
+// prop-firms.html is the only one of these three pages with a Turnstile-
+// gated form (its own newsletter signup, mounted by assets/newsletter.js) --
+// forex-calendar.html and premarket.html have no form that mounts a widget.
+// Same gap the curriculum pages' lock-form widgets and index.html's
+// newsletter/giveaway/quiz-lead forms had: the widget's theme is only ever
+// set once, at render time, so flipping #theme-toggle after the widget
+// rendered needs the identical remove-and-re-render nudge (assets/
+// newsletter.js's resyncTurnstileTheme(), exposed as window.vjmTurnstile.
+// resyncTheme).
+test('prop-firms.html: clicking the toggle resyncs its newsletter form\'s Turnstile widget via window.vjmTurnstile.resyncTheme', () => {
+  const html = read('prop-firms.html');
+  const calls = [];
+  const { btn } = run(html, { bodyLight: false, vjmTurnstile: { resyncTheme: (isLight) => calls.push(isLight) } });
+  btn.click();
+  assert.deepEqual(calls, [true], 'first click (dark -> light) should resync with isLight=true');
+  btn.click();
+  assert.deepEqual(calls, [true, false], 'second click should resync back with isLight=false');
+});
+
+test('prop-firms.html: clicking the toggle does not throw when assets/newsletter.js has not loaded (window.vjmTurnstile missing)', () => {
+  const html = read('prop-firms.html');
+  const { btn } = run(html, { bodyLight: false });
+  assert.doesNotThrow(() => btn.click());
+});
 
 // forex-calendar.html is the one page of the three with its own hardcoded
 // light-mode CSS (the other two ride assets/tokens.css's shared --vjm-*

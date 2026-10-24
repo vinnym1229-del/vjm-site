@@ -264,6 +264,12 @@ body.light-mode .nav-top{ background:rgba(0,0,0,.05); }
     var isLight = document.body.classList.toggle('light-mode');
     try { localStorage.setItem('st-theme', isLight ? 'light' : 'dark'); } catch (e) { /* storage blocked */ }
     sync(isLight);
+    // This page's newsletter form's Turnstile widget (assets/newsletter.js)
+    // only ever had its theme set once, at render time -- see that file's
+    // own resyncTurnstileTheme() for why a widget that has already rendered
+    // needs removing and re-rendering, not just a new sitekey, to actually
+    // pick up a theme flipped after the fact.
+    if (window.vjmTurnstile && window.vjmTurnstile.resyncTheme) window.vjmTurnstile.resyncTheme(isLight);
   });
   sync(document.body.classList.contains('light-mode'));
 })();

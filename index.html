@@ -1734,6 +1734,12 @@ function toggleTheme() {
   // Third-party embeds bake their colour scheme in at construction, so they
   // need telling rather than inheriting. One event, no polling.
   window.dispatchEvent(new CustomEvent('vjm:themechange', { detail: { theme: isLight ? 'light' : 'dark' } }));
+  // The newsletter/giveaway/quiz-lead forms' Turnstile widget (assets/
+  // newsletter.js) has the same baked-in-at-render-time theme gap the
+  // curriculum pages' lock-form widgets had -- see that file's own
+  // resyncTurnstileTheme() -- so it needs the identical remove-and-
+  // re-render nudge on every toggle, not just a dispatched event.
+  if (window.vjmTurnstile && window.vjmTurnstile.resyncTheme) window.vjmTurnstile.resyncTheme(isLight);
 }
 
 // ─── TRADINGVIEW TICKER (theme-aware) ───

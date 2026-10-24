@@ -99,3 +99,66 @@ test('an explicit stored "light" keeps light mode and labels the toggle "Light" 
   assert.equal(bodyClasses.has('light-mode'), true);
   assert.match(toggleInnerHTML, /Light/);
 });
+
+// toggleTheme() itself (invoked via onclick, not the load-time sync IIFE
+// run() above exercises) needs its own sandbox: CustomEvent/dispatchEvent
+// for the existing 'vjm:themechange' broadcast, plus a stand-in
+// window.vjmTurnstile so the newsletter/giveaway/quiz-lead forms' Turnstile
+// widget gets the same remove-and-re-render resync the curriculum pages'
+// lock-form widgets already have (assets/newsletter.js's
+// resyncTurnstileTheme(), wired the same way options-lab.html's own
+// toggleTheme() calls assets/curriculum.js's copy).
+function runToggle({ vjmTurnstile } = {}) {
+  const store = new Map();
+  const localStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+  };
+  const bodyClasses = new Set();
+  let toggleInnerHTML = '';
+  const sandbox = {
+    console,
+    localStorage,
+    CustomEvent: class CustomEvent { constructor(type, init) { this.type = type; this.detail = init && init.detail; } },
+    document: {
+      getElementById: (id) => (id === 'theme-toggle' ? {
+        set innerHTML(v) { toggleInnerHTML = v; },
+        get innerHTML() { return toggleInnerHTML; },
+      } : null),
+      body: {
+        classList: {
+          toggle(c, force) {
+            const on = force === undefined ? !bodyClasses.has(c) : !!force;
+            on ? bodyClasses.add(c) : bodyClasses.delete(c);
+            return on;
+          },
+          contains: (c) => bodyClasses.has(c),
+        },
+      },
+    },
+  };
+  sandbox.window = sandbox;
+  sandbox.window.dispatchEvent = () => {};
+  if (vjmTurnstile) sandbox.window.vjmTurnstile = vjmTurnstile;
+  vm.createContext(sandbox);
+  vm.runInContext(themeSrc, sandbox, { filename: 'index.html#theme-block' });
+  return sandbox;
+}
+
+test('toggleTheme() resyncs the newsletter/giveaway/quiz-lead Turnstile widget via window.vjmTurnstile.resyncTheme', () => {
+  // The load-time sync IIFE already turned light-mode ON (nothing stored
+  // defaults to light), so the first click flips to dark (isLight=false)
+  // and the second flips back to light (isLight=true) -- same starting
+  // point as every other default-light assertion in this file.
+  const calls = [];
+  const sandbox = runToggle({ vjmTurnstile: { resyncTheme: (isLight) => calls.push(isLight) } });
+  sandbox.toggleTheme();
+  assert.deepEqual(calls, [false], 'first click (light default -> dark) should resync with isLight=false');
+  sandbox.toggleTheme();
+  assert.deepEqual(calls, [false, true], 'second click should resync back with isLight=true');
+});
+
+test('toggleTheme() does not throw when assets/newsletter.js has not loaded (window.vjmTurnstile missing)', () => {
+  const sandbox = runToggle();
+  assert.doesNotThrow(() => sandbox.toggleTheme());
+});
