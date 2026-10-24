@@ -488,3 +488,31 @@ test("tokens.css's light-mode --vjm-border matches site.css's already-fixed --bo
   assert.ok(ratio > contrast(hexToRgb('#e3e3e6'), card),
     'the fixed --vjm-border must be a visible improvement over the retired #e3e3e6 value, not a lateral change');
 });
+
+// Four more pages carried the same pre-fix #e3e3e6 as their own inline
+// light-mode border token, each a white .card/.panel/.step sitting directly
+// on the white/near-white page background site.css's fix already addressed
+// elsewhere: options-lab.html's --border, forex-calendar.html's and
+// stock-lab.html's --line, and premium-guidance.html's --bdr. Pin all four
+// to the same #d4d4db literal so this propagation gap can't quietly reopen.
+const STRAY_BORDER_TOKENS = [
+  ['options-lab.html', '--border'],
+  ['forex-calendar.html', '--line'],
+  ['stock-lab.html', '--line'],
+  ['premium-guidance.html', '--bdr'],
+];
+
+test('the four remaining pages with their own inline light-mode border token match the fixed #d4d4db literal', () => {
+  const card = hexToRgb('#ffffff');
+  for (const [page, varName] of STRAY_BORDER_TOKENS) {
+    const source = read(page);
+    const lightBlock = source.match(/body\.light-mode\s*\{([^}]*)\}/)[1];
+    const match = lightBlock.match(new RegExp(`${varName}:\\s*(#[0-9a-fA-F]{3,8});`));
+    assert.ok(match, `${page}'s light-mode block must declare ${varName} as hex`);
+    assert.equal(match[1].toLowerCase(), '#d4d4db',
+      `${page}'s ${varName} (${match[1]}) no longer matches the fixed #d4d4db literal`);
+    const ratio = contrast(hexToRgb(match[1]), card);
+    assert.ok(ratio > contrast(hexToRgb('#e3e3e6'), card),
+      `${page}'s fixed ${varName} must be a visible improvement over the retired #e3e3e6 value`);
+  }
+});
