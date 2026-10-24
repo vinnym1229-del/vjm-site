@@ -375,3 +375,24 @@ body.light-mode .curr .skeleton::after,body.light-mode.curr .skeleton::after{bac
   .curr .nav-cta{ min-width:0; gap:8px; }
   .curr .nav-cta > *{ min-width:0; }
 }
+
+/* ─── PRINT ───
+   No @media print rule existed anywhere on these four pages. Dark mode is an
+   explicit, remembered opt-in (assets/theme.js), not hypothetical, and
+   printing while it's active came out unreadable: Chrome/Firefox default to
+   NOT printing element background colors ("background graphics" is off by
+   default in the print dialog) but DO print the author's specified text
+   color, so --bg's near-black (#0c0c0d) silently became the paper's own
+   white while --text's near-white (#ededee) printed exactly as specified --
+   near-white ink on a white page. Force the light-mode ink/paper values at
+   print time regardless of which theme is on screen, so a lesson prints
+   the same (legible) way every time. :root alone is enough for the dark-mode
+   case (same specificity as the plain :root block above, source order wins);
+   body.light-mode is restated too only so this stays the single source of
+   truth for print colors rather than relying on light mode already matching
+   by coincidence. */
+@media print{
+  :root,body.light-mode,body.light-mode.curr{
+    --bg:#fff;--bg2:#fff;--bg3:#fff;--card:#fff;--border:#ccc;--text:#000;--muted:#333;--accent:#fff;
+  }
+}
