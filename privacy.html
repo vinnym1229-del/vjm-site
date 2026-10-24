@@ -46,7 +46,12 @@ body::before {
    Restates every hard-coded dark surface / white-alpha fill for a white page. */
 body.light-mode{
   --gold:#b3251d;--gold-ink:#26262a;--bg:#ffffff;--bg2:#f6f6f7;--card:#ffffff;
-  --border:#e3e3e6;--text:#141416;--muted:#5f5f66;--green:#3f3f46;
+  /* Was #e3e3e6: a white .card/section on this near-white page had no
+     visible border edge -- the same invisible-edge bug site.css's --border
+     and tokens.css's --vjm-border were already fixed for (see their
+     comments). This page's own inline palette never got the same fix.
+     Matching their value. */
+  --border:#d4d4db;--text:#141416;--muted:#5f5f66;--green:#3f3f46;
   background:radial-gradient(ellipse at 50% 0%,rgba(0,0,0,.035),transparent 55%),var(--bg);
 }
 /* ambient wash: red stays under the light cap (0.04) */
