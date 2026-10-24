@@ -7,7 +7,7 @@ Queued → Claimed → Done (or Blocked). Newest claims at top of their section.
 
 | Instance | Branch | Scope (exact files/area) | Intent | Since |
 |----------|--------|--------------------------|--------|-------|
-| — | | | | |
+| claude (autonomous maintenance run) | pj | whole-repo scheduled maintenance cycle (test suite, live-deployment probe, one improvement, board/decisions log) | Run the standard 4-step cycle: npm test, probe pj.vjm.pages.dev, fix/improve one thing if found, log and push | 2026-10-24 |
 
 ## Queued (unclaimed, safe to take)
 
