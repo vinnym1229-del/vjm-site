@@ -77,6 +77,22 @@ test('lesson companion is bound to a server-held lesson, not browser text', () =
   assert.match(guidance, /function showVerifiedCard\(\)[\s\S]*?showLessonCompanion\(\)/);
 });
 
+// A headless pass at 320px (iPhone SE class, still a real supported width)
+// found the page's own document scrollWidth 36px wider than the viewport.
+// The desktop two-column rule already guards against this with
+// `minmax(0, 1.12fr)` on the text column -- a 1fr grid track's automatic
+// minimum size is its content's min-content width, not 0, so an unbroken
+// uppercase word in the hero h1 (clamp()'s floor keeps the font large even
+// at phone widths) was forcing the single mobile column wider than its own
+// 288px-wide container, and from there the whole page. The mobile override
+// collapsed back to a bare `1fr` and lost that same guard. Re-adding
+// `minmax(0, …)` caps the track's auto-minimum at 0, so normal text wrapping
+// (not a forced overflow) absorbs the long word instead.
+test('mobile hero grid track cannot be forced wider than its container by an unbreakable word', () => {
+  assert.match(guidance, /@media\(max-width:820px\)\{\.hero\{grid-template-columns:minmax\(0,1fr\)\}/,
+    'the 820px hero override must keep the same minmax(0, …) guard the desktop rule uses, not a bare 1fr');
+});
+
 test('prop-firms page states no unverified specifics in code', () => {
   // Directory is owner-data driven; the HTML must not hardcode firms/prices.
   assert.doesNotMatch(propFirms, /(topstep|apex trader|myfundedfutures|mffx|bulenox|takeprofit trader|ftmo|echelon)/i);
