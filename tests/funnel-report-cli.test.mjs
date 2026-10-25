@@ -20,7 +20,7 @@ import { mkdtempSync, writeFileSync, chmodSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { conversionSql, headlineLine } from '../tools/funnel-report.mjs';
+import { conversionSql, headlineLine, unknownEventsNote } from '../tools/funnel-report.mjs';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const TOOL = join(ROOT, 'tools', 'funnel-report.mjs');
@@ -73,6 +73,31 @@ test('headlineLine reports 0% rather than dividing by a truthy-but-zero case', (
 
 test('headlineLine returns null when no one has hit a paywall yet', () => {
   assert.equal(headlineLine(0, 0), null);
+});
+
+// Coverage for unknownEventsNote -- the drift guard that was previously
+// untested because the real ALLOWED_EVENTS/FUNNEL pair is (correctly) kept
+// in sync, so the branch never fires against production data. These pin its
+// behavior directly against made-up lists instead.
+test('unknownEventsNote returns null when every accepted event is placed in FUNNEL', () => {
+  assert.equal(
+    unknownEventsNote(['a', 'b'], [['a', 'Stage A'], ['b', 'Stage B']]),
+    null
+  );
+});
+
+test('unknownEventsNote names a single stage missing from FUNNEL, singular wording', () => {
+  assert.equal(
+    unknownEventsNote(['a', 'b'], [['a', 'Stage A']]),
+    '\n  Note: b is accepted by the collector but not placed in the funnel above — add it to FUNNEL in this file.'
+  );
+});
+
+test('unknownEventsNote names every stage missing from FUNNEL, plural wording', () => {
+  assert.equal(
+    unknownEventsNote(['a', 'b', 'c'], []),
+    '\n  Note: a, b, c are accepted by the collector but not placed in the funnel above — add them to FUNNEL in this file.'
+  );
 });
 
 // Coverage for funnel-report.mjs's own CLI entry point (the

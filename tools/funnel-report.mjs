@@ -87,6 +87,18 @@ export const headlineLine = (locks, converted) => locks
     `${converted} went on to click a pricing button (${((converted / locks) * 100).toFixed(0)}%).`
   : null;
 
+// Pulled out so the drift this guards against -- someone adds a stage to
+// ALLOWED_EVENTS in analytics.js and forgets to add it here to FUNNEL, so it
+// vanishes from the report silently -- can be pinned directly, without
+// needing a real ALLOWED_EVENTS/FUNNEL mismatch to exist in production to
+// exercise the branch.
+export const unknownEventsNote = (allowedEvents, funnel) => {
+  const unknown = [...allowedEvents].filter((e) => !funnel.some(([k]) => k === e));
+  if (!unknown.length) return null;
+  return `\n  Note: ${unknown.join(', ')} ${unknown.length === 1 ? 'is' : 'are'} accepted by the ` +
+    `collector but not placed in the funnel above — add ${unknown.length === 1 ? 'it' : 'them'} to FUNNEL in this file.`;
+};
+
 const since = `datetime('now', '-${Number.isFinite(DAYS) && DAYS > 0 ? DAYS : 30} days')`;
 
 // Guarded so this module can be imported (for conversionSql/headlineLine) by
@@ -150,11 +162,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const headline = headlineLine(locks, converted);
   if (headline) console.log(headline);
 
-  const unknown = [...ALLOWED_EVENTS].filter((e) => !FUNNEL.some(([k]) => k === e));
-  if (unknown.length) {
-    console.log(`\n  Note: ${unknown.join(', ')} ${unknown.length === 1 ? 'is' : 'are'} accepted by the ` +
-      `collector but not placed in the funnel above — add ${unknown.length === 1 ? 'it' : 'them'} to FUNNEL in this file.`);
-  }
+  const note = unknownEventsNote(ALLOWED_EVENTS, FUNNEL);
+  if (note) console.log(note);
 
   if (visitsTotal < 30) {
     console.log(`\n  Sample size is ${visitsTotal}. Percentages on a handful of visits are noise;` +
