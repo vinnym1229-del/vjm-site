@@ -491,7 +491,7 @@ section { padding: 90px 24px; }
 
 /* ─── INSIGHTS ─── */
 #insights { background:var(--bg); }
-.insights-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:20px; }
+.insights-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%, 300px),1fr)); gap:20px; }
 .insight-card { background:var(--card); border:1px solid var(--border); border-radius:12px; overflow:hidden; cursor:pointer; transition:all .2s; }
 .insight-card:hover { border-color:var(--muted); transform:translateY(-4px); }
 .insight-card-body { padding:20px; }

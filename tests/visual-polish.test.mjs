@@ -93,6 +93,21 @@ test('mobile hero grid track cannot be forced wider than its container by an unb
     'the 820px hero override must keep the same minmax(0, …) guard the desktop rule uses, not a bare 1fr');
 });
 
+// A headless pass at 320px (iPhone SE class) found a second, unrelated
+// cause of the same scrollWidth-wider-than-viewport symptom the hero fix
+// above addressed: #insights's grid used a bare `minmax(300px, 1fr)` track.
+// auto-fill still allocates at least one 300px-minimum track even when the
+// section's own padded content area (272px at 320px viewport) is narrower
+// than that minimum, forcing the grid -- and the page -- 4px past its own
+// container regardless of content. `minmax(min(100%, 300px), 1fr)` caps the
+// minimum at the available width, the same guard `.pj-tool-grid` already
+// uses elsewhere in this file (site.css:1386); above that width the grid
+// still allocates full 300px tracks and multi-columns normally.
+test('insights grid cannot force a column wider than its own container on narrow viewports', () => {
+  assert.match(siteCss, /\.insights-grid \{ display:grid; grid-template-columns:repeat\(auto-fill,minmax\(min\(100%, 300px\),1fr\)\); gap:20px; \}/,
+    'the insights grid track minimum must be capped by min(100%, …), not a bare 300px minimum');
+});
+
 test('prop-firms page states no unverified specifics in code', () => {
   // Directory is owner-data driven; the HTML must not hardcode firms/prices.
   assert.doesNotMatch(propFirms, /(topstep|apex trader|myfundedfutures|mffx|bulenox|takeprofit trader|ftmo|echelon)/i);
