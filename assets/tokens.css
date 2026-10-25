@@ -160,3 +160,27 @@ body.light-mode .vjm-chip.amber,
 body.light-mode .vjm-chip.blue { background: rgba(0,0,0,0.04); }
 body.light-mode .vjm-btn-ghost { background: rgba(0,0,0,0.04); }
 body.light-mode .vjm-note { background: rgba(0,0,0,0.025); }
+
+/* No @media print rule existed anywhere in this file either, so the three
+   .vjm-page pages built on it (premarket.html, prop-firms.html,
+   unsubscribe.html) had the identical failure assets/curriculum.css's own
+   print fix already describes: dark mode is an explicit, remembered opt-in
+   (assets/theme.js), not hypothetical, and browsers default to NOT printing
+   element background colors ("background graphics" is off by default) while
+   DOING print the author's specified text color -- so --vjm-bg's near-black
+   (#0c0c0d) silently became the paper's own white while --vjm-text's
+   near-white (#ededee) printed exactly as specified, near-white ink on a
+   white page. Confirmed with Playwright's print-media emulation the same
+   way the curriculum.css fix was verified: body text computed to
+   rgb(237,237,238) against an unprinted #0c0c0d background on all three
+   pages before this change. Force the light-mode ink/paper values at print
+   time regardless of which theme is on screen, this file's own variable
+   names (--vjm-*, not curriculum.css's --*). :root alone covers the
+   dark-mode case; body.light-mode is restated too only so this stays the
+   single source of truth for print colors rather than relying on light mode
+   already matching by coincidence. */
+@media print {
+  :root, body.light-mode {
+    --vjm-bg:#fff;--vjm-bg2:#fff;--vjm-card:#fff;--vjm-border:#ccc;--vjm-border-strong:#999;--vjm-text:#000;--vjm-muted:#333;
+  }
+}
