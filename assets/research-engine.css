@@ -78,7 +78,7 @@ textarea:focus-visible,summary:focus-visible,[tabindex]:focus-visible{
    dark surface / white overlay that would vanish or invert on white. */
 body.light-mode{
   --red:#b3251d;--red-ink:#b3251d;--red2:#8c1a14;--green:#3f3f46;--amber:#26262a;--blue:#26262a;
-  --bg:#ffffff;--bg2:#f6f6f7;--panel:#ffffff;--panel2:#fafafa;--line:#e3e3e6;
+  --bg:#ffffff;--bg2:#f6f6f7;--panel:#ffffff;--panel2:#fafafa;--line:#d4d4db;
   --line2:#cfcfd4;--text:#141416;--soft:#3f3f46;--muted:#5f5f66;--white:#141416;
 }
 body.light-mode{background:radial-gradient(circle at 50% -12%,rgba(179,37,29,.04),transparent 32%),linear-gradient(180deg,#ffffff,#f6f6f7 46%,#eeeef0)}

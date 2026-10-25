@@ -516,3 +516,45 @@ test('the four remaining pages with their own inline light-mode border token mat
       `${page}'s fixed ${varName} must be a visible improvement over the retired #e3e3e6 value`);
   }
 });
+
+// Closes out the last two files with their own light-mode variable block
+// still carrying the pre-fix #e3e3e6: research-engine.css's --line (its
+// .panel/.kpi/.toolbar/.table-wrap etc. are all white-on-white in light mode,
+// same undifferentiated-edge pattern as the pages above) and curriculum.css's
+// --border (its .lesson-card/.quiz/.tool/.essay are the same white card on a
+// white page). Pin both to the same #d4d4db literal.
+const STRAY_BORDER_VAR_BLOCKS = [
+  ['assets/research-engine.css', '--line'],
+  ['assets/curriculum.css', '--border'],
+];
+
+test("research-engine.css's and curriculum.css's light-mode border variables match the fixed #d4d4db literal", () => {
+  const card = hexToRgb('#ffffff');
+  for (const [file, varName] of STRAY_BORDER_VAR_BLOCKS) {
+    const source = read(file);
+    const lightBlock = source.match(/body\.light-mode\s*\{([^}]*)\}/)[1];
+    const match = lightBlock.match(new RegExp(`${varName}:\\s*(#[0-9a-fA-F]{3,8});`));
+    assert.ok(match, `${file}'s light-mode block must declare ${varName} as hex`);
+    assert.equal(match[1].toLowerCase(), '#d4d4db',
+      `${file}'s ${varName} (${match[1]}) no longer matches the fixed #d4d4db literal`);
+    const ratio = contrast(hexToRgb(match[1]), card);
+    assert.ok(ratio > contrast(hexToRgb('#e3e3e6'), card),
+      `${file}'s fixed ${varName} must be a visible improvement over the retired #e3e3e6 value`);
+  }
+});
+
+// chatbot.js hardcodes the same literal directly in a JS template string
+// (no CSS variable to swap), once per selector, rather than through a single
+// variable like every other file in this bug class -- the only one of the
+// ten files flagged on board.md's Queued row 9 that needed a find/replace
+// instead of a one-line swap. Pin the count and value directly so a future
+// edit to this widget can't quietly reintroduce the retired literal.
+test("chatbot.js's light-mode border-color literals match the fixed #d4d4db value", () => {
+  const js = read('assets/chatbot.js');
+  const lightModeBlock = js.slice(js.indexOf('body.light-mode .vjm-chat-fab:focus-visible'));
+  assert.ok(!lightModeBlock.includes('#e3e3e6'),
+    "chatbot.js's light-mode widget styles still carry the retired #e3e3e6 literal");
+  const fixedCount = (lightModeBlock.match(/#d4d4db/g) || []).length;
+  assert.equal(fixedCount, 7,
+    `expected chatbot.js's light-mode widget styles to carry the fixed #d4d4db literal 7 times, found ${fixedCount}`);
+});

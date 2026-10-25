@@ -11,7 +11,7 @@
   --text:#ededee; --muted:#9a9aa0; --accent:#1d1d20;
 }
 body.light-mode{--gold:#b3251d; --gold-ink:#b3251d; --gold2:#8c1a14; --green:#3f3f46; --emerald:#26262a;
-  --bg:#ffffff; --bg2:#f6f6f7; --bg3:#eeeef0; --card:#ffffff; --border:#e3e3e6;
+  --bg:#ffffff; --bg2:#f6f6f7; --bg3:#eeeef0; --card:#ffffff; --border:#d4d4db;
   --text:#141416; --muted:#5f5f66; --accent:#eeeef0;
 }
 *{box-sizing:border-box;}
