@@ -108,6 +108,21 @@ test('insights grid cannot force a column wider than its own container on narrow
     'the insights grid track minimum must be capped by min(100%, …), not a bare 300px minimum');
 });
 
+// A headless pass at 320px found a third instance of the same symptom on
+// stock-lab.html: the 980px breakpoint collapsed .hero-grid/.grid2/.grid3/
+// .gate-grid to a bare `1fr`, losing the minmax(0, …) guard the desktop
+// rules never needed. .grid2's own `.card` children hold <input> fields
+// (e.g. the risk calculator, the Fib-levels card) whose intrinsic
+// min-content width doesn't shrink with `width:100%` alone, so the single
+// mobile column's automatic minimum was pinned to that content width —
+// 318px against a 296px container at a 320px viewport — forcing the card,
+// and the page, 10px past the edge regardless of copy length.
+test('stock-lab grid tracks cannot be forced wider than their container by field-heavy cards', () => {
+  const stockLab = read('stock-lab.html');
+  assert.match(stockLab, /@media\(max-width:980px\)\{\.links\{display:none\}\.hamb\{display:flex\}\.hero-grid,\.grid2,\.grid3,\.gate-grid\{grid-template-columns:minmax\(0,1fr\)\}/,
+    'the 980px override for hero-grid/grid2/grid3/gate-grid must keep the minmax(0, …) guard, not a bare 1fr');
+});
+
 test('prop-firms page states no unverified specifics in code', () => {
   // Directory is owner-data driven; the HTML must not hardcode firms/prices.
   assert.doesNotMatch(propFirms, /(topstep|apex trader|myfundedfutures|mffx|bulenox|takeprofit trader|ftmo|echelon)/i);
