@@ -1706,3 +1706,28 @@ body.pj-home .pj-reference-hero #ferrari-showcase::before { display: none; }
 @media (prefers-reduced-motion: reduce) {
   body.pj-home .pj-reference-hero .fs-stage { transition: none; transform: none !important; }
 }
+
+/* ─── PRINT ───
+   The same gap assets/curriculum.css and assets/tokens.css already found and
+   fixed (see those files' own print blocks) was still open here: no
+   @media print rule existed anywhere in this file, and index.html is this
+   site's single highest-traffic page. Dark mode is an explicit, remembered
+   opt-in (assets/theme.js adds body.light-mode on top of body.pj-home, it
+   never replaces it), not hypothetical, and browsers default to NOT
+   printing element background colors ("background graphics" is off by
+   default in the print dialog) while DOING print the author's specified
+   text color -- so a dark-mode visitor who printed this page got --bg's
+   near-black (#0c0c0d) silently landing on the un-printed white paper while
+   --text's near-white (#ededee) printed exactly as specified, near-white
+   ink on a white page. Force the light-mode ink/paper values at print time
+   regardless of which theme is on screen, this file's own variable names
+   (--bg/--text/etc, not curriculum.css's bare vars reused or tokens.css's
+   --vjm-* prefix). :root alone covers the dark-mode case; body.light-mode
+   and body.light-mode.pj-home are restated too only so this stays the
+   single source of truth for print colors rather than relying on light
+   mode already matching by coincidence. */
+@media print {
+  :root, body.light-mode, body.light-mode.pj-home {
+    --bg:#fff;--bg2:#fff;--bg3:#fff;--card:#fff;--border:#ccc;--text:#000;--muted:#333;--accent:#fff;
+  }
+}
