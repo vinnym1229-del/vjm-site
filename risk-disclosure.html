@@ -68,6 +68,25 @@ body.light-mode #theme-toggle:hover{color:var(--gold);}
 body.light-mode section{background:#fafafa;}
 /* the risk kicker is an earned alert — it keeps red in both themes */
 body.light-mode .eyebrow{color:var(--gold);background:rgba(179,37,29,.07);border-color:rgba(179,37,29,.22);}
+/* No @media print rule existed on this page. Dark mode is an explicit,
+   remembered opt-in (assets/theme.js: light is the default), not
+   hypothetical, and legal/policy pages are exactly the ones a visitor is
+   likely to print or save as a PDF. Browsers default to NOT printing
+   element background colors ("background graphics" is off by default in
+   the print dialog) but DO print the author's specified text color, so a
+   dark-mode visitor printing this page got --text's near-white (#ededee)
+   ink landing on the un-printed white paper -- and, specific to this
+   page's own palette, --gold-ink's near-white (#d9d9dd) made every
+   heading (h1 span, h2) and every body/footer link (main a, p a, li a,
+   .footer a) just as invisible, since they're colored with it too. Force
+   the light-mode ink/paper values at print time regardless of which theme
+   is on screen, same pattern as assets/curriculum.css/tokens.css/site.css's
+   own print fixes. */
+@media print{
+  :root,body.light-mode{
+    --bg:#fff;--bg2:#fff;--card:#fff;--border:#ccc;--text:#000;--muted:#333;--gold-ink:#000;
+  }
+}
 </style>
 <script src="assets/theme.js"></script>
 </head>
