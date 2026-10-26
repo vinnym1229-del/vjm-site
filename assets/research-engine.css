@@ -182,3 +182,26 @@ body.light-mode .provenance.missing{background:rgba(0,0,0,.035)}
   .hero h1 { font-size: clamp(2.1rem, 9vw, 7.2rem); overflow-wrap: anywhere; }
   .hero-copy, .system-card { padding: 20px 16px; border-radius: 20px; }
 }
+
+/* ─── PRINT ───
+   No @media print rule existed anywhere in this file -- the same gap already
+   fixed in assets/curriculum.css/tokens.css/site.css, privacy/terms/risk-
+   disclosure.html, and premium-guidance/stock-lab/forex-calendar.html. Dark
+   mode is an explicit, remembered opt-in (assets/theme.js: light is the
+   default), not hypothetical, and browsers print the author's specified text
+   color but not the background by default, so a dark-mode visitor printing
+   research-engine.html got --text's near-white (#ededee) ink on an
+   un-printed white page -- plus --amber/--green's near-white
+   (#d9d9dd/#cfcfd4) made caution KPIs, positive stats and good-outcome table
+   cells just as invisible, and --soft/--muted's near-white body/label text
+   and --red/--red-ink's light coral (#d14343/#e26060) brand, links and bad-
+   outcome cells were all too low-contrast to read. Force the light-mode ink/
+   paper values at print time regardless of which theme is on screen, same
+   pattern as every prior print fix; :root alone covers the dark-mode case,
+   body.light-mode is restated too so this stays the single source of truth
+   rather than relying on light mode already matching by coincidence. */
+@media print {
+  :root, body.light-mode {
+    --bg:#fff;--bg2:#fff;--line:#ccc;--line2:#ccc;--text:#000;--muted:#333;--soft:#333;--amber:#333;--green:#000;--red:#900;--red-ink:#900;
+  }
+}

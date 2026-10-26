@@ -1357,7 +1357,14 @@ for (const preFix of [undefined, null, {}, { study: 'Old study' }, { study: 'Old
 // tests/palette.test.mjs asserts zero non-red chromatic hues site-wide. The
 // provenance UI must therefore be built from existing tokens only.
 const clientCss = readFileSync(resolve(projectRoot, 'assets/research-engine.css'), 'utf8');
-const provenanceCss = clientCss.slice(clientCss.indexOf('/* ─── RESULT PROVENANCE'));
+// Bounded to the next section marker, not left open to EOF -- an unbounded
+// slice swept later, unrelated sections (narrow-viewport overrides, the
+// @media print block) into this provenance-only colour check, which would
+// have broken the moment either section legitimately needed a literal.
+const provenanceCss = clientCss.slice(
+  clientCss.indexOf('/* ─── RESULT PROVENANCE'),
+  clientCss.indexOf('/* ─── NARROW VIEWPORTS'),
+);
 assert.ok(provenanceCss.length > 200, 'the provenance styles must be present');
 assert.doesNotMatch(provenanceCss, /#[0-9a-fA-F]{3,8}\b/, 'the provenance styles must not add a colour literal');
 assert.doesNotMatch(provenanceCss, /\brgba?\(\s*(?!0\s*,\s*0\s*,\s*0|255\s*,\s*255\s*,\s*255)/, 'only neutral black/white washes are allowed; hues come from tokens');
