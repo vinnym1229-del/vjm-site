@@ -122,6 +122,23 @@ body.light-mode footer{background:#ffffff!important;border-top-color:var(--bdr)}
   .nav-links::-webkit-scrollbar { display: none; }
   .nav-links > * { flex: 0 0 auto; white-space: nowrap; }
 }
+
+/* No @media print rule existed on this page -- the same gap already fixed
+   in assets/curriculum.css/tokens.css/site.css and privacy/terms/risk-
+   disclosure.html. Dark mode is an explicit, remembered opt-in
+   (assets/theme.js: light is the default), not hypothetical, and browsers
+   print the author's text color but not the background by default, so a
+   dark-mode visitor printing this page got --text's near-white (#ededee)
+   ink on an un-printed white page -- plus --gold-ink/--em's near-white
+   (#d9d9dd) made the brand, headline accent, trust stats, eyebrow/chip
+   text and resource links just as invisible. Force the light-mode ink/
+   paper values at print time regardless of which theme is on screen, same
+   pattern as every prior print fix. */
+@media print{
+  :root,body.light-mode{
+    --bg:#fff;--bg2:#fff;--card:#fff;--bdr:#ccc;--text:#000;--muted:#333;--m2:#333;--gold-ink:#000;--em:#000;--red:#900;
+  }
+}
 </style>
 <script src="assets/theme.js"></script>
 <script>window.vjmTrackQueue = window.vjmTrackQueue || [];

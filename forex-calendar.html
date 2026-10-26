@@ -135,6 +135,24 @@ body.light-mode .footer{border-top-color:var(--line);color:var(--muted)}
   .nav .links::-webkit-scrollbar { display: none; }
   .nav .links > * { flex: 0 0 auto; }
 }
+
+/* No @media print rule existed on this page -- the same gap already fixed
+   in assets/curriculum.css/tokens.css/site.css and privacy/terms/risk-
+   disclosure.html. Dark mode is an explicit, remembered opt-in
+   (assets/theme.js: light is the default), not hypothetical, and browsers
+   print the author's text color but not the background by default, so a
+   dark-mode visitor printing this page got --text's near-white (#ededee)
+   ink on an un-printed white page -- plus --gold-ink's near-white
+   (#d9d9dd) made the brand, status/stat numbers and error labels just as
+   invisible, and --soft's near-white event-row text and --red's light
+   coral (#e26060) high-impact labels were both too low contrast to read.
+   Force the light-mode ink/paper values at print time regardless of which
+   theme is on screen, same pattern as every prior print fix. */
+@media print{
+  :root,body.light-mode{
+    --bg:#fff;--bg2:#fff;--card:#fff;--line:#ccc;--text:#000;--muted:#333;--soft:#333;--gold-ink:#000;--orange:#333;--red:#900;
+  }
+}
 </style>
 <script src="assets/theme.js"></script>
 </head>

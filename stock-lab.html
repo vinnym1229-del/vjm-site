@@ -137,6 +137,25 @@ body.light-mode .premium-frame-shell{background:#ffffff;border-color:rgba(20,20,
   .nav-actions{ flex-wrap:wrap; gap:8px; min-width:0; }
   .nav-actions > *{ min-width:0; }
 }
+
+/* No @media print rule existed on this page -- the same gap already fixed
+   in assets/curriculum.css/tokens.css/site.css and privacy/terms/risk-
+   disclosure.html. Dark mode is an explicit, remembered opt-in
+   (assets/theme.js: light is the default), not hypothetical, and browsers
+   print the author's text color but not the background by default, so a
+   dark-mode visitor printing this page got --text's near-white (#ededee)
+   ink on an un-printed white page -- plus --gold-ink/--green's near-white
+   (#d9d9dd/#cfcfd4) made the brand, stat/score numbers, card headings and
+   ticker symbols just as invisible, and --soft's near-white lead/table-row
+   text and --red's light coral (#e26060) risk labels were both too low
+   contrast to read. Force the light-mode ink/paper values at print time
+   regardless of which theme is on screen, same pattern as every prior
+   print fix. */
+@media print{
+  :root,body.light-mode{
+    --bg:#fff;--bg2:#fff;--card:#fff;--line:#ccc;--text:#000;--muted:#333;--soft:#333;--gold-ink:#000;--green:#000;--orange:#333;--red:#900;
+  }
+}
 </style>
 <script src="assets/theme.js"></script>
 </head>
