@@ -92,7 +92,7 @@ test('every color:var(--vjm-x) used by tokens.css itself or its three consuming 
   const sources = [css, ...PAGES_USING_TOKENS.map((p) => readFileSync(join(ROOT, p), 'utf8'))];
   for (const source of sources) {
     const used = new Set(
-      [...source.matchAll(/(?:^|[;{\s])color:\s*var\(--vjm-([a-zA-Z0-9-]+)\)/g)].map((m) => m[1])
+      [...source.matchAll(/(?:^|[;{\s"'])color:\s*var\(--vjm-([a-zA-Z0-9-]+)\)/g)].map((m) => m[1])
     );
     for (const v of used) {
       assert.ok(DARK_INK_VARS.includes(v), `uses color:var(--vjm-${v}) but the print-legibility test doesn't cover --vjm-${v} -- add it so a future palette change can't reintroduce this bug silently`);
