@@ -38,7 +38,7 @@
   border: 1px solid var(--vjm-border-strong);
   border-radius: 11px;
 }
-.nl input::placeholder { color: var(--vjm-muted); opacity: .85; }
+.nl input::placeholder { color: var(--vjm-muted); }
 .nl input:focus-visible { outline: 2px solid var(--vjm-red); outline-offset: 2px; }
 
 /* The honeypot. Off-screen rather than display:none — some bots skip hidden
