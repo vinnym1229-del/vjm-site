@@ -178,9 +178,32 @@ body.light-mode .vjm-note { background: rgba(0,0,0,0.025); }
    names (--vjm-*, not curriculum.css's --*). :root alone covers the
    dark-mode case; body.light-mode is restated too only so this stays the
    single source of truth for print colors rather than relying on light mode
-   already matching by coincidence. */
+   already matching by coincidence.
+
+   The first landing of this fix (fc54414) only forced the bg/border/text/
+   muted set and missed six other --vjm-* vars this file and its three
+   consuming pages also use via color: -- --vjm-red/--vjm-red-bright color
+   premarket.html/prop-firms.html/unsubscribe.html's .brand and back/error
+   links, --vjm-green/--vjm-gold/--vjm-amber/--vjm-blue color .pos, .gold,
+   :focus-visible outlines, and premarket.html's dynamic statusChip() chip
+   text (amber/green/red/blue depending on feed state). Dark mode's --green
+   (#cfcfd4), --gold/--amber/--blue (#d9d9dd each) are all near-white, and
+   --red/--red-bright (#d14343/#e26060) are too low-contrast on white paper
+   even though not literally near-white -- same unreadable-under-print bug,
+   just on vars the first pass didn't grep for. Reusing body.light-mode's
+   own values here (as the bg/border/text/muted set above does) isn't
+   actually dark enough for --green (#3f3f46 is still ~65 average-luminance,
+   the same borderline this test's threshold catches); following the
+   #900/#333/#000 literal convention every other print-legibility fix in
+   this series (stock-lab.html, forex-calendar.html, premium-guidance.html,
+   research-engine.css) already settled on for red/secondary/primary ink
+   instead -- red family to maroon, the amber/blue status indicators to dark
+   gray like their "orange"/"soft" siblings elsewhere, gold and green (a
+   brand accent and a stat-value color, same role as those files' "gold-ink"
+   and "green") to pure black. */
 @media print {
   :root, body.light-mode {
     --vjm-bg:#fff;--vjm-bg2:#fff;--vjm-card:#fff;--vjm-border:#ccc;--vjm-border-strong:#999;--vjm-text:#000;--vjm-muted:#333;
+    --vjm-red:#900;--vjm-red-bright:#900;--vjm-green:#000;--vjm-gold:#000;--vjm-amber:#333;--vjm-blue:#333;
   }
 }
