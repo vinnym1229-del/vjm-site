@@ -49,6 +49,7 @@ body.light-mode {--gold-ink:#b3251d;
   --red-soft: rgba(179,37,29,0.07);
   --red-line: rgba(179,37,29,0.22);
 }
+#status-discord-input::placeholder { color: var(--muted); }
 body.light-mode { background: var(--bg); color: var(--text); }
 body.light-mode nav { background: rgba(255,255,255,0.97); border-bottom-color: var(--border); }
 body.light-mode .hero { background: radial-gradient(ellipse at 50% 0%,rgba(179,37,29,0.04) 0%,transparent 65%), linear-gradient(180deg,#ffffff 0%,#f6f6f7 100%); }
